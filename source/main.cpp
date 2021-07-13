@@ -32,6 +32,9 @@ int main(int argc, char **argv)
     // printf("SIGSTOP: %d\n", SIGSTOP);
     // printf("SIGCONT: %d\n", SIGCONT);
     // printf("WCONTINUED: %d\n", WCONTINUED);
+    // printf("ECHILD: %d\n", ECHILD);
+    // printf("EINTR: %d\n", EINTR);
+    // printf("EINVAL: %d\n", EINVAL);
 
     TracyCZoneN(tcz_init, "init", true);
 

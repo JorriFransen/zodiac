@@ -46,10 +46,6 @@ std :: import std;
         return @cast(pid_t, @syscall(SYS_gettid));
     }
 
-    fork :: func () -> pid_t {
-        return @cast(pid_t, @syscall(SYS_fork));
-    }
-
     #compiler abort :: func () {
 
         raise(SIGABRT);
@@ -75,10 +71,22 @@ std :: import std;
         return @cast(s32, result);
     }
 
-    waitpid :: func(pid: pid_t, wstatus: *s32, options: s32) -> s64 {
+    fork :: func () -> pid_t {
+        return @cast(pid_t, @syscall(SYS_fork));
+    }
+
+    waitpid :: func(pid: pid_t, wstatus: *s32, options: s32) -> pid_t {
         result := @syscall(SYS_wait4, pid, wstatus, options, 0);
-        return result;
-        // return @cast(s32, result);
+
+        if (result < 0) {
+            if (result < -1) {
+                @assert(false); //TODO: Handle errno somehow
+            }
+        }
+
+        return @cast(s32, result);
+
+        // return wait4(pid, wstatus, options, null);
     }
 
 } #else {

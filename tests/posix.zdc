@@ -3,9 +3,8 @@
 
     WNOHANG    : s32 :  1;
     WUNTRACED  : s32 :  2;
-    WCONTINUED : s32 :  4;
-    WNOWAIT    : s32 :  8;
-    WEXITED    : s32 : 16;
+    WEXITED    : s32 :  4;
+    WCONTINUED : s32 :  8;
 
     WEXITSTATUS :: func(status: s32) -> s32 {
         return (status & 65280) >> 8;
@@ -24,7 +23,8 @@
     }
 
     WIFSIGNALED :: func(status: s32) -> bool {
-        if (WIFSTOPPED(status)) return false;
+        if (WIFSTOPPED(status) ) return false;
+        if (WIFCONTINUED(status) ) return false;
         return (((status) & 127) + 1) >> 1 > 0;
     }
 
