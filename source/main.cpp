@@ -27,6 +27,11 @@ int main(int argc, char **argv)
     // printf("SYS_waitpid): %d\n", SYS_wait);
 
     // printf("SIGABRT: %d\n", SIGABRT);
+    // printf("SIGKILL: %d\n", SIGKILL);
+    // printf("SIGINT: %d\n", SIGINT);
+    // printf("SIGSTOP: %d\n", SIGSTOP);
+    // printf("SIGCONT: %d\n", SIGCONT);
+    // printf("WCONTINUED: %d\n", WCONTINUED);
 
     TracyCZoneN(tcz_init, "init", true);
 

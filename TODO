@@ -1,3 +1,4 @@
+https://web.stanford.edu/class/archive/cs/cs110/cs110.1196/static/lectures/07-Signals/lecture-07-signals.pdf
 
 cstr[i] != 0 in strlen(), std.zdc
 Here the inferred type of cstr[i] is s64, but it should really be u8, and the

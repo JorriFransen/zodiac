@@ -1,0 +1,42 @@
+
+#if (PLATFORM_LINUX) {
+
+    WNOHANG    : s32 :  1;
+    WUNTRACED  : s32 :  2;
+    WCONTINUED : s32 :  4;
+    WNOWAIT    : s32 :  8;
+    WEXITED    : s32 : 16;
+
+    WEXITSTATUS :: func(status: s32) -> s32 {
+        return (status & 65280) >> 8;
+    }
+
+    WTERMSIG :: func(status: s32) -> s32 {
+        return status & 127;
+    }
+
+    WSTOPSIG :: func(status: s32) -> s32 {
+        return WEXITSTATUS(status);
+    }
+
+    WIFEXITED :: func(status: s32) -> bool {
+        return WTERMSIG(status) == 0;
+    }
+
+    WIFSIGNALED :: func(status: s32) -> bool {
+        if (WIFSTOPPED(status)) return false;
+        return (((status) & 127) + 1) >> 1 > 0;
+    }
+
+    WIFSTOPPED :: func(status: s32) -> bool {
+        return ((status & 255) == 127);
+    }
+
+    WIFCONTINUED :: func(status: s32) -> bool {
+        return status == 65535;
+    }
+
+    WCOREDUMP :: func(status: s32) -> s32 {
+        return status & 128;
+    }
+}

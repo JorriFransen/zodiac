@@ -1,13 +1,12 @@
 std :: import std;
 os :: import os;
+posix :: import posix;
 
 #foreign waitpid :: func(pid: os.pid_t, status: *s32, options: s32) -> os.pid_t;
 
-#run main();
+// #run main();
 
-main :: func() -> int {
-    // std.println("Fork test");
-
+fork_normal_test :: func() -> void {
     fork_res := os.fork();
 
     return_value := 0;
@@ -17,7 +16,7 @@ main :: func() -> int {
         std.println("This is the child");
         std.print("Fork returned: "); std.print_numln(fork_res);
         return_value = 42;
-        // os.abort();
+        @exit(return_value);
     } else {
         // Parent
         status : s32;
@@ -26,48 +25,288 @@ main :: func() -> int {
         std.println("This is the parent");
         std.print("Fork returned: "); std.print_numln(fork_res);
         std.print("Wait returned: "); std.print_numln(wait_res);
-        // std.print("Wait status: "); std.print_numln(status);
+        std.print("Wait status: "); std.print_numln(status);
 
-        if (WIFSIGNALED(status)) {
-            signal_status := WTERMSIG(status);
+        if (posix.WIFSIGNALED(status)) {
+            signal_status := posix.WTERMSIG(status);
             std.print("Signal status: "); std.print_numln(signal_status);
+
+            if (posix.WCOREDUMP(status) != 0) {
+                std.println("Child core dumped...");
+            }
         }
 
-        if (WIFSTOPPED(status)) {
-            stop_status := WSTOPSIG(status);
+        if (posix.WIFSTOPPED(status)) {
+            stop_status := posix.WSTOPSIG(status);
             std.print("Stop status: "); std.print_numln(stop_status);
         }
 
-        if (WIFEXITED(status)) {
-            exit_status := WEXITSTATUS(status);
+        if (posix.WIFEXITED(status)) {
+            exit_status := posix.WEXITSTATUS(status);
             std.print("Exit status: "); std.print_numln(exit_status);
+        }
+
+        if (posix.WIFCONTINUED(status)) {
+            std.println("Child continued");
         }
     }
 
     std.println("Print after calling fork");
-    return return_value;
 }
 
-WEXITSTATUS :: func(status: s32) -> s32 {
-    return (status & 65280) >> 8;
+fork_signal_abort_test :: func() -> void {
+    fork_res := os.fork();
+
+    return_value := 0;
+
+    if (fork_res == 0) {
+        // Child
+        std.println("This is the child");
+        std.print("Fork returned: "); std.print_numln(fork_res);
+        os.raise(os.SIGABRT);
+    } else {
+        // Parent
+        status : s32;
+        wait_res := waitpid(fork_res, *status, 0);
+
+        std.println("This is the parent");
+        std.print("Fork returned: "); std.print_numln(fork_res);
+        std.print("Wait returned: "); std.print_numln(wait_res);
+
+        if (posix.WIFSIGNALED(status)) {
+            signal_status := posix.WTERMSIG(status);
+            std.print("Signal status: "); std.print_numln(signal_status);
+
+            if (posix.WCOREDUMP(status) != 0) {
+                std.println("Child core dumped...");
+            }
+        }
+
+        if (posix.WIFSTOPPED(status)) {
+            stop_status := posix.WSTOPSIG(status);
+            std.print("Stop status: "); std.print_numln(stop_status);
+        }
+
+        if (posix.WIFEXITED(status)) {
+            exit_status := posix.WEXITSTATUS(status);
+            std.print("Exit status: "); std.print_numln(exit_status);
+        }
+
+        if (posix.WIFCONTINUED(status)) {
+            std.println("Child continued");
+        }
+    }
+
+    std.println("Print after calling fork");
 }
 
-WTERMSIG :: func(status: s32) -> s32 {
-    return status & 127;
+fork_signal_int_test :: func() -> void {
+    fork_res := os.fork();
+
+    return_value := 0;
+
+    if (fork_res == 0) {
+        // Child
+        std.println("This is the child");
+        std.print("Fork returned: "); std.print_numln(fork_res);
+        os.raise(os.SIGINT);
+    } else {
+        // Parent
+        status : s32;
+        wait_res := waitpid(fork_res, *status, 0);
+
+        std.println("This is the parent");
+        std.print("Fork returned: "); std.print_numln(fork_res);
+        std.print("Wait returned: "); std.print_numln(wait_res);
+
+        if (posix.WIFSIGNALED(status)) {
+            signal_status := posix.WTERMSIG(status);
+            std.print("Signal status: "); std.print_numln(signal_status);
+
+            if (posix.WCOREDUMP(status) != 0) {
+                std.println("Child core dumped...");
+            }
+        }
+
+        if (posix.WIFSTOPPED(status)) {
+            stop_status := posix.WSTOPSIG(status);
+            std.print("Stop status: "); std.print_numln(stop_status);
+        }
+
+        if (posix.WIFEXITED(status)) {
+            exit_status := posix.WEXITSTATUS(status);
+            std.print("Exit status: "); std.print_numln(exit_status);
+        }
+
+        if (posix.WIFCONTINUED(status)) {
+            std.println("Child continued");
+        }
+    }
+
+    std.println("Print after calling fork");
 }
 
-WSTOPSIG :: func(status: s32) -> s32 {
-    return WEXITSTATUS(status);
+fork_stop_test :: func() -> void {
+    fork_res := os.fork();
+
+    return_value := 0;
+
+    if (fork_res == 0) {
+        // Child
+        std.println("This is the child");
+        std.print("Fork returned: "); std.print_numln(fork_res);
+        os.raise(os.SIGSTOP);
+    } else {
+        // Parent
+        status : s32;
+        wait_res := waitpid(fork_res, *status, posix.WUNTRACED | posix.WCONTINUED);
+        // os.kill(fork_res, os.SIGCONT);
+
+        std.println("This is the parent");
+        std.print("Fork returned: "); std.print_numln(fork_res);
+        std.print("Wait returned: "); std.print_numln(wait_res);
+
+        if (posix.WIFSIGNALED(status)) {
+            signal_status := posix.WTERMSIG(status);
+            std.print("Signal status: "); std.print_numln(signal_status);
+
+            if (posix.WCOREDUMP(status) != 0) {
+                std.println("Child core dumped...");
+            }
+        }
+
+        if (posix.WIFSTOPPED(status)) {
+            stop_status := posix.WSTOPSIG(status);
+            std.print("Stop status: "); std.print_numln(stop_status);
+        }
+
+        if (posix.WIFEXITED(status)) {
+            exit_status := posix.WEXITSTATUS(status);
+            std.print("Exit status: "); std.print_numln(exit_status);
+        }
+
+        if (posix.WIFCONTINUED(status)) {
+            std.println("Child continued");
+        }
+    }
+
+    std.println("Print after calling fork");
 }
 
-WIFEXITED :: func(status: s32) -> bool {
-    return WTERMSIG(status) == 0;
+fork_continue_test :: func() -> void {
+    fork_res := os.fork();
+
+    if (fork_res == 0) {
+        // Child
+        std.println("This is the child");
+        os.raise(os.SIGSTOP);
+        std.println("Child after sigstop");
+        // @exit(42);
+    } else {
+        // Parent
+        status : s32;
+        wait_res := waitpid(fork_res, *status, posix.WUNTRACED);
+
+        std.print("Wait returned: "); std.print_numln(wait_res);
+        std.print("Wait status: "); std.print_numln(status);
+
+        if (posix.WIFSTOPPED(status)) {
+            stop_status := posix.WSTOPSIG(status);
+            std.print("Stop status: "); std.print_numln(stop_status);
+        }
+
+        if (posix.WIFSIGNALED(status)) {
+            signal_status := posix.WTERMSIG(status);
+            std.print("Signal status: "); std.print_numln(signal_status);
+
+            if (posix.WCOREDUMP(status) != 0) {
+                std.println("Child core dumped...");
+            }
+        }
+
+        if (posix.WIFEXITED(status)) {
+            exit_status := posix.WEXITSTATUS(status);
+            std.print("Exit status: "); std.print_numln(exit_status);
+        }
+
+        if (posix.WIFCONTINUED(status)) {
+            std.println("Child continued");
+        }
+
+        os.kill(fork_res, os.SIGCONT);
+
+        std.print("Parent is waiting for continue signal of child\n");
+        wait_res = waitpid(fork_res, *status, posix.WCONTINUED);
+
+        std.print("Wait returned: "); std.print_numln(wait_res);
+        std.print("Wait status: "); std.print_numln(status);
+
+        if (posix.WIFCONTINUED(status)) {
+            std.println("Child continued");
+        }
+
+        if (posix.WIFSTOPPED(status)) {
+            stop_status := posix.WSTOPSIG(status);
+            std.print("Stop status: "); std.print_numln(stop_status);
+        }
+
+        if (posix.WIFSIGNALED(status)) {
+            signal_status := posix.WTERMSIG(status);
+            std.print("Signal status: "); std.print_numln(signal_status);
+
+            if (posix.WCOREDUMP(status) != 0) {
+                std.println("Child core dumped...");
+            }
+        }
+
+        if (posix.WIFEXITED(status)) {
+            exit_status := posix.WEXITSTATUS(status);
+            std.print("Exit status: "); std.print_numln(exit_status);
+        }
+
+        std.print("Parent is waiting for child\n");
+        wait_res = waitpid(fork_res, *status,  0);
+
+        std.print("Wait returned: "); std.print_numln(wait_res);
+        std.print("Wait status: "); std.print_numln(status);
+
+        if (posix.WIFCONTINUED(status)) {
+            std.println("Child continued");
+        }
+
+        if (posix.WIFSTOPPED(status)) {
+            stop_status := posix.WSTOPSIG(status);
+            std.print("Stop status: "); std.print_numln(stop_status);
+        }
+
+        if (posix.WIFSIGNALED(status)) {
+            signal_status := posix.WTERMSIG(status);
+            std.print("Signal status: "); std.print_numln(signal_status);
+
+            if (posix.WCOREDUMP(status) != 0) {
+                std.println("Child core dumped...");
+            }
+        }
+
+        if (posix.WIFEXITED(status)) {
+            exit_status := posix.WEXITSTATUS(status);
+            std.print("Exit status: "); std.print_numln(exit_status);
+        }
+    }
 }
 
-WIFSIGNALED :: func(status: s32) -> bool {
-    return (((status) & 127) + 1) >> 1 > 1;
+main :: func() -> int {
+    fork_normal_test();
+    std.print("\n\n=====================\n\n");
+    fork_signal_abort_test();
+    std.print("\n\n=====================\n\n");
+    fork_signal_int_test();
+    std.print("\n\n=====================\n\n");
+    // fork_stop_test();
+    // std.print("\n\n=====================\n\n");
+    fork_continue_test();
+
+    return 0;
 }
 
-WIFSTOPPED :: func(status: s32) -> bool {
-    return ((status & 255) == 127);
-}
+

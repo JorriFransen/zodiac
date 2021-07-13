@@ -590,6 +590,7 @@ namespace Zodiac
 
         assert(result);
         if (add_to_scope && !ast_scope_add_declaration(ast_builder, parent_scope, result)) {
+            assert(false && "Redeclaration, report error!!!");
             return nullptr;
         }
         return result;
@@ -721,21 +722,18 @@ namespace Zodiac
         auto begin_fp = ptn->self.begin_file_pos;
         auto end_fp = ptn->self.end_file_pos;
 
-        switch (ptn->kind)
-        {
+        switch (ptn->kind) {
             case Statement_PTN_Kind::INVALID: assert(false);
 
-            case Statement_PTN_Kind::BLOCK:
-            {
+            case Statement_PTN_Kind::BLOCK: {
                 Array<AST_Statement*> ast_block_stmts = {};
                 Scope *block_scope = scope_new(ast_builder->allocator, Scope_Kind::BLOCK,
                                                parent_scope, ptn->block.statements.count);
-                if (ptn->block.statements.count)
-                {
+
+                if (ptn->block.statements.count) {
                     array_init(ast_builder->allocator, &ast_block_stmts);
 
-                    for (int64_t i = 0; i < ptn->block.statements.count; i++)
-                    {
+                    for (int64_t i = 0; i < ptn->block.statements.count; i++) {
                         AST_Statement *ast_block_stmt =
                             ast_create_statement_from_ptn(ast_builder,
                                                           ptn->block.statements[i],
@@ -1036,6 +1034,7 @@ namespace Zodiac
                                                               ptn->if_stmt.else_stmt,
                                                               var_decls, parent_scope,
                                                               ast_module);
+                    assert(else_stmt);
 
                     if (else_stmt->kind == AST_Statement_Kind::BLOCK) {
                         else_scope = else_stmt->block.scope;

@@ -19,7 +19,7 @@ std :: import std;
 
 } #elseif (PLATFORM_LINUX) {
 
-    _open_default_io_handles :: func() { }
+    posix :: import posix;
 
     pid_t :: typedef s32;
 
@@ -29,7 +29,13 @@ std :: import std;
     SYS_gettid :: 186;
     SYS_tkill  :: 200;
 
-    SIGABRT : s32 : 6;
+    SIGINT  : s32 :  2;
+    SIGKILL : s32 :  9;
+    SIGABRT : s32 :  6;
+    SIGCONT : s32 : 18;
+    SIGSTOP : s32 : 19;
+
+    _open_default_io_handles :: func() { }
 
     getpid :: func () -> pid_t
     {
@@ -56,6 +62,7 @@ std :: import std;
         // @NOTE: When we do implement this, we should also block all signals, see the
         //  comment in raise(), and the musl implementation of abort().
 
+        raise(SIGKILL);
         @exit(127);
     }
 
@@ -63,6 +70,11 @@ std :: import std;
     {
         // @TODO: block other (app) signals, see musl implementation of raise()
         result := @syscall(SYS_tkill, gettid(), signal);
+        return @cast(s32, result);
+    }
+
+    kill :: func(pid: pid_t, sig: s32) -> s32 {
+        result := @syscall(SYS_kill, pid, sig);
         return @cast(s32, result);
     }
 

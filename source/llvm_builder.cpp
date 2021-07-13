@@ -1024,8 +1024,7 @@ namespace Zodiac
         {
             case Zodiac_Target_Platform::INVALID: assert(false);
 
-            case Zodiac_Target_Platform::LINUX:
-            {
+            case Zodiac_Target_Platform::LINUX: {
                 auto ta = temp_allocator_get();
                 temp_allocator_reset(ta);
 
