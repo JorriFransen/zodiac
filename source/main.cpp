@@ -23,8 +23,8 @@ int main(int argc, char **argv)
     // printf("SYS_tkill: %d\n", SYS_tkill);
     // printf("SYS_getpid: %d\n", SYS_getpid);
     // printf("SYS_gettid: %d\n", SYS_gettid);
-    // printf("SYS_fork): %d\n", SYS_fork);
-    // printf("SYS_waitpid): %d\n", SYS_wait);
+    // printf("SYS_fork: %d\n", SYS_fork);
+    // printf("SYS_wait4: %d\n", SYS_wait4);
 
     // printf("SIGABRT: %d\n", SIGABRT);
     // printf("SIGKILL: %d\n", SIGKILL);

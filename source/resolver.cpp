@@ -3972,8 +3972,7 @@ bool is_valid_type_conversion(AST_Type *type, AST_Type *target_type)
                 assert(false);
         }
 
-        case AST_Type_Kind::BOOL:
-            assert(false);
+        case AST_Type_Kind::BOOL: assert(false);
 
         case AST_Type_Kind::POINTER: {
             if (target_type->kind == AST_Type_Kind::BOOL) {

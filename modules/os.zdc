@@ -25,6 +25,7 @@ std :: import std;
 
     SYS_getpid ::  39;
     SYS_fork   ::  57;
+    SYS_wait4  ::  61;
     SYS_kill   ::  62;
     SYS_gettid :: 186;
     SYS_tkill  :: 200;
@@ -37,23 +38,20 @@ std :: import std;
 
     _open_default_io_handles :: func() { }
 
-    getpid :: func () -> pid_t
-    {
+    getpid :: func () -> pid_t {
         return @cast(pid_t, @syscall(SYS_getpid));
     }
 
-    gettid :: func () -> pid_t
-    {
+    gettid :: func () -> pid_t {
         return @cast(pid_t, @syscall(SYS_gettid));
     }
 
-    fork :: func () -> pid_t
-    {
+    fork :: func () -> pid_t {
         return @cast(pid_t, @syscall(SYS_fork));
     }
 
-    #compiler abort :: func ()
-    {
+    #compiler abort :: func () {
+
         raise(SIGABRT);
 
         // @TODO: If a handler is installed, the call to raise above might return.
@@ -66,8 +64,7 @@ std :: import std;
         @exit(127);
     }
 
-    raise :: func(signal : s32) -> s32
-    {
+    raise :: func(signal : s32) -> s32 {
         // @TODO: block other (app) signals, see musl implementation of raise()
         result := @syscall(SYS_tkill, gettid(), signal);
         return @cast(s32, result);
@@ -76,6 +73,12 @@ std :: import std;
     kill :: func(pid: pid_t, sig: s32) -> s32 {
         result := @syscall(SYS_kill, pid, sig);
         return @cast(s32, result);
+    }
+
+    waitpid :: func(pid: pid_t, wstatus: *s32, options: s32) -> s64 {
+        result := @syscall(SYS_wait4, pid, wstatus, options, 0);
+        return result;
+        // return @cast(s32, result);
     }
 
 } #else {

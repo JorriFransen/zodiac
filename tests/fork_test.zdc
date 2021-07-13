@@ -2,8 +2,6 @@ std :: import std;
 os :: import os;
 posix :: import posix;
 
-#foreign waitpid :: func(pid: os.pid_t, status: *s32, options: s32) -> os.pid_t;
-
 // #run main();
 
 fork_normal_test :: func() -> void {
@@ -20,7 +18,7 @@ fork_normal_test :: func() -> void {
     } else {
         // Parent
         status : s32;
-        wait_res := waitpid(fork_res, *status, 0);
+        wait_res := os.waitpid(fork_res, *status, 0);
 
         std.println("This is the parent");
         std.print("Fork returned: "); std.print_numln(fork_res);
@@ -67,7 +65,7 @@ fork_signal_abort_test :: func() -> void {
     } else {
         // Parent
         status : s32;
-        wait_res := waitpid(fork_res, *status, 0);
+        wait_res := os.waitpid(fork_res, *status, 0);
 
         std.println("This is the parent");
         std.print("Fork returned: "); std.print_numln(fork_res);
@@ -113,7 +111,7 @@ fork_signal_int_test :: func() -> void {
     } else {
         // Parent
         status : s32;
-        wait_res := waitpid(fork_res, *status, 0);
+        wait_res := os.waitpid(fork_res, *status, 0);
 
         std.println("This is the parent");
         std.print("Fork returned: "); std.print_numln(fork_res);
@@ -153,15 +151,13 @@ fork_stop_test :: func() -> void {
 
     if (fork_res == 0) {
         // Child
-        std.println("This is the child");
-        std.print("Fork returned: "); std.print_numln(fork_res);
+        std.print("This is the child\n");
         os.raise(os.SIGSTOP);
     } else {
         // Parent
         status : s32;
-        wait_res := waitpid(fork_res, *status, posix.WUNTRACED);
+        wait_res := os.waitpid(fork_res, *status, posix.WUNTRACED);
 
-        std.println("This is the parent");
         std.print("Fork returned: "); std.print_numln(fork_res);
         std.print("Wait returned: "); std.print_numln(wait_res);
 
@@ -170,7 +166,7 @@ fork_stop_test :: func() -> void {
             std.print("Signal status: "); std.print_numln(signal_status);
 
             if (posix.WCOREDUMP(status) != 0) {
-                std.println("Child core dumped...");
+                std.print("Child core dumped...\n");
             }
         }
 
@@ -185,11 +181,11 @@ fork_stop_test :: func() -> void {
         }
 
         if (posix.WIFCONTINUED(status)) {
-            std.println("Child continued");
+            std.print("Child continued\n");
         }
     }
 
-    std.println("Print after calling fork");
+    std.print("Print after calling fork\n");
 }
 
 fork_continue_test :: func() -> void {
@@ -199,12 +195,11 @@ fork_continue_test :: func() -> void {
         // Child
         std.println("This is the child");
         os.raise(os.SIGSTOP);
-        std.println("Child after sigstop");
-        // @exit(42);
+        @exit(42);
     } else {
         // Parent
         status : s32;
-        wait_res := waitpid(fork_res, *status, posix.WUNTRACED);
+        wait_res := os.waitpid(fork_res, *status, posix.WUNTRACED);
 
         std.print("Wait returned: "); std.print_numln(wait_res);
         std.print("Wait status: "); std.print_numln(status);
@@ -234,8 +229,8 @@ fork_continue_test :: func() -> void {
 
         os.kill(fork_res, os.SIGCONT);
 
-        std.print("Parent is waiting for continue signal of child\n");
-        wait_res = waitpid(fork_res, *status, posix.WCONTINUED);
+        status = 0;
+        wait_res = os.waitpid(fork_res, *status, posix.WCONTINUED);
 
         std.print("Wait returned: "); std.print_numln(wait_res);
         std.print("Wait status: "); std.print_numln(status);
@@ -263,8 +258,8 @@ fork_continue_test :: func() -> void {
             std.print("Exit status: "); std.print_numln(exit_status);
         }
 
-        std.print("Parent is waiting for child\n");
-        wait_res = waitpid(fork_res, *status,  0);
+        status = 0;
+        wait_res = os.waitpid(fork_res, *status,  0);
 
         std.print("Wait returned: "); std.print_numln(wait_res);
         std.print("Wait status: "); std.print_numln(status);
@@ -301,8 +296,8 @@ main :: func() -> int {
     std.print("\n\n=====================\n\n");
     fork_signal_int_test();
     std.print("\n\n=====================\n\n");
-    // fork_stop_test();
-    // std.print("\n\n=====================\n\n");
+    fork_stop_test();
+    std.print("\n\n=====================\n\n");
     fork_continue_test();
 
     return 0;
