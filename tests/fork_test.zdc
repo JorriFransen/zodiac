@@ -159,8 +159,7 @@ fork_stop_test :: func() -> void {
     } else {
         // Parent
         status : s32;
-        wait_res := waitpid(fork_res, *status, posix.WUNTRACED | posix.WCONTINUED);
-        // os.kill(fork_res, os.SIGCONT);
+        wait_res := waitpid(fork_res, *status, posix.WUNTRACED);
 
         std.println("This is the parent");
         std.print("Fork returned: "); std.print_numln(fork_res);
