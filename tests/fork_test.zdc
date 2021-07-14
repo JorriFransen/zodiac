@@ -289,6 +289,51 @@ fork_continue_test :: func() -> void {
     }
 }
 
+fork_coredump_test :: func() -> void {
+    fork_res := os.fork();
+
+    if (fork_res == 0) {
+        // Child
+        std.print("This is the child\n");
+        int_ptr : *int = null;
+        <int_ptr = 777;
+    } else {
+        // Parent
+        status: s32;
+        wait_res := os.waitpid(fork_res, *status, posix.WUNTRACED | posix.WCONTINUED);
+
+        std.print("This is the parent\n");
+
+        std.print("Wait returned: "); std.print_numln(wait_res);
+        std.print("Wait status: "); std.print_numln(status);
+
+        if (posix.WIFCONTINUED(status)) {
+            std.println("Child continued");
+        }
+
+        if (posix.WIFSTOPPED(status)) {
+            stop_status := posix.WSTOPSIG(status);
+            std.print("Stop status: "); std.print_numln(stop_status);
+        }
+
+        if (posix.WIFSIGNALED(status)) {
+            signal_status := posix.WTERMSIG(status);
+            std.print("Signal status: "); std.print_numln(signal_status);
+
+            if (posix.WCOREDUMP(status) != 0) {
+                std.println("Child core dumped...");
+            }
+        }
+
+        if (posix.WIFEXITED(status)) {
+            exit_status := posix.WEXITSTATUS(status);
+            std.print("Exit status: "); std.print_numln(exit_status);
+        }
+    }
+
+    
+}
+
 main :: func() -> int {
     fork_normal_test();
     std.print("\n\n=====================\n\n");
@@ -299,6 +344,8 @@ main :: func() -> int {
     fork_stop_test();
     std.print("\n\n=====================\n\n");
     fork_continue_test();
+    std.print("\n\n=====================\n\n");
+    fork_coredump_test();
 
     return 0;
 }
