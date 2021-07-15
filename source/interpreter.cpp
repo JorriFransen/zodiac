@@ -7,6 +7,11 @@
 
 #include <stdio.h>
 
+#ifdef linux
+#include <stdlib.h>
+#include <unistd.h>
+#endif // linux
+
 #include <tracy/Tracy.hpp>
 
 namespace Zodiac
@@ -195,6 +200,8 @@ namespace Zodiac
             .build_data = build_data,
             .running = false,
             .aborted = false,
+            .forked = false,
+            .exited = false,
             .globals_initialized = false,
             .foreigns_initialized = false,
             .exit_code = 0,
@@ -792,16 +799,19 @@ namespace Zodiac
                         break;
                     }
 
-                    if (callee->flags & BC_FUNC_FLAG_COMPILER_FUNC) {
-                        interpreter_execute_compiler_function(interp, callee, arg_count);
-                        break;
-                    }
-
                     int64_t result_index = -1;
+                    Interpreter_LValue result_lvalue = {};
 
                     if (inst.result) {
-                        Interpreter_LValue result_value = interp_load_lvalue(interp, inst.result);
-                        result_index = result_value.index;
+                        result_lvalue = interp_load_lvalue(interp, inst.result);
+                        result_index = result_lvalue.index;
+                    }
+
+                    if (callee->flags & BC_FUNC_FLAG_COMPILER_FUNC) {
+                        Interpreter_LValue *lval_ptr = nullptr;
+                        if (inst.result) lval_ptr = &result_lvalue;
+                        interpreter_execute_compiler_function(interp, callee, arg_count, lval_ptr);
+                        break;
                     }
 
                     assert(stack_count(&interp->temp_stack) > result_index);
@@ -1519,7 +1529,22 @@ namespace Zodiac
                     break;
                 }
 
-                case EXIT: assert(false);
+                case EXIT: {
+
+                    Interpreter_Value exit_val = interp_load_value(interp, inst.a);
+
+                    assert(exit_val.type == Builtin::type_s64);
+                    int exit_code = exit_val.integer_literal.s64;
+
+                    if (interp->forked) {
+                        exit(exit_code);
+                    } else {
+                        interp->running = false;
+                        interp->exit_code = exit_code;
+                        interp->exited = true;
+                    }
+                    break;
+                }
 
                 case SYSCALL: {
                     assert(inst.a->kind == BC_Value_Kind::INTEGER_LITERAL);
@@ -1575,12 +1600,18 @@ namespace Zodiac
 
         if (!interp->aborted) {
             if (!returns_void) {
-                assert(stack_count(&interp->temp_stack));
-                auto exit_val = stack_pop(&interp->temp_stack);
-                assert(exit_val.type->kind == AST_Type_Kind::INTEGER);
-                assert(exit_val.type == Builtin::type_s64);
+                if (!interp->exited) {
+                    assert(stack_count(&interp->temp_stack));
+                    auto exit_val = stack_pop(&interp->temp_stack);
+                    assert(exit_val.type->kind == AST_Type_Kind::INTEGER);
+                    assert(exit_val.type == Builtin::type_s64);
 
-                interp->exit_code = exit_val.integer_literal.s64;
+                    if (interp->forked) {
+                        exit(exit_val.integer_literal.s64);
+                    } else {
+                        interp->exit_code = exit_val.integer_literal.s64;
+                    }
+                }
             }
         } else {
             fprintf(stderr, "Bytecode aborted!\n");
@@ -1887,7 +1918,13 @@ namespace Zodiac
                       AST_Type *dest_type)
     {
         assert(interp);
-        assert(dest_ptr);
+
+
+        // @TODO: @CLEANUP: @Review: We actually allow this to be null right now,
+        //                            so we can throw sigsev like the real runtime
+        //                            would do when writing to a null pointer.
+        // assert(dest_ptr);
+
         assert(dest_type->kind == AST_Type_Kind::POINTER);
         assert(dest_type->pointer.base == source.type);
 
@@ -2185,7 +2222,7 @@ namespace Zodiac
     }
 
     void interpreter_execute_compiler_function(Interpreter *interp, BC_Function *func,
-                                               int64_t arg_count)
+                                               int64_t arg_count, Interpreter_LValue *result_lvalue)
     {
         assert(func->flags & BC_FUNC_FLAG_COMPILER_FUNC);
 
@@ -2195,6 +2232,31 @@ namespace Zodiac
             interp->aborted = true;
             interp->running = false;
             interp->exit_code = 134;
+
+        } else if (func->name == Builtin::atom_fork) {
+
+#ifdef linux
+            assert(result_lvalue);
+            assert(result_lvalue->type == Builtin::type_s32);
+
+            int32_t fork_res = fork();
+            if (fork_res == 0) {
+                interp->forked = true;
+            }
+
+            Interpreter_Value fork_res_value = {
+                .type = Builtin::type_s32,
+                .integer_literal = {},
+            };
+
+            fork_res_value.integer_literal.s32 = fork_res;
+
+
+            interp_store(interp, fork_res_value, *result_lvalue);
+#else
+            assert(false && !"Compiler function fork only supported on linux");
+#endif
+
         } else {
             assert(false && "Unimplemented compiler function!");
         }

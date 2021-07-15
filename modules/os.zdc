@@ -71,7 +71,7 @@ std :: import std;
         return @cast(s32, result);
     }
 
-    fork :: func () -> pid_t {
+    #compiler fork :: func () -> pid_t {
         return @cast(pid_t, @syscall(SYS_fork));
     }
 
@@ -85,8 +85,6 @@ std :: import std;
         }
 
         return @cast(s32, result);
-
-        // return wait4(pid, wstatus, options, null);
     }
 
 } #else {

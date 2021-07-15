@@ -65,6 +65,8 @@ namespace Zodiac
 
         bool running = false;
         bool aborted = false;
+        bool forked = false;
+        bool exited = false;
         bool globals_initialized = false;
         bool foreigns_initialized = false;
 
@@ -126,8 +128,7 @@ namespace Zodiac
                                               int64_t arg_count, BC_Value *result_value);
     void interpreter_call_function_pointer(Interpreter *interp, void *fn_ptr, AST_Type *fn_type,
                                            int64_t arg_count, BC_Value *result_value);
-    // void interpreter_push_foreign_arg(Interpreter *interp, uint8_t *arg_ptr, AST_Type *type);
 
     void interpreter_execute_compiler_function(Interpreter *interp, BC_Function *func,
-                                               int64_t arg_count);
+                                               int64_t arg_count, Interpreter_LValue *result_lvalue);
 }

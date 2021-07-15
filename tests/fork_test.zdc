@@ -2,19 +2,17 @@ std :: import std;
 os :: import os;
 posix :: import posix;
 
-// #run main();
+#run main();
 
 fork_normal_test :: func() -> void {
     fork_res := os.fork();
-
-    return_value := 0;
 
     if (fork_res == 0) {
         // Child
         std.println("This is the child");
         std.print("Fork returned: "); std.print_numln(fork_res);
-        return_value = 42;
-        @exit(return_value);
+        std.print_num(fork_res);
+        @exit(42);
     } else {
         // Parent
         status : s32;
@@ -330,8 +328,6 @@ fork_coredump_test :: func() -> void {
             std.print("Exit status: "); std.print_numln(exit_status);
         }
     }
-
-    
 }
 
 main :: func() -> int {
@@ -347,7 +343,28 @@ main :: func() -> int {
     std.print("\n\n=====================\n\n");
     fork_coredump_test();
 
-    return 0;
+    std.print("\n\n========================\n\nForking main\n");
+    fork_res := os.fork();
+
+    ret_val := 0;
+    if (fork_res == 0) {
+        ret_val = 42;
+    } else {
+        ret_val = 21;
+
+        wstatus : s32;
+        wait_res := os.waitpid(fork_res, *wstatus, 0);
+        @assert(wait_res == fork_res);
+
+        if (posix.WIFEXITED(wstatus)) {
+            std.print("Child returned from main with exit code: ");
+            std.print_numln(posix.WEXITSTATUS(wstatus));
+        } else {
+            @assert(false);
+        }
+    }
+
+    return ret_val;
 }
 
 

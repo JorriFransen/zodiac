@@ -55,6 +55,7 @@ enum class Builtin_Type_Kind
     DEFINE_BUILTIN_ATOM(pre_main)               \
     DEFINE_BUILTIN_ATOM(compiler)               \
     DEFINE_BUILTIN_ATOM(abort)                  \
+    DEFINE_BUILTIN_ATOM(fork)                   \
     DEFINE_BUILTIN_ATOM(PLATFORM_LINUX)         \
     DEFINE_BUILTIN_ATOM(PLATFORM_WINDOWS)       \
 
