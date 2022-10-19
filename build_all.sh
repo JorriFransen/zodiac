@@ -4,28 +4,26 @@ set echo on
 
 echo "Building everyting..."
 
-pushd zodiac_lib
-source build.sh
+make -f Makefile.zodiac_lib.linux.mak all
 ERR=$?
 if [ $ERR -ne 0 ]; then
     echo "Error:"$ERR && exit
 fi
-popd
 
-pushd zodiac_driver
-source build.sh
-ERR=$?
-if [ $ERR -ne 0 ]; then
-    echo "Error:"$ERR && exit
-fi
-popd
+echo ""
 
-pushd zodiac_tests
-source build.sh
+make -f Makefile.zodiac_driver.linux.mak all
 ERR=$?
 if [ $ERR -ne 0 ]; then
     echo "Error:"$ERR && exit
 fi
-popd
+
+echo ""
+
+make -f Makefile.zodiac_tests.linux.mak all
+ERR=$?
+if [ $ERR -ne 0 ]; then
+    echo "Error:"$ERR && exit
+fi
 
 echo "All assemblies built successfully..."

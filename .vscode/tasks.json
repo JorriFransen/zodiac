@@ -71,6 +71,20 @@
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "type": "shell",
+            "label": "Clean Everything",
+            "windows": {
+                "command": "${workspaceFolder}/clean_all.bat"
+            },
+            "linux": {
+                "command": "${workspaceFolder}/clean_all.sh"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build"
         }
     ],
     "version": "2.0.0"
