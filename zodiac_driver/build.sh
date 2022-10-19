@@ -15,7 +15,7 @@ libDir=$(realpath "../bin/")
 assembly="zodiac"
 compilerFlags="-g -fdeclspec -fPIC"
 includeFlags="-Isrc -I../zodiac_lib/src"
-linkerFlags="-L../bin/ -lzodiac_lib -Wl,-rpath,. -Wl,-rpath,$libDir"
+linkerFlags="../bin/zodiac_lib.a"
 defines="-D_DEBUG -DZIMPORT"
 
 echo "Building $assembly..."

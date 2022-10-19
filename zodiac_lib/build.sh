@@ -17,4 +17,5 @@ defines="-D_DEBUG -DZEXPORT"
 
 echo "Building $assembly..."
 
-clang++ $cppFileNames $compilerFlags -o ../bin/lib$assembly.so $defines $includeFlags $linkerFlags
+clang++ -c $cppFileNames $compilerFlags -o ../bin/$assembly.o $defines $includeFlags $linkerFlags
+ar ../bin/$assembly.o
