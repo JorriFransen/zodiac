@@ -4,19 +4,23 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/zodiac_lib/src/**",
+                "${workspaceFolder}/zodiac_driver/src/**",
+                "${workspaceFolder}/zodiac_tests/src/**",
                 "${workspaceFolder}/zodiac_tests/munit"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "clang-x64",
-            "configurationProvider": "ms-vscode.makefile-tools"
+            "intelliSenseMode": "clang-x64"
         },
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/zodiac_lib/src/**"
+                "${workspaceFolder}/zodiac_lib/src/**",
+                "${workspaceFolder}/zodiac_driver/src/**",
+                "${workspaceFolder}/zodiac_tests/src/**",
+                "${workspaceFolder}/zodiac_tests/munit"
             ],
             "defines": [],
             "compilerPath": "C:\\Program Files\\LLVM\\bin\\clang.exe",
