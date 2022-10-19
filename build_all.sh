@@ -20,4 +20,12 @@ if [ $ERR -ne 0 ]; then
 fi
 popd
 
+pushd zodiac_tests
+source build.sh
+ERR=$?
+if [ $ERR -ne 0 ]; then
+    echo "Error:"$ERR && exit
+fi
+popd
+
 echo "All assemblies built successfully..."

@@ -37,6 +37,23 @@
         },
         {
             "type": "shell",
+            "label": "Build zodiac_tests",
+            "windows": {
+                "command": "${workspaceFolder}/zodiac_tests/build.bat"
+            },
+            "linux": {
+                "command": "${workspaceFolder}/zodiac_tests/build.sh"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/zodiac_tests"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": "build"
+        },
+        {
+            "type": "shell",
             "label": "Build Everything",
             "windows": {
                 "command": "${workspaceFolder}/build_all.bat"
