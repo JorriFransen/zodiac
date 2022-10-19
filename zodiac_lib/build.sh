@@ -10,7 +10,7 @@ cppFileNames=$(find . -type f -name "*.cpp")
 #echo "Files:" $cppFileNames
 
 assembly="zodiac_lib"
-compilerFlags="-g -shared -fdeclspec -fPIC"
+compilerFlags="-g -fdeclspec -fPIC"
 includeFlags="-Isrc"
 linkerFlags=""
 defines="-D_DEBUG -DZEXPORT"
@@ -18,4 +18,4 @@ defines="-D_DEBUG -DZEXPORT"
 echo "Building $assembly..."
 
 clang++ -c $cppFileNames $compilerFlags -o ../bin/$assembly.o $defines $includeFlags $linkerFlags
-ar ../bin/$assembly.o
+ar r ../bin/$assembly.a ../bin/$assembly.o
