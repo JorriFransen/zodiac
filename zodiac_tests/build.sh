@@ -14,9 +14,10 @@ libDir=$(realpath "../bin/")
 
 assembly="zodiac_tests"
 compilerFlags="-g -fdeclspec -fPIC"
-includeFlags="-Isrc -I../zodiac_lib/src"
+includeFlags="-Isrc -Imunit -I../zodiac_lib/src"
 linkerFlags="../bin/zodiac_lib.a"
 defines="-D_DEBUG -DZIMPORT"
 
 echo "Building $assembly..."
-clang++ $cppFileNames $compilerFlags -o ../bin/$assembly $defines $includeFlags $linkerFlags
+clang -c munit/munit/munit.c -o ../bin/munit.o
+clang++ $cppFileNames ../bin/munit.o $compilerFlags -o ../bin/$assembly $defines $includeFlags $linkerFlags

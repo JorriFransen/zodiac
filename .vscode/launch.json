@@ -12,7 +12,7 @@
             "environment": [],
             "console": "newExternalWindow",
         },
-    {
+        {
             "name": "(Linux) Launch",
             "type": "cppdbg",
             "request": "launch",
@@ -21,5 +21,16 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-        }]
+        },
+        {
+            "name": "(Linux) Launch tests",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/bin/zodiac_tests",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/bin",
+            "environment": [],
+        }
+    ]
 }
