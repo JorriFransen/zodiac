@@ -12,10 +12,11 @@ FOR /R %%f in (*.cpp) do (
 REM echo "Files:" %cppFilenames%
 
 SET assembly=zodiac_lib
-SET compilerFlags=-g -shared -Wvarargs -Wall -Werror
+SET compilerFlags=-g -static -Wvarargs -Wall -Werror
 SET includeFlags=-Isrc
 SET linkerFlags=
 SET defines=-D_DEBUG -DZEXPORT -D_CRT_SECURE_NO_WARNINGS
 
 ECHO "Building %assembly%%..."
-clang++ %cppFilenames% %compilerFlags% -o ../bin/%assembly%.dll %defines% %includeFlags% %linkerFlags%
+clang++ -c %cppFilenames% %compilerFlags% -o ../bin/%assembly%.o %defines% %includeFlags% %linkerFlags%
+llvm-lib ../bin/%assembly%.o

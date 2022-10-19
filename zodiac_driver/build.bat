@@ -14,7 +14,7 @@ REM echo "Files:" %cppFilenames%
 SET assembly=zodiac
 SET compilerFlags=-g -Wvarargs -Wall -Werror
 SET includeFlags=-Isrc -I..\zodiac_lib\src
-SET linkerFlags=-L../bin -lzodiac_lib.lib
+SET linkerFlags=../bin/zodiac_lib.lib
 SET defines=-D_DEBUG -DZIMPORT
 
 ECHO "Building %assembly%%..."
