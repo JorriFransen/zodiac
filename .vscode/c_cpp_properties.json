@@ -4,7 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/zodiac_lib/src/**",
-                "${workspaceFolder}/zodiac_tests/munit/**"
+                "${workspaceFolder}/zodiac_tests/munit"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",
