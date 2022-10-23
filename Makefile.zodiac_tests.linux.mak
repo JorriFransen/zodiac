@@ -6,20 +6,21 @@ BASE_DIR := zodiac_tests
 SRC_DIR := $(BASE_DIR)/src
 ASSEMBLY := zodiac_tests
 EXTENSION :=
-COMPILER_FLAGS := -g -MD -Werror=vla -fdeclspec -fPIC
+COMPILER_FLAGS := -g -MD -MP -Werror=vla -fdeclspec -fPIC
 INCLUDE_FLAGS := -Izodiac_lib/src -I$(BASE_DIR)/munit -I$(SRC_DIR)
 LINKER_FLAGS :=
 DEFINES := -D_DEBUG -DZIMPORT
 
 SRC_FILES := $(shell find $(SRC_DIR) -name *.cpp)
 DIRECTORIES := $(shell find $(SRC_DIR) -type d)
+
+# Add munit library
+SRC_FILES += $(shell find $(BASE_DIR)/munit -name *.c)
+DIRECTORIES += $(shell find $(BASE_DIR)/munit -type d)
+
 OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)/%.o)
 
-MUNIT_INCLUDE_FLAGS := -I$(BASE_DIR)/munit/munit
-MUNIT_COMPILER_FLAGS := -g -MD -fdeclspec -fPIC
-MUNIT_SRC_FILES := $(shell find $(BASE_DIR)/munit -name *.c)
-MUNIT_DIRECTORIES := $(shell find $(BASE_DIR)/munit -type d)
-MUNIT_OBJ_FILES := $(MUNIT_SRC_FILES:%=$(OBJ_DIR)/%.o)
+FULL_ASSEMBLY_PATH := $(BUILD_DIR)/$(ASSEMBLY)$(EXTENSION)
 
 all: scaffold compile link
 	
@@ -27,12 +28,6 @@ all: scaffold compile link
 scaffold:
 	@mkdir -p bin
 	@mkdir -p $(addprefix $(OBJ_DIR)/,$(DIRECTORIES))
-	@mkdir -p $(addprefix $(OBJ_DIR)/,$(MUNIT_DIRECTORIES))
-	
-.PHONY: link
-link: scaffold $(OBJ_FILES) $(MUNIT_OBJ_FILES)
-	@echo Linking $(ASSEMBLY)
-	clang $(BUILD_DIR)/libzodiac.a $(OBJ_FILES) $(MUNIT_OBJ_FILES) -o $(BUILD_DIR)/$(ASSEMBLY)$(EXTENSION) $(LINKER_FLAGS)
 	
 .PHONY: compile
 compile:
@@ -42,7 +37,14 @@ $(OBJ_DIR)/%.cpp.o: %.cpp
 	clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
 	
 $(OBJ_DIR)/%.c.o: %.c
-	clang $< $(MUNIT_COMPILER_FLAGS) -c -o $@ $(DEFINES) $(MUNIT_INCLUDE_FLAGS)
+	clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+	
+.PHONY: link
+link: $(FULL_ASSEMBLY_PATH)
+
+$(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
+	@echo Linking $(ASSEMBLY)
+	clang $(OBJ_FILES) -o $@ $(LINKER_FLAGS)
 
 .PHONY: clean
 clean:
