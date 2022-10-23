@@ -131,11 +131,12 @@ extern "C" {
 #  define MUNIT_UNUSED
 #endif
 
-#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) && !defined(__PGI)
-#  define MUNIT_ARRAY_PARAM(name) name
-#else
+// NOTE: (Jorri) Disabling variable length arrays all together.  
+//#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) && !defined(__PGI)
+//#  define MUNIT_ARRAY_PARAM(name) name
+//#else
 #  define MUNIT_ARRAY_PARAM(name)
-#endif
+//#endif
 
 #if !defined(_WIN32)
 #  define MUNIT_SIZE_MODIFIER "z"
