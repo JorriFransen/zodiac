@@ -3,19 +3,13 @@ REM Build Everything
 
 ECHO "Building everything..."
 
-PUSHD zodiac_lib
-CALL build.bat
-POPD
+make -f Makefile.zodiac_lib.windows.mak all
 IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && exit)
 
-PUSHD zodiac_driver
-CALL build.bat
-POPD
+make -f Makefile.zodiac_driver.windows.mak all 
 IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && exit)
 
-PUSHD zodiac_tests
-CALL build.bat
-POPD
+make -f Makefile.zodiac_tests.windows.mak all 
 IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && exit)
 
 ECHO "All assemblies built successfully."
