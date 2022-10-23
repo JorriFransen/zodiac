@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include <dummy.h>
+#include <dummy/dummy.h>
 
 int main() {
     printf("Hello World!\n");
