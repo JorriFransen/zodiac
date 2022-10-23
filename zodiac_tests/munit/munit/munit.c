@@ -86,6 +86,17 @@
 /* https://msdn.microsoft.com/en-us/library/tf4dy80a.aspx */
 #endif
 
+// NOTE: (Jorri) Clang on windows, use the windows versions of these
+#if defined(_MSC_VER) && defined(__clang__)
+#  define isatty _isatty
+#  define fileno _fileno
+#  define dup _dup
+#  define dup2 _dup2
+#  define close _close
+#  define read _read
+#  define write _write
+#endif
+
 #include <limits.h>
 #include <time.h>
 #include <errno.h>
