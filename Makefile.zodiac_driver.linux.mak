@@ -7,7 +7,7 @@ ASSEMBLY := zodiac
 EXTENSION :=
 COMPILER_FLAGS := -g -MD -MP -Werror=vla -fdeclspec -fPIC
 INCLUDE_FLAGS := -Izodiac_lib/src -I$(SRC_DIR)
-LINKER_FLAGS := $(BUILD_DIR)/libzodiac.a
+LINKER_FLAGS := -L$(BUILD_DIR) -lzodiac -Wl,-rpath,. -Wl,-rpath,$(BUILD_DIR)
 DEFINES := -D_DEBUG -DZIMPORT
 
 SRC_FILES := $(shell find $(SRC_DIR) -name *.cpp)
@@ -35,7 +35,7 @@ link: $(FULL_ASSEMBLY_PATH)
 	
 $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 	@echo Linking $(ASSEMBLY)
-	clang $(OBJ_FILES) -o $@ $(LINKER_FLAGS)
+	clang $(COMPILER_FLAGS) $(OBJ_FILES) -o $@ $(LINKER_FLAGS)
 	
 .PHONY: clean
 clean:

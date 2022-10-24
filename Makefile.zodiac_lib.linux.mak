@@ -4,11 +4,17 @@ OBJ_DIR := obj
 BASE_DIR := zodiac_lib
 SRC_DIR := $(BASE_DIR)/src
 ASSEMBLY := libzodiac
-EXTENSION := .a
-COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wvla -fdeclspec -fPIC
+EXTENSION := .so
+
+LLVM_LIBS := $(shell llvm-config --libs)
+LLVM_CXX_FLAGS := $(shell llvm-config --cxxflags)
+LLVM_LD_FLAGS := $(shell llvm-config --ldflags)
+
+COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wvla -fdeclspec -fPIC $(LLVM_CXX_FLAGS)
 INCLUDE_FLAGS := -I$(SRC_DIR)
-LINKER_FLAGS := -g -static
+LINKER_FLAGS := -g -shared $(LLVM_LIBS) $(LLVM_LD_FLAGS)
 DEFINES := -D_DEBUG -DZEXPORT
+
 
 SRC_FILES := $(shell find $(SRC_DIR) -name *.cpp)
 DIRECTORIES := $(shell find $(SRC_DIR) -type d)
@@ -25,6 +31,7 @@ scaffold:
 	
 .PHONY: compile
 compile:
+
 	@echo Compiling $(ASSEMBLY)
 
 $(OBJ_DIR)/%.cpp.o: %.cpp
@@ -35,7 +42,7 @@ link: $(FULL_ASSEMBLY_PATH)
 
 $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 	@echo Linking $(ASSEMBLY)
-	ar r $(BUILD_DIR)/$(ASSEMBLY)$(EXTENSION) $(OBJ_FILES)
+	clang $< $(COMPILER_FLAGS) -o $@ $(DEFINES) $(LINKER_FLAGS)
 
 	
 .PHONY: clean
