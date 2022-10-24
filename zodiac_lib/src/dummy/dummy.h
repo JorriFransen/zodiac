@@ -2,6 +2,6 @@
 
 #include <defines.h>
 
-int add(int a, int b);
+ZAPI int add(int a, int b);
 
-void do_llvm_stuff();
+ZAPI void do_llvm_stuff();

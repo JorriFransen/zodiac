@@ -6,16 +6,23 @@ OBJ_DIR := obj
 BASE_DIR := zodiac_lib
 SRC_DIR := $(BASE_DIR)\src
 ASSEMBLY := libzodiac
-EXTENSION := .lib
-COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wvla -fdeclspec
+EXTENSION := .dll
+
+LLVM_DEBUG_INSTALL_DIR := D:\llvm_install_debug
+LLVM_CONFIG := $(LLVM_DEBUG_INSTALL_DIR)\bin\llvm-config.exe
+LLVM_LIBS := $(shell $(LLVM_CONFIG) --libnames codegen)
+LLVM_CXX_FLAGS := $(shell $(LLVM_CONFIG) --cxxflags)
+LLVM_LINK_FLAGS := $(shell $(LLVM_CONFIG) --ldflags)
+
+COMPILER_FLAGS := /MDd /DEBUG -Wall -Wvla -Wno-c++98-compat -Wno-c++98-compat-pedantic $(LLVM_CXX_FLAGS)
 INCLUDE_FLAGS := -I$(SRC_DIR)
-LINKER_FLAGS := -g -static
+LINKER_FLAGS := /LDd $(LLVM_LIBS) /link $(LLVM_LINK_FLAGS)
 DEFINES := -D_DEBUG -DZEXPORT
 
 # Make does not offer a recursive wildcard function, so here's one:
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
-SRC_FILES := $(call rwildcard,$(SRC_DIR)/,*.cpp)
+SRC_FILES := $(subst /,\, $(call rwildcard,$(SRC_DIR)/,*.cpp))
 DIRECTORIES := \$(SRC_DIR) $(subst $(DIR),,$(shell dir $(SRC_DIR) /S /AD /B | findstr /i src)) #All source directories
 OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)/%.o)
 
@@ -33,19 +40,23 @@ compile:
 	@echo Compiling $(ASSEMBLY)
 
 $(OBJ_DIR)/%.cpp.o: %.cpp
-	clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+	clang-cl.exe $< $(COMPILER_FLAGS) -c -o $(subst /,\, $@) $(DEFINES) $(INCLUDE_FLAGS)
 
 .PHONY: link
 link: $(FULL_ASSEMBLY_PATH)
 
 $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 	@echo Linking $(ASSEMBLY)
-	llvm-lib /out:$@ $<
+	clang-cl $(subst /,\, $<) -o $@ $(DEFINES) $(LINKER_FLAGS)
 
 	
 .PHONY: clean
 clean:
 	if exist $(BUILD_DIR)\$(ASSEMBLY)$(EXTENSION) del $(BUILD_DIR)\$(ASSEMBLY)$(EXTENSION)
+	if exist $(BUILD_DIR)\$(ASSEMBLY).ilk del $(BUILD_DIR)\$(ASSEMBLY).ilk
+	if exist $(BUILD_DIR)\$(ASSEMBLY).pdb del $(BUILD_DIR)\$(ASSEMBLY).pdb
+	if exist $(BUILD_DIR)\$(ASSEMBLY).exp del $(BUILD_DIR)\$(ASSEMBLY).exp
+	if exist $(BUILD_DIR)\$(ASSEMBLY).lib del $(BUILD_DIR)\$(ASSEMBLY).lib
 	rmdir /s /q $(OBJ_DIR)\$(BASE_DIR)
 
 -include $(OBJ_FILES:.o=.d)
