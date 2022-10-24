@@ -20,13 +20,15 @@
                 "${workspaceFolder}/zodiac_lib/src/**",
                 "${workspaceFolder}/zodiac_driver/src/**",
                 "${workspaceFolder}/zodiac_tests/src/**",
-                "${workspaceFolder}/zodiac_tests/munit"
+                "${workspaceFolder}/zodiac_tests/munit",
+                "D:\\llvm_install_debug\\include"
             ],
             "defines": [],
             "compilerPath": "C:\\Program Files\\LLVM\\bin\\clang.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "clang-x64"
+            "intelliSenseMode": "clang-x64",
+            "configurationProvider": "ms-vscode.makefile-tools"
         }
     ],
     "version": 4
