@@ -3,11 +3,6 @@
 
 #include <atom.h>
 
-//#ifdef _WIN32
-//#pragma warning(push)
-//#pragma warning(disable:4100)
-//#endif
-
 using namespace Zodiac;
 
 MunitResult Single_Match(const MunitParameter params[], void *user_data_or_fixture)

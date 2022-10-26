@@ -1,10 +1,60 @@
 #pragma once
 
 #if defined(__clang__) || defined(__gcc__)
-#define STATIC_ASSERT __cpp_static_assert
+#define STATIC_ASSERT _Static_assert
 #else
 #define STATIC_ASSERT static_assert
 #endif
+
+#define zodiac_assert_fatal(cond, err) \
+    if (!(cond)) { \
+        assert((cond) && !(err)); \
+        fprintf(stderr, "%s:%d: Assertion failed: %s", __FILE__, __LINE__, (err)); \
+        exit(42); \
+    }
+
+// Integer types
+typedef unsigned char   u8;
+typedef unsigned short u16;
+typedef unsigned int   u32;
+typedef unsigned long  u64;
+
+typedef signed char   i8;
+typedef signed short i16;
+typedef signed int   i32;
+typedef signed long  i64;
+
+typedef  i8  s8;
+typedef i16 s16;
+typedef i32 s32;
+typedef i64 s64;
+
+// Real types
+typedef float  r32;
+typedef double r64;
+
+STATIC_ASSERT(sizeof(u8) == 1, "Expected sizeof(u8) to be 1 byte");
+STATIC_ASSERT(sizeof(u16) == 2, "Expected sizeof(u16) to be 2 bytes");
+STATIC_ASSERT(sizeof(u32) == 4, "Expected sizeof(u32) to be 4 bytes");
+STATIC_ASSERT(sizeof(u64) == 8, "Expected sizeof(u64) to be 8 bytes");
+
+STATIC_ASSERT(sizeof(i8) == 1, "Expected sizeof(i8) to be 1 byte");
+STATIC_ASSERT(sizeof(i16) == 2, "Expected sizeof(i16) to be 2 bytes");
+STATIC_ASSERT(sizeof(i32) == 4, "Expected sizeof(i32) to be 4 bytes");
+STATIC_ASSERT(sizeof(i64) == 8, "Expected sizeof(i64) to be 8 bytes");
+
+STATIC_ASSERT(sizeof(s8) == 1, "Expected sizeof(s8) to be 1 byte");
+STATIC_ASSERT(sizeof(s16) == 2, "Expected sizeof(s16) to be 2 bytes");
+STATIC_ASSERT(sizeof(s32) == 4, "Expected sizeof(s32) to be 4 bytes");
+STATIC_ASSERT(sizeof(s64) == 8, "Expected sizeof(s64) to be 8 bytes");
+
+STATIC_ASSERT(sizeof(r32) == 4, "Expected sizeof(r32) to be 4 bytes");
+STATIC_ASSERT(sizeof(r64) == 8, "Expected sizeof(r64) to be 8 bytes");
+
+
+
+#define KB(x) (x * 1024)
+#define MB(x) (KB(x) * 1024)
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 

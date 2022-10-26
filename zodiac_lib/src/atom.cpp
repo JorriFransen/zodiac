@@ -1,4 +1,3 @@
-
 #include "atom.h"
 
 #include <zstring.h>
@@ -7,24 +6,23 @@ namespace Zodiac
 {
 
 static void atom_table_grow(Atom_Table *at);
-static void atom_table_add_block(Atom_Table *at, Atom_Block *new_block, int64_t block_size);
-static Atom atom_table_add(Atom_Table *at, const char *cstr, int64_t length);
+static void atom_table_add_block(Atom_Table *at, Atom_Block *new_block, i64 block_size);
+static Atom atom_table_add(Atom_Table *at, const char *cstr, i64 length);
 
-void atom_table_init(Allocator *allocator, Atom_Table *at, int64_t initial_capacity/*= ATOM_TABLE_INITIAL_CAPACITY*/)
+void atom_table_init(Allocator *allocator, Atom_Table *at, i64 initial_capacity/*= ATOM_TABLE_INITIAL_CAPACITY*/)
 {
     at->allocator = allocator;
 
     at->capacity = initial_capacity;
 
     at->atoms = alloc_array<Atom>(allocator, ATOM_TABLE_INITIAL_CAPACITY);
-    at->hashes = alloc_array<uint64_t>(allocator, ATOM_TABLE_INITIAL_CAPACITY);
+    at->hashes = alloc_array<u64>(allocator, ATOM_TABLE_INITIAL_CAPACITY);
 
     auto byte_size = sizeof(at->hashes) * ATOM_TABLE_INITIAL_CAPACITY;
     memset(at->hashes, 0, byte_size);
 
     at->current_block = nullptr;
     atom_table_add_block(at, &at->first_block, ATOM_TABLE_INITIAL_BLOCK_SIZE);
-
 }
 
 static void atom_table_grow(Atom_Table *at)
@@ -36,19 +34,19 @@ static void atom_table_grow(Atom_Table *at)
     auto old_hashes = at->hashes;
 
     auto new_atoms = alloc_array<Atom>(at->allocator, new_cap);
-    auto new_hashes = alloc_array<uint64_t>(at->allocator, new_cap);
-    memset(new_hashes, 0, sizeof(uint64_t) * new_cap);
+    auto new_hashes = alloc_array<u64>(at->allocator, new_cap);
+    memset(new_hashes, 0, sizeof(u64) * new_cap);
 
     at->capacity = new_cap;
     at->atoms = new_atoms;
     at->hashes = new_hashes;
 
-    for (int64_t i = 0; i < old_cap; i++) {
+    for (i64 i = 0; i < old_cap; i++) {
 
-        uint64_t hash = old_hashes[i];
-        int64_t hash_index = hash % at->capacity;
+        u64 hash = old_hashes[i];
+        i64 hash_index = hash % at->capacity;
 
-        int64_t iteration_count = 0;
+        i64 iteration_count = 0;
 
         while (iteration_count < at->capacity) {
 
@@ -71,7 +69,7 @@ static void atom_table_grow(Atom_Table *at)
     free(at->allocator, old_atoms);
 }
 
-static void atom_table_add_block(Atom_Table *at, Atom_Block *new_block, int64_t block_size)
+static void atom_table_add_block(Atom_Table *at, Atom_Block *new_block, i64 block_size)
 {
     assert(new_block->first == nullptr);
     assert(new_block->current == nullptr);
@@ -88,7 +86,7 @@ static void atom_table_add_block(Atom_Table *at, Atom_Block *new_block, int64_t 
     at->current_block = new_block;
 }
 
-static Atom atom_table_add(Atom_Table *at, const char *cstr, int64_t length)
+static Atom atom_table_add(Atom_Table *at, const char *cstr, i64 length)
 {
     assert(at->current_block);
 
@@ -121,12 +119,12 @@ static Atom atom_table_add(Atom_Table *at, const char *cstr, int64_t length)
     return result;
 }
 
-Atom atom_get(Atom_Table *at, const char *cstr, int64_t length)
+Atom atom_get(Atom_Table *at, const char *cstr, i64 length)
 {
-    uint64_t hash = hash_c_string(cstr, length);
-    int64_t hash_index = hash % at->capacity;
+    u64 hash = hash_c_string(cstr, length);
+    i64 hash_index = hash % at->capacity;
 
-    int64_t iteration_count = 0;
+    i64 iteration_count = 0;
 
     while (iteration_count < at->capacity) {
 

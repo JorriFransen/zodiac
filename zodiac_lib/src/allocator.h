@@ -1,7 +1,6 @@
 #pragma once
 
-#include <cassert>
-#include <inttypes.h>
+#include <defines.h>
 
 namespace Zodiac
 {
@@ -18,7 +17,7 @@ enum class Allocation_Mode
 
 typedef void *(*Alloc_Function)(Allocator *allocator,
                                 Allocation_Mode mode,
-                                int64_t size,
+                                i64 size,
                                 void *old_ptr);
 
 struct Allocator
@@ -30,7 +29,7 @@ Allocator *c_allocator();
 Allocator *err_allocator();
 
 template <typename T>
-T *alloc(Allocator *allocator)
+ZAPI T *alloc(Allocator *allocator)
 {
     assert(allocator);
     auto size = sizeof(T);
@@ -39,7 +38,7 @@ T *alloc(Allocator *allocator)
 }
 
 template <typename Element_Type>
-Element_Type *alloc_array(Allocator *allocator, int64_t capacity)
+ZAPI Element_Type *alloc_array(Allocator *allocator, i64 capacity)
 {
     assert(allocator);
     assert(capacity > 0);
@@ -49,7 +48,7 @@ Element_Type *alloc_array(Allocator *allocator, int64_t capacity)
 }
 
 template <typename Element_Type>
-void free(Allocator *allocator, Element_Type *pointer)
+ZAPI void free(Allocator *allocator, Element_Type *pointer)
 {
     assert(allocator);
     assert(pointer);
