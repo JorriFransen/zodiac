@@ -42,7 +42,7 @@ link: $(FULL_ASSEMBLY_PATH)
 
 $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 	@echo Linking $(ASSEMBLY)
-	clang $< $(COMPILER_FLAGS) -o $@ $(DEFINES) $(LINKER_FLAGS)
+	clang $(OBJ_FILES) $(COMPILER_FLAGS) -o $@ $(DEFINES) $(LINKER_FLAGS)
 
 	
 .PHONY: clean

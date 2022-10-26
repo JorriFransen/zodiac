@@ -32,4 +32,7 @@
         "overviewRulerColor": "rgba(0,0,0,0)",
         "isWholeLine": false,
     },
+    "files.associations": {
+        "vector": "cpp"
+    },
 }

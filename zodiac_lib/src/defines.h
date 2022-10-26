@@ -47,3 +47,6 @@ STATIC_ASSERT(false, "Unsupported platform (Apple).");
 #endif
 
 #endif // ZEXPORT
+
+#include <stdint.h>
+#include <cassert>
