@@ -5,13 +5,14 @@
 namespace Zodiac
 {
 
-void* kallocate(u64 size)
+void* kallocate(i64 size)
 {
-    return malloc(size);
+    return malloc(static_cast<size_t>(size));
 }
 
-void kfree(void* memory, u64 size)
+void kfree(void* memory, i64 size)
 {
+    assert(size > 0);
     free(memory);
 }
 

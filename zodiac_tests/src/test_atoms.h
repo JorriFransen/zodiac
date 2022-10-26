@@ -130,7 +130,3 @@ START_TESTS(atom_tests)
     DEFINE_TEST(Multiple_Match),
     DEFINE_TEST(Growing),
 END_TESTS()
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif

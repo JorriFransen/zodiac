@@ -14,9 +14,9 @@ LLVM_LIBS := $(shell $(LLVM_CONFIG) --libnames codegen)
 LLVM_CXX_FLAGS := $(shell $(LLVM_CONFIG) --cxxflags)
 LLVM_LINK_FLAGS := $(shell $(LLVM_CONFIG) --ldflags)
 
-COMPILER_FLAGS := /MDd /DEBUG -Wall -Wvla -Wno-c++98-compat -Wno-c++98-compat-pedantic $(LLVM_CXX_FLAGS)
+COMPILER_FLAGS := /MTd /DEBUG -Wall -Wvla -Wno-c++20-designator -Wno-format-nonliteral -Wno-cast-qual -Wno-shadow-field-in-constructor -Wno-old-style-cast -Wno-c++98-compat -Wno-c++98-compat-pedantic $(LLVM_CXX_FLAGS)
 INCLUDE_FLAGS := -I$(SRC_DIR)
-LINKER_FLAGS := /LDd $(LLVM_LIBS) /link $(LLVM_LINK_FLAGS)
+LINKER_FLAGS := /LDd $(LLVM_LIBS) /link $(LLVM_LINK_FLAGS) /DEBUG
 DEFINES := -D_DEBUG -DZEXPORT
 
 # Make does not offer a recursive wildcard function, so here's one:
@@ -40,14 +40,14 @@ compile:
 	@echo Compiling $(ASSEMBLY)
 
 $(OBJ_DIR)/%.cpp.o: %.cpp
-	clang-cl.exe $< $(COMPILER_FLAGS) -c -o $(subst /,\, $@) $(DEFINES) $(INCLUDE_FLAGS)
+	clang-cl $< $(COMPILER_FLAGS) -c -o $(subst /,\, $@) $(DEFINES) $(INCLUDE_FLAGS)
 
 .PHONY: link
 link: $(FULL_ASSEMBLY_PATH)
 
 $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 	@echo Linking $(ASSEMBLY)
-	clang-cl $(subst /,\, $<) -o $@ $(DEFINES) $(LINKER_FLAGS)
+	clang-cl $(subst /,\, $(OBJ_FILES)) -o $@ $(DEFINES) $(LINKER_FLAGS)
 
 	
 .PHONY: clean

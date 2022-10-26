@@ -4,7 +4,7 @@
 #include <common.h>
 
 #ifdef _WIN32
-#include <windows.h>
+#include <Windows.h>
 #endif
 
 #include <stdarg.h>
@@ -13,21 +13,21 @@ namespace Zodiac
 {
 
 
-void String::__init__(Allocator * allocator, char *cstr, i64 len)
+void String::init(Allocator * allocator, char *cstr, i64 len)
 {
     assert(len >= 0);
 
     this->data = alloc_array<char>(allocator, len + 1);
     this->length = len;
 
-    memcpy(this->data, cstr, len);
+    memcpy(this->data, cstr, (size_t)len);
 
     this->data[len] = '\0';
 }
 
 #ifdef _WIN32
 
-void String::__init__(Allocator* allocator, wchar_t* wstr, i64 _length)
+void String::init(Allocator* allocator, wchar_t* wstr, i64 _length)
 {
     int required_size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wstr, (int)_length, nullptr, 0, nullptr, nullptr);
     assert(required_size);
@@ -52,7 +52,7 @@ String string_copy(Allocator *allocator, const String_Ref &original)
 {
     String result(alloc_array<char>(allocator, original.length + 1), original.length);
 
-    memcpy(result.data, original.data, original.length);
+    memcpy(result.data, original.data, (size_t)original.length);
     result.data[original.length] = '\0';
 
     return result;
@@ -69,8 +69,8 @@ String string_append(Allocator *allocator, const String_Ref &a, const String_Ref
 
     String result(alloc_array<char>(allocator, new_length + 1), new_length);
 
-    memcpy(result.data, a.data, a.length);
-    memcpy(result.data + a.length, b.data, b.length);
+    memcpy(result.data, a.data, (size_t)a.length);
+    memcpy(result.data + a.length, b.data, (size_t)b.length);
     result.data[new_length] = '\0';
 
     return result;
@@ -162,9 +162,9 @@ const String string_format(Allocator *allocator, const char *fmt, va_list args)
     char *buf = alloc_array<char>(allocator, size + 1);
     assert(buf);
 
-    auto written_size = vsnprintf(buf, size + 1, fmt, args);
+    auto written_size = vsnprintf(buf, (size_t)size + 1, fmt, args);
     assert(written_size <= size);
-    zodiac_assert_fatal(written_size <= size, "Written size does not match the expected size");
+    zodiac_assert_fatal(written_size <= size, "Written size does not match the expected size")
 
     return String(buf, size);
 }
@@ -203,7 +203,7 @@ i64 string_to_s64(const String_Ref &string, u64 base /*= 10*/)
 
     for (i64 i = start_index; i < string.length; i++) {
         result *= base;
-        i64 digit_value = _digit_value(string.data[i]);
+        i64 digit_value = (i64)_digit_value(string.data[i]);
         result += digit_value;
     }
 
@@ -221,8 +221,8 @@ Real_Value string_to_real(const String_Ref &string)
 float string_to_float(const String_Ref &string)
 {
     char *end_ptr;
-    float result = strtof(string.data, &end_ptr);
-    if (result == 0.0 && end_ptr != string.data + string.length) {
+    r32 result = strtof(string.data, &end_ptr);
+    if (result == 0.0f && end_ptr != string.data + string.length) {
         assert(false);
     }
 

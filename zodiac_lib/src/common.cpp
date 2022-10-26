@@ -17,7 +17,7 @@ u64 hash_c_string(const char *cstr, i64 length)
 
     for (i64 i = 0; i < length; i++)
     {
-        hash = hash ^ (cstr[i]);
+        hash = hash ^ ((u64)cstr[i]);
         hash = hash * 1099511628211;
     }
 

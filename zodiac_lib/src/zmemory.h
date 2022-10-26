@@ -5,7 +5,7 @@
 namespace Zodiac
 {
 
-ZAPI void* kallocate(u64 size);
-ZAPI void kfree(void* memory, u64 size);
+ZAPI void* kallocate(i64 size);
+ZAPI void kfree(void* memory, i64 size);
 
 }

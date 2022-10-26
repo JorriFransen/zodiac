@@ -35,7 +35,7 @@ static void atom_table_grow(Atom_Table *at)
 
     auto new_atoms = alloc_array<Atom>(at->allocator, new_cap);
     auto new_hashes = alloc_array<u64>(at->allocator, new_cap);
-    memset(new_hashes, 0, sizeof(u64) * new_cap);
+    memset(new_hashes, 0, sizeof(u64) * (size_t)new_cap);
 
     at->capacity = new_cap;
     at->atoms = new_atoms;
@@ -44,7 +44,7 @@ static void atom_table_grow(Atom_Table *at)
     for (i64 i = 0; i < old_cap; i++) {
 
         u64 hash = old_hashes[i];
-        i64 hash_index = hash % at->capacity;
+        i64 hash_index = (i64)(hash % (u64)at->capacity);
 
         i64 iteration_count = 0;
 
@@ -106,7 +106,7 @@ static Atom atom_table_add(Atom_Table *at, const char *cstr, i64 length)
     }
 
     char *dest = b->current;
-    memcpy(dest, cstr, length);
+    memcpy(dest, cstr, (size_t)length);
     dest[length] = '\0';
 
     Atom result = {
@@ -122,7 +122,7 @@ static Atom atom_table_add(Atom_Table *at, const char *cstr, i64 length)
 Atom atom_get(Atom_Table *at, const char *cstr, i64 length)
 {
     u64 hash = hash_c_string(cstr, length);
-    i64 hash_index = hash % at->capacity;
+    i64 hash_index = (i64)(hash % (u64)at->capacity);
 
     i64 iteration_count = 0;
 
@@ -155,7 +155,7 @@ Atom atom_get(Atom_Table *at, const char *cstr, i64 length)
 
 Atom atom_get(Atom_Table *at, const char *cstr)
 {
-    auto length = strlen(cstr);
+    auto length = (i64)strlen(cstr);
     return atom_get(at, cstr, length);
 }
 

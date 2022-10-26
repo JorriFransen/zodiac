@@ -19,15 +19,15 @@ struct String
 
     String() {}
     String(char* data, i64 length) : data(data), length(length) {}
-    String(Allocator* allocator, char *cstr, i64 length) { __init__(allocator, cstr, length); }
-    String(Allocator* allocator, const char *cstr, i64 length) { __init__(allocator, (char *)cstr, length); }
+    String(Allocator* allocator, char *cstr, i64 length) { init(allocator, cstr, length); }
+    String(Allocator* allocator, const char *cstr, i64 length) { init(allocator, (char *)cstr, length); }
 
-    void __init__(Allocator * allocator, char *cstr, i64 length);
+    void init(Allocator * allocator, char *cstr, i64 length);
 
 #ifdef _WIN32
-    String(Allocator* allocator, wchar_t *wstr, i64 length) { __init__(allocator, wstr, length); }
-    String(Allocator* allocator, const wchar_t *wstr, i64 length) { __init__(allocator, (wchar_t *)wstr, length); }
-    void __init__(Allocator * allocator, wchar_t *wstr, i64 length);
+    String(Allocator* allocator, wchar_t *wstr, i64 length) { init(allocator, wstr, length); }
+    String(Allocator* allocator, const wchar_t *wstr, i64 length) { init(allocator, (wchar_t *)wstr, length); }
+    void init(Allocator * allocator, wchar_t *wstr, i64 length);
 #endif
 
     char &operator[](i64 index)
@@ -45,9 +45,9 @@ struct String_Ref
 
     String_Ref() : data(nullptr), length(0) {}
 
-    String_Ref(const char *cstr) : data(cstr), length(strlen(cstr)) {}
+    String_Ref(const char *cstr) : data(cstr), length((i64)strlen(cstr)) {}
     String_Ref(const char *cstr, i64 length) : data(cstr), length(length) {}
-    String_Ref(const std::string &std_str) : data(std_str.c_str()), length(std_str.length()) {}
+    String_Ref(const std::string &std_str) : data(std_str.c_str()), length((i64)std_str.length()) {}
     String_Ref(const String &zstr) : data(zstr.data), length(zstr.length) {}
     String_Ref(const Atom &atom) : data(atom.data), length(atom.length) {}
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(__clang__) || defined(__gcc__)
+#if (defined(__clang__) || defined(__gcc__)) && (defined(__STDC_VERSION__)  && __STDC_VERSION__ > 201112L)
 #define STATIC_ASSERT _Static_assert
 #else
 #define STATIC_ASSERT static_assert
@@ -8,21 +8,21 @@
 
 #define zodiac_assert_fatal(cond, err) \
     if (!(cond)) { \
-        assert((cond) && !(err)); \
+        assert(cond); \
         fprintf(stderr, "%s:%d: Assertion failed: %s", __FILE__, __LINE__, (err)); \
         exit(42); \
     }
 
 // Integer types
-typedef unsigned char   u8;
-typedef unsigned short u16;
-typedef unsigned int   u32;
-typedef unsigned long  u64;
+typedef unsigned char       u8;
+typedef unsigned short     u16;
+typedef unsigned int       u32;
+typedef unsigned long long u64;
 
-typedef signed char   i8;
-typedef signed short i16;
-typedef signed int   i32;
-typedef signed long  i64;
+typedef signed char       i8;
+typedef signed short     i16;
+typedef signed int       i32;
+typedef signed long long i64;
 
 typedef  i8  s8;
 typedef i16 s16;

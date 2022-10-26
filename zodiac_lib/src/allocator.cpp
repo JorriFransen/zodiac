@@ -5,7 +5,7 @@
 namespace Zodiac
 {
 
-    void *c_alloc_func(Allocator *allocator, Allocation_Mode mode, i64 size, void *old_ptr)
+    static void *c_alloc_func(Allocator *allocator, Allocation_Mode mode, i64 size, void *old_ptr)
     {
         assert(allocator);
         assert(allocator == c_allocator() || allocator == err_allocator());
@@ -30,18 +30,17 @@ namespace Zodiac
         return nullptr;
     }
 
-    static Allocator _c_allocator = { .alloc_func = c_alloc_func };
+    static Allocator c_allocator_data = { .alloc_func = Zodiac::c_alloc_func };
 
     Allocator *c_allocator()
     {
-        return &_c_allocator;
+        return &c_allocator_data;
     }
 
-    static Allocator _err_allocator = { .alloc_func = c_alloc_func };
+    static Allocator err_allocator_data = { .alloc_func = Zodiac::c_alloc_func };
 
     Allocator *err_allocator()
     {
-        return &_err_allocator;
+        return &err_allocator_data;
     }
-
 }

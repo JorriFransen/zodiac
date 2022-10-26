@@ -32,5 +32,8 @@ static MunitSuite main_suite = {
 
 int main(int argc, char** argv) {
 
-    return munit_suite_main(&Zodiac::main_suite, nullptr, argc, argv);
+    auto ca = c_allocator();
+
+
+   return munit_suite_main(&Zodiac::main_suite, nullptr, argc, argv);
 }
