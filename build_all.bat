@@ -1,7 +1,7 @@
 @ECHO OFF
 REM Build Everything
 
-ECHO "Building everything..."
+ECHO Building everything...
 
 make -f Makefile.zodiac_lib.windows.mak all
 IF %ERRORLEVEL% NEQ 0 (echo Error:%ERRORLEVEL% && exit)

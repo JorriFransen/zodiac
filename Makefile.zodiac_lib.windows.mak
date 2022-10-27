@@ -50,21 +50,21 @@ $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 
 .PHONY: llvm
 llvm:
-	@if not exist $(LLVM_SRC_DIR) (\
-	 	echo "Extracting llvm..." && \
-		powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('$(BASE_DIR)\llvm\llvm-$(LLVM_VERSION).src.zip', '$(LLVM_SRC_DIR)'); }" )
-	@if not exist $(LLVM_DEBUG_BUILD_DIR) (\
-	 	echo "Configuring llvm..." &&\
+	if not exist $(LLVM_DEBUG_INSTALL_DIR) (\
+	 	echo Extracting llvm... && \
+		powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('$(BASE_DIR)\llvm\llvm-$(LLVM_VERSION).src.zip', '$(LLVM_SRC_DIR)'); }" &&\
+	 	echo Configuring llvm... &&\
 		mkdir $(LLVM_DEBUG_BUILD_DIR) &&\
 		pushd $(LLVM_DEBUG_BUILD_DIR) &&\
 		cmake.exe $(LLVM_SRC_DIR)\llvm -DCMAKE_INSTALL_PREFIX=$(LLVM_DEBUG_INSTALL_DIR) -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Debug -T ClangCl &&\
-		popd ) 
-	@if not exist $(LLVM_DEBUG_INSTALL_DIR) (\
-	 	echo "Building and installing llvm..." &&\
+	 	echo Building and installing llvm... &&\
 		mkdir $(LLVM_DEBUG_INSTALL_DIR) &&\
 		pushd $(LLVM_DEBUG_BUILD_DIR) &&\
 		cmake.exe --build . --target install --config Debug &&\
-		popd )
+		popd &&\
+		echo Removing llvm source and build dir after install &&\
+		rmdir /s /q $(LLVM_SRC_DIR) &&\
+		rmdir /s /q $(LLVM_DEBUG_BUILD_DIR) )
 
 llvm_vars:
 	$(eval LLVM_CONFIG = $(LLVM_DEBUG_INSTALL_DIR)\bin\llvm-config.exe)
@@ -76,7 +76,8 @@ llvm_vars:
 .PHONY: clean_llvm
 clean_llvm:
 	if exist $(LLVM_SRC_DIR) rmdir /s /q $(LLVM_SRC_DIR)
-	if exist $(LLVM_DEBUG_INSTALL_DIR) rmdir /s /q (LLVM_DEBUG_INSTALL_DIR)
+	if exist $(LLVM_DEBUG_BUILD_DIR) rmdir /s /q $(LLVM_DEBUG_BUILD_DIR)
+	if exist $(LLVM_DEBUG_INSTALL_DIR) rmdir /s /q $(LLVM_DEBUG_INSTALL_DIR)
 
 .PHONY: clean
 clean:
