@@ -50,7 +50,7 @@ $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 
 .PHONY: llvm
 llvm:
-	if not exist $(LLVM_DEBUG_INSTALL_DIR) (\
+	@if not exist $(LLVM_DEBUG_INSTALL_DIR) (\
 	 	echo Extracting llvm... && \
 		powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('$(BASE_DIR)\llvm\llvm-$(LLVM_VERSION).src.zip', '$(LLVM_SRC_DIR)'); }" &&\
 	 	echo Configuring llvm... &&\
@@ -61,9 +61,12 @@ llvm:
 		mkdir $(LLVM_DEBUG_INSTALL_DIR) &&\
 		pushd $(LLVM_DEBUG_BUILD_DIR) &&\
 		cmake.exe --build . --target install --config Debug &&\
-		popd &&\
-		echo Removing llvm source and build dir after install &&\
-		rmdir /s /q $(LLVM_SRC_DIR) &&\
+		popd )
+	@if exist $(LLVM_SRC_DIR) (\
+		@echo Removing llvm source dir after instal... &&\
+		rmdir /s /q $(LLVM_SRC_DIR) )
+	@if exist $(LLVM_DEBUG_BUILD_DIR) (\
+	 	echo Removing llvm debug build dir after install &&\
 		rmdir /s /q $(LLVM_DEBUG_BUILD_DIR) )
 
 llvm_vars:
