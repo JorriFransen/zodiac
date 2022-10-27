@@ -21,7 +21,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "externalTerminal",
+            "console": "internalConsole",
         },
         {
             "name": "(Linux) Launch",

@@ -70,6 +70,12 @@ MunitResult Multiple_Match(const MunitParameter params[], void *user_data_or_fix
     munit_assert_false(a5 == a3);
     munit_assert_false(a5 == a4);
 
+    Atom a11 = atom_get(&at, "a11");
+    munit_assert_false(a1 == a11);
+
+    Atom z1 = atom_get(&at, "z1");
+    munit_assert_false(a1 == z1);
+
     return MUNIT_OK;
 }
 

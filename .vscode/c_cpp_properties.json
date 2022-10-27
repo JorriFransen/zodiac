@@ -23,7 +23,7 @@
                 "${workspaceFolder}/zodiac_tests/munit",
                 "D:\\llvm_install_debug\\include"
             ],
-            "defines": [],
+            "defines": [ "_DEBUG" ],
             "compilerPath": "C:\\Program Files\\LLVM\\bin\\clang.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",

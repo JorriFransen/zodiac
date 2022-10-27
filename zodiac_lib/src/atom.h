@@ -19,13 +19,23 @@ namespace Zodiac
 
     inline bool operator==(const Atom &lhs, const Atom &rhs)
     {
-        if (lhs.length != rhs.length) return false;
-
-        for (i64 i = 0; i < lhs.length; i++) {
-            if (lhs.data[i] != rhs.data[i]) return false;
-        }
-
-        return true;
+        #if _DEBUG
+            if (lhs.data == rhs.data) {
+                assert(lhs.length == rhs.length);
+                return true;
+            } else {
+                if (lhs.length != rhs.length) return false;
+            
+                for (i64 i = 0; i < lhs.length; i++) {
+                    if (lhs.data[i] != rhs.data[i]) return false;
+                }
+            
+                assert(false && !"Returning false, but atoms seem to match...");
+                return false;
+            }
+        #else
+            return lhs.data == rhs.data;
+        #endif
     }
 
     inline bool operator !=(const Atom &lhs, const Atom &rhs)
