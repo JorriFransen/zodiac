@@ -6,7 +6,7 @@ SRC_DIR := $(BASE_DIR)/src
 ASSEMBLY := libzodiac
 EXTENSION := .so
 
-LLVM_LIBS := $(shell llvm-config --libs)
+LLVM_LIBS := $(shell llvm-config --libs codegen)
 LLVM_CXX_FLAGS := $(shell llvm-config --cxxflags)
 LLVM_LD_FLAGS := $(shell llvm-config --ldflags)
 

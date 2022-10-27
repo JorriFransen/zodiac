@@ -8,10 +8,15 @@ SRC_DIR := $(BASE_DIR)\src
 ASSEMBLY := libzodiac
 EXTENSION := .dll
 
+LLVM_INSTALL_DIR := D:\llvm_install_debug
+LLVM_CONFIG := $(LLVM_INSTALL_DIR)\bin\llvm-config.exe
+LLVM_INCLUDE_DIR := $(shell $(LLVM_CONFIG) --includedir)
+LLVM_LIBS := $(shell $(LLVM_CONFIG) --libs codegen)
+
 COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wvla -fdeclspec
-INCLUDE_FLAGS := -I$(SRC_DIR)
-LINKER_FLAGS := -g -shared 
-DEFINES := -D_DEBUG -DZEXPORT
+INCLUDE_FLAGS := -I$(SRC_DIR) -I$(LLVM_INCLUDE_DIR)
+LINKER_FLAGS := -g -shared $(LLVM_LIBS) -Wl,-nodefaultlib:libcmt 
+DEFINES := -D_DEBUG -DZEXPORT -D_DLL
 
 # Make does not offer a recursive wildcard function, so here's one:
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
@@ -43,7 +48,6 @@ $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 	@echo Linking $(ASSEMBLY)
 	clang $(subst /,\, $(OBJ_FILES)) -o $@ $(DEFINES) $(LINKER_FLAGS)
 
-	
 .PHONY: clean
 clean:
 	if exist $(BUILD_DIR)\$(ASSEMBLY)$(EXTENSION) del $(BUILD_DIR)\$(ASSEMBLY)$(EXTENSION)
