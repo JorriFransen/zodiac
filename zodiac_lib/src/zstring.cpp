@@ -1,7 +1,8 @@
 #include "zstring.h"
 
-#include <string.h>
 #include <common.h>
+#include <string.h>
+#include <zmemory.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -20,7 +21,7 @@ void String::init(Allocator * allocator, char *cstr, i64 len)
     this->data = alloc_array<char>(allocator, len + 1);
     this->length = len;
 
-    memcpy(this->data, cstr, (size_t)len);
+    zmemcpy(this->data, cstr, (size_t)len);
 
     this->data[len] = '\0';
 }
@@ -52,7 +53,7 @@ String string_copy(Allocator *allocator, const String_Ref &original)
 {
     String result(alloc_array<char>(allocator, original.length + 1), original.length);
 
-    memcpy(result.data, original.data, (size_t)original.length);
+    zmemcpy(result.data, original.data, (size_t)original.length);
     result.data[original.length] = '\0';
 
     return result;
@@ -69,8 +70,8 @@ String string_append(Allocator *allocator, const String_Ref &a, const String_Ref
 
     String result(alloc_array<char>(allocator, new_length + 1), new_length);
 
-    memcpy(result.data, a.data, (size_t)a.length);
-    memcpy(result.data + a.length, b.data, (size_t)b.length);
+    zmemcpy(result.data, a.data, (size_t)a.length);
+    zmemcpy(result.data + a.length, b.data, (size_t)b.length);
     result.data[new_length] = '\0';
 
     return result;
@@ -105,12 +106,8 @@ bool string_starts_with(const String_Ref &string, const String_Ref &start)
     if (!(string.length > start.length)) {
         return false;
     }
-
-    for (i64 i = 0; i < start.length; i++) {
-        if (string[i] != start[i]) return false;
-    }
-
-    return true;
+    
+    return zmemcmp(string.data, start.data, start.length) == 0;
 }
 
 bool string_ends_with(const String_Ref &string, const String_Ref &end)
@@ -118,24 +115,15 @@ bool string_ends_with(const String_Ref &string, const String_Ref &end)
     assert(end.length <= string.length);
 
     auto offset = string.length - end.length;
-
-    for (i64 i = 0; i < end.length; i++) {
-        if (end[i] != string[offset + i]) return false;
-    }
-
-    return true;
+    return zmemcmp(string.data + offset, end.data, end.length) == 0;
 }
 
 bool string_equal(const String_Ref &a, const String_Ref &b)
 
 {
     if (a.length != b.length) return false;
-
-    for (i64 i = 0; i < a.length; i++) {
-        if (a[i] != b[i]) return false;
-    }
-
-    return true;
+    
+    return zmemcmp(a.data, b.data, a.length) == 0;
 }
 
 const String string_format(Allocator* allocator, const char* fmt, ...)

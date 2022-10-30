@@ -1,5 +1,6 @@
 #include "atom.h"
 
+#include <zmemory.h>
 #include <zstring.h>
 
 namespace Zodiac
@@ -18,8 +19,8 @@ void atom_table_init(Allocator *allocator, Atom_Table *at, i64 initial_capacity/
     at->atoms = alloc_array<Atom>(allocator, ATOM_TABLE_INITIAL_CAPACITY);
     at->hashes = alloc_array<u64>(allocator, ATOM_TABLE_INITIAL_CAPACITY);
 
-    auto byte_size = sizeof(at->hashes) * ATOM_TABLE_INITIAL_CAPACITY;
-    memset(at->hashes, 0, byte_size);
+    auto hashes_size = sizeof(at->hashes) * ATOM_TABLE_INITIAL_CAPACITY;
+    zzeromem(at->hashes, hashes_size);
 
     at->current_block = nullptr;
     atom_table_add_block(at, &at->first_block, ATOM_TABLE_INITIAL_BLOCK_SIZE);
@@ -35,7 +36,7 @@ static void atom_table_grow(Atom_Table *at)
 
     auto new_atoms = alloc_array<Atom>(at->allocator, new_cap);
     auto new_hashes = alloc_array<u64>(at->allocator, new_cap);
-    memset(new_hashes, 0, sizeof(u64) * (size_t)new_cap);
+    zzeromem(new_hashes, sizeof(u64) * new_cap);
 
     at->capacity = new_cap;
     at->atoms = new_atoms;

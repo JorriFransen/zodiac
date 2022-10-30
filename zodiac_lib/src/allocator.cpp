@@ -13,14 +13,14 @@ namespace Zodiac
         switch (mode) {
             case Allocation_Mode::ALLOCATE: {
                 assert(!old_ptr);
-                return kallocate(size);
+                return zallocate(size);
             }
 
             case Allocation_Mode::REALLOCATE: assert(false); break;
 
             case Allocation_Mode::FREE: {
                 assert(old_ptr);
-                kfree(old_ptr, size);
+                zfree(old_ptr, size);
                 return nullptr;
             }
             case Allocation_Mode::FREE_ALL: assert(false); break;
