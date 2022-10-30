@@ -22,6 +22,7 @@ MunitResult Single_Match(const MunitParameter params[], void *user_data_or_fixtu
 
     munit_assert_ptr_equal(atom.data, atom2.data);
 
+    atom_table_free(&at);
 
     return MUNIT_OK;
 }
@@ -76,6 +77,8 @@ MunitResult Multiple_Match(const MunitParameter params[], void *user_data_or_fix
     Atom z1 = atom_get(&at, "z1");
     munit_assert_false(a1 == z1);
 
+    atom_table_free(&at);
+
     return MUNIT_OK;
 }
 
@@ -127,6 +130,8 @@ MunitResult Growing(const MunitParameter params[], void *user_data_or_fixture)
     munit_assert_false(a5 == a2);
     munit_assert_false(a5 == a3);
     munit_assert_false(a5 == a4);
+
+    atom_table_free(&at);
 
     return MUNIT_OK;
 }

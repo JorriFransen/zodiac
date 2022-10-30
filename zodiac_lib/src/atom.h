@@ -67,6 +67,7 @@ namespace Zodiac
 
 
     ZAPI void atom_table_init(Allocator *allocator, Atom_Table *at, i64 initial_capacity = ATOM_TABLE_INITIAL_CAPACITY);
+    ZAPI void atom_table_free(Atom_Table *at);
 
     ZAPI Atom atom_get(Atom_Table *at, const char *cstr, i64 length);
     ZAPI Atom atom_get(Atom_Table *at, const char *cstr);

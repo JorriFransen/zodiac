@@ -26,8 +26,30 @@ void atom_table_init(Allocator *allocator, Atom_Table *at, i64 initial_capacity/
     atom_table_add_block(at, &at->first_block, ATOM_TABLE_INITIAL_BLOCK_SIZE);
 }
 
+void atom_table_free(Atom_Table *at)
+{
+    free(at->allocator, at->atoms);
+    free(at->allocator, at->hashes);
+
+    auto block = &at->first_block;
+    while (block) {
+        
+        auto next_block = block->next_block;
+
+        free(at->allocator, block->first);
+        if (block != &at->first_block)
+        {
+            fprintf(stderr, "Freeint at block...\n");
+            free(at->allocator, block);
+        }
+
+        block = next_block;
+    }
+}
+
 static void atom_table_grow(Atom_Table *at)
 {
+    fprintf(stderr, "grow...\n");
     auto new_cap = at->capacity * 2;
 
     auto old_cap = at->capacity;
