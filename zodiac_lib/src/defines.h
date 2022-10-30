@@ -13,7 +13,19 @@
         exit(42); \
     }
 
-// Integer types
+
+#if defined(__clang__) || defined(__gcc__)
+#define ZINLINE __attribute__((always_inline)) inline
+#define ZNOINLINE __attribute__((noinline))
+#elif defined(_MSC_VER)
+#define ZINLINE __forceinline
+#define ZNOINLINE __declspec(noinline)
+#else
+#define ZINLINE static inline
+#define ZNOINLINE
+#endif
+
+
 typedef unsigned char       u8;
 typedef unsigned short     u16;
 typedef unsigned int       u32;
