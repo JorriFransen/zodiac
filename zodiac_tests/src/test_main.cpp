@@ -2,9 +2,18 @@
 #include <munit/munit.h>
 
 #include "test_atoms.h"
+#include "test_strings.h"
 
 namespace Zodiac
 {
+
+static MunitSuite string_suite = {
+    (char*)"String/",
+    string_tests,
+    nullptr,
+    1,
+    MUNIT_SUITE_OPTION_NONE,
+};
 
 static MunitSuite atom_suite = {
     (char*)"Atom/",
@@ -15,6 +24,7 @@ static MunitSuite atom_suite = {
 };
 
 static MunitSuite main_child_suites[] = {
+    string_suite,
     atom_suite,
     //bytecode_suite,
     {},
