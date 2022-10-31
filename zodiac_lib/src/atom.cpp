@@ -1,6 +1,6 @@
 #include "atom.h"
 
-#include <zmemory.h>
+#include <memory/zmemory.h>
 #include <zstring.h>
 
 namespace Zodiac
@@ -19,9 +19,6 @@ void atom_table_init(Allocator *allocator, Atom_Table *at, i64 initial_capacity/
     at->atoms = alloc_array<Atom>(allocator, ATOM_TABLE_INITIAL_CAPACITY);
     at->hashes = alloc_array<u64>(allocator, ATOM_TABLE_INITIAL_CAPACITY);
 
-    auto hashes_size = sizeof(at->hashes) * ATOM_TABLE_INITIAL_CAPACITY;
-    zzeromem(at->hashes, hashes_size);
-
     at->current_block = nullptr;
     atom_table_add_block(at, &at->first_block, ATOM_TABLE_INITIAL_BLOCK_SIZE);
 }
@@ -33,13 +30,11 @@ void atom_table_free(Atom_Table *at)
 
     auto block = &at->first_block;
     while (block) {
-        
+
         auto next_block = block->next_block;
 
         free(at->allocator, block->first);
-        if (block != &at->first_block)
-        {
-            fprintf(stderr, "Freeint at block...\n");
+        if (block != &at->first_block) {
             free(at->allocator, block);
         }
 
@@ -49,7 +44,6 @@ void atom_table_free(Atom_Table *at)
 
 static void atom_table_grow(Atom_Table *at)
 {
-    fprintf(stderr, "grow...\n");
     auto new_cap = at->capacity * 2;
 
     auto old_cap = at->capacity;
@@ -58,7 +52,6 @@ static void atom_table_grow(Atom_Table *at)
 
     auto new_atoms = alloc_array<Atom>(at->allocator, new_cap);
     auto new_hashes = alloc_array<u64>(at->allocator, new_cap);
-    zzeromem(new_hashes, sizeof(u64) * new_cap);
 
     at->capacity = new_cap;
     at->atoms = new_atoms;

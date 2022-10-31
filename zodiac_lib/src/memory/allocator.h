@@ -2,6 +2,8 @@
 
 #include <defines.h>
 
+#include "zmemory.h"
+
 namespace Zodiac
 {
 
@@ -27,12 +29,13 @@ struct Allocator
     Alloc_Function alloc_func = nullptr;
 };
 
-template <typename T>
-T *alloc(Allocator *allocator)
+template <typename Element_Type>
+Element_Type *alloc(Allocator *allocator)
 {
     assert(allocator);
-    auto size = (i64)sizeof(T);
-    auto result = (T *)allocator->alloc_func(allocator, Allocation_Mode::ALLOCATE, size, nullptr);
+    i64 size = (i64)sizeof(Element_Type);
+    Element_Type* result = (Element_Type *)allocator->alloc_func(allocator, Allocation_Mode::ALLOCATE, size, nullptr);
+    zzeromem(result, size);
     return result;
 }
 
@@ -42,7 +45,8 @@ Element_Type *alloc_array(Allocator *allocator, i64 capacity)
     assert(allocator);
     assert(capacity > 0);
     i64 size = (i64)sizeof(Element_Type) * capacity;
-    auto result = (Element_Type *)allocator->alloc_func(allocator, Allocation_Mode::ALLOCATE, size, nullptr);
+    Element_Type* result = (Element_Type *)allocator->alloc_func(allocator, Allocation_Mode::ALLOCATE, size, nullptr);
+    zzeromem(result, size);
     return result;
 }
 

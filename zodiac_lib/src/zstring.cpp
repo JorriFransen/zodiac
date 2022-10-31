@@ -1,8 +1,8 @@
 #include "zstring.h"
 
 #include <common.h>
+#include <memory/zmemory.h>
 #include <string.h>
-#include <zmemory.h>
 
 #ifdef _WIN32
 #include <Windows.h>

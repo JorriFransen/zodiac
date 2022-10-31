@@ -1,9 +1,9 @@
 
 #include <stdio.h>
 
-#include <allocator.h>
 #include <atom.h>
 #include <llvm_test.h>
+#include <memory/allocator.h>
 
 using namespace Zodiac;
 
