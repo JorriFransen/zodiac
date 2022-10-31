@@ -29,7 +29,12 @@ struct Real_Value
     double r64;
 };
 
-u64 hash_c_string(const char *cstr, i64 length);
-u64 hash_mix(u64 a, u64 b);
+template <typename T>
+ZAPI ZINLINE bool is_power_of_two(T n) {
+    return n && (!(n & (n-1)));
+}
+
+ZAPI u64 hash_c_string(const char *cstr, i64 length);
+ZAPI u64 hash_mix(u64 a, u64 b);
 
 }
