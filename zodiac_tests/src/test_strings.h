@@ -4,7 +4,7 @@
 
 using namespace Zodiac;
 
-MunitResult String_Equal(const MunitParameter params[], void *user_data_or_fixture)
+static MunitResult String_Equal(const MunitParameter params[], void *user_data_or_fixture)
 {
     String_Ref a = "Hello, World!";
     String_Ref b = "Hello, World!";
@@ -23,7 +23,7 @@ MunitResult String_Equal(const MunitParameter params[], void *user_data_or_fixtu
     return MUNIT_OK;
 }
 
-MunitResult String_Contains(const MunitParameter params[], void *user_data_or_fixture)
+static MunitResult String_Contains(const MunitParameter params[], void *user_data_or_fixture)
 {
     
     String_Ref a = "Hello, World!";
@@ -43,7 +43,7 @@ MunitResult String_Contains(const MunitParameter params[], void *user_data_or_fi
     return MUNIT_OK;
 }
 
-MunitResult String_Starts_With(const MunitParameter params[], void *user_data_or_fixture)
+static MunitResult String_Starts_With(const MunitParameter params[], void *user_data_or_fixture)
 {
     String_Ref a = "Hello, World!";
     String_Ref b = "Hello";
@@ -62,7 +62,7 @@ MunitResult String_Starts_With(const MunitParameter params[], void *user_data_or
     return MUNIT_OK;
 }
 
-MunitResult String_Ends_With(const MunitParameter params[], void *user_data_or_fixture)
+static MunitResult String_Ends_With(const MunitParameter params[], void *user_data_or_fixture)
 {
     String_Ref a = "Hello, World!";
     String_Ref b = " Hello";
