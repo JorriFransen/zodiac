@@ -19,7 +19,7 @@ void freelist_create(Allocator *backing_allocator, u64 total_size, Freelist *out
 
     out_list->nodes = alloc_array<Freelist_Node>(backing_allocator, max_entries);
     out_list->head = &out_list->nodes[0];
-    
+
     out_list->head->offset = 0;
     out_list->head->size = total_size;
     out_list->head->next = nullptr;
@@ -42,7 +42,7 @@ void freelist_free(Freelist *freelist)
 
 u64 freelist_free_space(Freelist *freelist)
 {
-    assert(freelist && freelist->head);
+    assert(freelist);
 
     u64 total = 0;
     auto node = freelist->head;
@@ -56,7 +56,7 @@ u64 freelist_free_space(Freelist *freelist)
 
 bool freelist_allocate_block(Freelist *freelist, u64 size, u64 *out_offset)
 {
-    assert(freelist && freelist->head && size && out_offset);
+    assert(freelist && size && out_offset);
 
     Freelist_Node *node = freelist->head;
     Freelist_Node *previous_node = nullptr;
@@ -73,7 +73,7 @@ bool freelist_allocate_block(Freelist *freelist, u64 size, u64 *out_offset)
                 freelist->head = node->next;
             }
 
-            reset_node(freelist, node); 
+            reset_node(freelist, node);
             return true;
 
         } else if (node->size > size) {
@@ -82,12 +82,12 @@ bool freelist_allocate_block(Freelist *freelist, u64 size, u64 *out_offset)
             node->offset += size;
             return true;
         }
-    
+
         previous_node = node;
         node = node->next;
     }
 
-    zodiac_assert_fatal(false, "Freelist out of space...");
+    zodiac_warn("Freelist out of space...");
     return false;
 }
 
@@ -98,16 +98,28 @@ bool freelist_free_block(Freelist *freelist, u64 size, u64 offset)
     Freelist_Node *node = freelist->head;
     Freelist_Node *previous_node = nullptr;
 
-    while (node) {
+    if (!node) {
+        // Everything is allocated, make one new node for all the memory
 
-        assert(node->offset != offset);
+        assert(offset == 0);
+        assert(size == freelist->total_size);
+
+        Freelist_Node *new_node = freelist_get_node(freelist);
+        new_node->offset = 0;
+        new_node->size = 0;
+        new_node->next = nullptr;
+        freelist->head = new_node;
+        return true;
+    }
+
+    while (node) {
 
         if (node->offset > offset) {
 
             Freelist_Node *new_node = freelist_get_node(freelist);
             new_node->offset = offset;
             new_node->size = size;
-  
+
             if (previous_node) {
                 previous_node->next = new_node;
                 new_node->next = node;
@@ -115,7 +127,7 @@ bool freelist_free_block(Freelist *freelist, u64 size, u64 offset)
                 new_node->next = node;
                 freelist->head = new_node;
             }
-  
+
             // Optionally join new node with next node
             if (new_node->next && new_node->offset + new_node->size == new_node->next->offset) {
                 new_node->size += new_node->next->size;
@@ -124,7 +136,7 @@ bool freelist_free_block(Freelist *freelist, u64 size, u64 offset)
 
                 reset_node(freelist, removed_node);
             }
-  
+
             // Optionally join new node with previous node
             if (previous_node && previous_node->offset + previous_node->size == new_node->offset) {
                 previous_node->size += new_node->size;
@@ -133,9 +145,9 @@ bool freelist_free_block(Freelist *freelist, u64 size, u64 offset)
 
                 reset_node(freelist, removed_node);
             }
-  
+
             return true;
-  
+
         }
 
         previous_node = node;

@@ -15,6 +15,8 @@
         exit(42); \
     }
 
+#define zodiac_warn(err) \
+    fprintf(stderr, "%s:%d: Warning: %s\n", __FILE__, __LINE__, (err));
 
 #if defined(__clang__) || defined(__gcc__)
 #define ZINLINE __attribute__((always_inline)) inline
@@ -91,7 +93,7 @@ STATIC_ASSERT(sizeof(r64) == 8, "Expected sizeof(r64) to be 8 bytes");
 #error "64-bit is required on Windows!"
 #endif // _WIN64
 
-#elif defined(__linux__) || defined(__gnu_linux__) 
+#elif defined(__linux__) || defined(__gnu_linux__)
 
 //STATIC_ASSERT(false, "Unsupported platform (linux).");
 #define ZPLATFORM_LINUX 1
