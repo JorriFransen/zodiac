@@ -24,10 +24,12 @@ struct Freelist
 
     Freelist_Node *head;
     Freelist_Node *nodes;
+
+    Allocator *backing_allocator; // Used for node allocation
 };
 
-ZAPI void freelist_create(u64 total_size, u64 *memory_requirement, Freelist *out_list, void *memory);
-ZAPI void freelist_destroy(Freelist *freelist);
+ZAPI void freelist_create(Allocator *backing_allocator, u64 total_size, Freelist *out_list);
+ZAPI void freelist_free(Freelist *freelist);
 
 ZAPI u64 freelist_free_space(Freelist *freelist);
 ZAPI bool freelist_allocate_block(Freelist *freelist, u64 size, u64 *out_offset);
