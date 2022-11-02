@@ -29,7 +29,7 @@ struct Dynamic_Array
 };
 
 template <typename Element_Type>
-ZAPI void dynamic_array_create(Allocator *backing_allocator, Dynamic_Array<Element_Type> *out_array, u64 capacity = ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY)
+void dynamic_array_create(Allocator *backing_allocator, Dynamic_Array<Element_Type> *out_array, u64 capacity = ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY)
 {
     assert(backing_allocator && out_array);
 
@@ -42,7 +42,7 @@ ZAPI void dynamic_array_create(Allocator *backing_allocator, Dynamic_Array<Eleme
 }
 
 template <typename Element_Type>
-ZAPI void dynamic_array_free(Dynamic_Array<Element_Type> *array)
+void dynamic_array_free(Dynamic_Array<Element_Type> *array)
 {
     if (array->data) {
         assert(array->capacity);
@@ -53,7 +53,7 @@ ZAPI void dynamic_array_free(Dynamic_Array<Element_Type> *array)
 }
 
 template <typename Element_Type>
-ZAPI void dynamic_array_grow(Dynamic_Array<Element_Type> *array)
+void dynamic_array_grow(Dynamic_Array<Element_Type> *array)
 {
     i64 new_cap = array->capacity * 2;
     if (new_cap == 0) new_cap = ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY;
@@ -72,7 +72,7 @@ ZAPI void dynamic_array_grow(Dynamic_Array<Element_Type> *array)
 }
 
 template <typename Element_Type>
-ZAPI void dynamic_array_append(Dynamic_Array<Element_Type> *array, Element_Type element)
+void dynamic_array_append(Dynamic_Array<Element_Type> *array, Element_Type element)
 {
     if (array->count >= array->capacity) {
         dynamic_array_grow(array);
