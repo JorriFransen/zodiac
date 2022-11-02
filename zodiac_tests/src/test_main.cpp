@@ -4,6 +4,7 @@
 #include "test_atoms.h"
 #include "test_strings.h"
 #include "test_dynamic_array.h"
+#include "test_freelist.h"
 
 namespace Zodiac
 {
@@ -32,10 +33,19 @@ static MunitSuite dynamic_array_suite = {
     MUNIT_SUITE_OPTION_NONE,
 };
 
+static MunitSuite freelist_suite = {
+    (char*)"Freelist/",
+    Freelist_Tests::freelist_tests,
+    nullptr,
+    1,
+    MUNIT_SUITE_OPTION_NONE,
+};
+
 static MunitSuite main_child_suites[] = {
     string_suite,
     atom_suite,
     dynamic_array_suite,
+    freelist_suite,
     //bytecode_suite,
     {},
 };

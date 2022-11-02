@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdio.h>
+
 #if (defined(__clang__) || defined(__gcc__)) && (defined(__STDC_VERSION__)  && __STDC_VERSION__ > 201112L)
 #define STATIC_ASSERT _Static_assert
 #else
@@ -41,9 +43,18 @@ typedef i16 s16;
 typedef i32 s32;
 typedef i64 s64;
 
-// Real types
 typedef float  r32;
 typedef double r64;
+
+#define U64_MAX UINT64_MAX
+#define U32_MAX UINT32_MAX
+#define U16_MAX UINT16_MAX
+#define U8_MAX UINT8_MAX
+
+#define I64_MAX INT64_MAX
+#define I32_MAX INT32_MAX
+#define I16_MAX INT16_MAX
+#define I8_MAX INT8_MAX
 
 STATIC_ASSERT(sizeof(u8) == 1, "Expected sizeof(u8) to be 1 byte");
 STATIC_ASSERT(sizeof(u16) == 2, "Expected sizeof(u16) to be 2 bytes");
@@ -65,8 +76,13 @@ STATIC_ASSERT(sizeof(r64) == 8, "Expected sizeof(r64) to be 8 bytes");
 
 
 
-#define KB(x) (x * 1024)
-#define MB(x) (KB(x) * 1024)
+#define GIBIBYTE(x) (x * 1024 * 1024 * 1024)
+#define MEBIBYTE(x) (x * 1024 * 1024)
+#define KIBIBYTE(x) (x * 1024)
+
+#define GIGABYTE(x) (x * 1000 * 1000 * 1000)
+#define MEGABYTE(x) (x * 1000 * 1000)
+#define KILOBYTE(x) (x * 1000)
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 
