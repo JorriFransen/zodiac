@@ -7,15 +7,23 @@ namespace Zodiac { namespace Freelist_Tests {
 static MunitResult Create_And_Free(const MunitParameter params[], void *user_data_or_fixture)
 {
     Freelist freelist;
-    auto total_size = KIBIBYTE(1);
-    freelist_create(c_allocator(), total_size, &freelist);
+    auto total_size = 512;
+    u64 mem_required;
+
+    freelist_create(total_size, &mem_required, &freelist, nullptr);
+    munit_assert_uint64(mem_required, >, 0);
+
+    void *memory = zallocate(mem_required);
+    munit_assert_ptr_not_null(memory);
+
+    freelist_create(total_size, &mem_required, &freelist, memory);
+
 
     munit_assert_uint64(freelist.total_size, ==, total_size);
     munit_assert_uint64(freelist.max_entries, >=, 20);
     munit_assert_ptr_not_null(freelist.head);
     munit_assert_ptr_not_null(freelist.nodes);
     munit_assert_ptr_equal(freelist.head, &freelist.nodes[0]);
-    munit_assert_ptr_equal(freelist.backing_allocator, c_allocator());
 
     for (i64 i = 1; i < freelist.max_entries; i++) {
         munit_assert_uint64(freelist.nodes[i].offset, ==, ZODIAC_FREELIST_INVALID_OFFSET);
@@ -24,24 +32,34 @@ static MunitResult Create_And_Free(const MunitParameter params[], void *user_dat
 
     munit_assert_uint64(freelist_free_space(&freelist), ==, total_size);
 
-    freelist_free(&freelist);
+    freelist_destroy(&freelist);
 
     munit_assert_uint64(freelist.total_size, ==, 0);
     munit_assert_uint64(freelist.max_entries, ==, 0);
     munit_assert_ptr_null(freelist.nodes);
     munit_assert_ptr_null(freelist.head);
-    munit_assert_ptr_null(freelist.backing_allocator);
+
+    zfree(memory, mem_required);
 
     return MUNIT_OK;
 }
 
 static MunitResult Alloc_And_Free_Block(const MunitParameter params[], void *user_data_or_fixture)
 {
+    Freelist freelist;
+    auto total_size = 512;
+    u64 alloc_size = 64;
+    u64 mem_required;
+
     {
-        Freelist freelist;
-        auto total_size = 512;
-        auto alloc_size = 64;
-        freelist_create(c_allocator(), total_size, &freelist);
+        freelist_create(total_size, &mem_required, &freelist, nullptr);
+        munit_assert_uint64(mem_required, >, 0);
+
+        void *memory = zallocate(mem_required);
+        munit_assert_ptr_not_null(memory);
+
+        freelist_create(total_size, &mem_required, &freelist, memory);
+
 
         u64 offset = ZODIAC_FREELIST_INVALID_OFFSET;
         bool result = freelist_allocate_block(&freelist, alloc_size, &offset);
@@ -54,14 +72,17 @@ static MunitResult Alloc_And_Free_Block(const MunitParameter params[], void *use
 
         result = freelist_free_block(&freelist, alloc_size, offset);
 
-        freelist_free(&freelist);
+        freelist_destroy(&freelist);
     }
 
     {
-        Freelist freelist;
-        auto total_size = 512;
-        auto alloc_size = 512;
-        freelist_create(c_allocator(), total_size, &freelist);
+        freelist_create(total_size, &mem_required, &freelist, nullptr);
+        munit_assert_uint64(mem_required, >, 0);
+
+        void *memory = zallocate(mem_required);
+        munit_assert_ptr_not_null(memory);
+
+        freelist_create(total_size, &mem_required, &freelist, memory);
 
         u64 offset = ZODIAC_FREELIST_INVALID_OFFSET;
         bool result = freelist_allocate_block(&freelist, alloc_size, &offset);
@@ -74,7 +95,7 @@ static MunitResult Alloc_And_Free_Block(const MunitParameter params[], void *use
 
         result = freelist_free_block(&freelist, alloc_size, offset);
 
-        freelist_free(&freelist);
+        freelist_destroy(&freelist);
     }
 
     return MUNIT_OK;
@@ -84,8 +105,19 @@ static MunitResult Alloc_And_Free_Multi(const MunitParameter params[], void *use
 {
     Freelist freelist;
     auto total_size = 512;
+    u64 mem_required;
+
+    freelist_create(total_size, &mem_required, &freelist, nullptr);
+    munit_assert_uint64(mem_required, >, 0);
+
+    void *memory = zallocate(mem_required);
+    munit_assert_ptr_not_null(memory);
+
+    freelist_create(total_size, &mem_required, &freelist, memory);
+
+
+
     auto alloc_size = 64;
-    freelist_create(c_allocator(), total_size, &freelist);
 
     u64 offset = ZODIAC_FREELIST_INVALID_OFFSET;
     bool result = freelist_allocate_block(&freelist, alloc_size, &offset);
@@ -143,7 +175,9 @@ static MunitResult Alloc_And_Free_Multi(const MunitParameter params[], void *use
     munit_assert_ptr_null(freelist.head->next);
 
 
-    freelist_free(&freelist);
+    freelist_destroy(&freelist);
+
+    zfree(memory, mem_required);
 
     return MUNIT_OK;
 }
@@ -151,7 +185,15 @@ static MunitResult Alloc_And_Free_Multi_Sized(const MunitParameter params[], voi
 {
     Freelist freelist;
     auto total_size = 512;
-    freelist_create(c_allocator(), total_size, &freelist);
+    u64 mem_required;
+
+    freelist_create(total_size, &mem_required, &freelist, nullptr);
+    munit_assert_uint64(mem_required, >, 0);
+
+    void *memory = zallocate(mem_required);
+    munit_assert_ptr_not_null(memory);
+
+    freelist_create(total_size, &mem_required, &freelist, memory);
 
 
     u64 alloc_size = 64;
@@ -218,7 +260,9 @@ static MunitResult Alloc_And_Free_Multi_Sized(const MunitParameter params[], voi
     munit_assert_ptr_null(freelist.head->next);
 
 
-    freelist_free(&freelist);
+    freelist_destroy(&freelist);
+
+    zfree(memory, mem_required);
 
     return MUNIT_OK;
 }
@@ -227,8 +271,15 @@ static MunitResult Alloc_Full(const MunitParameter params[], void *user_data_or_
 {
     Freelist freelist;
     auto total_size = 512;
-    freelist_create(c_allocator(), total_size, &freelist);
+    u64 mem_required;
 
+    freelist_create(total_size, &mem_required, &freelist, nullptr);
+    munit_assert_uint64(mem_required, >, 0);
+
+    void *memory = zallocate(mem_required);
+    munit_assert_ptr_not_null(memory);
+
+    freelist_create(total_size, &mem_required, &freelist, memory);
 
     u64 alloc_size = 512;
     u64 offset = ZODIAC_FREELIST_INVALID_OFFSET;
@@ -243,6 +294,10 @@ static MunitResult Alloc_Full(const MunitParameter params[], void *user_data_or_
     fprintf(stderr, "The following warning is intentional...\n");
     result = freelist_allocate_block(&freelist, 64, &offset2);
     munit_assert_false(result);
+
+    freelist_destroy(&freelist);
+
+    zfree(memory, mem_required);
 
     return MUNIT_OK;
 }

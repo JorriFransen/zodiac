@@ -6,18 +6,20 @@ namespace Zodiac
 void reset_node(Freelist *freelist, Freelist_Node *node);
 Freelist_Node *freelist_get_node(Freelist *freelist);
 
-void freelist_create(Allocator *backing_allocator, u64 total_size, Freelist *out_list)
+void freelist_create(u64 total_size, u64 *memory_requirement, Freelist *out_list, void *memory)
 {
-    assert(backing_allocator && total_size && out_list);
+    assert(total_size && memory_requirement && out_list);
 
     auto max_entries = total_size / sizeof(void *);
     zodiac_assert_fatal(max_entries >= 20, "Creating freelist for small memory block failed...");
 
+    *memory_requirement = max_entries * sizeof(Freelist_Node);
+    if (!memory) return;
+
     out_list->total_size = total_size;
     out_list->max_entries = max_entries;
-    out_list->backing_allocator = backing_allocator;
 
-    out_list->nodes = alloc_array<Freelist_Node>(backing_allocator, max_entries);
+    out_list->nodes = (Freelist_Node *)memory;
     out_list->head = &out_list->nodes[0];
 
     out_list->head->offset = 0;
@@ -30,13 +32,11 @@ void freelist_create(Allocator *backing_allocator, u64 total_size, Freelist *out
     }
 }
 
-void freelist_free(Freelist *freelist)
+void freelist_destroy(Freelist *freelist)
 {
     assert(freelist);
-    assert(freelist->nodes && freelist->max_entries && freelist->total_size);
-    assert(freelist->backing_allocator);
 
-    free(freelist->backing_allocator, freelist->nodes);
+    zzeromem(freelist->nodes, sizeof(Freelist_Node) * freelist->max_entries);
     zzeromem(freelist, sizeof(Freelist));
 }
 
