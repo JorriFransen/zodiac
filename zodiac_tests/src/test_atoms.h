@@ -3,7 +3,7 @@
 
 #include <atom.h>
 
-using namespace Zodiac;
+namespace Zodiac { namespace Atom_Tests {
 
 static MunitResult Single_Match(const MunitParameter params[], void *user_data_or_fixture)
 {
@@ -141,3 +141,6 @@ START_TESTS(atom_tests)
     DEFINE_TEST(Multiple_Match),
     DEFINE_TEST(Growing),
 END_TESTS()
+
+}}
+
