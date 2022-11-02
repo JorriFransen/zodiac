@@ -1,4 +1,3 @@
-#pragma once
 
 #include <test_common.h>
 
@@ -6,7 +5,7 @@
 
 using namespace Zodiac;
 
-static MunitResult Single_Match(const MunitParameter params[], void *user_data_or_fixture)
+MunitResult Single_Match(const MunitParameter params[], void *user_data_or_fixture)
 {
     auto allocator = c_allocator();
 
@@ -28,7 +27,7 @@ static MunitResult Single_Match(const MunitParameter params[], void *user_data_o
     return MUNIT_OK;
 }
 
-static MunitResult Multiple_Match(const MunitParameter params[], void *user_data_or_fixture)
+MunitResult Multiple_Match(const MunitParameter params[], void *user_data_or_fixture)
 {
     auto allocator = c_allocator();
 
@@ -83,7 +82,7 @@ static MunitResult Multiple_Match(const MunitParameter params[], void *user_data
     return MUNIT_OK;
 }
 
-static MunitResult Growing(const MunitParameter params[], void *user_data_or_fixture)
+MunitResult Growing(const MunitParameter params[], void *user_data_or_fixture)
 {
     auto allocator = c_allocator();
 

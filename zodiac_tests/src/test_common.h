@@ -5,7 +5,7 @@
 #include <munit/munit.h>
 
 #define START_TESTS(name) \
-    static MunitTest (name)[] = {
+    MunitTest (name)[] = {
 
 #define DEFINE_NAMED_TEST(name, fn) { \
     (char*)(name), \

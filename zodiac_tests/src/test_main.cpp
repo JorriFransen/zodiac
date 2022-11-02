@@ -3,7 +3,6 @@
 
 #include "test_atoms.h"
 #include "test_strings.h"
-#include "test_dynamic_array.h"
 
 namespace Zodiac
 {
@@ -24,18 +23,9 @@ static MunitSuite atom_suite = {
     MUNIT_SUITE_OPTION_NONE,
 };
 
-static MunitSuite dynamic_array_suite = {
-    (char*)"Dynamic_Array/",
-    Dynamic_Array_Tests::dynamic_array_tests,
-    nullptr,
-    1,
-    MUNIT_SUITE_OPTION_NONE,
-};
-
 static MunitSuite main_child_suites[] = {
     string_suite,
     atom_suite,
-    dynamic_array_suite,
     //bytecode_suite,
     {},
 };

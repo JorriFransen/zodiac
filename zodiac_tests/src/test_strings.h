@@ -1,12 +1,10 @@
-#pragma once
-
 #include <test_common.h>
 
 #include <zstring.h>
 
 using namespace Zodiac;
 
-static MunitResult String_Equal(const MunitParameter params[], void *user_data_or_fixture)
+MunitResult String_Equal(const MunitParameter params[], void *user_data_or_fixture)
 {
     String_Ref a = "Hello, World!";
     String_Ref b = "Hello, World!";
@@ -25,7 +23,7 @@ static MunitResult String_Equal(const MunitParameter params[], void *user_data_o
     return MUNIT_OK;
 }
 
-static MunitResult String_Contains(const MunitParameter params[], void *user_data_or_fixture)
+MunitResult String_Contains(const MunitParameter params[], void *user_data_or_fixture)
 {
     
     String_Ref a = "Hello, World!";
@@ -45,7 +43,7 @@ static MunitResult String_Contains(const MunitParameter params[], void *user_dat
     return MUNIT_OK;
 }
 
-static MunitResult String_Starts_With(const MunitParameter params[], void *user_data_or_fixture)
+MunitResult String_Starts_With(const MunitParameter params[], void *user_data_or_fixture)
 {
     String_Ref a = "Hello, World!";
     String_Ref b = "Hello";
@@ -64,7 +62,7 @@ static MunitResult String_Starts_With(const MunitParameter params[], void *user_
     return MUNIT_OK;
 }
 
-static MunitResult String_Ends_With(const MunitParameter params[], void *user_data_or_fixture)
+MunitResult String_Ends_With(const MunitParameter params[], void *user_data_or_fixture)
 {
     String_Ref a = "Hello, World!";
     String_Ref b = " Hello";
