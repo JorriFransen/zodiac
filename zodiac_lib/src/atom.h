@@ -25,11 +25,11 @@ namespace Zodiac
                 return true;
             } else {
                 if (lhs.length != rhs.length) return false;
-            
+
                 for (i64 i = 0; i < lhs.length; i++) {
                     if (lhs.data[i] != rhs.data[i]) return false;
                 }
-            
+
                 assert(false && !"Returning false, but atoms seem to match...");
                 return false;
             }
