@@ -61,7 +61,9 @@ void dynamic_array_grow(Dynamic_Array<Element_Type> *array)
 
     Element_Type *new_data = alloc_array<Element_Type>(array->backing_allocator, new_cap);
     assert(new_data);
-    zmemcpy(new_data, array->data, sizeof(Element_Type) * array->count);
+    if (array->capacity) {
+        zmemcpy(new_data, array->data, sizeof(Element_Type) * array->count);
+    }
 
     if (array->capacity) {
         assert(array->data);
