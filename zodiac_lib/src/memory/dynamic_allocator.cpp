@@ -73,7 +73,7 @@ void *dynamic_alloc_func(Allocator *allocator, Allocation_Mode mode, i64 size, v
 
             auto header = (Dynamic_Alloc_Header *)(((u8 *)containing_block->memory) + offset);
 
-            bool result = freelist_free_block(&containing_block->freelist, header->size, header->alignment);
+            bool result = freelist_free_block(&containing_block->freelist, header->size, offset);
             assert(result);
             return nullptr;
         }
