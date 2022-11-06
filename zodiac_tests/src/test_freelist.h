@@ -1,5 +1,6 @@
 #include <test_common.h>
 
+#include <memory/zmemory.h>
 #include <containers/freelist.h>
 
 namespace Zodiac { namespace Freelist_Tests {

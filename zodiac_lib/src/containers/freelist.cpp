@@ -1,5 +1,7 @@
 #include "freelist.h"
 
+#include <memory/zmemory.h>
+
 namespace Zodiac
 {
 

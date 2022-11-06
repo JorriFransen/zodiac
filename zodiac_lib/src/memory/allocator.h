@@ -2,7 +2,7 @@
 
 #include <defines.h>
 
-#include "zmemory.h"
+#include <platform/platform.h>
 
 namespace Zodiac
 {
@@ -27,6 +27,7 @@ typedef void *(*Alloc_Function)(Allocator *allocator,
 struct Allocator
 {
     Alloc_Function alloc_func = nullptr;
+    void *user_data = nullptr;
 };
 
 template <typename Element_Type>
@@ -35,7 +36,7 @@ Element_Type *alloc(Allocator *allocator)
     assert(allocator);
     i64 size = (i64)sizeof(Element_Type);
     Element_Type* result = (Element_Type *)allocator->alloc_func(allocator, Allocation_Mode::ALLOCATE, size, nullptr);
-    zzeromem(result, size);
+    platform_zero_mem(result, size);
     return result;
 }
 
@@ -46,7 +47,7 @@ Element_Type *alloc_array(Allocator *allocator, i64 capacity)
     assert(capacity > 0);
     i64 size = (i64)sizeof(Element_Type) * capacity;
     Element_Type* result = (Element_Type *)allocator->alloc_func(allocator, Allocation_Mode::ALLOCATE, size, nullptr);
-    zzeromem(result, size);
+    platform_zero_mem(result, size);
     return result;
 }
 
