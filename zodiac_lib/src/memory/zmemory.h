@@ -20,6 +20,7 @@ ZAPI ZINLINE void* zallocate(i64 size)
     assert(memory_system_initialized);
     assert(size);
     assert(false);
+    return nullptr;
 }
 
 ZAPI ZINLINE void* zallocate_aligned(i64 size, i64 alignment)
@@ -27,6 +28,7 @@ ZAPI ZINLINE void* zallocate_aligned(i64 size, i64 alignment)
     assert(memory_system_initialized);
     assert(size && alignment);
     assert(false);
+    return nullptr;
 }
 
 ZAPI ZINLINE void zfree(void *memory, i64 size)

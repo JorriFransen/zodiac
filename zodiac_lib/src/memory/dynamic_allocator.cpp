@@ -27,16 +27,21 @@ void *dynamic_alloc_func(Allocator *allocator, Allocation_Mode mode, i64 size, v
             break;
         }
     }
+
+    assert(false);
+    return nullptr;
 }
 
 bool dynamic_allocator_create(u64 initial_block_size, Dynamic_Allocator_State *out_allocator)
 {
     assert(false);
+    return false;
 }
 
 Allocator dynamic_allocator_allocator(Dynamic_Allocator_State *dynamic_allocator)
 {
     assert(false);
+    return {};
 }
 
 }
