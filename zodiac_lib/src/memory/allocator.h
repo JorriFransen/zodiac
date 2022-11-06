@@ -30,6 +30,11 @@ struct Allocator
     void *user_data = nullptr;
 };
 
+ZAPI void allocator_create(Alloc_Function alloc_func, void *user_data, Allocator *out_allocator);
+
+ZAPI void *alloc(Allocator *allocator, u64 size);
+ZAPI void free(Allocator *allocator, void *memory);
+
 template <typename Element_Type>
 Element_Type *alloc(Allocator *allocator)
 {

@@ -9,9 +9,9 @@
 namespace Zodiac
 {
 
-static bool memory_system_initialized = false;
-static Dynamic_Allocator_State dynamic_allocator_state;
-static Allocator dynamic_allocator;
+ZAPI extern bool memory_system_initialized;
+ZAPI extern Dynamic_Allocator_State dynamic_allocator_state;
+ZAPI extern Allocator dynamic_allocator;
 
 ZAPI void memory_system_initialize();
 
@@ -19,29 +19,29 @@ ZAPI ZINLINE void* zallocate(i64 size)
 {
     assert(memory_system_initialized);
     assert(size);
-    assert(false);
-    return nullptr;
+    return alloc(&dynamic_allocator, size);
 }
 
 ZAPI ZINLINE void* zallocate_aligned(i64 size, i64 alignment)
 {
     assert(memory_system_initialized);
     assert(size && alignment);
-    assert(false);
+    assert(false && !"zalloate_aligned is not supported yet...");
     return nullptr;
 }
 
-ZAPI ZINLINE void zfree(void *memory, i64 size)
+ZAPI ZINLINE void zfree(void *memory)
 {
     assert(memory_system_initialized);
-    assert(memory && size);
-    assert(false);
+    assert(memory);
+    return free(&dynamic_allocator, memory);
 }
 
 ZAPI ZINLINE void zfree_aligned(void *memory, i64 size, i64 alignment)
 {
     assert(memory_system_initialized);
     assert(memory && size && alignment);
+    assert(false && !"zfree_aligned is not supported yet...");
     assert(false);
 }
 

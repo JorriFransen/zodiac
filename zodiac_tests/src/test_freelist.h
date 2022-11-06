@@ -40,7 +40,7 @@ static MunitResult Create_And_Free(const MunitParameter params[], void *user_dat
     munit_assert_ptr_null(freelist.nodes);
     munit_assert_ptr_null(freelist.head);
 
-    zfree(memory, mem_required);
+    zfree(memory);
 
     return MUNIT_OK;
 }
@@ -178,7 +178,7 @@ static MunitResult Alloc_And_Free_Multi(const MunitParameter params[], void *use
 
     freelist_destroy(&freelist);
 
-    zfree(memory, mem_required);
+    zfree(memory);
 
     return MUNIT_OK;
 }
@@ -263,7 +263,7 @@ static MunitResult Alloc_And_Free_Multi_Sized(const MunitParameter params[], voi
 
     freelist_destroy(&freelist);
 
-    zfree(memory, mem_required);
+    zfree(memory);
 
     return MUNIT_OK;
 }
@@ -292,13 +292,13 @@ static MunitResult Alloc_Full(const MunitParameter params[], void *user_data_or_
 
 
     u64 offset2 = ZODIAC_FREELIST_INVALID_OFFSET;
-    fprintf(stderr, "The following warning is intentional...\n");
+    zodiac_info("The following warning is intentional!..");
     result = freelist_allocate_block(&freelist, 64, &offset2);
     munit_assert_false(result);
 
     freelist_destroy(&freelist);
 
-    zfree(memory, mem_required);
+    zfree(memory);
 
     return MUNIT_OK;
 }

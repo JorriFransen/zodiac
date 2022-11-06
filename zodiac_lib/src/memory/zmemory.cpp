@@ -3,6 +3,10 @@
 namespace Zodiac
 {
 
+bool memory_system_initialized = false;
+Dynamic_Allocator_State dynamic_allocator_state;
+Allocator dynamic_allocator;
+
 void memory_system_initialize()
 {
     if (memory_system_initialized) assert(false && !"Memory system already initialized");

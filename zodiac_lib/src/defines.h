@@ -16,6 +16,9 @@
         exit(42); \
     }
 
+#define zodiac_info(info) \
+    fprintf(stderr, "%s:%d: Info: %s\n", __FILE__, __LINE__, (info));
+
 #define zodiac_warn(err) \
     fprintf(stderr, "%s:%d: Warning: %s\n", __FILE__, __LINE__, (err));
 

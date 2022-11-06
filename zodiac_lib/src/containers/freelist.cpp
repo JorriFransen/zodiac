@@ -10,13 +10,17 @@ Freelist_Node *freelist_get_node(Freelist *freelist);
 
 void freelist_create(u64 total_size, u64 *memory_requirement, Freelist *out_list, void *memory)
 {
-    assert(total_size && memory_requirement && out_list);
+    assert(total_size && memory_requirement);
 
-    auto max_entries = total_size / sizeof(void *);
-    zodiac_assert_fatal(max_entries >= 20, "Creating freelist for small memory block failed...");
+    auto max_entries = (total_size / sizeof(Freelist_Node));
+    assert(max_entries);
+    if (max_entries < 20) {
+        zodiac_warn("Creating freelist for small memory block...");
+    }
 
     *memory_requirement = max_entries * sizeof(Freelist_Node);
     if (!memory) return;
+    assert(out_list);
 
     out_list->total_size = total_size;
     out_list->max_entries = max_entries;

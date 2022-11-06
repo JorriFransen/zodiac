@@ -32,7 +32,7 @@ void *platform_allocate(u64 size, u64 alignment/*=1*/)
 
 void platform_free(void *memory, u64 size, u64 alignment/*=1*/)
 {
-    assert(memory && size && alignment);
+    assert(memory && alignment);
     assert(is_power_of_two(alignment));
 
     if (alignment == 1) {
