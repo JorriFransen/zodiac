@@ -1,5 +1,6 @@
 #include "dynamic_allocator.h"
 
+#include <memory/zmemory.h>
 #include <platform/platform.h>
 
 namespace Zodiac
@@ -8,10 +9,11 @@ namespace Zodiac
 struct Dynamic_Alloc_Header
 {
     u32 size;
-    u32 alignment; // TODO: This can be a u16, using a u32 for now as padding, since we are not passing alignment correctly (always 1)
+    u16 alignment;
 };
 
 Dynamic_Allocator_Block *allocate_block(u64 size);
+void free_block(Dynamic_Allocator_Block *block);
 
 void *dynamic_alloc_func(Allocator *allocator, Allocation_Mode mode, i64 size, void *old_ptr)
 {
@@ -20,61 +22,11 @@ void *dynamic_alloc_func(Allocator *allocator, Allocation_Mode mode, i64 size, v
 
     switch (mode) {
         case Allocation_Mode::ALLOCATE: {
-
-            assert(size <= U32_MAX);
-
-            u64 actual_size = size + sizeof(Dynamic_Alloc_Header);
-
-
-            u64 offset;
-            bool result = freelist_allocate_block(&das->current_block->freelist, actual_size, &offset);
-            assert(result); // TODO: Add new blocks/try old blocks
-
-            auto mem_block = (u8 *)das->current_block->memory;
-            auto header = (Dynamic_Alloc_Header *)(mem_block + offset);
-            header->size = size;
-            header->alignment = 1;
-
-            return mem_block + sizeof(Dynamic_Alloc_Header) + offset;
+            return dynamic_allocator_allocate(das, size);
         }
 
         case Allocation_Mode::FREE: {
-            assert(old_ptr);
-
-            Dynamic_Allocator_Block *containing_block = nullptr;
-
-            // Check the current block
-            if (old_ptr >= das->current_block->memory && old_ptr < ((u8 *)das->current_block->memory) + das->current_block->freelist.total_size) {
-                containing_block = das->current_block;
-            } else {
-
-                Dynamic_Allocator_Block *block = das->first_block;
-
-                while (block) {
-
-                    if (block != das->current_block) {
-
-                        if (old_ptr >= block->memory && old_ptr < ((u8 *)block->memory) + block->freelist.total_size) {
-                            containing_block = block;
-                            break;
-                        }
-
-                    }
-
-                    block = block->next;
-                }
-            }
-
-            if (!containing_block) {
-                zodiac_assert_fatal(!containing_block, "Dynamic allocator id not find block containing freed address...");
-            }
-
-            auto offset = ((u8 *)old_ptr) - ((u8 *)containing_block->memory) - sizeof(Dynamic_Alloc_Header);
-
-            auto header = (Dynamic_Alloc_Header *)(((u8 *)containing_block->memory) + offset);
-
-            bool result = freelist_free_block(&containing_block->freelist, header->size, offset);
-            assert(result);
+            dynamic_allocator_free(das, old_ptr);
             return nullptr;
         }
 
@@ -95,8 +47,12 @@ void *dynamic_alloc_func(Allocator *allocator, Allocation_Mode mode, i64 size, v
 
 bool dynamic_allocator_create(u64 initial_block_size, Dynamic_Allocator_State *out_allocator)
 {
-    assert(initial_block_size >= KIBIBYTE(4));
+    assert(initial_block_size);
     assert(out_allocator);
+
+    if (initial_block_size < KIBIBYTE(4)) {
+        zodiac_warn("Creating dynamic allocator with small block size...");
+    }
 
     out_allocator->first_block = allocate_block(initial_block_size);
     out_allocator->current_block = out_allocator->first_block;
@@ -105,10 +61,27 @@ bool dynamic_allocator_create(u64 initial_block_size, Dynamic_Allocator_State *o
     return true;
 }
 
-Allocator dynamic_allocator_allocator(Dynamic_Allocator_State *dynamic_allocator)
+void dynamic_allocator_destroy(Dynamic_Allocator_State *state)
+{
+    assert(state && state->first_block);
+
+    auto block = state->first_block;
+    while (block) {
+
+        free_block(block);
+
+        auto next = block->next;
+
+        zzeromem(state, sizeof(Dynamic_Allocator_State));
+
+        block = next;
+    }
+}
+
+Allocator dynamic_allocator_allocator(Dynamic_Allocator_State *state)
 {
     Allocator result;
-    allocator_create(dynamic_alloc_func, dynamic_allocator, &result);
+    allocator_create(dynamic_alloc_func, state, &result);
     return result;
 }
 
@@ -136,6 +109,101 @@ Dynamic_Allocator_Block *allocate_block(u64 size)
     new_block->next = nullptr;
 
     return new_block;
+}
+
+void free_block(Dynamic_Allocator_Block *block)
+{
+    assert(block);
+
+    auto size = block->freelist.total_size;
+    freelist_destroy(&block->freelist);
+    platform_free(block, size);
+}
+
+void *dynamic_allocator_allocate(Dynamic_Allocator_State *state, u64 size)
+{
+    return dynamic_allocator_allocate_aligned(state, size, 1);
+}
+
+void *dynamic_allocator_allocate_aligned(Dynamic_Allocator_State *state, u64 size, u64 alignment)
+{
+    assert(state);
+    assert(size <= U32_MAX);
+    assert(alignment == 1);
+
+    u64 actual_size = size + sizeof(Dynamic_Alloc_Header);
+
+    u64 offset;
+    bool result = freelist_allocate_block(&state->current_block->freelist, actual_size, &offset);
+    assert(result); // TODO: Add new blocks/try old blocks
+
+    auto mem_block = (u8 *)state->current_block->memory;
+    auto header = (Dynamic_Alloc_Header *)(mem_block + offset);
+    header->size = size;
+    header->alignment = 1;
+
+    return mem_block + sizeof(Dynamic_Alloc_Header) + offset;
+}
+
+void dynamic_allocator_free(Dynamic_Allocator_State *state, void *memory)
+{
+    assert(state && memory);
+
+    Dynamic_Allocator_Block *containing_block = nullptr;
+
+    // Check the current block
+    if (memory >= state->current_block->memory && memory < ((u8 *)state->current_block->memory) + state->current_block->freelist.total_size) {
+        containing_block = state->current_block;
+    } else {
+
+        Dynamic_Allocator_Block *block = state->first_block;
+
+        while (block) {
+
+            if (block != state->current_block) {
+
+                if (memory >= block->memory && memory < ((u8 *)block->memory) + block->freelist.total_size) {
+                    containing_block = block;
+                    break;
+                }
+
+            }
+
+            block = block->next;
+        }
+    }
+
+    if (!containing_block) {
+        zodiac_assert_fatal(!containing_block, "Dynamic allocator id not find block containing freed address...");
+    }
+
+    auto offset = ((u8 *)memory) - ((u8 *)containing_block->memory) - sizeof(Dynamic_Alloc_Header);
+
+    auto header = (Dynamic_Alloc_Header *)(((u8 *)containing_block->memory) + offset);
+    auto total_size = header->size + sizeof(Dynamic_Alloc_Header);
+
+    bool result = freelist_free_block(&containing_block->freelist, total_size, offset);
+    assert(result);
+}
+
+u64 dynamic_allocator_free_space(Dynamic_Allocator_State *state)
+{
+    u64 total = 0;
+
+    auto block = state->first_block;
+    while (block) {
+
+        total += freelist_free_space(&block->freelist);
+
+        block = block->next;
+    }
+
+    return total;
+}
+
+ZAPI u64 dynamic_allocator_header_size()
+{
+    return sizeof(Dynamic_Alloc_Header);
 }
 
 }
