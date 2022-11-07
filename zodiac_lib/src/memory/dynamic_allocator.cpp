@@ -8,6 +8,7 @@ namespace Zodiac
 
 struct Dynamic_Alloc_Header
 {
+    u8 *start;
     u32 size;
     u16 alignment;
 };
@@ -129,20 +130,24 @@ void *dynamic_allocator_allocate_aligned(Dynamic_Allocator_State *state, u64 siz
 {
     assert(state);
     assert(size <= U32_MAX);
-    assert(alignment == 1);
+    assert(is_power_of_two(alignment));
 
-    u64 actual_size = size + sizeof(Dynamic_Alloc_Header);
+    u64 actual_size = size + alignment - 1 + sizeof(Dynamic_Alloc_Header);
 
     u64 offset;
     bool result = freelist_allocate_block(&state->current_block->freelist, actual_size, &offset);
     assert(result); // TODO: Add new blocks/try old blocks
 
-    auto mem_block = (u8 *)state->current_block->memory;
-    auto header = (Dynamic_Alloc_Header *)(mem_block + offset);
+    u8 *mem_block = ((u8 *)state->current_block->memory) + offset;
+    u64 aligned_offset = get_aligned(((u64)mem_block) + sizeof(Dynamic_Alloc_Header), alignment);
+    auto header = (Dynamic_Alloc_Header *)(aligned_offset - sizeof(Dynamic_Alloc_Header));
+    header->start = mem_block;
     header->size = size;
-    header->alignment = 1;
+    header->alignment = alignment;
 
-    return mem_block + sizeof(Dynamic_Alloc_Header) + offset;
+    auto result_ptr = (void *)aligned_offset;
+    assert((u64)result_ptr % alignment == 0);
+    return result_ptr;
 }
 
 void dynamic_allocator_free(Dynamic_Allocator_State *state, void *memory)
@@ -177,11 +182,10 @@ void dynamic_allocator_free(Dynamic_Allocator_State *state, void *memory)
         zodiac_assert_fatal(!containing_block, "Dynamic allocator id not find block containing freed address...");
     }
 
-    auto offset = ((u8 *)memory) - ((u8 *)containing_block->memory) - sizeof(Dynamic_Alloc_Header);
+    auto header = (Dynamic_Alloc_Header *)(((u64)memory) - sizeof(Dynamic_Alloc_Header));
+    u64 offset = header->start - ((u8 *)containing_block->memory);
 
-    auto header = (Dynamic_Alloc_Header *)(((u8 *)containing_block->memory) + offset);
-    auto total_size = header->size + sizeof(Dynamic_Alloc_Header);
-
+    u64 total_size = header->size + header->alignment - 1 + sizeof(Dynamic_Alloc_Header);
     bool result = freelist_free_block(&containing_block->freelist, total_size, offset);
     assert(result);
 }

@@ -209,11 +209,40 @@ static MunitResult Alloc_Free_Multi_Size(const MunitParameter params[], void *us
     return MUNIT_OK;
 }
 
+static MunitResult Alloc_Free_One_Aligned(const MunitParameter params[], void *user_data_or_fixture)
+{
+    u64 block_size = 512;
+    u64 alignment = 16;
+    u64 header_size = dynamic_allocator_header_size();
+
+    Dynamic_Allocator_State state;
+    u64 total_size = block_size + (alignment - 1) + header_size;
+    zodiac_info("The next warning is expected");
+    bool result = dynamic_allocator_create(total_size, &state);
+    munit_assert(result);
+
+    munit_assert_uint64(dynamic_allocator_free_space(&state), ==, total_size);
+
+
+    void *memory = dynamic_allocator_allocate_aligned(&state, block_size, alignment);
+    munit_assert_ptr_not_null(memory);
+    munit_assert_uint64(((u64)memory) % alignment, ==, 0);
+    munit_assert_uint64(dynamic_allocator_free_space(&state), ==, 0);
+    munit_assert_ptr_equal(state.first_block, state.current_block);
+    munit_assert_uint64((u64)memory, >=, (u64)state.first_block->memory);
+    munit_assert_uint64((u64)memory, <, ((u64)state.first_block->memory) + block_size);
+
+    dynamic_allocator_destroy(&state);
+
+    return MUNIT_OK;
+}
+
 START_TESTS(dynamic_allocator_tests)
     DEFINE_TEST(Create_Free),
     DEFINE_TEST(Alloc_Free_One),
     DEFINE_TEST(Alloc_Free_Multi),
     DEFINE_TEST(Alloc_Free_Multi_Size),
+    DEFINE_TEST(Alloc_Free_One_Aligned),
 END_TESTS();
 
 }}

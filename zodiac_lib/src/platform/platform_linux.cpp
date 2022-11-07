@@ -18,15 +18,21 @@ void *platform_allocate(u64 size, u64 alignment/*=1*/)
     if (alignment == 1) {
         return malloc(size);
     } else {
-        auto am1 = alignment - 1;
+        // auto am1 = alignment - 1;
 
-        auto padded_size = size + am1 + sizeof(void *);
-        void *memory = malloc(padded_size);
+        // auto padded_size = size + am1 + sizeof(void *);
+        // void *memory = malloc(padded_size);
 
-        void *ptr = (void *)(((i64)memory + am1 + sizeof(void *)) & ~(am1));
-        ((void **)ptr)[-1] = (void*)memory;
+        // void *ptr = (void *)(((i64)memory + am1 + sizeof(void *)) & ~(am1));
+        // ((void **)ptr)[-1] = (void*)memory;
 
-        return ptr;
+        u64 total_size = size + alignment - 1 + sizeof(void *);
+        void *memory = malloc(total_size);
+
+        u64 offset_ptr = get_aligned(((u64)memory) + sizeof(void *), alignment);
+        ((void **)offset_ptr)[-1] = (void*)memory;
+
+        return (void *)offset_ptr;
     }
 }
 

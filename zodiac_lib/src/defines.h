@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cassert>
 #include <stdio.h>
 #include <stdlib.h>
+#include <cstdint>
 
 #if (defined(__clang__) || defined(__gcc__)) && (defined(__STDC_VERSION__)  && __STDC_VERSION__ > 201112L)
 #define STATIC_ASSERT _Static_assert
@@ -132,5 +134,6 @@ STATIC_ASSERT(false, "Unsupported platform (Apple).");
 
 #endif // ZEXPORT
 
-#include <stdint.h>
-#include <cassert>
+ZINLINE u64 get_aligned(u64 operand, u64 alignment) {
+    return ((operand + (alignment - 1)) & ~(alignment - 1));
+}
