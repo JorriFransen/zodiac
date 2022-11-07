@@ -291,10 +291,20 @@ static MunitResult Alloc_Full(const MunitParameter params[], void *user_data_or_
     munit_assert_uint64(freelist_free_space(&freelist), ==, total_size - alloc_size);
 
 
+    u64 alloc_size2 = 64;
     u64 offset2 = ZODIAC_FREELIST_INVALID_OFFSET;
     zodiac_info("The following warning is intentional!..");
-    result = freelist_allocate_block(&freelist, 64, &offset2);
+    result = freelist_allocate_block(&freelist, alloc_size2, &offset2);
     munit_assert_false(result);
+
+    freelist_free_block(&freelist, alloc_size, offset);
+
+
+    offset2 = ZODIAC_FREELIST_INVALID_OFFSET;
+    result = freelist_allocate_block(&freelist, alloc_size2, &offset2);
+    munit_assert(result);
+    munit_assert_uint64(offset2, ==, 0);
+    munit_assert_uint64(freelist_free_space(&freelist), ==, total_size - alloc_size2);
 
     freelist_destroy(&freelist);
 

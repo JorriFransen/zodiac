@@ -134,11 +134,41 @@ void *dynamic_allocator_allocate_aligned(Dynamic_Allocator_State *state, u64 siz
 
     u64 actual_size = size + alignment - 1 + sizeof(Dynamic_Alloc_Header);
 
-    u64 offset;
-    bool result = freelist_allocate_block(&state->current_block->freelist, actual_size, &offset);
-    assert(result); // TODO: Add new blocks/try old blocks
+    Dynamic_Allocator_Block *block = nullptr;
 
-    u8 *mem_block = ((u8 *)state->current_block->memory) + offset;
+    if (freelist_free_space(&state->current_block->freelist) < actual_size) {
+
+        auto cb = state->first_block;
+        while (cb) {
+
+            if (cb != state->current_block) {
+                if (freelist_free_space(&cb->freelist) >= actual_size) {
+                    block = cb;
+                    break;
+                }
+            }
+
+            cb = cb->next;
+        }
+
+        if (!block) {
+            state->initial_block_size = zmax(state->initial_block_size, actual_size);
+            block = allocate_block(state->initial_block_size);
+            state->current_block->next = block;
+            state->current_block = block;
+        }
+
+    } else {
+        block = state->current_block;
+    }
+
+    assert(block);
+
+    u64 offset;
+    bool result = freelist_allocate_block(&block->freelist, actual_size, &offset);
+    assert(result);
+
+    u8 *mem_block = ((u8 *)block->memory) + offset;
     u64 aligned_offset = get_aligned(((u64)mem_block) + sizeof(Dynamic_Alloc_Header), alignment);
     auto header = (Dynamic_Alloc_Header *)(aligned_offset - sizeof(Dynamic_Alloc_Header));
     header->start = mem_block;

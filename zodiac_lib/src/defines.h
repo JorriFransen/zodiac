@@ -134,6 +134,8 @@ STATIC_ASSERT(false, "Unsupported platform (Apple).");
 
 #endif // ZEXPORT
 
+#define zmax(a, b) ((a) >= (b) ? (a) : (b))
+
 ZINLINE u64 get_aligned(u64 operand, u64 alignment) {
     return ((operand + (alignment - 1)) & ~(alignment - 1));
 }

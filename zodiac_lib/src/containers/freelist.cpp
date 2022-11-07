@@ -112,7 +112,7 @@ bool freelist_free_block(Freelist *freelist, u64 size, u64 offset)
 
         Freelist_Node *new_node = freelist_get_node(freelist);
         new_node->offset = 0;
-        new_node->size = 0;
+        new_node->size = size;
         new_node->next = nullptr;
         freelist->head = new_node;
         return true;
