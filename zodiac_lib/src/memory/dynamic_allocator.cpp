@@ -8,7 +8,7 @@ namespace Zodiac
 
 struct Dynamic_Alloc_Header
 {
-    u8 *start;
+    u8 *start; // NOTE: Since the size is stored in 32 bits, we should be able to store the lower 32 bits of the start addess, and replace those in the pointer passed to free.
     u32 size;
     u16 alignment;
 };
