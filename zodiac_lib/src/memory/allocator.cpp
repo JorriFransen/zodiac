@@ -15,17 +15,25 @@ void allocator_create(Alloc_Function alloc_func, void *user_data, Allocator *out
 
 void *alloc(Allocator *allocator, u64 size)
 {
-    assert(allocator && size);
-    return allocator->alloc_func(allocator, Allocation_Mode::ALLOCATE, size, nullptr);
+    return alloc_aligned(allocator, size, 1);
+}
+
+void *alloc_aligned(Allocator *allocator, u64 size, u64 alignment)
+{
+    assert(allocator && size && alignment);
+    assert(is_power_of_two(alignment));
+    void *result = allocator->alloc_func(allocator, Allocation_Mode::ALLOCATE, size, alignment, nullptr);
+    zzeromem(result, size);
+    return result;
 }
 
 void free(Allocator *allocator, void *memory)
 {
     assert(allocator && memory);
-    allocator->alloc_func(allocator, Allocation_Mode::FREE, 0, memory);
+    allocator->alloc_func(allocator, Allocation_Mode::FREE, 0, 0, memory);
 }
 
-static void *c_alloc_func(Allocator *allocator, Allocation_Mode mode, i64 size, void *old_ptr)
+static void *c_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u64 alignment, void *old_ptr)
 {
     assert(allocator);
     assert(allocator == c_allocator() || allocator == err_allocator());
@@ -33,6 +41,7 @@ static void *c_alloc_func(Allocator *allocator, Allocation_Mode mode, i64 size, 
     switch (mode) {
         case Allocation_Mode::ALLOCATE: {
             assert(!old_ptr);
+            assert(alignment == 1);
             return malloc(size);
         }
 
@@ -40,6 +49,7 @@ static void *c_alloc_func(Allocator *allocator, Allocation_Mode mode, i64 size, 
 
         case Allocation_Mode::FREE: {
             assert(old_ptr);
+            assert(alignment == 0);
             ::free(old_ptr);
             return nullptr;
         }

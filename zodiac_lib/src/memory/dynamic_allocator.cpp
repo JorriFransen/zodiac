@@ -16,14 +16,14 @@ struct Dynamic_Alloc_Header
 Dynamic_Allocator_Block *allocate_block(u64 size);
 void free_block(Dynamic_Allocator_Block *block);
 
-void *dynamic_alloc_func(Allocator *allocator, Allocation_Mode mode, i64 size, void *old_ptr)
+void *dynamic_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u64 alignment, void *old_ptr)
 {
 
     auto das = (Dynamic_Allocator_State *)allocator->user_data;
 
     switch (mode) {
         case Allocation_Mode::ALLOCATE: {
-            return dynamic_allocator_allocate(das, size);
+            return dynamic_allocator_allocate_aligned(das, size, alignment);
         }
 
         case Allocation_Mode::FREE: {
