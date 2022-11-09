@@ -10,37 +10,36 @@
 namespace Zodiac
 {
 
+struct Alloc_Header
+{
+    void *start; // NOTE: Since the size is stored in 32 bits, we should be able to store the lower 32 bits of the start addess, and replace those in the pointer passed to free.
+    u32 size;
+    u16 alignment;
+};
+
 void *platform_allocate(u64 size, u64 alignment/*=1*/)
 {
     assert(size && alignment);
     assert(is_power_of_two(alignment));
 
-    if (alignment == 1) {
-        return malloc(size);
-    } else {
-        auto am1 = alignment - 1;
+    u64 total_size = size + alignment - 1 + sizeof(Alloc_Header);
+    void *memory = malloc(total_size);
+    assert(memory);
+    u64 aligned_offset = get_aligned(((u64)memory) + sizeof(Alloc_Header), alignment);
+    auto header = (Alloc_Header *)(aligned_offset - sizeof(Alloc_Header));
+    header->start = memory;
+    header->size = size;
+    header->alignment = alignment;
 
-        auto padded_size = size + am1 + sizeof(void *);
-        void *memory = malloc(padded_size);
-
-        void *ptr = (void *)(((i64)memory + am1 + sizeof(void *)) & ~(am1));
-        ((void **)ptr)[-1] = (void*)memory;
-
-        return ptr;
-    }
+    return (void *)aligned_offset;
 }
 
-void platform_free(void *memory, u64 size, u64 alignment/*=1*/)
+void platform_free(void *memory)
 {
-    assert(memory && alignment);
-    assert(is_power_of_two(alignment));
+    assert(memory);
 
-    if (alignment == 1) {
-        ::free(memory);
-    } else {
-        auto ptr = ((void **)memory)[-1];
-        ::free(ptr);
-    }
+    auto header = (Alloc_Header *)((u64)memory - sizeof(Alloc_Header));
+    ::free(header->start);
 }
 
 void *platform_memset(void *memory, i64 value, u64 size)

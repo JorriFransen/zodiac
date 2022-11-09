@@ -116,9 +116,8 @@ void free_block(Dynamic_Allocator_Block *block)
 {
     assert(block);
 
-    auto size = block->freelist.total_size;
     freelist_destroy(&block->freelist);
-    platform_free(block, size);
+    platform_free(block);
 }
 
 void *dynamic_allocator_allocate(Dynamic_Allocator_State *state, u64 size)

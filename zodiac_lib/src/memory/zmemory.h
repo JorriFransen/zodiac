@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include <common.h>
 #include <memory/allocator.h>
 #include <memory/dynamic_allocator.h>
