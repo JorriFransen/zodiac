@@ -20,7 +20,6 @@ void linear_allocator_create(u64 size, void *memory, Linear_Allocator *out_alloc
         assert(out_allocator->memory);
         out_allocator->owns_memory = true;
     }
-
 }
 
 void linear_allocator_destroy(Linear_Allocator *allocator)
@@ -32,6 +31,44 @@ void linear_allocator_destroy(Linear_Allocator *allocator)
     }
 
     zzeromem(allocator, sizeof(Linear_Allocator));
+}
+
+void *linear_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u64 alignment, void *old_ptr)
+{
+    auto las = (Linear_Allocator *)allocator->user_data;
+
+    switch (mode) {
+        case Allocation_Mode::ALLOCATE: {
+            assert(alignment == 1);
+            return linear_allocator_allocate(las, size);
+            break;
+        }
+
+        case Allocation_Mode::FREE: {
+            assert(false && !"FREE not supported for linear allocator");
+            break;
+        }
+
+        case Allocation_Mode::FREE_ALL: {
+            linear_allocator_free_all(las);
+            return nullptr;
+            break;
+        }
+
+        case Allocation_Mode::REALLOCATE: {
+            assert(false && !"REALLOCATE not supported for linear allocator");
+            break;
+        }
+    }
+}
+
+Allocator linear_allocator_allocator(Linear_Allocator *state)
+{
+    assert(state);
+
+    Allocator result;
+    allocator_create(linear_alloc_func, state, &result);
+    return result;
 }
 
 void *linear_allocator_allocate(Linear_Allocator *allocator, u64 size)
