@@ -6,6 +6,7 @@
 #include "test_dynamic_array.h"
 #include "test_freelist.h"
 #include "test_dynamic_allocator.h"
+#include "test_linear_allocator.h"
 
 namespace Zodiac
 {
@@ -49,12 +50,22 @@ static MunitSuite dynamic_allocator_suite = {
     1,
     MUNIT_SUITE_OPTION_NONE,
 };
+
+static MunitSuite linear_allocator_suite = {
+    (char*)"Linear_Alloc/",
+    Linear_Allocator_Tests::linear_allocator_tests,
+    nullptr,
+    1,
+    MUNIT_SUITE_OPTION_NONE,
+};
+
 static MunitSuite main_child_suites[] = {
     string_suite,
     atom_suite,
     dynamic_array_suite,
     freelist_suite,
     dynamic_allocator_suite,
+    linear_allocator_suite,
     //bytecode_suite,
     {},
 };

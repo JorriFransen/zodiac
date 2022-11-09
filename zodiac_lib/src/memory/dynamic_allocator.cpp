@@ -27,6 +27,7 @@ void *dynamic_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u
         }
 
         case Allocation_Mode::FREE: {
+            assert(alignment == 0);
             dynamic_allocator_free(das, old_ptr);
             return nullptr;
         }

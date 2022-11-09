@@ -93,7 +93,7 @@ bool freelist_allocate_block(Freelist *freelist, u64 size, u64 *out_offset)
         node = node->next;
     }
 
-    zodiac_warn("Freelist out of space...");
+    zodiac_error("Freelist out of space...");
     return false;
 }
 
