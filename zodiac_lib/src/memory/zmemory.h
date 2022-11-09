@@ -9,7 +9,7 @@ namespace Zodiac
 {
 
 ZAPI extern bool memory_system_initialized;
-ZAPI extern Dynamic_Allocator_State dynamic_allocator_state;
+ZAPI extern Dynamic_Allocator dynamic_allocator_state;
 ZAPI extern Allocator dynamic_allocator;
 
 ZAPI void memory_system_initialize();

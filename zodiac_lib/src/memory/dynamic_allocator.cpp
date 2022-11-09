@@ -19,7 +19,7 @@ void free_block(Dynamic_Allocator_Block *block);
 void *dynamic_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u64 alignment, void *old_ptr)
 {
 
-    auto das = (Dynamic_Allocator_State *)allocator->user_data;
+    auto das = (Dynamic_Allocator *)allocator->user_data;
 
     switch (mode) {
         case Allocation_Mode::ALLOCATE: {
@@ -47,7 +47,7 @@ void *dynamic_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u
     return nullptr;
 }
 
-bool dynamic_allocator_create(u64 initial_block_size, Dynamic_Allocator_State *out_allocator)
+bool dynamic_allocator_create(u64 initial_block_size, Dynamic_Allocator *out_allocator)
 {
     assert(initial_block_size);
     assert(out_allocator);
@@ -63,7 +63,7 @@ bool dynamic_allocator_create(u64 initial_block_size, Dynamic_Allocator_State *o
     return true;
 }
 
-void dynamic_allocator_destroy(Dynamic_Allocator_State *state)
+void dynamic_allocator_destroy(Dynamic_Allocator *state)
 {
     assert(state && state->first_block);
 
@@ -74,14 +74,16 @@ void dynamic_allocator_destroy(Dynamic_Allocator_State *state)
 
         auto next = block->next;
 
-        zzeromem(state, sizeof(Dynamic_Allocator_State));
+        zzeromem(state, sizeof(Dynamic_Allocator));
 
         block = next;
     }
 }
 
-Allocator dynamic_allocator_allocator(Dynamic_Allocator_State *state)
+Allocator dynamic_allocator_allocator(Dynamic_Allocator *state)
 {
+    assert(state);
+
     Allocator result;
     allocator_create(dynamic_alloc_func, state, &result);
     return result;
@@ -121,12 +123,12 @@ void free_block(Dynamic_Allocator_Block *block)
     platform_free(block);
 }
 
-void *dynamic_allocator_allocate(Dynamic_Allocator_State *state, u64 size)
+void *dynamic_allocator_allocate(Dynamic_Allocator *state, u64 size)
 {
     return dynamic_allocator_allocate_aligned(state, size, 1);
 }
 
-void *dynamic_allocator_allocate_aligned(Dynamic_Allocator_State *state, u64 size, u64 alignment)
+void *dynamic_allocator_allocate_aligned(Dynamic_Allocator *state, u64 size, u64 alignment)
 {
     assert(state);
     assert(size <= U32_MAX);
@@ -180,7 +182,7 @@ void *dynamic_allocator_allocate_aligned(Dynamic_Allocator_State *state, u64 siz
     return result_ptr;
 }
 
-void dynamic_allocator_free(Dynamic_Allocator_State *state, void *memory)
+void dynamic_allocator_free(Dynamic_Allocator *state, void *memory)
 {
     assert(state && memory);
 
@@ -220,7 +222,7 @@ void dynamic_allocator_free(Dynamic_Allocator_State *state, void *memory)
     assert(result);
 }
 
-u64 dynamic_allocator_free_space(Dynamic_Allocator_State *state)
+u64 dynamic_allocator_free_space(Dynamic_Allocator *state)
 {
     u64 total = 0;
 

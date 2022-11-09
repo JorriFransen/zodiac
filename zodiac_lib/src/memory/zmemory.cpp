@@ -4,7 +4,7 @@ namespace Zodiac
 {
 
 bool memory_system_initialized = false;
-Dynamic_Allocator_State dynamic_allocator_state;
+Dynamic_Allocator dynamic_allocator_state;
 Allocator dynamic_allocator;
 
 void memory_system_initialize()
