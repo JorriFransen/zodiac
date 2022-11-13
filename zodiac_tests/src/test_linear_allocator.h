@@ -136,6 +136,7 @@ static MunitResult Alloc_All_Multi_Free(const MunitParameter params[], void *use
 
     return MUNIT_OK;
 }
+
 START_TESTS(linear_allocator_tests)
     DEFINE_TEST(Create_Free),
     DEFINE_TEST(Alloc_All_Once),
