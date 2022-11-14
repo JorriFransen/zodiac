@@ -60,6 +60,9 @@ void *linear_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u6
             break;
         }
     }
+    
+    assert(false);
+    return nullptr;
 }
 
 Allocator linear_allocator_allocator(Linear_Allocator *state)
