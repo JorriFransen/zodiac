@@ -70,14 +70,15 @@ void dynamic_allocator_destroy(Dynamic_Allocator *state)
     auto block = state->first_block;
     while (block) {
 
-        free_block(block);
-
         auto next = block->next;
 
-        zzeromem(state, sizeof(Dynamic_Allocator));
+        free_block(block);
 
         block = next;
     }
+
+    zzeromem(state, sizeof(Dynamic_Allocator));
+
 }
 
 Allocator dynamic_allocator_allocator(Dynamic_Allocator *state)
