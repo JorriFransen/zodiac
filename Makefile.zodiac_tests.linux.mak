@@ -23,22 +23,24 @@ OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)/%.o)
 FULL_ASSEMBLY_PATH := $(BUILD_DIR)/$(ASSEMBLY)$(EXTENSION)
 
 all: scaffold compile link
-	
+
 .PHONY: scaffold
 scaffold:
 	@mkdir -p bin
 	@mkdir -p $(addprefix $(OBJ_DIR)/,$(DIRECTORIES))
-	
+
 .PHONY: compile
 compile:
 	@echo Compiling $(ASSEMBLY)
-	
+
 $(OBJ_DIR)/%.cpp.o: %.cpp
-	clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
-	
+	@echo "$< -> $@"
+	@clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+
 $(OBJ_DIR)/%.c.o: %.c
-	clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
-	
+	@echo "$< -> $@"
+	@clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+
 .PHONY: link
 link: $(FULL_ASSEMBLY_PATH)
 
