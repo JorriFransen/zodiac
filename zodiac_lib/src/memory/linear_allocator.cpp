@@ -60,7 +60,7 @@ void *linear_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u6
             break;
         }
     }
-    
+
     assert(false);
     return nullptr;
 }
@@ -94,6 +94,14 @@ void linear_allocator_free_all(Linear_Allocator *allocator)
 
     allocator->offset = 0;
     zzeromem(allocator->memory, allocator->size);
+}
+
+u64 linear_allocator_free_space(Linear_Allocator *allocator)
+{
+    assert(allocator && allocator->memory);
+    assert(allocator->offset <= allocator->size);
+
+    return allocator->size - allocator->offset;
 }
 
 }
