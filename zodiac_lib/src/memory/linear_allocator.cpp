@@ -35,13 +35,14 @@ void linear_allocator_destroy(Linear_Allocator *allocator)
 
 void *linear_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u64 alignment, void *old_ptr)
 {
+    assert(allocator);
+
     auto las = (Linear_Allocator *)allocator->user_data;
 
     switch (mode) {
         case Allocation_Mode::ALLOCATE: {
             assert(alignment == 1);
             return linear_allocator_allocate(las, size);
-            break;
         }
 
         case Allocation_Mode::FREE: {
@@ -52,7 +53,6 @@ void *linear_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u6
         case Allocation_Mode::FREE_ALL: {
             linear_allocator_free_all(las);
             return nullptr;
-            break;
         }
 
         case Allocation_Mode::REALLOCATE: {
