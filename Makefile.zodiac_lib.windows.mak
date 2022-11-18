@@ -15,7 +15,7 @@ LLVM_DEBUG_INSTALL_DIR := "$(DIR)\$(BUILD_DIR)\llvm_install_debug"
 
 COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wvla -fdeclspec
 INCLUDE_FLAGS := -I$(SRC_DIR)
-LINKER_FLAGS := -g -shared -Wl,-nodefaultlib:libcmt 
+LINKER_FLAGS := -g -shared -Wl,-nodefaultlib:libcmt
 DEFINES := -D_DEBUG -DZEXPORT -D_DLL
 
 # Make does not offer a recursive wildcard function, so here's one:
@@ -28,18 +28,19 @@ OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)/%.o)
 FULL_ASSEMBLY_PATH := $(BUILD_DIR)/$(ASSEMBLY)$(EXTENSION)
 
 all: scaffold llvm llvm_vars compile link
-	
+
 .PHONY: scaffold
 scaffold:
 	-@setlocal enableextensions enabledelayedexpansion && mkdir $(addprefix $(OBJ_DIR), $(DIRECTORIES)) 2>NUL || cd .
 	-@setlocal enableextensions enabledelayedexpansion && mkdir $(BUILD_DIR) 2>NUL || cd .
-	
+
 .PHONY: compile
 compile: llvm_vars
 	@echo Compiling $(ASSEMBLY)
 
 $(OBJ_DIR)/%.cpp.o: %.cpp
-	clang $< $(COMPILER_FLAGS) -c -o $(subst /,\, $@) $(DEFINES) $(INCLUDE_FLAGS)
+	@echo $< -^> $@
+	@clang $< $(COMPILER_FLAGS) -c -o $(subst /,\, $@) $(DEFINES) $(INCLUDE_FLAGS)
 
 .PHONY: link
 link: llvm_vars $(FULL_ASSEMBLY_PATH)
