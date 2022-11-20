@@ -1,25 +1,18 @@
 
-#include <stdio.h>
-
-#include <atom.h>
-#include <llvm_test.h>
-#include <memory/allocator.h>
+#include <memory/zmemory.h>
+#include <logger.h>
 
 using namespace Zodiac;
 
 int main() {
-    printf("Hello world!\n");
+    Zodiac::memory_system_initialize();
 
-    auto ca = c_allocator();
-
-    llvm_test();
-
-    Atom_Table at;
-    atom_table_init(c_allocator(), &at);
-
-    auto match = atom_get(&at, "a") == atom_get(&at, "a");
-
-    atom_table_free(&at);
+    log_message(Log_Level::FATAL, "FATAL message");
+    log_message(Log_Level::ERROR, "ERROR message");
+    log_message(Log_Level::WARN, "WARN message");
+    log_message(Log_Level::INFO, "INFO message");
+    log_message(Log_Level::DEBUG, "DEBUG message");
+    log_message(Log_Level::TRACE, "TRACE message");
 
     return 0;
 }

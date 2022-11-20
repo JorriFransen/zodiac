@@ -12,6 +12,8 @@
 namespace Zodiac
 {
 
+#define ZSTRING_FORMAT_STACK_BUFFER_SIZE 32000
+
 struct String
 {
     char* data = nullptr;
@@ -72,6 +74,9 @@ ZAPI bool string_equal(const String_Ref &a, const String_Ref &b);
 
 ZAPI const String string_format(Allocator *allocator, const char *fmt, ...);
 ZAPI const String string_format(Allocator *allocator, const char *fmt, va_list args);
+
+ZAPI i32 string_format(char *dest, const char *fmt, ...);
+ZAPI i32 string_format(char *dest, const char *fmt, va_list args);
 
 ZAPI i64 string_to_s64(const String_Ref &string, u64 base = 10);
 ZAPI Real_Value string_to_real(const String_Ref &string);

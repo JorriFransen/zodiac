@@ -66,6 +66,34 @@ i64 platform_memcmp(const void *a, const void *b, u64 num)
     return memcmp(a, b, num);
 }
 
+void platform_console_write(const char *message)
+{
+    printf("%s\n", message);
+}
+
+void platform_console_write(const char *message, Platform_Console_Color color)
+{
+    u64 color_index = (u64)color;
+    assert(color_index >= 0 && color_index < 5);
+    const char *color_strings[5] = { "34", "32", "31", "33", "37" };
+
+    printf("\033[%sm%s\033[0m", color_strings[color_index], message);
+}
+
+void platform_console_write_error(const char *message)
+{
+    fprintf(stderr, "%s\n", message);
+}
+
+void platform_console_write_error(const char *message, Platform_Console_Color color)
+{
+    u64 color_index = (u64)color;
+    assert(color_index >= 0 && color_index < 5);
+    const char *color_strings[5] = { "34", "32", "31", "33", "37" };
+
+    fprintf(stderr, "\033[%sm%s\033[0m", color_strings[color_index], message);
+}
+
 }
 
 #endif

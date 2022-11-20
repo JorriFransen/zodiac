@@ -106,7 +106,7 @@ bool string_starts_with(const String_Ref &string, const String_Ref &start)
     if (!(string.length > start.length)) {
         return false;
     }
-    
+
     return zmemcmp(string.data, start.data, start.length) == 0;
 }
 
@@ -122,7 +122,7 @@ bool string_equal(const String_Ref &a, const String_Ref &b)
 
 {
     if (a.length != b.length) return false;
-    
+
     return zmemcmp(a.data, b.data, a.length) == 0;
 }
 
@@ -155,6 +155,32 @@ const String string_format(Allocator *allocator, const char *fmt, va_list args)
     zodiac_assert_fatal(written_size <= size, "Written size does not match the expected size")
 
     return String(buf, size);
+}
+
+i32 string_format(char *dest, const char *fmt, ...)
+{
+    assert(dest && fmt);
+
+    va_list args;
+    va_start(args, fmt);
+
+    i32 result = string_format(dest, fmt, args);
+
+    va_end(args);
+
+    return result;
+}
+
+i32 string_format(char *dest, const char *fmt, va_list args)
+{
+    assert(dest && fmt);
+
+    char buffer[ZSTRING_FORMAT_STACK_BUFFER_SIZE];
+    auto written_size = vsnprintf(buffer, ZSTRING_FORMAT_STACK_BUFFER_SIZE, fmt, args);
+    buffer[written_size] = '\0';
+    zmemcpy(dest, buffer, written_size + 1);
+
+    return written_size;
 }
 
 static u64 _digit_value(char c)

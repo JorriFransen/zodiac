@@ -12,4 +12,20 @@ ZAPI void *platform_zero_mem(void *memory, u64 num);
 ZAPI void *platform_memcpy(void *dest, const void *src, u64 num);
 ZAPI i64 platform_memcmp(const void *a, const void *b, u64 num);
 
+
+enum class Platform_Console_Color
+{
+    Blue,
+    Green,
+    Red,
+    Yellow,
+    Grey,
+};
+
+ZAPI void platform_console_write(const char *message);
+ZAPI void platform_console_write(const char *message, Platform_Console_Color color);
+
+ZAPI void platform_console_write_error(const char *message);
+ZAPI void platform_console_write_error(const char *message, Platform_Console_Color color);
+
 }
