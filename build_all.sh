@@ -1,22 +1,10 @@
 #!/bin/bash
 
-set echo on 
+set echo on
 
 echo "Building everyting..."
 
-make -f Makefile.zodiac_lib.linux.mak all
-ERR=$?
-if [ $ERR -ne 0 ]; then
-    echo "Error:"$ERR && exit
-fi
-
-make -f Makefile.zodiac_driver.linux.mak all
-ERR=$?
-if [ $ERR -ne 0 ]; then
-    echo "Error:"$ERR && exit
-fi
-
-make -f Makefile.zodiac_tests.linux.mak all
+make -f Makefile.linux.mak all -j $(nproc)
 ERR=$?
 if [ $ERR -ne 0 ]; then
     echo "Error:"$ERR && exit
