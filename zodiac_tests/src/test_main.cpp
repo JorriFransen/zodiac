@@ -104,5 +104,9 @@ int main(int argc, char** argv) {
 
     Zodiac::memory_system_initialize();
 
+    // Log nothting to stdout, this will mess up the test output.
+    // Munit will display stderr when a test fails.
+    Zodiac::logging_system_initialize(stderr, stderr);
+
     return munit_suite_main(&Zodiac::main_suite, nullptr, argc, argv);
 }

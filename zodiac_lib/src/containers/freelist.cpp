@@ -1,5 +1,6 @@
 #include "freelist.h"
 
+#include <logger.h>
 #include <memory/zmemory.h>
 
 namespace Zodiac
@@ -15,7 +16,7 @@ void freelist_create(u64 total_size, u64 *memory_requirement, Freelist *out_list
     auto max_entries = (total_size / sizeof(Freelist_Node));
     assert(max_entries);
     if (max_entries < 20) {
-        zodiac_warn("Creating freelist for small memory block...");
+        ZWARN("Creating freelist for small memory block...");
     }
 
     *memory_requirement = max_entries * sizeof(Freelist_Node);
@@ -93,7 +94,7 @@ bool freelist_allocate_block(Freelist *freelist, u64 size, u64 *out_offset)
         node = node->next;
     }
 
-    zodiac_error("Freelist out of space...");
+    ZERROR("Freelist out of space...");
     return false;
 }
 

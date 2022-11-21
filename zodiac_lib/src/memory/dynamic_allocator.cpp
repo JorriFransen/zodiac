@@ -1,5 +1,6 @@
 #include "dynamic_allocator.h"
 
+#include <logger.h>
 #include <memory/zmemory.h>
 #include <platform/platform.h>
 
@@ -53,7 +54,7 @@ bool dynamic_allocator_create(u64 initial_block_size, Dynamic_Allocator *out_all
     assert(out_allocator);
 
     if (initial_block_size < KIBIBYTE(4)) {
-        zodiac_warn("Creating dynamic allocator with small block size...");
+        ZWARN("Creating dynamic allocator with small block size...");
     }
 
     out_allocator->first_block = allocate_block(initial_block_size);
@@ -212,7 +213,7 @@ void dynamic_allocator_free(Dynamic_Allocator *state, void *memory)
     }
 
     if (!containing_block) {
-        zodiac_assert_fatal(!containing_block, "Dynamic allocator id not find block containing freed address...");
+        zodiac_assert_fatal(!containing_block, "Dynamic allocator did not find block containing freed address...");
     }
 
     auto header = (Dynamic_Alloc_Header *)(((u64)memory) - sizeof(Dynamic_Alloc_Header));

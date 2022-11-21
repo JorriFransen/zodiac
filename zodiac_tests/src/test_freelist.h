@@ -1,7 +1,8 @@
 #include <test_common.h>
 
-#include <memory/zmemory.h>
 #include <containers/freelist.h>
+#include <logger.h>
+#include <memory/zmemory.h>
 
 namespace Zodiac { namespace Freelist_Tests {
 
@@ -293,12 +294,12 @@ static MunitResult Alloc_Full(const MunitParameter params[], void *user_data_or_
 
     u64 alloc_size2 = 64;
     u64 offset2 = ZODIAC_FREELIST_INVALID_OFFSET;
-    zodiac_info("The following warning is intentional!..");
+    ZINFO("The following warning is intentional!..");
     result = freelist_allocate_block(&freelist, alloc_size2, &offset2);
     munit_assert_false(result);
 
-    freelist_free_block(&freelist, alloc_size, offset);
 
+    freelist_free_block(&freelist, alloc_size, offset);
 
     offset2 = ZODIAC_FREELIST_INVALID_OFFSET;
     result = freelist_allocate_block(&freelist, alloc_size2, &offset2);

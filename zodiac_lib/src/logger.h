@@ -15,6 +15,17 @@ enum class Log_Level
     TRACE = 5,
 };
 
+// ZAPI extern bool logging_system_initialized;
+
+ZAPI void logging_system_initialize(FILE *stdout, FILE *stderr);
+
 ZAPI void log_message(Log_Level level, const char *fmt, ...);
+
+#define ZFATAL(fmt, ...) log_message(Log_Level::FATAL, fmt, ##__VA_ARGS__);
+#define ZERROR(fmt, ...) log_message(Log_Level::ERROR, fmt, ##__VA_ARGS__);
+#define ZWARN(fmt, ...) log_message(Log_Level::WARN, fmt, ##__VA_ARGS__);
+#define ZINFO(fmt, ...) log_message(Log_Level::INFO, fmt, ##__VA_ARGS__);
+#define ZDEBUG(fmt, ...) log_message(Log_Level::DEBUG, fmt, ##__VA_ARGS__);
+#define ZTRACE(fmt, ...) log_message(Log_Level::DEBUG, fmt, ##__VA_ARGS__);
 
 }

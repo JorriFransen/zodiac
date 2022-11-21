@@ -6,8 +6,30 @@
 namespace Zodiac
 {
 
+file_local bool logging_system_initialized = false;
+
+struct Logging_System_State
+{
+    FILE *stdout;
+    FILE *stderr;
+};
+
+file_local Logging_System_State logging_system_state;
+
+ZAPI void logging_system_initialize(FILE *stdout, FILE *stderr)
+{
+    if (logging_system_initialized) assert(false && !"Logging system already initialized");
+    assert(stdout && stderr);
+
+    logging_system_state = { stdout, stderr };
+
+    logging_system_initialized = true;
+}
+
 void log_message(Log_Level log_level, const char *fmt, ...)
 {
+    assert(logging_system_initialized);
+
     i64 level_index = (i64)log_level;
     assert(level_index >= 0 && log_level <= Log_Level::TRACE);
 
@@ -31,9 +53,9 @@ void log_message(Log_Level log_level, const char *fmt, ...)
     out_length = string_format(out_message, "%s%s\n", level_strings[level_index], out_message);
 
     if (log_level <= Log_Level::ERROR) {
-        platform_console_write_error(out_message, level_colors[level_index]);
+        platform_file_write(logging_system_state.stderr, out_message, level_colors[level_index]);
     } else {
-        platform_console_write(out_message, level_colors[level_index]);
+        platform_file_write(logging_system_state.stdout, out_message, level_colors[level_index]);
     }
 }
 

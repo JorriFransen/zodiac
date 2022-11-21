@@ -3,6 +3,7 @@
 
 #include <test_common.h>
 
+#include <logger.h>
 #include <memory/temporary_allocator.h>
 
 namespace Zodiac { namespace Temp_Allocator_Tests {
@@ -101,7 +102,7 @@ static MunitResult Alloc_All_Multi_Over(const MunitParameter params[], void *use
 
     munit_assert_uint64(temporary_allocator_free_space(&allocator), ==, 0);
 
-    zodiac_info("The following error is intentionally caused by this test");
+    ZINFO("The following error is intentionally caused by this test");
     block = temporary_allocator_allocate(&allocator, alloc_size);
     munit_assert_ptr_null(block);
 

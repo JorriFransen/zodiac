@@ -2,6 +2,8 @@
 
 #include "zmemory.h"
 
+#include <logger.h>
+
 namespace Zodiac
 {
 
@@ -49,7 +51,7 @@ void *pool_allocator_allocate(Pool_Allocator *allocator)
         zzeromem(chunk, allocator->element_size);
         return chunk;
     } else {
-        zodiac_error("Pool allocator out of space!");
+        ZERROR("Pool allocator out of space!");
         return nullptr;
     }
 }

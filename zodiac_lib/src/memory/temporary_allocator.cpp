@@ -2,6 +2,8 @@
 
 #include "zmemory.h"
 
+#include <logger.h>
+
 namespace Zodiac
 {
 
@@ -68,7 +70,7 @@ void *temporary_allocator_allocate(Temporary_Allocator *allocator, u64 size)
     assert(allocator && size);
 
     if (temporary_allocator_free_space(allocator) < size) {
-        zodiac_error("Temporary allocator out of space!");
+        ZERROR("Temporary allocator out of space!");
         return nullptr;
     }
 

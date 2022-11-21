@@ -2,6 +2,8 @@
 
 #include "zmemory.h"
 
+#include <logger.h>
+
 namespace Zodiac
 {
 
@@ -79,7 +81,7 @@ void *linear_allocator_allocate(Linear_Allocator *allocator, u64 size)
     assert(allocator && allocator->memory && size);
 
     if (allocator->offset + size > allocator->size) {
-        zodiac_error("Linear allocator out of space!");
+        ZERROR("Linear allocator out of space!");
         return nullptr;
     }
 

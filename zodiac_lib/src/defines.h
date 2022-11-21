@@ -18,15 +18,6 @@
         exit(42); \
     }
 
-#define zodiac_info(info) \
-    fprintf(stderr, "%s:%d: Info: %s\n", __FILE__, __LINE__, (info));
-
-#define zodiac_warn(err) \
-    fprintf(stderr, "%s:%d: Warning: %s\n", __FILE__, __LINE__, (err));
-
-#define zodiac_error(err) \
-    fprintf(stderr, "%s:%d: Error: %s\n", __FILE__, __LINE__, (err));
-
 #if defined(__clang__) || defined(__gcc__)
 #define ZINLINE __attribute__((always_inline)) inline
 #define ZNOINLINE __attribute__((noinline))
@@ -38,6 +29,7 @@
 #define ZNOINLINE
 #endif
 
+#define file_local static
 
 typedef unsigned char       u8;
 typedef unsigned short     u16;

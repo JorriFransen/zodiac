@@ -6,6 +6,7 @@ using namespace Zodiac;
 
 int main() {
     Zodiac::memory_system_initialize();
+    Zodiac::logging_system_initialize(stdout, stderr);
 
     log_message(Log_Level::FATAL, "FATAL message");
     log_message(Log_Level::ERROR, "ERROR message");

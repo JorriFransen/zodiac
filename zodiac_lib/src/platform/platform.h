@@ -22,6 +22,10 @@ enum class Platform_Console_Color
     Grey,
 };
 
+
+ZAPI void platform_file_write(FILE *file, const char *message);
+ZAPI void platform_file_write(FILE *file, const char *message, Platform_Console_Color color);
+
 ZAPI void platform_console_write(const char *message);
 ZAPI void platform_console_write(const char *message, Platform_Console_Color color);
 

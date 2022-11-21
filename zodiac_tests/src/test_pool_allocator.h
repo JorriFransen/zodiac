@@ -2,6 +2,7 @@
 
 #include <test_common.h>
 
+#include <logger.h>
 #include <memory/pool_allocator.h>
 #include <memory/zmemory.h>
 
@@ -152,7 +153,7 @@ static MunitResult Alloc_Over(const MunitParameter params[], void *user_data_or_
     munit_assert_ptr_not_null(memory);
     munit_assert_ptr_not_null(memory2);
 
-    zodiac_info("The following error is intentionally caused by this test");
+    ZINFO("The following error is intentionally caused by this test");
     auto memory3 = pool_allocator_allocate(&pool);
     munit_assert_ptr_null(memory3);
 
