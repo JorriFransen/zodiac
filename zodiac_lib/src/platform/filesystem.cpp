@@ -114,7 +114,7 @@ File_Handle *filesystem_stdout_file()
         zodiac_stdout.handle = stdout;
         zodiac_stdout.valid = true;
     }
-    
+
     assert(zodiac_stdout.handle);
     return &zodiac_stdout;
 }
@@ -126,7 +126,7 @@ File_Handle *filesystem_stderr_file()
         zodiac_stderr.handle = stderr;
         zodiac_stderr.valid = true;
     }
-    
+
     assert(zodiac_stderr.handle);
     return &zodiac_stderr;
 }

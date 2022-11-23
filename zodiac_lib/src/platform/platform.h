@@ -19,11 +19,13 @@ enum class Platform_Console_Color
     Blue,
     Green,
     Red,
+    Fatal_Red,
     Yellow,
     Grey,
 };
 
 
+ZAPI void platform_file_write(File_Handle *file, const char *message);
 ZAPI void platform_file_write(File_Handle *file, const char *message, Platform_Console_Color color);
 
 ZAPI void platform_console_write(const char *message);

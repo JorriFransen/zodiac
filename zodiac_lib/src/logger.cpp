@@ -62,7 +62,7 @@ void log_message(Log_Level log_level, const char *fmt, ...)
     const char *level_strings[6] = { "[FATAL]: ", "[ERROR]: ", "[WARN]: ", "[INFO]: ", "[DEBUG]: ", "[TRACE]: "};
 
     const Platform_Console_Color level_colors[6] = {
-        Platform_Console_Color::Red,
+        Platform_Console_Color::Fatal_Red,
         Platform_Console_Color::Red,
         Platform_Console_Color::Yellow,
         Platform_Console_Color::Green,
