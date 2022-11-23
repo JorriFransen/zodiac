@@ -69,76 +69,50 @@ i64 platform_memcmp(const void *a, const void *b, u64 num)
     return memcmp(a, b, num);
 }
 
-void platform_file_write(File_Handle *file, const char *message)
+void platform_file_write(File_Handle *file, const String_Ref message)
 {
     assert(file->valid && file->handle);
-    assert(message);
 
-    u64 size = strlen(message);
     u64 size_written;
-    filesystem_write(file, size, message, &size_written);
-    assert(size_written == size);
+    filesystem_write(file, message.length, message.data, &size_written);
+    assert(size_written == message.length);
 }
 
-void platform_file_write(File_Handle *file, const char *message, Platform_Console_Color color)
+void platform_file_write(File_Handle *file, const String_Ref message, Platform_Console_Color color)
 {
     assert(file->valid && file->handle);
-    assert(message);
+    assert(message.data);
 
     u64 color_index = (u64)color;
     assert(color_index >= 0 && color_index < 6);
+    static const char *color_strings[6] = { "34", "32", "31", "31;1", "33", "59" };
 
-    static u8 levels[6] = {
-        FOREGROUND_BLUE,
-        FOREGROUND_GREEN,
-        FOREGROUND_RED,
-        BACKGROUND_RED | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,
-        FOREGROUND_RED | FOREGROUND_GREEN,
-        FOREGROUND_INTENSITY,
-    };
+    char str[ZSTRING_FORMAT_STACK_BUFFER_SIZE];
+    u64 size = string_format(str, "\033[%sm%s\033[0m", color_strings[color_index], message.data);
+    u64 size_written;
 
-    int fileno = _fileno((FILE *)file->handle);
-    HANDLE handle = (HANDLE)_get_osfhandle(fileno);
-
-    SetConsoleTextAttribute(handle, levels[color_index]);
-
-    OutputDebugStringA(message);
-
-    auto length = strlen(message);
-    DWORD num_written;
-    BOOL result = WriteConsoleA(handle, message, length, &num_written, 0);
-    assert(result != 0);
-    assert(num_written == length);
-
-    // Reset
-    SetConsoleTextAttribute(handle, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+    filesystem_write(file, size, str, &size_written);
+    OutputDebugStringA(message.data);
+    assert(size_written == size);
 }
 
-void platform_console_write(const char *message)
+void platform_console_write(const String_Ref message)
 {
-    assert(message);
-
     platform_file_write(filesystem_stdout_file(), message);
 }
 
-void platform_console_write(const char *message, Platform_Console_Color color)
+void platform_console_write(const String_Ref message, Platform_Console_Color color)
 {
-    assert(message);
-
     platform_file_write(filesystem_stdout_file(), message, color);
 }
 
-void platform_console_write_error(const char *message)
+void platform_console_write_error(const String_Ref message)
 {
-    assert(message);
-
     platform_file_write(filesystem_stderr_file(), message);
 }
 
-void platform_console_write_error(const char *message, Platform_Console_Color color)
+void platform_console_write_error(const String_Ref message, Platform_Console_Color color)
 {
-    assert(message);
-
     platform_file_write(filesystem_stderr_file(), message, color);
 }
 
