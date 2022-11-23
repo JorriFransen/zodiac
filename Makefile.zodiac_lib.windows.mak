@@ -16,7 +16,7 @@ LLVM_DEBUG_INSTALL_DIR := "$(DIR)\$(BUILD_DIR)\llvm_install_debug"
 COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wvla -fdeclspec
 INCLUDE_FLAGS := -I$(SRC_DIR)
 LINKER_FLAGS := -g -shared -Wl,-nodefaultlib:libcmt
-DEFINES := -D_DEBUG -DZEXPORT -D_DLL
+DEFINES := -D_DEBUG -DZEXPORT -D_DLL -D_CRT_SECURE_NO_WARNINGS
 
 # Make does not offer a recursive wildcard function, so here's one:
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))

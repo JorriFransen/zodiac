@@ -3,14 +3,16 @@
 #include <platform/platform.h>
 #include <zstring.h>
 
+#include <cstdarg>
+
 namespace Zodiac
 {
 
 
 struct Logging_System_State
 {
-    File_Handle *stdout;
-    File_Handle *stderr;
+    File_Handle *out_file;
+    File_Handle *err_file;
     File_Handle log_file;
 };
 
@@ -23,8 +25,8 @@ bool logging_system_initialize()
 {
     if (logging_system_initialized) assert(false && !"Logging system already initialized");
 
-    logging_system_state.stdout = filesystem_stdout_file();
-    logging_system_state.stderr = filesystem_stderr_file();
+    logging_system_state.out_file = filesystem_stdout_file();
+    logging_system_state.err_file = filesystem_stderr_file();
 
     if (!filesystem_open("console.log", FILE_MODE_WRITE, &logging_system_state.log_file)) {
         platform_console_write_error("ERROR: Unable to open 'console.log' for writing!", Platform_Console_Color::Red);
@@ -36,18 +38,18 @@ bool logging_system_initialize()
     return true;
 }
 
-void logging_system_set_stdout_file(File_Handle *stdout)
+void logging_system_set_stdout_file(File_Handle *out_file)
 {
-    assert(stdout->valid && stdout->handle);
+    assert(out_file->valid && out_file->handle);
 
-    logging_system_state.stdout = stdout;
+    logging_system_state.out_file = out_file;
 }
 
-void logging_system_set_stderr_file(File_Handle *stderr)
+void logging_system_set_stderr_file(File_Handle *err_file)
 {
-    assert(stderr->valid && stderr->handle);
+    assert(err_file->valid && err_file->handle);
 
-    logging_system_state.stderr = stderr;
+    logging_system_state.err_file = err_file;
 }
 
 void log_message(Log_Level log_level, const char *fmt, ...)
@@ -85,9 +87,9 @@ void log_message(Log_Level log_level, const char *fmt, ...)
     out_length = string_format(out_message, "%s%s\n", level_strings[level_index], out_message);
 
     if (log_level <= Log_Level::ERROR) {
-        platform_file_write(logging_system_state.stderr, out_message, level_colors[level_index]);
+        platform_file_write(logging_system_state.err_file, out_message, level_colors[level_index]);
     } else {
-        platform_file_write(logging_system_state.stdout, out_message, level_colors[level_index]);
+        platform_file_write(logging_system_state.out_file, out_message, level_colors[level_index]);
     }
 
     write_log_file(out_message);
