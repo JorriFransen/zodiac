@@ -83,8 +83,8 @@ void platform_file_write(File_Handle *file, const char *message, Platform_Consol
     assert(message);
 
     u64 color_index = (u64)color;
-    assert(color_index >= 0 && color_index < 5);
-    static const char *color_strings[5] = { "34", "32", "31", "33", "37" };
+    assert(color_index >= 0 && color_index < 6);
+    static const char *color_strings[6] = { "34", "32", "31", "30;41", "33", "59" };
 
     char str[ZSTRING_FORMAT_STACK_BUFFER_SIZE];
     u64 size = string_format(str, "\033[%sm%s\033[0m", color_strings[color_index], message);
