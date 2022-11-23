@@ -5,7 +5,10 @@
 using namespace Zodiac;
 
 int main() {
+
     if (!Zodiac::logging_system_initialize()) return 1;
+    if (!Zodiac::memory_system_initialize()) return 1;
+
     log_message(Log_Level::FATAL, "FATAL message");
     log_message(Log_Level::ERROR, "ERROR message");
     log_message(Log_Level::WARN, "WARN message");
