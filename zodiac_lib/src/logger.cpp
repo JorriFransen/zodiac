@@ -6,23 +6,34 @@
 namespace Zodiac
 {
 
-file_local bool logging_system_initialized = false;
 
 struct Logging_System_State
 {
     File_Handle *stdout;
     File_Handle *stderr;
+    File_Handle log_file;
 };
 
+file_local bool logging_system_initialized = false;
 file_local Logging_System_State logging_system_state;
 
-ZAPI void logging_system_initialize()
+file_local void write_log_file(const String_Ref message);
+
+bool logging_system_initialize()
 {
     if (logging_system_initialized) assert(false && !"Logging system already initialized");
 
-    logging_system_state = { filesystem_stdout_file(), filesystem_stderr_file() };
+    logging_system_state.stdout = filesystem_stdout_file();
+    logging_system_state.stderr = filesystem_stderr_file();
+
+    if (!filesystem_open("console.log", FILE_MODE_WRITE, &logging_system_state.log_file)) {
+        platform_console_write_error("ERROR: Unable to open 'console.log' for writing!", Platform_Console_Color::Red);
+        return false;
+    }
 
     logging_system_initialized = true;
+
+    return true;
 }
 
 void logging_system_set_stdout_file(File_Handle *stdout)
@@ -77,6 +88,19 @@ void log_message(Log_Level log_level, const char *fmt, ...)
         platform_file_write(logging_system_state.stderr, out_message, level_colors[level_index]);
     } else {
         platform_file_write(logging_system_state.stdout, out_message, level_colors[level_index]);
+    }
+
+    write_log_file(out_message);
+}
+
+file_local void write_log_file(const String_Ref message)
+{
+    u64 out_size;
+    bool result = filesystem_write(&logging_system_state.log_file, message.length, message.data, &out_size);
+    assert(out_size == message.length);
+
+    if (!result) {
+        platform_console_write_error("ERROR: writing to 'console.log' failed!");
     }
 }
 

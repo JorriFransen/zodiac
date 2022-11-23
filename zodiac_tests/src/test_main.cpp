@@ -102,13 +102,15 @@ static MunitSuite main_suite = {
 
 int main(int argc, char** argv) {
 
-    Zodiac::memory_system_initialize();
+    if (!Zodiac::logging_system_initialize()) return 1;
 
     // Log nothting to stdout, this will mess up the test output.
     // Munit will display stderr when a test fails.
-    Zodiac::logging_system_initialize();
     Zodiac::File_Handle *stderr = Zodiac::filesystem_stderr_file();
     Zodiac::logging_system_set_stdout_file(stderr);
+
+    if (!Zodiac::memory_system_initialize()) return 1;
+
 
     return munit_suite_main(&Zodiac::main_suite, nullptr, argc, argv);
 }

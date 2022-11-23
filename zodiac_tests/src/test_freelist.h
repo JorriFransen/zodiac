@@ -294,7 +294,7 @@ static MunitResult Alloc_Full(const MunitParameter params[], void *user_data_or_
 
     u64 alloc_size2 = 64;
     u64 offset2 = ZODIAC_FREELIST_INVALID_OFFSET;
-    ZINFO("The following warning is intentional!..");
+    ZINFO("The following error is intentional!..");
     result = freelist_allocate_block(&freelist, alloc_size2, &offset2);
     munit_assert_false(result);
 

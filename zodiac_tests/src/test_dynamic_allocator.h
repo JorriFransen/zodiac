@@ -13,7 +13,7 @@ static MunitResult Create_Free(const MunitParameter params[], void *user_data_or
     u64 block_size = 512;
 
     Dynamic_Allocator state;
-    ZINFO("The following error is intentionally caused by this test");
+    ZINFO("The following warning is intentionally caused by this test");
     bool result = dynamic_allocator_create(block_size, &state);
 
     munit_assert(result);
@@ -43,7 +43,7 @@ static MunitResult Alloc_Free_One(const MunitParameter params[], void *user_data
     auto header_size = dynamic_allocator_header_size();
 
     Dynamic_Allocator state;
-    ZINFO("The following error is intentionally caused by this test");
+    ZINFO("The following warning is intentionally caused by this test");
     bool result = dynamic_allocator_create(block_size, &state);
     munit_assert(result);
 
@@ -69,7 +69,7 @@ static MunitResult Alloc_Free_Multi(const MunitParameter params[], void *user_da
     auto header_size = dynamic_allocator_header_size();
 
     Dynamic_Allocator state;
-    ZINFO("The following error is intentionally caused by this test");
+    ZINFO("The following warning is intentionally caused by this test");
     bool result = dynamic_allocator_create(block_size, &state);
     munit_assert(result);
 
@@ -133,7 +133,7 @@ static MunitResult Alloc_Free_Multi_Size(const MunitParameter params[], void *us
     auto header_size = dynamic_allocator_header_size();
 
     Dynamic_Allocator state;
-    ZINFO("The following error is intentionally caused by this test");
+    ZINFO("The following warning is intentionally caused by this test");
     bool result = dynamic_allocator_create(block_size, &state);
     munit_assert(result);
 
@@ -217,7 +217,7 @@ static MunitResult Alloc_Free_One_Aligned(const MunitParameter params[], void *u
 
     Dynamic_Allocator state;
     u64 total_size = block_size + (alignment - 1) + header_size;
-    ZINFO("The following error is intentionally caused by this test");
+    ZINFO("The following warning is intentionally caused by this test");
     bool result = dynamic_allocator_create(total_size, &state);
     munit_assert(result);
 
@@ -244,7 +244,7 @@ static MunitResult Grow(const MunitParameter params[], void *user_data_or_fixtur
 
     Dynamic_Allocator state;
     u64 total_size = block_size + header_size;
-    ZINFO("The following error is intentionally caused by this test");
+    ZINFO("The following warning is intentionally caused by this test");
     bool result = dynamic_allocator_create(total_size, &state);
     munit_assert(result);
     munit_assert_uint64(dynamic_allocator_free_space(&state), ==, total_size);

@@ -12,7 +12,7 @@ ZAPI extern bool memory_system_initialized;
 ZAPI extern Dynamic_Allocator dynamic_allocator_state;
 ZAPI extern Allocator dynamic_allocator;
 
-ZAPI void memory_system_initialize();
+ZAPI bool memory_system_initialize();
 
 ZAPI ZINLINE void* zallocate(i64 size)
 {

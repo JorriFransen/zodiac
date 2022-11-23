@@ -16,7 +16,7 @@ enum class Log_Level
     TRACE = 5,
 };
 
-ZAPI void logging_system_initialize();
+ZAPI bool logging_system_initialize();
 ZAPI void logging_system_set_stdout_file(File_Handle *stdout);
 ZAPI void logging_system_set_stderr_file(File_Handle *stderr);
 
