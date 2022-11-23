@@ -66,22 +66,21 @@ i64 platform_memcmp(const void *a, const void *b, u64 num)
     return memcmp(a, b, num);
 }
 
-void platform_file_write(FILE *file, const char *message)
+void platform_file_write(File_Handle *file, const char *message, Platform_Console_Color color)
 {
-    assert(file && message);
-
-    fprintf(file, "%s\n", message);
-}
-
-void platform_file_write(FILE *file, const char *message, Platform_Console_Color color)
-{
-    assert(file && message);
+    assert(file->valid && file->handle);
+    assert(message);
 
     u64 color_index = (u64)color;
     assert(color_index >= 0 && color_index < 5);
     const char *color_strings[5] = { "34", "32", "31", "33", "37" };
 
-    fprintf(file, "\033[%sm%s\033[0m", color_strings[color_index], message);
+    char str[ZSTRING_FORMAT_STACK_BUFFER_SIZE];
+    u64 size = string_format(str, "\033[%sm%s\033[0m", color_strings[color_index], message);
+    u64 size_written;
+
+    filesystem_write(file, size, str, &size_written);
+    assert(size_written == size);
 }
 
 void platform_console_write(const char *message)

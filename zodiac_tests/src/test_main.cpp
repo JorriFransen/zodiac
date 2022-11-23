@@ -106,7 +106,9 @@ int main(int argc, char** argv) {
 
     // Log nothting to stdout, this will mess up the test output.
     // Munit will display stderr when a test fails.
-    Zodiac::logging_system_initialize(stderr, stderr);
+    Zodiac::logging_system_initialize();
+    Zodiac::File_Handle *stderr = Zodiac::filesystem_stderr_file();
+    Zodiac::logging_system_set_stdout_file(stderr);
 
     return munit_suite_main(&Zodiac::main_suite, nullptr, argc, argv);
 }

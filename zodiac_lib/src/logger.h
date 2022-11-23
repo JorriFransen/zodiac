@@ -1,6 +1,7 @@
 #pragma once
 
 #include <defines.h>
+#include <platform/filesystem.h>
 
 namespace Zodiac
 {
@@ -15,9 +16,9 @@ enum class Log_Level
     TRACE = 5,
 };
 
-// ZAPI extern bool logging_system_initialized;
-
-ZAPI void logging_system_initialize(FILE *stdout, FILE *stderr);
+ZAPI void logging_system_initialize();
+ZAPI void logging_system_set_stdout_file(File_Handle *stdout);
+ZAPI void logging_system_set_stderr_file(File_Handle *stderr);
 
 ZAPI void log_message(Log_Level level, const char *fmt, ...);
 

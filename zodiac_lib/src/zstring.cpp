@@ -2,13 +2,10 @@
 
 #include <common.h>
 #include <memory/zmemory.h>
-#include <string.h>
 
 #ifdef _WIN32
 #include <Windows.h>
 #endif
-
-#include <stdarg.h>
 
 namespace Zodiac
 {
