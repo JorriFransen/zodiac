@@ -52,7 +52,7 @@ void logging_system_set_stderr_file(File_Handle *err_file)
     logging_system_state.err_file = err_file;
 }
 
-void log_message(Log_Level log_level, const char *fmt, ...)
+void log_message(Log_Level log_level, const String_Ref fmt, ...)
 {
     assert(logging_system_initialized);
 
@@ -75,7 +75,7 @@ void log_message(Log_Level log_level, const char *fmt, ...)
     va_list args;
     va_start(args, fmt);
 
-    auto out_length = string_format(out_message, fmt, args);
+    auto out_length = string_format(out_message, fmt.data, args);
 
     va_end(args);
 

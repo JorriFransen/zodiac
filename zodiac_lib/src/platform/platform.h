@@ -25,13 +25,13 @@ enum class Platform_Console_Color
 };
 
 
-ZAPI void platform_file_write(File_Handle *file, const char *message);
-ZAPI void platform_file_write(File_Handle *file, const char *message, Platform_Console_Color color);
+ZAPI void platform_file_write(File_Handle *file, const String_Ref message);
+ZAPI void platform_file_write(File_Handle *file, const String_Ref message, Platform_Console_Color color);
 
-ZAPI void platform_console_write(const char *message);
-ZAPI void platform_console_write(const char *message, Platform_Console_Color color);
+ZAPI void platform_console_write(const String_Ref message);
+ZAPI void platform_console_write(const String_Ref message, Platform_Console_Color color);
 
-ZAPI void platform_console_write_error(const char *message);
-ZAPI void platform_console_write_error(const char *message, Platform_Console_Color color);
+ZAPI void platform_console_write_error(const String_Ref message);
+ZAPI void platform_console_write_error(const String_Ref message, Platform_Console_Color color);
 
 }

@@ -72,11 +72,11 @@ ZAPI bool string_starts_with(const String_Ref &string, const String_Ref &start);
 ZAPI bool string_ends_with(const String_Ref &string, const String_Ref &end);
 ZAPI bool string_equal(const String_Ref &a, const String_Ref &b);
 
-ZAPI const String string_format(Allocator *allocator, const char *fmt, ...);
-ZAPI const String string_format(Allocator *allocator, const char *fmt, va_list args);
+ZAPI const String string_format(Allocator *allocator, const String_Ref fmt, ...);
+ZAPI const String string_format(Allocator *allocator, const String_Ref fmt, va_list args);
 
-ZAPI i32 string_format(char *dest, const char *fmt, ...);
-ZAPI i32 string_format(char *dest, const char *fmt, va_list args);
+ZAPI i32 string_format(char *dest, const String_Ref fmt, ...);
+ZAPI i32 string_format(char *dest, const String_Ref fmt, va_list args);
 
 ZAPI i64 string_to_s64(const String_Ref &string, u64 base = 10);
 ZAPI Real_Value string_to_real(const String_Ref &string);

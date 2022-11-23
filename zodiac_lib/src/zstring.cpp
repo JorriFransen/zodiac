@@ -123,7 +123,7 @@ bool string_equal(const String_Ref &a, const String_Ref &b)
     return zmemcmp(a.data, b.data, a.length) == 0;
 }
 
-const String string_format(Allocator* allocator, const char* fmt, ...)
+const String string_format(Allocator* allocator, const String_Ref fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
@@ -135,28 +135,28 @@ const String string_format(Allocator* allocator, const char* fmt, ...)
     return result;
 }
 
-const String string_format(Allocator *allocator, const char *fmt, va_list args)
+const String string_format(Allocator *allocator, const String_Ref fmt, va_list args)
 {
     va_list args_copy;
     va_copy(args_copy, args);
 
-    auto size = vsnprintf(nullptr, 0, fmt, args_copy);
+    auto size = vsnprintf(nullptr, 0, fmt.data, args_copy);
 
     va_end(args_copy);
 
     char *buf = alloc_array<char>(allocator, size + 1);
     assert(buf);
 
-    auto written_size = vsnprintf(buf, (size_t)size + 1, fmt, args);
+    auto written_size = vsnprintf(buf, (size_t)size + 1, fmt.data, args);
     assert(written_size <= size);
     zodiac_assert_fatal(written_size <= size, "Written size does not match the expected size")
 
     return String(buf, size);
 }
 
-i32 string_format(char *dest, const char *fmt, ...)
+i32 string_format(char *dest, const String_Ref fmt, ...)
 {
-    assert(dest && fmt);
+    assert(dest && fmt.data);
 
     va_list args;
     va_start(args, fmt);
@@ -168,12 +168,12 @@ i32 string_format(char *dest, const char *fmt, ...)
     return result;
 }
 
-i32 string_format(char *dest, const char *fmt, va_list args)
+i32 string_format(char *dest, const String_Ref fmt, va_list args)
 {
-    assert(dest && fmt);
+    assert(dest && fmt.data);
 
     char buffer[ZSTRING_FORMAT_STACK_BUFFER_SIZE];
-    auto written_size = vsnprintf(buffer, ZSTRING_FORMAT_STACK_BUFFER_SIZE, fmt, args);
+    auto written_size = vsnprintf(buffer, ZSTRING_FORMAT_STACK_BUFFER_SIZE, fmt.data, args);
     buffer[written_size] = '\0';
     zmemcpy(dest, buffer, written_size + 1);
 
