@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <asserts.h>
+
 namespace Zodiac
 {
 

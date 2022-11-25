@@ -106,4 +106,9 @@ file_local void write_log_file(const String_Ref message)
     }
 }
 
+void report_assert_fail(const char* expression, const char* message, const char *file, i64 line)
+{
+    log_message(Log_Level::FATAL, "Assertion failed: '%s', message: '%s', in: %s:%i", expression, message, file, line);
+}
+
 }

@@ -1,7 +1,6 @@
 #pragma once
 
 
-#define MUNIT_ENABLE_ASSERT_ALIASES
 #include <munit/munit.h>
 
 #define START_TESTS(name) \

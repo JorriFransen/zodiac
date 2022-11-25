@@ -161,7 +161,7 @@ bool freelist_free_block(Freelist *freelist, u64 size, u64 offset)
         node = node->next;
     }
 
-    zodiac_assert_fatal(false, "Freelist unable to find block to be freed...");
+    assert_msg(false, "Freelist unable to find block to be freed...");
     return false;
 }
 

@@ -212,9 +212,7 @@ void dynamic_allocator_free(Dynamic_Allocator *state, void *memory)
         }
     }
 
-    if (!containing_block) {
-        zodiac_assert_fatal(!containing_block, "Dynamic allocator did not find block containing freed address...");
-    }
+    assert_msg(containing_block != nullptr, "Dynamic allocator did not find block containing freed address...");
 
     auto header = (Dynamic_Alloc_Header *)(((u64)memory) - sizeof(Dynamic_Alloc_Header));
     u64 offset = header->start - ((u8 *)containing_block->memory);

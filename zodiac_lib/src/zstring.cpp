@@ -149,7 +149,8 @@ const String string_format(Allocator *allocator, const String_Ref fmt, va_list a
 
     auto written_size = vsnprintf(buf, (size_t)size + 1, fmt.data, args);
     assert(written_size <= size);
-    zodiac_assert_fatal(written_size <= size, "Written size does not match the expected size")
+
+    assert_msg(written_size <= size, "Written size does not match the expected size")
 
     return String(buf, size);
 }

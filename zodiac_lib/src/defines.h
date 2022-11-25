@@ -1,19 +1,10 @@
 #pragma once
 
-#include <cassert>
-
 #if (defined(__clang__) || defined(__gcc__)) && (defined(__STDC_VERSION__)  && __STDC_VERSION__ > 201112L)
 #define STATIC_ASSERT _Static_assert
 #else
 #define STATIC_ASSERT static_assert
 #endif
-
-#define zodiac_assert_fatal(cond, err) \
-    if (!(cond)) { \
-        assert(cond); \
-        fprintf(stderr, "%s:%d: Assertion failed: %s", __FILE__, __LINE__, (err)); \
-        exit(42); \
-    }
 
 #if defined(__clang__) || defined(__gcc__)
 #define ZINLINE __attribute__((always_inline)) inline
