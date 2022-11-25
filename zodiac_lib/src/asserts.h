@@ -8,10 +8,14 @@
 
 #ifdef ZASSERTS_ENABLED
 
+#define ZODIAC_ABORT() raise(SIGABRT)
+
 #if _MSC_VER
+
+#define ZODIAC_DEBUG_BREAK() __debugbreak()
+
 #else //_MSC_VER
 
-#define ZODIAC_ABORT() raise(SIGABRT)
 #define ZODIAC_DEBUG_BREAK() __builtin_trap()
 
 #endif //_MSC_VER
