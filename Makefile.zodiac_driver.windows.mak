@@ -15,9 +15,9 @@ DEFINES := -D_DEBUG -DZIMPORT
 # Make does not offer a recursive wildcard function, so here's one:
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
-SRC_FILES := $(call rwildcard,$(SRC_DIR)/,*.cpp)
+SRC_FILES := $(subst /,\, $(call rwildcard,$(SRC_DIR)/,*.cpp))
 DIRECTORIES := \$(SRC_DIR) $(subst $(DIR),,$(shell dir $(SRC_DIR) /S /AD /B | findstr /i src)) #All source directories
-OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)/%.o)
+OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)\\%.o)
 
 FULL_ASSEMBLY_PATH := $(BUILD_DIR)/$(ASSEMBLY)$(EXTENSION)
 
@@ -32,7 +32,7 @@ scaffold:
 compile:
 	@echo Compiling $(ASSEMBLY)
 
-$(OBJ_DIR)/%.cpp.o: %.cpp
+$(OBJ_DIR)\\%.cpp.o: %.cpp
 	@echo $< -^> $@
 	@clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
 
