@@ -8,7 +8,7 @@
 #include "test_dynamic_allocator.h"
 #include "test_linear_allocator.h"
 #include "test_temp_allocator.h"
-#include "test_dynamic_pool_allocator.h"
+#include "test_pool_allocator.h"
 
 namespace Zodiac
 {

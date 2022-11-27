@@ -2,13 +2,13 @@
 
 #include <test_common.h>
 
-#include <memory/dynamic_pool_allocator.h>
+#include <memory/pool_allocator.h>
 
 namespace Zodiac { namespace Dynamic_Pool_Allocator_Tests {
 
 static MunitResult Create_Free(const MunitParameter params[], void *user_data_or_fixture)
 {
-    Dynamic_Pool_Allocator pool;
+    Pool_Allocator pool;
 
     u64 capacity = 8;
     u64 element_size = sizeof(u64);
@@ -34,7 +34,7 @@ static MunitResult Create_Free(const MunitParameter params[], void *user_data_or
 
 static MunitResult Alloc_Free_One(const MunitParameter params[], void *user_data_or_fixture)
 {
-    Dynamic_Pool_Allocator pool;
+    Pool_Allocator pool;
     u64 capacity = 8;
     u64 element_size = sizeof(u64);
 
@@ -54,7 +54,7 @@ static MunitResult Alloc_Free_One(const MunitParameter params[], void *user_data
 
 static MunitResult Alloc_Free_Multi(const MunitParameter params[], void *user_data_or_fixture)
 {
-    Dynamic_Pool_Allocator pool;
+    Pool_Allocator pool;
     u64 capacity = 8;
     u64 element_size = sizeof(u64);
 
@@ -130,7 +130,7 @@ static MunitResult Alloc_Free_Multi(const MunitParameter params[], void *user_da
 
 static MunitResult Grow(const MunitParameter params[], void *user_data_or_fixture)
 {
-    Dynamic_Pool_Allocator pool;
+    Pool_Allocator pool;
     u64 capacity = 4;
     u64 element_size = sizeof(u64);
 
