@@ -1,8 +1,8 @@
 #pragma once
 
-#include <test_common.h>
-
+#include <logger.h>
 #include <memory/dynamic_allocator.h>
+#include <test_common.h>
 
 namespace Zodiac { namespace Dynamic_Allocator_Tests  {
 
