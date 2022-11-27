@@ -4,7 +4,7 @@
 
 #include <memory/pool_allocator.h>
 
-namespace Zodiac { namespace Dynamic_Pool_Allocator_Tests {
+namespace Zodiac { namespace Pool_Allocator_Tests {
 
 static MunitResult Create_Free(const MunitParameter params[], void *user_data_or_fixture)
 {
@@ -166,7 +166,7 @@ static MunitResult Grow(const MunitParameter params[], void *user_data_or_fixtur
     return MUNIT_OK;
 }
 
-START_TESTS(dynamic_pool_allocator_tests)
+START_TESTS(pool_allocator_tests)
     DEFINE_TEST(Create_Free),
     DEFINE_TEST(Alloc_Free_One),
     DEFINE_TEST(Alloc_Free_Multi),
