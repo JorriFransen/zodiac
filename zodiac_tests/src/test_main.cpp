@@ -5,17 +5,14 @@
 #include "test_strings.h"
 #include "test_dynamic_array.h"
 #include "test_freelist.h"
-#include "test_dynamic_allocator.h"
-#include "test_linear_allocator.h"
-#include "test_pool_allocator.h"
-#include "test_temp_allocator.h"
-#include "test_stack_allocator.h"
+
+#include "memory/test_memory.h"
 
 namespace Zodiac
 {
 
 static MunitSuite string_suite = {
-    (char*)"String/",
+    (char *)"String/",
     String_Tests::string_tests,
     nullptr,
     1,
@@ -23,7 +20,7 @@ static MunitSuite string_suite = {
 };
 
 static MunitSuite atom_suite = {
-    (char*)"Atom/",
+    (char *)"Atom/",
     Atom_Tests::atom_tests,
     nullptr,
     1,
@@ -31,7 +28,7 @@ static MunitSuite atom_suite = {
 };
 
 static MunitSuite dynamic_array_suite = {
-    (char*)"Dynamic_Array/",
+    (char *)"Dynamic_Array/",
     Dynamic_Array_Tests::dynamic_array_tests,
     nullptr,
     1,
@@ -39,63 +36,20 @@ static MunitSuite dynamic_array_suite = {
 };
 
 static MunitSuite freelist_suite = {
-    (char*)"Freelist/",
+    (char *)"Freelist/",
     Freelist_Tests::freelist_tests,
     nullptr,
     1,
     MUNIT_SUITE_OPTION_NONE,
 };
 
-static MunitSuite dynamic_allocator_suite = {
-    (char*)"Dynamic_Alloc/",
-    Dynamic_Allocator_Tests::dynamic_allocator_tests,
-    nullptr,
-    1,
-    MUNIT_SUITE_OPTION_NONE,
-};
-
-static MunitSuite linear_allocator_suite = {
-    (char*)"Linear_Alloc/",
-    Linear_Allocator_Tests::linear_allocator_tests,
-    nullptr,
-    1,
-    MUNIT_SUITE_OPTION_NONE,
-};
-
-static MunitSuite temporary_allocator_suite = {
-    (char*)"Temp_Alloc/",
-    Temp_Allocator_Tests::temp_allocator_tests,
-    nullptr,
-    1,
-    MUNIT_SUITE_OPTION_NONE,
-};
-
-static MunitSuite pool_allocator_suite = {
-    (char*)"Dyn_Pool_Alloc/",
-    Pool_Allocator_Tests::pool_allocator_tests,
-    nullptr,
-    1,
-    MUNIT_SUITE_OPTION_NONE,
-};
-
-static MunitSuite stack_allocator_suite = {
-    (char*)"Stack_Alloc/",
-    Stack_Allocator_Tests::stack_allocator_tests,
-    nullptr,
-    1,
-    MUNIT_SUITE_OPTION_NONE,
-};
 
 static MunitSuite main_child_suites[] = {
     string_suite,
     atom_suite,
     dynamic_array_suite,
     freelist_suite,
-    dynamic_allocator_suite,
-    linear_allocator_suite,
-    pool_allocator_suite,
-    temporary_allocator_suite,
-    stack_allocator_suite,
+    memory_suite,
     //bytecode_suite,
     {},
 };

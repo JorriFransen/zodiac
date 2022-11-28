@@ -160,7 +160,7 @@ static MunitResult Alloc_Free_Multi(const MunitParameter params[], void *user_da
     return MUNIT_OK;
 }
 
-static MunitResult Alloc_Free_Out_Of_Order(const MunitParameter params[], void *user_data_or_fixture)
+static MunitResult Invalid_Free(const MunitParameter params[], void *user_data_or_fixture)
 {
     u64 block_cap = 4;
     u64 alloc_size = sizeof(u64);
@@ -307,7 +307,7 @@ START_TESTS(stack_allocator_tests)
     DEFINE_TEST(Create_Free),
     DEFINE_TEST(Alloc_Free_One),
     DEFINE_TEST(Alloc_Free_Multi),
-    DEFINE_TEST(Alloc_Free_Out_Of_Order),
+    DEFINE_TEST(Invalid_Free),
     DEFINE_TEST(Grow),
 END_TESTS();
 
