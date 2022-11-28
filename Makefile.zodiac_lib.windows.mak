@@ -15,7 +15,7 @@ EXTENSION := .dll
 
 COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wvla -fdeclspec
 INCLUDE_FLAGS := -I$(SRC_DIR)
-LINKER_FLAGS := -g -shared -Wl,-nodefaultlib:libcmt
+LINKER_FLAGS := -g -shared -lmsvcrt -Wl,-nodefaultlib:libcmt
 DEFINES := -D_DEBUG -DZEXPORT -D_DLL -D_CRT_SECURE_NO_WARNINGS
 
 # Make does not offer a recursive wildcard function, so here's one:
@@ -51,31 +51,31 @@ $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 
 .PHONY: llvm
 llvm:
-	# @if not exist $(LLVM_DEBUG_INSTALL_DIR) (\
-	#      echo Extracting llvm... && \
-	#     powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('$(BASE_DIR)\llvm\llvm-$(LLVM_VERSION).src.zip', '$(LLVM_SRC_DIR)'); }" &&\
-	#      echo Configuring llvm... &&\
-	#     mkdir $(LLVM_DEBUG_BUILD_DIR) &&\
-	#     pushd $(LLVM_DEBUG_BUILD_DIR) &&\
-	#     cmake.exe $(LLVM_SRC_DIR)\llvm -DCMAKE_INSTALL_PREFIX=$(LLVM_DEBUG_INSTALL_DIR) -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Debug -T ClangCl &&\
-	#      echo Building and installing llvm... &&\
-	#     mkdir $(LLVM_DEBUG_INSTALL_DIR) &&\
-	#     pushd $(LLVM_DEBUG_BUILD_DIR) &&\
-	#     cmake.exe --build . --target install --config Debug &&\
-	#     popd )
-	# @if exist $(LLVM_SRC_DIR) (\
-	#     @echo Removing llvm source dir after instal... &&\
-	#     rmdir /s /q $(LLVM_SRC_DIR) )
-	# @if exist $(LLVM_DEBUG_BUILD_DIR) (\
-	#      echo Removing llvm debug build dir after install &&\
-	#     rmdir /s /q $(LLVM_DEBUG_BUILD_DIR) )
+#	@if not exist $(LLVM_DEBUG_INSTALL_DIR) (\
+#	     echo Extracting llvm... && \
+#	    powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('$(BASE_DIR)\llvm\llvm-$(LLVM_VERSION).src.zip', '$(LLVM_SRC_DIR)'); }" &&\
+#	     echo Configuring llvm... &&\
+#	    mkdir $(LLVM_DEBUG_BUILD_DIR) &&\
+#	    pushd $(LLVM_DEBUG_BUILD_DIR) &&\
+#	    cmake.exe $(LLVM_SRC_DIR)\llvm -DCMAKE_INSTALL_PREFIX=$(LLVM_DEBUG_INSTALL_DIR) -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Debug -T ClangCl &&\
+#	     echo Building and installing llvm... &&\
+#	    mkdir $(LLVM_DEBUG_INSTALL_DIR) &&\
+#	    pushd $(LLVM_DEBUG_BUILD_DIR) &&\
+#	    cmake.exe --build . --target install --config Debug &&\
+#	    popd )
+#	@if exist $(LLVM_SRC_DIR) (\
+#	    @echo Removing llvm source dir after instal... &&\
+#	    rmdir /s /q $(LLVM_SRC_DIR) )
+#	@if exist $(LLVM_DEBUG_BUILD_DIR) (\
+#	     echo Removing llvm debug build dir after install &&\
+#	    rmdir /s /q $(LLVM_DEBUG_BUILD_DIR) )
 
 llvm_vars:
-	# $(eval LLVM_CONFIG = $(LLVM_DEBUG_INSTALL_DIR)\bin\llvm-config.exe)
-	# $(eval LLVM_INCLUDE_DIR = $(shell $(LLVM_CONFIG) --includedir))
-	# $(eval LLVM_LIBS = $(shell $(LLVM_CONFIG) --libs codegen))
-	# $(eval INCLUDE_FLAGS += -I$(LLVM_INCLUDE_DIR))
-	# $(eval LINKER_FLAGS += $(LLVM_LIBS))
+#	$(eval LLVM_CONFIG = $(LLVM_DEBUG_INSTALL_DIR)\bin\llvm-config.exe)
+#	$(eval LLVM_INCLUDE_DIR = $(shell $(LLVM_CONFIG) --includedir))
+#	$(eval LLVM_LIBS = $(shell $(LLVM_CONFIG) --libs codegen))
+#	$(eval INCLUDE_FLAGS += -I$(LLVM_INCLUDE_DIR))
+#	$(eval LINKER_FLAGS += $(LLVM_LIBS))
 
 .PHONY: clean_llvm
 clean_llvm:
