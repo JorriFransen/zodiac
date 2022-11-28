@@ -14,7 +14,7 @@ int main() {
 
     ZTRACE("Systems init done");
 
-    Lexer lexer; 
+    Lexer lexer;
     lexer_create("1+2-_VarName*another_var()", &lexer);
 
     while (!(is_token(&lexer, TOK_EOF) || is_token(&lexer, TOK_INVALID))) {

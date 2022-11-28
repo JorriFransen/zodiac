@@ -6,9 +6,9 @@ SRC_DIR := $(BASE_DIR)/src
 ASSEMBLY := libzodiac
 EXTENSION := .so
 
-LLVM_LIBS := $(shell llvm-config --libs codegen)
-LLVM_CXX_FLAGS := $(shell llvm-config --cxxflags)
-LLVM_LD_FLAGS := $(shell llvm-config --ldflags)
+# LLVM_LIBS := $(shell llvm-config --libs codegen)
+# LLVM_CXX_FLAGS := $(shell llvm-config --cxxflags)
+# LLVM_LD_FLAGS := $(shell llvm-config --ldflags)
 
 COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wvla -fdeclspec -fPIC $(LLVM_CXX_FLAGS)
 INCLUDE_FLAGS := -I$(SRC_DIR)
