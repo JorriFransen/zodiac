@@ -14,39 +14,9 @@ struct Dynamic_Alloc_Header
     u16 alignment;
 };
 
-Dynamic_Allocator_Block *allocate_block(u64 size);
-void free_block(Dynamic_Allocator_Block *block);
-
-void *dynamic_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u64 alignment, void *old_ptr)
-{
-
-    auto das = (Dynamic_Allocator *)allocator->user_data;
-
-    switch (mode) {
-        case Allocation_Mode::ALLOCATE: {
-            return dynamic_allocator_allocate_aligned(das, size, alignment);
-        }
-
-        case Allocation_Mode::FREE: {
-            assert(alignment == 0);
-            dynamic_allocator_free(das, old_ptr);
-            return nullptr;
-        }
-
-        case Allocation_Mode::FREE_ALL: {
-            assert(false && !"FREE_ALL not supported for dynamic_allocator");
-            break;
-        }
-
-        case Allocation_Mode::REALLOCATE: {
-            assert(false && !"REALLOCATE not supported for dynamic_allocator");
-            break;
-        }
-    }
-
-    assert(false);
-    return nullptr;
-}
+file_local Dynamic_Allocator_Block *allocate_block(u64 size);
+file_local void free_block(Dynamic_Allocator_Block *block);
+file_local void *dynamic_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u64 alignment, void *old_ptr);
 
 bool dynamic_allocator_create(u64 initial_block_size, Dynamic_Allocator *out_allocator)
 {
@@ -89,40 +59,6 @@ Allocator dynamic_allocator_allocator(Dynamic_Allocator *state)
     Allocator result;
     allocator_create(dynamic_alloc_func, state, &result);
     return result;
-}
-
-Dynamic_Allocator_Block *allocate_block(u64 size)
-{
-    assert(size);
-
-    u64 freelist_mem_req;
-    freelist_create(size, &freelist_mem_req, nullptr, nullptr);
-
-    assert(freelist_mem_req);
-
-    u64 total_size = sizeof(Dynamic_Allocator_Block) + size + freelist_mem_req;
-    assert(total_size);
-
-    u8 *memory = (u8 *)platform_allocate(total_size);
-    assert(memory);
-
-    Dynamic_Allocator_Block *new_block = (Dynamic_Allocator_Block *)memory;
-    u8 *freelist_mem = memory + sizeof(Dynamic_Allocator_Block);
-    u8 *block_mem = freelist_mem + freelist_mem_req;
-
-    freelist_create(size, &freelist_mem_req, &new_block->freelist, freelist_mem);
-    new_block->memory = block_mem;
-    new_block->next = nullptr;
-
-    return new_block;
-}
-
-void free_block(Dynamic_Allocator_Block *block)
-{
-    assert(block);
-
-    freelist_destroy(&block->freelist);
-    platform_free(block);
 }
 
 void *dynamic_allocator_allocate(Dynamic_Allocator *state, u64 size)
@@ -240,6 +176,70 @@ u64 dynamic_allocator_free_space(Dynamic_Allocator *state)
 ZAPI u64 dynamic_allocator__header_size()
 {
     return sizeof(Dynamic_Alloc_Header);
+}
+
+file_local Dynamic_Allocator_Block *allocate_block(u64 size)
+{
+    assert(size);
+
+    u64 freelist_mem_req;
+    freelist_create(size, &freelist_mem_req, nullptr, nullptr);
+
+    assert(freelist_mem_req);
+
+    u64 total_size = sizeof(Dynamic_Allocator_Block) + size + freelist_mem_req;
+    assert(total_size);
+
+    u8 *memory = (u8 *)platform_allocate(total_size);
+    assert(memory);
+
+    Dynamic_Allocator_Block *new_block = (Dynamic_Allocator_Block *)memory;
+    u8 *freelist_mem = memory + sizeof(Dynamic_Allocator_Block);
+    u8 *block_mem = freelist_mem + freelist_mem_req;
+
+    freelist_create(size, &freelist_mem_req, &new_block->freelist, freelist_mem);
+    new_block->memory = block_mem;
+    new_block->next = nullptr;
+
+    return new_block;
+}
+
+file_local void free_block(Dynamic_Allocator_Block *block)
+{
+    assert(block);
+
+    freelist_destroy(&block->freelist);
+    platform_free(block);
+}
+
+file_local void *dynamic_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u64 alignment, void *old_ptr)
+{
+    auto das = (Dynamic_Allocator *)allocator->user_data;
+
+    switch (mode) {
+        case Allocation_Mode::ALLOCATE: {
+            return dynamic_allocator_allocate_aligned(das, size, alignment);
+        }
+
+        case Allocation_Mode::FREE: {
+            assert(alignment == 0);
+            dynamic_allocator_free(das, old_ptr);
+            return nullptr;
+        }
+
+        case Allocation_Mode::FREE_ALL: {
+            assert(false && !"FREE_ALL not supported for dynamic_allocator");
+            break;
+        }
+
+        case Allocation_Mode::REALLOCATE: {
+            assert(false && !"REALLOCATE not supported for dynamic_allocator");
+            break;
+        }
+    }
+
+    assert(false);
+    return nullptr;
 }
 
 }
