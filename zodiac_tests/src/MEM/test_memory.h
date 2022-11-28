@@ -57,10 +57,11 @@ static MunitSuite memory_child_suites[] = {
     pool_allocator_suite,
     temporary_allocator_suite,
     stack_allocator_suite,
+    {},
 };
 
 static MunitSuite memory_suite = {
-    (char *)"Mem/",
+    (char *)"MEM/",
     nullptr,
     memory_child_suites,
     1,

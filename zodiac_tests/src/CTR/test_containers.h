@@ -17,7 +17,7 @@ static MunitSuite dynamic_array_suite = {
 };
 
 static MunitSuite freelist_suite = {
-    (char *)"Freelist/",
+    (char *)"FRLST/",
     Freelist_Tests::freelist_tests,
     nullptr,
     1,
