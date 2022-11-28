@@ -27,6 +27,6 @@ ZAPI void log_message(Log_Level log_level, const String_Ref fmt, ...);
 #define ZWARN(fmt, ...) log_message(Log_Level::WARN, fmt, ##__VA_ARGS__);
 #define ZINFO(fmt, ...) log_message(Log_Level::INFO, fmt, ##__VA_ARGS__);
 #define ZDEBUG(fmt, ...) log_message(Log_Level::DEBUG, fmt, ##__VA_ARGS__);
-#define ZTRACE(fmt, ...) log_message(Log_Level::DEBUG, fmt, ##__VA_ARGS__);
+#define ZTRACE(fmt, ...) log_message(Log_Level::TRACE, fmt, ##__VA_ARGS__);
 
 }
