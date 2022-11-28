@@ -237,7 +237,7 @@ u64 dynamic_allocator_free_space(Dynamic_Allocator *state)
     return total;
 }
 
-ZAPI u64 dynamic_allocator_header_size()
+ZAPI u64 dynamic_allocator__header_size()
 {
     return sizeof(Dynamic_Alloc_Header);
 }

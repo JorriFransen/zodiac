@@ -34,7 +34,7 @@ ZAPI void *dynamic_allocator_allocate_aligned(Dynamic_Allocator *state, u64 size
 ZAPI void dynamic_allocator_free(Dynamic_Allocator *state, void *ptr);
 
 ZAPI u64 dynamic_allocator_free_space(Dynamic_Allocator *state);
-ZAPI u64 dynamic_allocator_header_size();
+ZAPI u64 dynamic_allocator__header_size();
 
 
 }

@@ -11,6 +11,12 @@ T min(T a, T b) {
     return b;
 }
 
+template <typename T>
+T max(T a, T b) {
+    if (a > b) return a;
+    return b;
+}
+
 union Integer_Value
 {
     i64 s64;
