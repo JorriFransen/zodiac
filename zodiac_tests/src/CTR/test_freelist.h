@@ -1,3 +1,5 @@
+#pragma once
+
 #include <test_common.h>
 
 #include <containers/freelist.h>
