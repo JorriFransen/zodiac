@@ -7,12 +7,6 @@
 namespace Zodiac
 {
 
-struct Stack_Alloc_Header
-{
-    u32 previous_offset;
-    void *ptr;
-};
-
 struct Stack_Block
 {
     void *memory;
@@ -35,6 +29,7 @@ ZAPI Allocator stack_allocator_allocator(Stack_Allocator *state);
 ZAPI void *stack_allocator_allocate(Stack_Allocator *state, u64 size);
 ZAPI void *stack_allocator_allocate_aligned(Stack_Allocator *state, u64 size, u64 alignment);
 ZAPI bool stack_allocator_free(Stack_Allocator *state, void *memory);
+ZAPI void stack_allocator_free_all(Stack_Allocator *state);
 
 ZAPI u64 stack_allocator_free_space(Stack_Allocator *state);
 ZAPI u64 stack_allocator__header_size();

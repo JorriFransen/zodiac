@@ -8,7 +8,14 @@
 namespace Zodiac
 {
 
+struct Stack_Alloc_Header
+{
+    u32 previous_offset;
+    void *ptr;
+};
+
 file_local Stack_Block *create_block(u32 size);
+file_local void *stack_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u64 alignment, void *old_ptr);
 
 void stack_allocator_create(u32 block_size, Stack_Allocator *out_allocator)
 {
@@ -44,8 +51,10 @@ void stack_allocator_destroy(Stack_Allocator *allocator)
 Allocator stack_allocator_allocator(Stack_Allocator *state)
 {
     assert(state);
-    assert(false);
-    return {};
+
+    Allocator result;
+    allocator_create(stack_alloc_func, state, &result);
+    return result;
 }
 
 void *stack_allocator_allocate(Stack_Allocator *state, u64 size)
@@ -84,6 +93,7 @@ void *stack_allocator_allocate_aligned(Stack_Allocator *state, u64 size, u64 ali
         }
 
         if (free_block) {
+            assert(free_block->offset == 0);
             free_block->next = state->head;
             state->head = free_block;
         } else {
@@ -118,6 +128,7 @@ bool stack_allocator_free(Stack_Allocator *state, void *ptr)
         auto old_block = state->head;
         state->head = old_block->next;
 
+        old_block->offset = 0;
         old_block->next = state->freelist;
         state->freelist = old_block;
     }
@@ -138,6 +149,30 @@ bool stack_allocator_free(Stack_Allocator *state, void *ptr)
     state->head->offset = header->previous_offset;
 
     return true;
+}
+
+void stack_allocator_free_all(Stack_Allocator *state)
+{
+    assert(state && state->head);
+
+    auto block = state->head;
+    while (block) {
+
+        auto next = block->next;
+        block->offset = 0;
+
+        if (next) {
+            block->next = state->freelist;
+            state->freelist = block->next;
+        } else {
+            // Don't move the last block to the freelist
+            state->head = block;
+        }
+
+        block = next;
+    }
+
+    assert(state->head);
 }
 
 u64 stack_allocator_free_space(Stack_Allocator *state)
@@ -161,6 +196,11 @@ u64 stack_allocator_free_space(Stack_Allocator *state)
     return total_free;
 }
 
+ZAPI u64 stack_allocator__header_size()
+{
+    return sizeof(Stack_Alloc_Header);
+}
+
 file_local Stack_Block *create_block(u32 size)
 {
     auto total_size = size + sizeof(Stack_Block);
@@ -174,10 +214,31 @@ file_local Stack_Block *create_block(u32 size)
     return result;
 }
 
-ZAPI u64 stack_allocator__header_size()
+file_local void *stack_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u64 alignment, void *old_ptr)
 {
-    return sizeof(Stack_Alloc_Header);
-}
+    auto sas = (Stack_Allocator *)allocator->user_data;
 
+    switch (mode) {
+        case Allocation_Mode::ALLOCATE: {
+            return stack_allocator_allocate_aligned(sas, size, alignment);
+        }
+
+        case Allocation_Mode::FREE: {
+            assert(alignment == 0);
+            stack_allocator_free(sas, old_ptr);
+            return nullptr;
+        }
+
+        case Allocation_Mode::FREE_ALL: {
+            stack_allocator_free_all(sas);
+            return nullptr;
+        }
+
+        case Allocation_Mode::REALLOCATE: {
+            assert(false && !"REALLOCATE not supported for stack_allocator");
+            return nullptr;
+        }
+    }
+}
 }
 
