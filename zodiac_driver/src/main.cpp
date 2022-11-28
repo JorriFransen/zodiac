@@ -12,8 +12,6 @@ int main() {
     if (!Zodiac::logging_system_initialize()) return 1;
     if (!Zodiac::memory_system_initialize()) return 1;
 
-    ZTRACE("Systems init done");
-
     Lexer lexer;
     lexer_create("1+2-_VarName*another_var()", &lexer);
 

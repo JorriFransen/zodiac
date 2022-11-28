@@ -1,5 +1,6 @@
 #include "lexer.h"
 
+#include <logger.h>
 #include <memory/zmemory.h>
 
 namespace Zodiac
@@ -24,13 +25,24 @@ void next_token(Lexer *lex)
 {
     assert(lex);
 
+next_token__start_lexing_token:
     lex->token.kind = TOK_INVALID;
-    lex->token.start = lex->stream;
+    lex->token.string.data = lex->stream;
 
     switch (*lex->stream) {
 
         case 0: {
             lex->token.kind = TOK_EOF;
+            break;
+        }
+
+        case ' ': case '\n': case '\t': {
+            lex->stream += 1;
+            while (isspace(*lex->stream)) {
+                lex->stream += 1;
+            }
+
+            goto next_token__start_lexing_token;
             break;
         }
 
@@ -62,13 +74,17 @@ void next_token(Lexer *lex)
         }
 
         default: {
-            lex->token.kind = (Token_Kind)*lex->stream;
-            lex->stream += 1;
+            if (*lex->stream && std::isprint(*lex->stream)) {
+                lex->token.kind = (Token_Kind)*lex->stream;
+                lex->stream += 1;
+            } else {
+                ZFATAL("Unexpected character: '%c', value: '%d'", *lex->stream, *lex->stream);
+            }
             break;
         }
     }
 
-    lex->token.end = lex->stream;
+    lex->token.string.length = lex->stream - lex->token.string.data;
 }
 
 bool is_token(Lexer *lexer, Token_Kind kind)
@@ -79,9 +95,8 @@ bool is_token(Lexer *lexer, Token_Kind kind)
 void print_token(Token token)
 {
     const char *name = token_kind_str(token.kind);
-    int length = token.end - token.start;
 
-    if (length) printf("%s '%.*s'\n", name, length, token.start);
+    if (token.string.length) printf("%s '%.*s'\n", name, (int)token.string.length, token.string.data);
     else printf("%s\n", name);
 }
 

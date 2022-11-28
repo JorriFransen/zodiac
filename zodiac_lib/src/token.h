@@ -2,6 +2,7 @@
 
 #include <common.h>
 #include <defines.h>
+#include <zstring.h>
 
 namespace Zodiac
 {
@@ -22,8 +23,7 @@ struct Token
 {
     Token_Kind kind;
 
-    const char *start;
-    const char *end;
+    String_Ref string;
 
     union
     {

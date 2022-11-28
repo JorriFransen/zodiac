@@ -2,6 +2,7 @@
 #include <munit/munit.h>
 
 #include "test_atoms.h"
+#include "test_lexer.h"
 #include "test_strings.h"
 
 #include "CTR/test_containers.h"
@@ -26,11 +27,20 @@ static MunitSuite atom_suite = {
     MUNIT_SUITE_OPTION_NONE,
 };
 
+static MunitSuite lexer_suite = {
+    (char *)"Lex/",
+    Lexer_Tests::lexer_tests,
+    nullptr,
+    1,
+    MUNIT_SUITE_OPTION_NONE,
+};
+
 static MunitSuite main_child_suites[] = {
     string_suite,
     atom_suite,
     containers_suite,
     memory_suite,
+    lexer_suite,
     //bytecode_suite,
     {},
 };
