@@ -17,14 +17,14 @@ namespace Zodiac
 struct String
 {
     char* data = nullptr;
-    i64 length = 0;
+    u64 length = 0;
 
     String() {}
-    String(char* data, i64 length) : data(data), length(length) {}
-    String(Allocator* allocator, char *cstr, i64 length) { init(allocator, cstr, length); }
-    String(Allocator* allocator, const char *cstr, i64 length) { init(allocator, (char *)cstr, length); }
+    String(char* data, u64 length) : data(data), length(length) {}
+    String(Allocator* allocator, char *cstr, u64 length) { init(allocator, cstr, length); }
+    String(Allocator* allocator, const char *cstr, u64 length) { init(allocator, (char *)cstr, length); }
 
-    void init(Allocator * allocator, char *cstr, i64 length);
+    void init(Allocator * allocator, char *cstr, u64 length);
 
 #ifdef _WIN32
     String(Allocator* allocator, wchar_t *wstr, i64 length) { init(allocator, wstr, length); }
@@ -32,7 +32,7 @@ struct String
     void init(Allocator * allocator, wchar_t *wstr, i64 length);
 #endif
 
-    char &operator[](i64 index)
+    char &operator[](u64 index)
     {
         assert(index >= 0 && index <= length);
         return data[index];
@@ -43,17 +43,17 @@ struct String
 struct String_Ref
 {
     const char *data = nullptr;
-    i64 length = 0;
+    u64 length = 0;
 
     String_Ref() : data(nullptr), length(0) {}
 
-    String_Ref(const char *cstr) : data(cstr), length((i64)strlen(cstr)) {}
-    String_Ref(const char *cstr, i64 length) : data(cstr), length(length) {}
-    String_Ref(const std::string &std_str) : data(std_str.c_str()), length((i64)std_str.length()) {}
+    String_Ref(const char *cstr) : data(cstr), length((u64)strlen(cstr)) {}
+    String_Ref(const char *cstr, u64 length) : data(cstr), length(length) {}
+    String_Ref(const std::string &std_str) : data(std_str.c_str()), length((u64)std_str.length()) {}
     String_Ref(const String &zstr) : data(zstr.data), length(zstr.length) {}
     String_Ref(const Atom &atom) : data(atom.data), length(atom.length) {}
 
-    const char &operator[](i64 index) const {
+    const char &operator[](u64 index) const {
         assert(index < this->length);
         return data[index];
     }
@@ -64,7 +64,7 @@ struct String_Ref
 };
 
 ZAPI String string_copy(Allocator *allocator, const String_Ref &original);
-ZAPI String string_copy(Allocator *allocator, const char *cstr, i64 length);
+ZAPI String string_copy(Allocator *allocator, const char *cstr, u64 length);
 ZAPI String string_append(Allocator *allocator, const String_Ref &a, const String_Ref &b);
 
 ZAPI bool string_contains(const String_Ref &string, const String_Ref &sub_string);

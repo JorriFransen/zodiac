@@ -11,7 +11,7 @@ namespace Zodiac
 {
 
 
-void String::init(Allocator * allocator, char *cstr, i64 len)
+void String::init(Allocator * allocator, char *cstr, u64 len)
 {
     assert(len >= 0);
 
@@ -25,12 +25,12 @@ void String::init(Allocator * allocator, char *cstr, i64 len)
 
 #ifdef _WIN32
 
-void String::init(Allocator* allocator, wchar_t* wstr, i64 _length)
+void String::init(Allocator* allocator, wchar_t* wstr, u64 _length)
 {
     int required_size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wstr, (int)_length, nullptr, 0, nullptr, nullptr);
     assert(required_size);
 
-    this->data = alloc_array<char>(allocator, ((i64)required_size) + 1);
+    this->data = alloc_array<char>(allocator, ((u64)required_size) + 1);
     this->length = required_size;
 
     auto written_size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wstr, (int)_length, this->data, required_size + 1, nullptr, nullptr);
@@ -56,7 +56,7 @@ String string_copy(Allocator *allocator, const String_Ref &original)
     return result;
 }
 
-String string_copy(Allocator *allocator, const char *cstr, i64 length)
+String string_copy(Allocator *allocator, const char *cstr, u64 length)
 {
     return string_copy(allocator, String_Ref(cstr, length));
 }
@@ -79,13 +79,13 @@ bool string_contains(const String_Ref &str, const String_Ref &sub_str)
     if (sub_str.length > str.length) return false;
     if (str == sub_str) return true;
 
-    for (i64 str_i = 0; str_i < str.length; str_i++) {
+    for (u64 str_i = 0; str_i < str.length; str_i++) {
 
         auto rem_length = str.length - str_i;
         if (sub_str.length > rem_length) return false;
 
         bool match = true;
-        for (i64 substr_i = 0; substr_i < sub_str.length; substr_i++) {
+        for (u64 substr_i = 0; substr_i < sub_str.length; substr_i++) {
             if (str[str_i + substr_i] != sub_str[substr_i]) {
                 match = false;
                 break;
@@ -205,7 +205,7 @@ i64 string_to_s64(const String_Ref &string, u64 base /*= 10*/)
 {
     i64 result = 0;
 
-    i64 start_index = 0;
+    u64 start_index = 0;
     bool negate = false;
 
     if (string.data[0] == '-') {
@@ -213,7 +213,7 @@ i64 string_to_s64(const String_Ref &string, u64 base /*= 10*/)
         start_index = 1;
     }
 
-    for (i64 i = start_index; i < string.length; i++) {
+    for (u64 i = start_index; i < string.length; i++) {
         result *= base;
         i64 digit_value = (i64)_digit_value(string.data[i]);
         result += digit_value;
