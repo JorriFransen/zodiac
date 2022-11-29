@@ -6,6 +6,15 @@
 
 namespace Zodiac { namespace Lexer_Tests {
 
+#define ASSERT_TOK(knd)                           \
+    munit_assert_int(lexer.token.kind, ==, (knd))
+
+#define ASSERT_TOK_NAME(str)                                 \
+    munit_assert_int(lexer.token.kind, ==, TOK_NAME);        \
+    munit_assert(string_equal(lexer.token.string, (str)));   \
+    next_token(&lexer);
+
+
 static MunitResult Create_And_Free(const MunitParameter params[], void *user_data_or_fixture)
 {
     const char *stream = "(";
@@ -26,14 +35,6 @@ static MunitResult Create_And_Free(const MunitParameter params[], void *user_dat
     return MUNIT_OK;
 }
 
-#define ASSERT_TOK(knd)                           \
-    munit_assert_int(lexer.token.kind, ==, (knd))
-
-#define ASSERT_TOK_NAME(str)                                 \
-    munit_assert_int(lexer.token.kind, ==, TOK_NAME);        \
-    munit_assert(string_equal(lexer.token.string, (str)));   \
-    next_token(&lexer);
-
 static MunitResult Lex_Name(const MunitParameter params[], void *user_data_or_fixture)
 {
     const char *stream = "first SECOND Th3rd  _fourth \tfifth_56_sixth\n _Seventh_and_EIGHTH";
@@ -53,6 +54,9 @@ static MunitResult Lex_Name(const MunitParameter params[], void *user_data_or_fi
 
     return MUNIT_OK;
 }
+
+#undef ASSERT_TOK
+#undef ASSERT_TOK_NAME
 
 START_TESTS(lexer_tests)
    DEFINE_TEST(Create_And_Free),
