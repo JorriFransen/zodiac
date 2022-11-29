@@ -26,42 +26,28 @@ static MunitResult Create_And_Free(const MunitParameter params[], void *user_dat
     return MUNIT_OK;
 }
 
+#define ASSERT_TOK(knd)                           \
+    munit_assert_int(lexer.token.kind, ==, (knd))
+
+#define ASSERT_TOK_NAME(str)                                 \
+    munit_assert_int(lexer.token.kind, ==, TOK_NAME);        \
+    munit_assert(string_equal(lexer.token.string, (str)));   \
+    next_token(&lexer);
+
 static MunitResult Lex_Name(const MunitParameter params[], void *user_data_or_fixture)
 {
     const char *stream = "first SECOND Th3rd  _fourth \tfifth_56_sixth\n _Seventh_and_EIGHTH";
     Lexer lexer;
     lexer_create(stream, &lexer);
 
-    munit_assert_int(lexer.token.kind, ==, TOK_NAME);
-    munit_assert(string_equal(lexer.token.string, "first"));
+    ASSERT_TOK_NAME("first");
+    ASSERT_TOK_NAME("SECOND");
+    ASSERT_TOK_NAME("Th3rd");
+    ASSERT_TOK_NAME("_fourth");
+    ASSERT_TOK_NAME("fifth_56_sixth");
+    ASSERT_TOK_NAME("_Seventh_and_EIGHTH");
 
-    next_token(&lexer);
-
-    munit_assert_int(lexer.token.kind, ==, TOK_NAME);
-    munit_assert(string_equal(lexer.token.string, "SECOND"));
-
-    next_token(&lexer);
-
-    munit_assert_int(lexer.token.kind, ==, TOK_NAME);
-    munit_assert(string_equal(lexer.token.string, "Th3rd"));
-
-    next_token(&lexer);
-
-    munit_assert_int(lexer.token.kind, ==, TOK_NAME);
-    munit_assert(string_equal(lexer.token.string, "_fourth"));
-
-    next_token(&lexer);
-
-    munit_assert_int(lexer.token.kind, ==, TOK_NAME);
-    munit_assert(string_equal(lexer.token.string, "fifth_56_sixth"));
-
-    next_token(&lexer);
-
-    munit_assert_int(lexer.token.kind, ==, TOK_NAME);
-    munit_assert(string_equal(lexer.token.string, "_Seventh_and_EIGHTH"));
-
-    next_token(&lexer);
-    munit_assert_int(lexer.token.kind, ==, TOK_EOF);
+    ASSERT_TOK(TOK_EOF);
 
     lexer_destroy(&lexer);
 
