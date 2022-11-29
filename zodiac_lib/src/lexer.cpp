@@ -94,10 +94,25 @@ bool is_token(Lexer *lexer, Token_Kind kind)
 
 void print_token(Token token)
 {
+    auto str = tmp_token_string(token);
+    printf("%.*s\n", (int)str.length, str.data);
+}
+
+String_Ref tmp_token_string(Token token)
+{
+    static char buffer[1024];
+
+    i32 length;
+
     const char *name = token_kind_str(token.kind);
 
-    if (token.string.length) printf("%s '%.*s'\n", name, (int)token.string.length, token.string.data);
-    else printf("%s\n", name);
+    if (token.string.length) {
+        length = string_format(buffer, "%s '%.*s'", name, (int)token.string.length, token.string.data);
+    } else {
+        length = string_format(buffer, "%s", name);
+    }
+
+    return String_Ref(buffer, length);
 }
 
 const char *token_kind_str(Token_Kind kind)
