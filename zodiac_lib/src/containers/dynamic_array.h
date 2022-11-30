@@ -14,16 +14,16 @@ template <typename Element_Type>
 struct Dynamic_Array
 {
     Element_Type *data;
-    i64 count;
-    i64 capacity;
+    u64 count;
+    u64 capacity;
     Allocator* backing_allocator;
 
-    Element_Type& operator[](i64 index) {
+    Element_Type& operator[](u64 index) {
         assert(index >= 0 && index < count);
         return data[index];
     }
 
-    const Element_Type& operator[](i64 index) const {
+    const Element_Type& operator[](u64 index) const {
         assert(index >= 0 && index < count);
         return data[index];
     }
@@ -56,7 +56,7 @@ void dynamic_array_free(Dynamic_Array<Element_Type> *array)
 template <typename Element_Type>
 void dynamic_array_grow(Dynamic_Array<Element_Type> *array)
 {
-    i64 new_cap = array->capacity * 2;
+    u64 new_cap = array->capacity * 2;
     if (new_cap == 0) new_cap = ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY;
     assert(new_cap);
 

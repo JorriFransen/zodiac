@@ -201,7 +201,7 @@ static u64 _digit_value(char c)
     return 0;
 }
 
-i64 string_to_s64(const String_Ref &string, u64 base /*= 10*/)
+i64 string_to_i64(const String_Ref &string, u64 base /*= 10*/)
 {
     i64 result = 0;
 

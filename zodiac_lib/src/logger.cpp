@@ -56,7 +56,7 @@ void log_message(Log_Level log_level, const String_Ref fmt, ...)
 {
     assert(logging_system_initialized);
 
-    i64 level_index = (i64)log_level;
+    u64 level_index = (u64)log_level;
     assert(level_index >= 0 && log_level <= Log_Level::TRACE);
 
     const char *level_strings[6] = { "[FATAL]: ", "[ERROR]: ", "[WARN]: ", "[INFO]: ", "[DEBUG]: ", "[TRACE]: "};

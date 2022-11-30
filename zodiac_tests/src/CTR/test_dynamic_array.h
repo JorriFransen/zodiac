@@ -121,7 +121,7 @@ static MunitResult Growing(const MunitParameter params[], void *user_data_or_fix
         munit_assert_int(array.count, ==, ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY + 1);
 
         munit_assert_int(array[0], ==, 42);
-        for (i64 i = 0; i < ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY - 1; i++) {
+        for (u64 i = 0; i < ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY - 1; i++) {
             munit_assert_int(array[i + 1], ==, i);
         }
         munit_assert_int(array[ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY], ==, 21);

@@ -14,8 +14,8 @@ namespace Zodiac
 
     struct Atom
     {
-        const char *data = nullptr;
-        i64 length = -1;
+        const char *data;
+        u64 length;
     };
 
     inline bool operator==(const Atom &lhs, const Atom &rhs)
@@ -27,7 +27,7 @@ namespace Zodiac
             } else {
                 if (lhs.length != rhs.length) return false;
 
-                for (i64 i = 0; i < lhs.length; i++) {
+                for (u64 i = 0; i < lhs.length; i++) {
                     if (lhs.data[i] != rhs.data[i]) return false;
                 }
 
@@ -57,7 +57,7 @@ namespace Zodiac
     {
         Allocator *allocator = nullptr;
 
-        i64 capacity = 0;
+        u64 capacity = 0;
 
         Atom *atoms = nullptr;
         u64 *hashes = nullptr;
@@ -67,11 +67,11 @@ namespace Zodiac
     };
 
 
-    ZAPI void atom_table_init(Allocator *allocator, Atom_Table *at, i64 initial_capacity = ATOM_TABLE_INITIAL_CAPACITY);
-    ZAPI void atom_table_init(Atom_Table *at, i64 initial_capacity = ATOM_TABLE_INITIAL_CAPACITY);
+    ZAPI void atom_table_init(Allocator *allocator, Atom_Table *at, u64 initial_capacity = ATOM_TABLE_INITIAL_CAPACITY);
+    ZAPI void atom_table_init(Atom_Table *at, u64 initial_capacity = ATOM_TABLE_INITIAL_CAPACITY);
     ZAPI void atom_table_free(Atom_Table *at);
 
-    ZAPI Atom atom_get(Atom_Table *at, const char *cstr, i64 length);
+    ZAPI Atom atom_get(Atom_Table *at, const char *cstr, u64 length);
     ZAPI Atom atom_get(Atom_Table *at, const char *cstr);
     ZAPI Atom atom_get(Atom_Table *at, const String_Ref &string_ref);
 

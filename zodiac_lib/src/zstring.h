@@ -27,9 +27,9 @@ struct String
     void init(Allocator * allocator, char *cstr, u64 length);
 
 #ifdef _WIN32
-    String(Allocator* allocator, wchar_t *wstr, i64 length) { init(allocator, wstr, length); }
-    String(Allocator* allocator, const wchar_t *wstr, i64 length) { init(allocator, (wchar_t *)wstr, length); }
-    void init(Allocator * allocator, wchar_t *wstr, i64 length);
+    String(Allocator* allocator, wchar_t *wstr, u64 length) { init(allocator, wstr, length); }
+    String(Allocator* allocator, const wchar_t *wstr, u64 length) { init(allocator, (wchar_t *)wstr, length); }
+    void init(Allocator * allocator, wchar_t *wstr, u64 length);
 #endif
 
     char &operator[](u64 index)
@@ -78,7 +78,7 @@ ZAPI const String string_format(Allocator *allocator, const String_Ref fmt, va_l
 ZAPI i32 string_format(char *dest, const String_Ref fmt, ...);
 ZAPI i32 string_format(char *dest, const String_Ref fmt, va_list args);
 
-ZAPI i64 string_to_s64(const String_Ref &string, u64 base = 10);
+ZAPI i64 string_to_i64(const String_Ref &string, u64 base = 10);
 ZAPI Real_Value string_to_real(const String_Ref &string);
 ZAPI float string_to_float(const String_Ref &string);
 ZAPI double string_to_double(const String_Ref &string);

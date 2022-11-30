@@ -5,7 +5,7 @@
 namespace Zodiac
 {
 
-u64 hash_c_string(const char *cstr, i64 length)
+u64 hash_c_string(const char *cstr, u64 length)
 {
     // 64 bit FNV hash
     if (length == 0)
@@ -15,7 +15,7 @@ u64 hash_c_string(const char *cstr, i64 length)
 
     u64 hash = 14695981039346656037u;
 
-    for (i64 i = 0; i < length; i++)
+    for (u64 i = 0; i < length; i++)
     {
         hash = hash ^ ((u64)cstr[i]);
         hash = hash * 1099511628211;
