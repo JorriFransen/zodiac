@@ -2,7 +2,7 @@
 
 #include <asserts.h>
 
-#include <stdio.h> //nocheckin strinbuilder
+#include <stdio.h> //nocheckin stringbuilder
 
 namespace Zodiac
 {
