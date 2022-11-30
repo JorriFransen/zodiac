@@ -29,7 +29,7 @@ static MunitResult Create_And_Free(const MunitParameter params[], void *user_dat
     munit_assert_ptr_not_null(freelist.nodes);
     munit_assert_ptr_equal(freelist.head, &freelist.nodes[0]);
 
-    for (i64 i = 1; i < freelist.max_entries; i++) {
+    for (u64 i = 1; i < freelist.max_entries; i++) {
         munit_assert_uint64(freelist.nodes[i].offset, ==, ZODIAC_FREELIST_INVALID_OFFSET);
         munit_assert_uint64(freelist.nodes[i].size, ==, ZODIAC_FREELIST_INVALID_SIZE);
     }
