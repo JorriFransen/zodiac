@@ -183,6 +183,42 @@ bool is_token(Lexer *lexer, Token_Kind kind)
     return lexer->token.kind == kind;
 }
 
+bool is_token(Lexer *lexer, char c)
+{
+    return is_token(lexer, (Token_Kind)c);
+}
+
+bool match_token(Lexer *lexer, Token_Kind kind)
+{
+    if (is_token(lexer, kind)) {
+        next_token(lexer);
+        return true;
+    }
+
+    return false;
+}
+
+bool match_token(Lexer *lexer, char c)
+{
+    return match_token(lexer, (Token_Kind)c);
+}
+
+bool expect_token(Lexer *lexer, Token_Kind kind)
+{
+    if (is_token(lexer, kind)) {
+        next_token(lexer);
+        return true;
+    }
+
+    ZFATAL("Expected token...");
+    return false;
+}
+
+bool expect_token(Lexer *lexer, char c)
+{
+    return expect_token(lexer, (Token_Kind)c);
+}
+
 void print_token(Token token)
 {
     auto str = tmp_token_string(token);

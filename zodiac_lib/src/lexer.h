@@ -70,6 +70,12 @@ ZAPI void lexer_destroy(Lexer *lexer);
 
 ZAPI bool next_token(Lexer *lexer);
 ZAPI bool is_token(Lexer *lexer, Token_Kind kind);
+ZAPI bool is_token(Lexer *lexer, char c);
+ZAPI bool match_token(Lexer *lexer, Token_Kind kind);
+ZAPI bool match_token(Lexer *lexer, char c);
+ZAPI bool expect_token(Lexer *lexer, Token_Kind kind);
+ZAPI bool expect_token(Lexer *lexer, char c);
+
 ZAPI void print_token(Token token);
 ZAPI String_Ref tmp_token_string(Token token);
 ZAPI const char *token_kind_str(Token_Kind kind);
