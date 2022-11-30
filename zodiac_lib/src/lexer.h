@@ -19,6 +19,20 @@ struct Lexer
     Token token;
 };
 
+#define ALL_ZODIAC_KEYWORDS \
+    ZODIAC_KEYWORD(for)     \
+    ZODIAC_KEYWORD(sizeof)  \
+    ZODIAC_KEYWORD(struct)
+
+// Emit variable for all keywords
+#define ZODIAC_KEYWORD(n) extern Atom keyword_##n;
+ALL_ZODIAC_KEYWORDS
+#undef ZODIAC_KEYWORD
+
+ZAPI void zodiac_register_keywords(Atom_Table *at);
+ZAPI bool is_keyword(const Atom &atom);
+
+
 ZAPI void lexer_create(Zodiac_Context *context, Lexer *out_lexer);
 ZAPI void lexer_init_stream(Lexer *lexer, const char *stream);
 ZAPI void lexer_destroy(Lexer *lexer);

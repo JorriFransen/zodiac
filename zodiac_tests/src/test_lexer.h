@@ -41,6 +41,13 @@ namespace Zodiac { namespace Lexer_Tests {
     next_token(lexer);                                   \
 }
 
+#define ASSERT_TOK_KW(kw_atom) {                          \
+    munit_assert_int(lexer->token.kind, ==, TOK_KEYWORD); \
+    munit_assert(lexer->token.atom == (kw_atom));         \
+    PRINT_TOK();                                          \
+    next_token(lexer);                                    \
+}
+
 static void *lexer_test_setup(const MunitParameter params[], void *user_data)
 {
     auto context = zallocate<Zodiac_Context>();
@@ -195,6 +202,31 @@ static MunitResult Lex_Float(const MunitParameter params[], void *user_data_or_f
     return MUNIT_OK;
 }
 
+static MunitResult Lex_Keyword(const MunitParameter params[], void *user_data_or_fixture)
+{
+    auto lexer = (Lexer *)user_data_or_fixture;
+
+    const char *stream = "for sizeof struct sstruct or sizeofstruct";
+    lexer_init_stream(lexer, stream);
+
+    ZTRACE("");
+    ZTRACE("TEST: Lex_Keyword");
+    ZTRACE("  stream: '%s'", stream);
+
+    ASSERT_TOK_KW(keyword_for);
+    ASSERT_TOK_KW(keyword_sizeof);
+    ASSERT_TOK_KW(keyword_struct);
+    ASSERT_TOK_NAME("sstruct");
+    ASSERT_TOK_NAME("or");
+    ASSERT_TOK_NAME("sizeofstruct");
+
+    ASSERT_TOK(TOK_EOF);
+
+    ZTRACE("");
+
+    return MUNIT_OK;
+}
+
 #undef ASSERT_TOK
 #undef ASSERT_TOK_NAME
 
@@ -213,6 +245,7 @@ START_TESTS(lexer_tests)
    DEFINE_LEX_TEST(Lex_Multi_Char),
    DEFINE_LEX_TEST(Lex_Int),
    DEFINE_LEX_TEST(Lex_Float),
+   DEFINE_LEX_TEST(Lex_Keyword),
 END_TESTS()
 
 

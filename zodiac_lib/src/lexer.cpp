@@ -13,6 +13,35 @@ namespace Zodiac
 file_local void lex_int(Lexer *lexer);
 file_local void lex_real(Lexer *lexer);
 
+// Emit variable for all keywords
+#define ZODIAC_KEYWORD(n) Atom keyword_##n;
+ALL_ZODIAC_KEYWORDS
+#undef ZODIAC_KEYWORD
+
+// Emit array with all keywords
+file_local Atom *all_keywords[] = {
+#define ZODIAC_KEYWORD(n) &(keyword_##n),
+    ALL_ZODIAC_KEYWORDS
+#undef ZODIAC_KEYWORD
+};
+
+void zodiac_register_keywords(Atom_Table *at)
+{
+    Atom_Block *block = at->current_block;
+
+    // Emit init for all keywords
+#define ZODIAC_KEYWORD(n) keyword_##n = atom_get(at, #n);
+    ALL_ZODIAC_KEYWORDS
+#undef ZODIAC_KEYWORD
+
+    assert_msg(block == at->current_block, "Expected all keyword atoms to fit in the same block...");
+}
+
+bool is_keyword(const Atom &atom)
+{
+    return atom.data >= all_keywords[0]->data && atom.data <= all_keywords[sizeof(all_keywords)/sizeof(all_keywords[0]) - 1]->data;
+}
+
 void lexer_create(Zodiac_Context *context, Lexer *out_lexer)
 {
     assert(context && out_lexer);
@@ -134,8 +163,17 @@ case (first_char): {                                                \
     }
 
     auto length = lex->stream - start;
-    if (length) lex->token.atom = atom_get(&lex->context->atoms, start, length);
-    else lex->token.atom = {};
+    if (length) {
+        lex->token.atom = atom_get(&lex->context->atoms, start, length);
+
+        if (lex->token.kind == TOK_NAME && is_keyword(lex->token.atom)) {
+            lex->token.kind = TOK_KEYWORD;
+        }
+    }
+    else
+    {
+        lex->token.atom = {};
+    }
 }
 
 bool is_token(Lexer *lexer, Token_Kind kind)
