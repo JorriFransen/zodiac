@@ -3,6 +3,10 @@
 #include <logger.h>
 #include <memory/zmemory.h>
 
+#include <cfloat>
+#include <cmath>
+#include <cstdlib>
+
 namespace Zodiac
 {
 
@@ -262,8 +266,29 @@ file_local void lex_real(Lexer *lexer)
     }
 
     Real_Value result;
-    result.r32 = strtof(start, nullptr);
-    result.r64 = strtod(start, nullptr);
+    char *err;
+
+    result.r32 = strtof(start, &err);
+    if (result.r32 == 0.0 && err == start) {
+        assert_msg(false, "Convertion to float failed");
+    }
+    if (result.r32 == HUGE_VALF || result.r32 == -HUGE_VALF) {
+        assert_msg(false, "Float literal overflow");
+    }
+    if (result.r32 <= FLT_MIN && errno == ERANGE) {
+        assert_msg(false, "Float literal underflow");
+    }
+
+    result.r64 = strtod(start, &err);
+    if (result.r64 == 0.0 && err == start) {
+        assert_msg(false, "Convertion to double failed");
+    }
+    if (result.r64 == HUGE_VAL || result.r64 == -HUGE_VAL) {
+        assert_msg(false, "Double literal overflow");
+    }
+    if (result.r64 <= DBL_MIN && errno == ERANGE) {
+        assert_msg(false, "Double literal underflow");
+    }
 
     lexer->token.kind = TOK_REAL;
     lexer->token.real = result;
