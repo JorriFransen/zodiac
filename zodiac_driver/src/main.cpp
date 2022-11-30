@@ -3,16 +3,20 @@
 #include <logger.h>
 #include <memory/zmemory.h>
 
+#include <ast.h>
 #include <lexer.h>
+
+#include <memory/pool_allocator.h>
 
 using namespace Zodiac;
 
-file_local int parse_expr3();
-file_local int parse_expr2();
-file_local int parse_expr1();
-file_local int parse_expression();
+// file_local AST_Expression *parse_expr3();
+// file_local AST_Expression *parse_expr2();
+// file_local AST_Expression *parse_expr1();
+// file_local AST_Expression *parse_expression();
 
 Lexer *lxr;
+Allocator *expression_allocator;
 
 int main() {
 
@@ -27,17 +31,10 @@ int main() {
     lexer_init_stream(&lexer, "1 + 2 * -3"); // -5
     // lexer_init_stream(&lexer, "(1 + 2) * -3"); // -9
 
-    // while (!(is_token(&lexer, TOK_EOF) || is_token(&lexer, TOK_INVALID))) {
-    //     print_token(lexer.token);
-    //     next_token(&lexer);
-    // }
-    // print_token(lexer.token);
 
-    // lexer_destroy(&lexer);
-
-    lxr = &lexer;
-    auto result = parse_expression();
-    ZINFO("Result: %i", result);
+    // lxr = &lexer;
+    // auto result = parse_expression();
+    // ZINFO("Result: %i", result);
 
     return 0;
 }
@@ -47,70 +44,70 @@ int main() {
 // expr1 = expr2 ([/*] expr2)*
 // expr = expr1 ([+-] expr1)*
 
-file_local int parse_expr3()
-{
-    if (is_token(lxr, TOK_INT)) {
-        int result = lxr->token.integer;
-        next_token(lxr);
-        return result;
-    } else {
+// file_local int parse_expr3()
+// {
+//     if (is_token(lxr, TOK_INT)) {
+//         int result = lxr->token.integer;
+//         next_token(lxr);
+//         return result;
+//     } else {
 
-        if (match_token(lxr, '(')) {
-            auto result = parse_expression();
-            expect_token(lxr, ')');
-            return result;
-        } else {
-            ZFATAL("Expected '('");
-            return 0;
-        }
+//         if (match_token(lxr, '(')) {
+//             auto result = parse_expression();
+//             expect_token(lxr, ')');
+//             return result;
+//         } else {
+//             ZFATAL("Expected '('");
+//             return 0;
+//         }
 
-    }
-}
+//     }
+// }
 
-file_local int parse_expr2()
-{
-    if (is_token(lxr, '+')) {
-        next_token(lxr);
-        return parse_expr2();
-    } else if (is_token(lxr, '-')) {
-        next_token(lxr);
-        return -parse_expr2();
-    } else {
-        return parse_expr3();
-    }
-}
+// file_local int parse_expr2()
+// {
+//     if (is_token(lxr, '+')) {
+//         next_token(lxr);
+//         return parse_expr2();
+//     } else if (is_token(lxr, '-')) {
+//         next_token(lxr);
+//         return -parse_expr2();
+//     } else {
+//         return parse_expr3();
+//     }
+// }
 
-file_local int parse_expr1()
-{
-    auto lhs = parse_expr2();
+// file_local int parse_expr1()
+// {
+//     auto lhs = parse_expr2();
 
-    while (is_token(lxr, '/') || is_token(lxr, '*')) {
-        char op = lxr->token.kind;
-        next_token(lxr);
+//     while (is_token(lxr, '/') || is_token(lxr, '*')) {
+//         char op = lxr->token.kind;
+//         next_token(lxr);
 
-        auto rhs = parse_expr2();
+//         auto rhs = parse_expr2();
 
-        if (op == '/') lhs = lhs / rhs;
-        else lhs = lhs * rhs;
-    }
+//         if (op == '/') lhs = lhs / rhs;
+//         else lhs = lhs * rhs;
+//     }
 
-    return lhs;
-}
+//     return lhs;
+// }
 
-file_local int parse_expression()
-{
-    auto lhs = parse_expr1();
+// file_local int parse_expression()
+// {
+//     auto lhs = parse_expr1();
 
-    while (is_token(lxr, '+') || is_token(lxr, '-')) {
-        char op = lxr->token.kind;
-        next_token(lxr);
+//     while (is_token(lxr, '+') || is_token(lxr, '-')) {
+//         char op = lxr->token.kind;
+//         next_token(lxr);
 
-        auto rhs = parse_expr1();
+//         auto rhs = parse_expr1();
 
-        if (op == '+') lhs = lhs + rhs;
-        else lhs = lhs - rhs;
+//         if (op == '+') lhs = lhs + rhs;
+//         else lhs = lhs - rhs;
 
-    }
+//     }
 
-    return lhs;
-}
+//     return lhs;
+// }

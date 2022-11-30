@@ -9,10 +9,10 @@ namespace Zodiac
 file_local Pool_Block *allocate_block(u32 element_size, u32 capacity);
 file_local void *pool_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u64 alignment, void *old_ptr);
 
-void dynamic_pool_allocator_create(u32 block_capacity, u32 element_size, Pool_Allocator *out_allocator)
+void pool_allocator_create(u32 block_capacity, u32 element_size, Pool_Allocator *out_allocator)
 {
     assert(element_size && block_capacity);
-    assert(element_size >= sizeof(void *) && "Dynamic_Pool_Allocator element size must be at least pointer size");
+    assert(element_size >= sizeof(void *) && "Pool_Allocator element size must be at least pointer size");
 
     out_allocator->element_size = element_size;
     out_allocator->block_capacity = block_capacity;
@@ -22,7 +22,7 @@ void dynamic_pool_allocator_create(u32 block_capacity, u32 element_size, Pool_Al
 
 }
 
-void dynamic_pool_allocator_destroy(Pool_Allocator *allocator)
+void pool_allocator_destroy(Pool_Allocator *allocator)
 {
     assert(allocator->element_size && allocator->block_capacity && allocator->first_block && allocator->current_block);
 
@@ -38,7 +38,7 @@ void dynamic_pool_allocator_destroy(Pool_Allocator *allocator)
     zzeromem(allocator, sizeof(Pool_Allocator));
 }
 
-Allocator dyamic_pool_allocator_allocator(Pool_Allocator *state)
+Allocator pool_allocator_allocator(Pool_Allocator *state)
 {
     assert(state);
 
@@ -47,7 +47,7 @@ Allocator dyamic_pool_allocator_allocator(Pool_Allocator *state)
     return result;
 }
 
-void *dynamic_pool_allocator_allocate(Pool_Allocator *allocator)
+void *pool_allocator_allocate(Pool_Allocator *allocator)
 {
     Pool_Block *non_full_block = nullptr;
 
@@ -82,7 +82,7 @@ void *dynamic_pool_allocator_allocate(Pool_Allocator *allocator)
     return chunk;
 }
 
-void dynamic_pool_allocator_free(Pool_Allocator *allocator, void *ptr)
+void pool_allocator_free(Pool_Allocator *allocator, void *ptr)
 {
     Pool_Block *containing_block = nullptr;
 
@@ -105,7 +105,7 @@ void dynamic_pool_allocator_free(Pool_Allocator *allocator, void *ptr)
     }
 
     if (!containing_block) {
-        ZERROR("Invalid free (dynamic pool allocator)!");
+        ZERROR("Invalid free (pool allocator)!");
         return;
     }
 
@@ -114,7 +114,7 @@ void dynamic_pool_allocator_free(Pool_Allocator *allocator, void *ptr)
     containing_block->head = new_chunk;
 }
 
-u32 dynamic_pool_allocator_free_capacity(Pool_Allocator *pool)
+u32 pool_allocator_free_capacity(Pool_Allocator *pool)
 {
     // NOTE: We might want to cache this on the pool for speed
     u32 free_cap = 0;
@@ -165,22 +165,22 @@ file_local void *pool_alloc_func(Allocator *allocator, Allocation_Mode mode, u64
         case Allocation_Mode::ALLOCATE: {
             assert_msg(size == pas->element_size, "Invalid size for pool allocator");
             assert(alignment == 1);
-            return dynamic_pool_allocator_allocate(pas);
+            return pool_allocator_allocate(pas);
         }
 
         case Allocation_Mode::FREE: {
-            dynamic_pool_allocator_free(pas, old_ptr);
+            pool_allocator_free(pas, old_ptr);
             return nullptr;
             break;
         }
 
         case Allocation_Mode::FREE_ALL: {
-            assert_msg(false, "FREE_ALL not implemented for dynamic pool allocator");
+            assert_msg(false, "FREE_ALL not implemented for pool allocator");
             return nullptr;
         }
 
         case Allocation_Mode::REALLOCATE: {
-            assert(false && !"REALLOCATE not supported for dynamic allocator");
+            assert(false && !"REALLOCATE not supported for allocator");
             return nullptr;
             break;
         }

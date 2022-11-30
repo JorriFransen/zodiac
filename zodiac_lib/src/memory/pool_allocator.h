@@ -28,12 +28,12 @@ struct Pool_Allocator
     Pool_Block *current_block;
 };
 
-ZAPI void dynamic_pool_allocator_create(u32 block_capacity, u32 element_size, Pool_Allocator *out_allocator);
-ZAPI void dynamic_pool_allocator_destroy(Pool_Allocator *allocator);
-ZAPI Allocator dyamic_pool_allocator_allocator(Pool_Allocator *state);
+ZAPI void pool_allocator_create(u32 block_capacity, u32 element_size, Pool_Allocator *out_allocator);
+ZAPI void pool_allocator_destroy(Pool_Allocator *allocator);
+ZAPI Allocator pool_allocator_allocator(Pool_Allocator *state);
 
-ZAPI void *dynamic_pool_allocator_allocate(Pool_Allocator *allocator);
-ZAPI void dynamic_pool_allocator_free(Pool_Allocator *allocator, void *ptr);
-ZAPI u32 dynamic_pool_allocator_free_capacity(Pool_Allocator *pool);
+ZAPI void *pool_allocator_allocate(Pool_Allocator *allocator);
+ZAPI void pool_allocator_free(Pool_Allocator *allocator, void *ptr);
+ZAPI u32 pool_allocator_free_capacity(Pool_Allocator *pool);
 
 }
