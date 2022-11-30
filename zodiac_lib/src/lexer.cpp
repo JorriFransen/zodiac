@@ -6,6 +6,9 @@
 namespace Zodiac
 {
 
+file_local void lex_int(Lexer *lexer);
+file_local void lex_real(Lexer *lexer);
+
 void lexer_create(Zodiac_Context *context, Lexer *out_lexer)
 {
     assert(context && out_lexer);
@@ -71,17 +74,26 @@ case (first_char): {                                                \
             break;
         }
 
+        case '.': {
+            lex_real(lex);
+            break;
+        }
+
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
         {
-            lex->token.kind = TOK_NUMBER;
-            Integer_Value value = {};
             while (isdigit(*lex->stream)) {
-                value.u64 *= 10;
-                value.u64 += *lex->stream - '0';
                 lex->stream += 1;
             }
-            lex->token.number = value;
+
+            char c = *lex->stream;
+            lex->stream = start;
+
+            if (c == '.') {
+                lex_real(lex);
+            } else {
+                lex_int(lex);
+            }
             break;
         }
 
@@ -141,7 +153,7 @@ String_Ref tmp_token_string(Token token)
 
     const char *name = token_kind_str(token.kind);
 
-    if (token.atom.length >= 0) {
+    if (token.atom.length > 0) {
         length = string_format(buffer, "%s '%.*s'", name, (int)token.atom.length, token.atom.data);
     } else {
         length = string_format(buffer, "%s", name);
@@ -154,7 +166,8 @@ const char *token_kind_str(Token_Kind kind)
 {
     switch (kind) {
         case TOK_INVALID: return "<INVALID>";
-        case TOK_NUMBER: return "<NUMBER>";
+        case TOK_INT: return "<INT>";
+        case TOK_REAL: return "<REAL>";
         case TOK_NAME: return "<NAME>";
         case TOK_KEYWORD: return "<KEYWORD>";
         case TOK_EQ: return "<TOK_EQ>";
@@ -173,6 +186,87 @@ const char *token_kind_str(Token_Kind kind)
             }
         }
     }
+}
+
+file_local u8 char_to_digit[256] = {
+    ['0'] = 0,
+    ['1'] = 1,
+    ['2'] = 2,
+    ['3'] = 3,
+    ['4'] = 4,
+    ['5'] = 5,
+    ['6'] = 6,
+    ['7'] = 7,
+    ['8'] = 8,
+    ['9'] = 9,
+    ['a'] = 10, ['A'] = 10,
+    ['b'] = 11, ['B'] = 11,
+    ['c'] = 12, ['C'] = 12,
+    ['d'] = 13, ['D'] = 13,
+    ['e'] = 14, ['E'] = 14,
+    ['f'] = 15, ['F'] = 15,
+};
+
+file_local void lex_int(Lexer *lexer)
+{
+    assert(lexer);
+
+    u64 base = 10;
+    u64 result = 0;
+
+    auto start = lexer->stream;
+    u64 length = 0;
+
+    while (true) {
+
+        u64 digit = char_to_digit[(int)*lexer->stream];
+        if (digit == 0 && *lexer->stream != '0') break;
+
+        if (digit >= base) {
+            ZFATAL("Digit '%c' out of range for base %i", *lexer->stream, base);
+            result = 0;
+            return;
+        }
+
+        if (result > (UINT64_MAX - digit) / 10) {
+            ZFATAL("Integer literal overflow: '%.*s'", (int)length + 1, start);
+            // Skip the rest of this integer
+            while (isdigit(*lexer->stream)) lexer->stream += 1;
+            result = 0;
+            return;
+        }
+
+        result = result * base + digit;
+        lexer->stream += 1;
+        length += 1;
+    }
+
+    lexer->token.kind = TOK_INT;
+    lexer->token.integer = result;
+}
+
+file_local void lex_real(Lexer *lexer)
+{
+    assert(lexer);
+
+    const char *start = lexer->stream;
+
+    while (isdigit(*lexer->stream)) lexer->stream += 1;
+
+    if (*lexer->stream == '.') lexer->stream += 1;
+
+    while (isdigit(*lexer->stream)) lexer->stream += 1;
+
+    if (tolower(*lexer->stream) == 'e') {
+        assert_msg(false, "Scientific real notation not supported yet");
+    }
+
+    Real_Value result;
+    result.r32 = strtof(start, nullptr);
+    result.r64 = strtod(start, nullptr);
+
+    lexer->token.kind = TOK_REAL;
+    lexer->token.real = result;
 }
 
 }

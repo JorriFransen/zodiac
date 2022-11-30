@@ -17,7 +17,8 @@ int main() {
 
     Lexer lexer;
     lexer_create(&c, &lexer);
-    lexer_init_stream(&lexer, "1+2-_VarName*another_var()");
+    lexer_init_stream(&lexer, "1+2-_VarName*another_var() 1844674407370956");
+    auto a = UINT64_MAX;
 
     while (!(is_token(&lexer, TOK_EOF) || is_token(&lexer, TOK_INVALID))) {
         print_token(lexer.token);

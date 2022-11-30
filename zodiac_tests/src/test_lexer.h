@@ -19,11 +19,26 @@ namespace Zodiac { namespace Lexer_Tests {
     PRINT_TOK();                                    \
     next_token(lexer);
 
-#define ASSERT_TOK_NAME(str) {                             \
-    munit_assert_int(lexer->token.kind, ==, TOK_NAME);     \
-    munit_assert(string_equal(lexer->token.atom, (str)));  \
-    PRINT_TOK();                                           \
+#define ASSERT_TOK_NAME(str) {                            \
+    munit_assert_int(lexer->token.kind, ==, TOK_NAME);    \
+    munit_assert(string_equal(lexer->token.atom, (str))); \
+    PRINT_TOK();                                          \
     next_token(lexer);                                    \
+}
+
+#define ASSERT_TOK_INT(num) {                             \
+    munit_assert_int(lexer->token.kind, ==, TOK_INT);     \
+    munit_assert_uint64(lexer->token.integer, ==, (num)); \
+    PRINT_TOK();                                          \
+    next_token(lexer);                                    \
+}
+
+#define ASSERT_TOK_REAL(r) {                             \
+    munit_assert_int(lexer->token.kind, ==, TOK_REAL);   \
+    munit_assert_float(lexer->token.real.r32, ==, (r));  \
+    munit_assert_double(lexer->token.real.r64, ==, (r)); \
+    PRINT_TOK();                                         \
+    next_token(lexer);                                   \
 }
 
 static void *lexer_test_setup(const MunitParameter params[], void *user_data)
@@ -131,6 +146,55 @@ static MunitResult Lex_Multi_Char(const MunitParameter params[], void *user_data
     return MUNIT_OK;
 }
 
+static MunitResult Lex_Int(const MunitParameter params[], void *user_data_or_fixture)
+{
+    auto lexer = (Lexer *)user_data_or_fixture;
+
+    const char *stream = "0 10 42 18446744073709551615";
+    lexer_init_stream(lexer, stream);
+
+    ZTRACE("");
+    ZTRACE("TEST: Lex_Int");
+    ZTRACE("  stream: '%s'", stream);
+
+    ASSERT_TOK_INT(0);
+    ASSERT_TOK_INT(10);
+    ASSERT_TOK_INT(42);
+    ASSERT_TOK_INT(18446744073709551615ul);
+
+    ASSERT_TOK(TOK_EOF);
+
+    ZTRACE("");
+
+    return MUNIT_OK;
+}
+
+static MunitResult Lex_Float(const MunitParameter params[], void *user_data_or_fixture)
+{
+    auto lexer = (Lexer *)user_data_or_fixture;
+
+    const char *stream = ".0 0. 0.0 4.2 .314 55. 0.54";
+    lexer_init_stream(lexer, stream);
+
+    ZTRACE("");
+    ZTRACE("TEST: Lex_Float");
+    ZTRACE("  stream: '%s'", stream);
+
+    ASSERT_TOK_REAL(0);
+    ASSERT_TOK_REAL(0);
+    ASSERT_TOK_REAL(0);
+    ASSERT_TOK_REAL(4.2);
+    ASSERT_TOK_REAL(0.314);
+    ASSERT_TOK_REAL(55);
+    ASSERT_TOK_REAL(0.54);
+
+    ASSERT_TOK(TOK_EOF);
+
+    ZTRACE("");
+
+    return MUNIT_OK;
+}
+
 #undef ASSERT_TOK
 #undef ASSERT_TOK_NAME
 
@@ -147,6 +211,8 @@ START_TESTS(lexer_tests)
    DEFINE_TEST(Create_And_Free),
    DEFINE_LEX_TEST(Lex_Name),
    DEFINE_LEX_TEST(Lex_Multi_Char),
+   DEFINE_LEX_TEST(Lex_Int),
+   DEFINE_LEX_TEST(Lex_Float),
 END_TESTS()
 
 

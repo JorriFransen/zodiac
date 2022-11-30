@@ -13,7 +13,8 @@ enum Token_Kind
 
     // Ascii range
 
-    TOK_NUMBER = 128,
+    TOK_INT = 128,
+    TOK_REAL,
     TOK_NAME,
     TOK_KEYWORD,
 
@@ -33,7 +34,8 @@ struct Token
 
     union
     {
-        Integer_Value number;
+        u64 integer;
+        Real_Value real;
     };
 };
 
