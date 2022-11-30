@@ -13,7 +13,7 @@ EXTENSION := .dll
 # LLVM_DEBUG_BUILD_DIR := "$(DIR)\$(BUILD_DIR)\llvm_build_debug"
 # LLVM_DEBUG_INSTALL_DIR := "$(DIR)\$(BUILD_DIR)\llvm_install_debug"
 
-COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wvla -fdeclspec
+COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wno-c99-designator -Wvla -fdeclspec
 INCLUDE_FLAGS := -I$(SRC_DIR)
 LINKER_FLAGS := -g -shared -lmsvcrt -Wl,-nodefaultlib:libcmt
 DEFINES := -D_DEBUG -DZEXPORT -D_DLL -D_CRT_SECURE_NO_WARNINGS

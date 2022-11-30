@@ -13,7 +13,7 @@ namespace Zodiac
 file_local void lex_int(Lexer *lexer);
 file_local void lex_real(Lexer *lexer);
 
-// Emit variable for all keywords
+// Emit variable definition for all keywords
 #define ZODIAC_KEYWORD(n) Atom keyword_##n;
 ALL_ZODIAC_KEYWORDS
 #undef ZODIAC_KEYWORD

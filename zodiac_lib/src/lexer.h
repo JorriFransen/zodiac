@@ -55,8 +55,8 @@ struct Lexer
     ZODIAC_KEYWORD(sizeof)  \
     ZODIAC_KEYWORD(struct)
 
-// Emit variable for all keywords
-#define ZODIAC_KEYWORD(n) extern Atom keyword_##n;
+// Emit variable declaration for all keywords
+#define ZODIAC_KEYWORD(n) ZAPI extern Atom keyword_##n;
 ALL_ZODIAC_KEYWORDS
 #undef ZODIAC_KEYWORD
 
