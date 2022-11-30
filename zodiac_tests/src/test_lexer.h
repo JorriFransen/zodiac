@@ -51,7 +51,9 @@ namespace Zodiac { namespace Lexer_Tests {
 static void *lexer_test_setup(const MunitParameter params[], void *user_data)
 {
     auto context = zallocate<Zodiac_Context>();
-    zodiac_context_create(context);
+    // HACK: Pass 1 as expression allocator to pass asserts.
+    //       This should be ok when lexing only
+    zodiac_context_create((Allocator *)1, context);
 
     auto lexer = zallocate<Lexer>();
     lexer_create(context, lexer);
@@ -66,13 +68,18 @@ static void lexer_test_tear_down(void *fixture)
 
     lexer_destroy(lexer);
     zodiac_context_destroy(context);
+
+    zfree(lexer);
+    zfree(context);
 }
 
 static MunitResult Create_And_Free(const MunitParameter params[], void *user_data_or_fixture)
 {
     // This test doesn't use the setup/teardown
     Zodiac_Context context;
-    zodiac_context_create(&context);
+    // HACK: Pass 1 as expression allocator to pass asserts.
+    //       This should be ok when lexing only
+    zodiac_context_create((Allocator *)1, &context);
 
     Lexer l;
     lexer_create(&context, &l);

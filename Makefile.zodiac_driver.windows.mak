@@ -7,7 +7,7 @@ BASE_DIR := zodiac_driver
 SRC_DIR := $(BASE_DIR)\src
 ASSEMBLY := zodiac
 EXTENSION := .exe
-COMPILER_FLAGS := -g -MD -MP -Werror=vla -fdeclspec
+COMPILER_FLAGS := -g -MD -MP -Werror=vla -Wno-c99-designator -fdeclspec
 INCLUDE_FLAGS := -Izodiac_lib\src -I$(SRC_DIR)
 LINKER_FLAGS := $(BUILD_DIR)\libzodiac.lib
 DEFINES := -D_DEBUG -DZIMPORT
