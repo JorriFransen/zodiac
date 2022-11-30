@@ -3,6 +3,7 @@
 #include <defines.h>
 
 #include <token.h>
+#include <zodiac_context.h>
 #include <zstring.h>
 
 namespace Zodiac
@@ -10,13 +11,16 @@ namespace Zodiac
 
 struct Lexer
 {
+    Zodiac_Context *context;
+
     const char *stream_start;
     const char *stream;
 
     Token token;
 };
 
-ZAPI void lexer_create(const char *stream, Lexer *out_lexer);
+ZAPI void lexer_create(Zodiac_Context *context, Lexer *out_lexer);
+ZAPI void lexer_init_stream(Lexer *lexer, const char *stream);
 ZAPI void lexer_destroy(Lexer *lexer);
 
 ZAPI void next_token(Lexer *lexer);

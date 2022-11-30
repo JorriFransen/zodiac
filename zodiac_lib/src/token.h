@@ -23,7 +23,7 @@ struct Token
 {
     Token_Kind kind;
 
-    String_Ref string;
+    Atom atom;
 
     union
     {

@@ -14,11 +14,17 @@ ZAPI extern Allocator dynamic_allocator;
 
 ZAPI bool memory_system_initialize();
 
-ZAPI ZINLINE void* zallocate(i64 size)
+ZAPI ZINLINE void *zallocate(i64 size)
 {
     assert(memory_system_initialized);
     assert(size);
     return alloc(&dynamic_allocator, size);
+}
+
+template <typename T>
+ZAPI ZINLINE T *zallocate()
+{
+    return (T *)zallocate(sizeof(T));
 }
 
 ZAPI ZINLINE void* zallocate_aligned(i64 size, i64 alignment)

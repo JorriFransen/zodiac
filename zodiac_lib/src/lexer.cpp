@@ -6,28 +6,41 @@
 namespace Zodiac
 {
 
-void lexer_create(const char *stream, Lexer *out_lexer)
+void lexer_create(Zodiac_Context *context, Lexer *out_lexer)
 {
-    out_lexer->stream_start = stream;
-    out_lexer->stream = stream;
+    assert(context && out_lexer);
+
+    out_lexer->context = context;
+    out_lexer->stream_start = nullptr;
+    out_lexer->stream = nullptr;
 
     out_lexer->token.kind = TOK_INVALID;
+}
 
-    next_token(out_lexer);
+void lexer_init_stream(Lexer *lexer, const char *stream)
+{
+    assert(lexer && lexer->context && stream);
+
+    lexer->stream_start = stream;
+    lexer->stream = stream;
+
+    next_token(lexer);
 }
 
 void lexer_destroy(Lexer *lexer)
 {
+    assert(lexer && lexer->stream_start && lexer->stream);
+
     zzeromem(lexer, sizeof(Lexer));
 }
 
 void next_token(Lexer *lex)
 {
-    assert(lex);
+    assert(lex && lex->stream_start && lex->stream);
 
 next_token__start_lexing_token:
     lex->token.kind = TOK_INVALID;
-    lex->token.string.data = lex->stream;
+    auto start = lex->stream;
 
     switch (*lex->stream) {
 
@@ -84,7 +97,9 @@ next_token__start_lexing_token:
         }
     }
 
-    lex->token.string.length = lex->stream - lex->token.string.data;
+    auto length = lex->stream - start;
+    if (length) lex->token.atom = atom_get(&lex->context->atoms, start, length);
+    else lex->token.atom = {};
 }
 
 bool is_token(Lexer *lexer, Token_Kind kind)
@@ -106,8 +121,8 @@ String_Ref tmp_token_string(Token token)
 
     const char *name = token_kind_str(token.kind);
 
-    if (token.string.length) {
-        length = string_format(buffer, "%s '%.*s'", name, (int)token.string.length, token.string.data);
+    if (token.atom.length >= 0) {
+        length = string_format(buffer, "%s '%.*s'", name, (int)token.atom.length, token.atom.data);
     } else {
         length = string_format(buffer, "%s", name);
     }

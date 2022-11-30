@@ -23,6 +23,11 @@ void atom_table_init(Allocator *allocator, Atom_Table *at, i64 initial_capacity/
     atom_table_add_block(at, &at->first_block, ATOM_TABLE_INITIAL_BLOCK_SIZE);
 }
 
+void atom_table_init(Atom_Table *at, i64 initial_capacity /*= ATOM_TABLE_INITIAL_CAPACITY*/)
+{
+    atom_table_init(&dynamic_allocator, at, initial_capacity);
+}
+
 void atom_table_free(Atom_Table *at)
 {
     free(at->allocator, at->atoms);
