@@ -131,37 +131,6 @@ static MunitResult Lex_Multi_Char(const MunitParameter params[], void *user_data
     return MUNIT_OK;
 }
 
-static MunitResult Lex_Int(const MunitParameter params[], void *user_data_or_fixture)
-{
-    auto lexer = (Lexer *)user_data_or_fixture;
-
-    const char *stream = "= = == ! = != < = <= > = >=";
-    lexer_init_stream(lexer, stream);
-
-    ZTRACE("");
-    ZTRACE("TEST: Lex_Multi_Char");
-    ZTRACE("  stream: '%s'", stream);
-
-    ASSERT_TOK('=');
-    ASSERT_TOK('=');
-    ASSERT_TOK(TOK_EQ);
-    ASSERT_TOK('!');
-    ASSERT_TOK('=');
-    ASSERT_TOK(TOK_NEQ);
-    ASSERT_TOK('<');
-    ASSERT_TOK('=');
-    ASSERT_TOK(TOK_LTEQ);
-    ASSERT_TOK('>');
-    ASSERT_TOK('=');
-    ASSERT_TOK(TOK_GTEQ);
-
-    ASSERT_TOK(TOK_EOF);
-
-    ZTRACE("");
-
-    return MUNIT_OK;
-}
-
 #undef ASSERT_TOK
 #undef ASSERT_TOK_NAME
 
@@ -178,7 +147,6 @@ START_TESTS(lexer_tests)
    DEFINE_TEST(Create_And_Free),
    DEFINE_LEX_TEST(Lex_Name),
    DEFINE_LEX_TEST(Lex_Multi_Char),
-   DEFINE_LEX_TEST(Lex_Int),
 END_TESTS()
 
 
