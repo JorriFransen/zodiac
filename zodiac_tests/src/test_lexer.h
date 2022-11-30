@@ -157,7 +157,7 @@ static MunitResult Lex_Int(const MunitParameter params[], void *user_data_or_fix
 {
     auto lexer = (Lexer *)user_data_or_fixture;
 
-    const char *stream = "0 10 42 18446744073709551615";
+    const char *stream = "0 10 42 18446744073709551615 2147483647 0x7FFFFFFF 0x7fffffff 0xxf";
     lexer_init_stream(lexer, stream);
 
     ZTRACE("");
@@ -168,6 +168,9 @@ static MunitResult Lex_Int(const MunitParameter params[], void *user_data_or_fix
     ASSERT_TOK_INT(10);
     ASSERT_TOK_INT(42);
     ASSERT_TOK_INT(18446744073709551615ul);
+    ASSERT_TOK_INT(2147483647);
+    ASSERT_TOK_INT(2147483647);
+    ASSERT_TOK_INT(2147483647);
 
     ASSERT_TOK(TOK_EOF);
 

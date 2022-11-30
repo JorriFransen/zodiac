@@ -201,6 +201,10 @@ String_Ref tmp_token_string(Token token)
         length = string_format(buffer, "%s", name);
     }
 
+    if (token.kind == TOK_INT) {
+        length = string_format(buffer, "%s, %llu", buffer, token.integer);
+    }
+
     return String_Ref(buffer, length);
 }
 
@@ -259,6 +263,16 @@ file_local void lex_int(Lexer *lexer)
     auto start = lexer->stream;
     u64 length = 0;
 
+    if (*lexer->stream == '0') {
+        lexer->stream += 1;
+
+        if (tolower(*lexer->stream) == 'x') {
+            lexer->stream += 1;
+            base = 16;
+            start = lexer->stream;
+        }
+    }
+
     while (true) {
 
         u64 digit = char_to_digit[(int)*lexer->stream];
@@ -266,21 +280,25 @@ file_local void lex_int(Lexer *lexer)
 
         if (digit >= base) {
             ZFATAL("Digit '%c' out of range for base %i", *lexer->stream, base);
-            result = 0;
             return;
         }
 
-        if (result > (UINT64_MAX - digit) / 10) {
+        if (result > (UINT64_MAX - digit) / base) {
             ZFATAL("Integer literal overflow: '%.*s'", (int)length + 1, start);
             // Skip the rest of this integer
             while (isdigit(*lexer->stream)) lexer->stream += 1;
-            result = 0;
             return;
         }
 
         result = result * base + digit;
         lexer->stream += 1;
         length += 1;
+    }
+
+    if (lexer->stream == start) {
+        ZFATAL("Expected base %d digit, got '%c'", base, *lexer->stream);
+        assert(false);
+        return;
     }
 
     lexer->token.kind = TOK_INT;
