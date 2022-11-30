@@ -122,7 +122,7 @@ case (first_char): {                                                \
             char c = *lex->stream;
             lex->stream = start;
 
-            if (c == '.') {
+            if (c == '.' || tolower(c) == 'e') {
                 if (!lex_real(lex)) return false;
             } else {
                 if (!lex_int(lex)) return false;
@@ -201,6 +201,21 @@ String_Ref tmp_token_string(Token token)
         length = string_format(buffer, "%s '%.*s'", name, (int)token.atom.length, token.atom.data);
     } else {
         length = string_format(buffer, "%s", name);
+    }
+
+    // Optionally print value
+    switch (token.kind) {
+        case TOK_INT: {
+            length = string_format(buffer, "%s, %llu", buffer, token.integer);
+            break;
+        }
+
+        case TOK_REAL: {
+            length = string_format(buffer, "%s, %f", buffer, token.real.r64);
+            break;
+        }
+
+        default: break;
     }
 
     if (token.kind == TOK_INT) {
@@ -320,15 +335,33 @@ file_local bool lex_real(Lexer *lexer)
 
     const char *start = lexer->stream;
 
+    // NOTE:
+    // The scanning we do here is to leave the stream in the correct position when done.
+    // The actual conversion is done by strtod/strtof.
+
+    // All digits before the '.'
     while (isdigit(*lexer->stream)) lexer->stream += 1;
 
     if (*lexer->stream == '.') lexer->stream += 1;
 
+    // All digits after the '.'
     while (isdigit(*lexer->stream)) lexer->stream += 1;
 
+    // Scientific notation
     if (tolower(*lexer->stream) == 'e') {
-        ZFATAL("Scientific real notation not supported yet");
-        return false;
+        lexer->stream += 1;
+
+        if (*lexer->stream == '+' || *lexer->stream == '-') {
+            lexer->stream += 1;
+        }
+
+        if (!isdigit(*lexer->stream)) {
+            ZFATAL("Expected digit after float literal exponent, found '%c'.", *lexer->stream);
+            return false;
+        }
+
+        // All digits after 'e' and optional '+'/'-'
+        while (isdigit(*lexer->stream)) lexer->stream += 1;
     }
 
     Real_Value result;

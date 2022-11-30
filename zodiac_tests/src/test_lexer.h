@@ -186,7 +186,7 @@ static MunitResult Lex_Float(const MunitParameter params[], void *user_data_or_f
 {
     auto lexer = (Lexer *)user_data_or_fixture;
 
-    const char *stream = ".0 0. 0.0 4.2 .314 55. 0.54";
+    const char *stream = ".0 0. 0.0 4.2 .314 55. 0.54 4e3 4e+3 4e-3 4.2e4";
     lexer_init_stream(lexer, stream);
 
     ZTRACE("");
@@ -200,6 +200,10 @@ static MunitResult Lex_Float(const MunitParameter params[], void *user_data_or_f
     ASSERT_TOK_REAL(0.314);
     ASSERT_TOK_REAL(55);
     ASSERT_TOK_REAL(0.54);
+    ASSERT_TOK_REAL(4e3);
+    ASSERT_TOK_REAL(4e+3);
+    ASSERT_TOK_REAL(0.004);
+    ASSERT_TOK_REAL(4.2e4);
 
     ASSERT_TOK(TOK_EOF);
 
