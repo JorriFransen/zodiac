@@ -16,6 +16,12 @@ enum Token_Kind
     TOK_NUMBER = 128,
     TOK_NAME,
     TOK_KEYWORD,
+
+    TOK_EQ,
+    TOK_NEQ,
+    TOK_LTEQ,
+    TOK_GTEQ,
+
     TOK_EOF,
 };
 

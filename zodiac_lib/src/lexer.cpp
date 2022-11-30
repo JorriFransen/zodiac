@@ -44,6 +44,18 @@ next_token__start_lexing_token:
 
     switch (*lex->stream) {
 
+#define TWO_CHAR_TOKEN_CASE(first_char, second_char, two_char_kind) \
+case (first_char): {                                                \
+    lex->token.kind = (Token_Kind)*lex->stream;                     \
+    lex->stream += 1;                                               \
+    if (*lex->stream == (second_char)) {                            \
+        lex->token.kind = (two_char_kind);                          \
+        lex->stream += 1;                                           \
+    }                                                               \
+    break;                                                          \
+}
+
+
         case 0: {
             lex->token.kind = TOK_EOF;
             break;
@@ -86,6 +98,11 @@ next_token__start_lexing_token:
             break;
         }
 
+        TWO_CHAR_TOKEN_CASE('=', '=', TOK_EQ);
+        TWO_CHAR_TOKEN_CASE('!', '=', TOK_NEQ);
+        TWO_CHAR_TOKEN_CASE('<', '=', TOK_LTEQ);
+        TWO_CHAR_TOKEN_CASE('>', '=', TOK_GTEQ);
+
         default: {
             if (*lex->stream && std::isprint(*lex->stream)) {
                 lex->token.kind = (Token_Kind)*lex->stream;
@@ -95,6 +112,9 @@ next_token__start_lexing_token:
             }
             break;
         }
+
+#undef TWO_CHAR_TOKEN_CASE
+
     }
 
     auto length = lex->stream - start;
@@ -137,6 +157,10 @@ const char *token_kind_str(Token_Kind kind)
         case TOK_NUMBER: return "<NUMBER>";
         case TOK_NAME: return "<NAME>";
         case TOK_KEYWORD: return "<KEYWORD>";
+        case TOK_EQ: return "<TOK_EQ>";
+        case TOK_NEQ: return "<TOK_NEQ>";
+        case TOK_LTEQ: return "<TOK_LTEQ>";
+        case TOK_GTEQ: return "<TOK_GTEQ>";
         case TOK_EOF: return "<EOF>";
 
         default:
