@@ -10,8 +10,8 @@
 namespace Zodiac
 {
 
-file_local void lex_int(Lexer *lexer);
-file_local void lex_real(Lexer *lexer);
+file_local bool lex_int(Lexer *lexer);
+file_local bool lex_real(Lexer *lexer);
 
 // Emit variable definition for all keywords
 #define ZODIAC_KEYWORD(n) Atom keyword_##n;
@@ -70,7 +70,7 @@ void lexer_destroy(Lexer *lexer)
     zzeromem(lexer, sizeof(Lexer));
 }
 
-void next_token(Lexer *lex)
+bool next_token(Lexer *lex)
 {
     assert(lex && lex->stream_start && lex->stream);
 
@@ -108,7 +108,7 @@ case (first_char): {                                                \
         }
 
         case '.': {
-            lex_real(lex);
+            if (!lex_real(lex)) return false;
             break;
         }
 
@@ -123,9 +123,9 @@ case (first_char): {                                                \
             lex->stream = start;
 
             if (c == '.') {
-                lex_real(lex);
+                if (!lex_real(lex)) return false;
             } else {
-                lex_int(lex);
+                if (!lex_int(lex)) return false;
             }
             break;
         }
@@ -154,6 +154,7 @@ case (first_char): {                                                \
                 lex->stream += 1;
             } else {
                 ZFATAL("Unexpected character: '%c', value: '%d'", *lex->stream, *lex->stream);
+                return false;
             }
             break;
         }
@@ -169,11 +170,12 @@ case (first_char): {                                                \
         if (lex->token.kind == TOK_NAME && is_keyword(lex->token.atom)) {
             lex->token.kind = TOK_KEYWORD;
         }
-    }
-    else
-    {
+
+    } else {
         lex->token.atom = {};
     }
+
+    return true;
 }
 
 bool is_token(Lexer *lexer, Token_Kind kind)
@@ -253,7 +255,7 @@ file_local u8 char_to_digit[256] = {
     ['f'] = 15, ['F'] = 15,
 };
 
-file_local void lex_int(Lexer *lexer)
+file_local bool lex_int(Lexer *lexer)
 {
     assert(lexer);
 
@@ -280,14 +282,14 @@ file_local void lex_int(Lexer *lexer)
 
         if (digit >= base) {
             ZFATAL("Digit '%c' out of range for base %i", *lexer->stream, base);
-            return;
+            return false;
         }
 
         if (result > (UINT64_MAX - digit) / base) {
             ZFATAL("Integer literal overflow: '%.*s'", (int)length + 1, start);
             // Skip the rest of this integer
             while (isdigit(*lexer->stream)) lexer->stream += 1;
-            return;
+            return false;
         }
 
         result = result * base + digit;
@@ -297,15 +299,16 @@ file_local void lex_int(Lexer *lexer)
 
     if (lexer->stream == start) {
         ZFATAL("Expected base %d digit, got '%c'", base, *lexer->stream);
-        assert(false);
-        return;
+        return false;
     }
 
     lexer->token.kind = TOK_INT;
     lexer->token.integer = result;
+
+    return true;
 }
 
-file_local void lex_real(Lexer *lexer)
+file_local bool lex_real(Lexer *lexer)
 {
     assert(lexer);
 
@@ -318,7 +321,8 @@ file_local void lex_real(Lexer *lexer)
     while (isdigit(*lexer->stream)) lexer->stream += 1;
 
     if (tolower(*lexer->stream) == 'e') {
-        assert_msg(false, "Scientific real notation not supported yet");
+        ZFATAL("Scientific real notation not supported yet");
+        return false;
     }
 
     Real_Value result;
@@ -326,28 +330,36 @@ file_local void lex_real(Lexer *lexer)
 
     result.r32 = strtof(start, &err);
     if (result.r32 == 0.0 && err == start) {
-        assert_msg(false, "Convertion to float failed");
+        ZFATAL("Convertion to float failed");
+        return false;
     }
     if (result.r32 == HUGE_VALF || result.r32 == -HUGE_VALF) {
-        assert_msg(false, "Float literal overflow");
+        ZFATAL("Float literal overflow");
+        return false;
     }
     if (result.r32 <= FLT_MIN && errno == ERANGE) {
-        assert_msg(false, "Float literal underflow");
+        ZFATAL("Float literal underflow");
+        return false;
     }
 
     result.r64 = strtod(start, &err);
     if (result.r64 == 0.0 && err == start) {
-        assert_msg(false, "Convertion to double failed");
+        ZFATAL("Convertion to double failed");
+        return false;
     }
     if (result.r64 == HUGE_VAL || result.r64 == -HUGE_VAL) {
-        assert_msg(false, "Double literal overflow");
+        ZFATAL("Double literal overflow");
+        return false;
     }
     if (result.r64 <= DBL_MIN && errno == ERANGE) {
-        assert_msg(false, "Double literal underflow");
+        ZFATAL("Double literal underflow");
+        return false;
     }
 
     lexer->token.kind = TOK_REAL;
     lexer->token.real = result;
+
+    return true;
 }
 
 }

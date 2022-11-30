@@ -17,20 +17,20 @@ namespace Zodiac { namespace Lexer_Tests {
 #define ASSERT_TOK(knd)                             \
     munit_assert_int(lexer->token.kind, ==, (knd)); \
     PRINT_TOK();                                    \
-    next_token(lexer);
+    munit_assert(next_token(lexer));
 
 #define ASSERT_TOK_NAME(str) {                            \
     munit_assert_int(lexer->token.kind, ==, TOK_NAME);    \
     munit_assert(string_equal(lexer->token.atom, (str))); \
     PRINT_TOK();                                          \
-    next_token(lexer);                                    \
+    munit_assert(next_token(lexer));                      \
 }
 
 #define ASSERT_TOK_INT(num) {                             \
     munit_assert_int(lexer->token.kind, ==, TOK_INT);     \
     munit_assert_uint64(lexer->token.integer, ==, (num)); \
     PRINT_TOK();                                          \
-    next_token(lexer);                                    \
+    munit_assert(next_token(lexer));                      \
 }
 
 #define ASSERT_TOK_REAL(r) {                             \
@@ -38,14 +38,14 @@ namespace Zodiac { namespace Lexer_Tests {
     munit_assert_float(lexer->token.real.r32, ==, (r));  \
     munit_assert_double(lexer->token.real.r64, ==, (r)); \
     PRINT_TOK();                                         \
-    next_token(lexer);                                   \
+    munit_assert(next_token(lexer));                     \
 }
 
 #define ASSERT_TOK_KW(kw_atom) {                          \
     munit_assert_int(lexer->token.kind, ==, TOK_KEYWORD); \
     munit_assert(lexer->token.atom == (kw_atom));         \
     PRINT_TOK();                                          \
-    next_token(lexer);                                    \
+    munit_assert(next_token(lexer));                      \
 }
 
 static void *lexer_test_setup(const MunitParameter params[], void *user_data)
@@ -157,7 +157,7 @@ static MunitResult Lex_Int(const MunitParameter params[], void *user_data_or_fix
 {
     auto lexer = (Lexer *)user_data_or_fixture;
 
-    const char *stream = "0 10 42 18446744073709551615 2147483647 0x7FFFFFFF 0x7fffffff 0xxf";
+    const char *stream = "0 10 42 18446744073709551615 2147483647 0x7FFFFFFF 0x7fffffff 0xf";
     lexer_init_stream(lexer, stream);
 
     ZTRACE("");
@@ -171,6 +171,7 @@ static MunitResult Lex_Int(const MunitParameter params[], void *user_data_or_fix
     ASSERT_TOK_INT(2147483647);
     ASSERT_TOK_INT(2147483647);
     ASSERT_TOK_INT(2147483647);
+    ASSERT_TOK_INT(15);
 
     ASSERT_TOK(TOK_EOF);
 
