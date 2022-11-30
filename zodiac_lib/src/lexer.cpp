@@ -218,10 +218,6 @@ String_Ref tmp_token_string(Token token)
         default: break;
     }
 
-    if (token.kind == TOK_INT) {
-        length = string_format(buffer, "%s, %llu", buffer, token.integer);
-    }
-
     return String_Ref(buffer, length);
 }
 
