@@ -22,7 +22,11 @@ ZAPI void logging_system_set_stderr_file(File_Handle *err_file);
 
 ZAPI void log_message(Log_Level log_level, const String_Ref fmt, ...);
 
-#define ZFATAL(fmt, ...) log_message(Log_Level::FATAL, fmt, ##__VA_ARGS__);
+#define ZFATAL(fmt, ...) { \
+    log_message(Log_Level::FATAL, fmt, ##__VA_ARGS__); \
+    ZODIAC_ABORT(); \
+}
+
 #define ZERROR(fmt, ...) log_message(Log_Level::ERROR, fmt, ##__VA_ARGS__);
 #define ZWARN(fmt, ...) log_message(Log_Level::WARN, fmt, ##__VA_ARGS__);
 #define ZINFO(fmt, ...) log_message(Log_Level::INFO, fmt, ##__VA_ARGS__);
