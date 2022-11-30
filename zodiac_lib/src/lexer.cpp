@@ -272,13 +272,19 @@ file_local bool lex_int(Lexer *lexer)
             lexer->stream += 1;
             base = 16;
             start = lexer->stream;
+        } else if (tolower(*lexer->stream) == 'b') {
+            lexer->stream += 1;
+            base = 2;
+            start = lexer->stream;
         }
     }
 
     while (true) {
 
         u64 digit = char_to_digit[(int)*lexer->stream];
-        if (digit == 0 && *lexer->stream != '0') break;
+        if (digit == 0 && *lexer->stream != '0') {
+            break;
+        }
 
         if (digit >= base) {
             ZFATAL("Digit '%c' out of range for base %i", *lexer->stream, base);
