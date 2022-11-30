@@ -2,6 +2,8 @@
 
 #include <defines.h>
 
+#include "allocator.h"
+
 namespace Zodiac
 {
 
@@ -28,6 +30,7 @@ struct Pool_Allocator
 
 ZAPI void dynamic_pool_allocator_create(u32 block_capacity, u32 element_size, Pool_Allocator *out_allocator);
 ZAPI void dynamic_pool_allocator_destroy(Pool_Allocator *allocator);
+ZAPI Allocator dyamic_pool_allocator_allocator(Pool_Allocator *state);
 
 ZAPI void *dynamic_pool_allocator_allocate(Pool_Allocator *allocator);
 ZAPI void dynamic_pool_allocator_free(Pool_Allocator *allocator, void *ptr);
