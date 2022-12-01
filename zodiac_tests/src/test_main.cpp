@@ -1,12 +1,14 @@
 
 #include <munit/munit.h>
 
-#include "test_atoms.h"
-#include "test_lexer.h"
 #include "test_strings.h"
+#include "test_atoms.h"
+#include "test_string_builder.h"
 
 #include "CTR/test_containers.h"
 #include "MEM/test_memory.h"
+
+#include "test_lexer.h"
 
 namespace Zodiac
 {
@@ -27,6 +29,14 @@ static MunitSuite atom_suite = {
     MUNIT_SUITE_OPTION_NONE,
 };
 
+static MunitSuite string_builder_suite = {
+    (char *)"String_Builder/",
+    String_Builder_Tests::string_builder_tests,
+    nullptr,
+    1,
+    MUNIT_SUITE_OPTION_NONE,
+};
+
 static MunitSuite lexer_suite = {
     (char *)"Lex/",
     Lexer_Tests::lexer_tests,
@@ -38,6 +48,7 @@ static MunitSuite lexer_suite = {
 static MunitSuite main_child_suites[] = {
     string_suite,
     atom_suite,
+    string_builder_suite,
     containers_suite,
     memory_suite,
     lexer_suite,

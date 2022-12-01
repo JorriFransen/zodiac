@@ -140,6 +140,7 @@ const String string_format(Allocator *allocator, const String_Ref fmt, va_list a
     va_list args_copy;
     va_copy(args_copy, args);
 
+    assert_msg(fmt.data[fmt.length] == '\0', "Null terminated string expected");
     auto size = vsnprintf(nullptr, 0, fmt.data, args_copy);
 
     va_end(args_copy);
@@ -174,6 +175,8 @@ i32 string_format(char *dest, const String_Ref fmt, va_list args)
     assert(dest && fmt.data);
 
     char buffer[ZSTRING_FORMAT_STACK_BUFFER_SIZE];
+
+    assert_msg(fmt.data[fmt.length] == '\0', "Null terminated string expected");
     auto written_size = vsnprintf(buffer, ZSTRING_FORMAT_STACK_BUFFER_SIZE, fmt.data, args);
     buffer[written_size] = '\0';
     zmemcpy(dest, buffer, written_size + 1);

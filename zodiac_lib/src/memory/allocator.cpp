@@ -33,6 +33,12 @@ void free(Allocator *allocator, void *memory)
     allocator->alloc_func(allocator, Allocation_Mode::FREE, 0, 0, memory);
 }
 
+void free_all(Allocator *allocator)
+{
+    assert(allocator);
+    allocator->alloc_func(allocator, Allocation_Mode::FREE_ALL, 0, 0, nullptr);
+}
+
 static void *c_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u64 alignment, void *old_ptr)
 {
     assert(allocator);

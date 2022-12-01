@@ -93,8 +93,7 @@ static AST_Binary_Operator char_to_ast_binop[256] = {
     ['+'] = AST_Binary_Operator::ADD,
     ['-'] = AST_Binary_Operator::SUB,
     ['*'] = AST_Binary_Operator::MUL,
-    // ['/'] = AST_Binary_Operator::DIV,
-
+    ['/'] = AST_Binary_Operator::DIV,
 };
 
 file_local AST_Expression *parse_expr1()
