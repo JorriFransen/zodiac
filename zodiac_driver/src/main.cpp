@@ -38,13 +38,23 @@ int main() {
 
     lxr = &lexer;
     auto result = parse_expression();
-    ast_print_expression(result);
-    printf("\n");
+
+    String_Builder sb;
+    string_builder_create(&sb);
+
+    ast_print_expression(&sb, result);
+    string_builder_append(&sb, "\n");
 
     lexer_init_stream(&lexer, "(1 + 2) * -3"); // -9
     result = parse_expression();
-    ast_print_expression(result);
-    printf("\n");
+    ast_print_expression(&sb, result);
+    string_builder_append(&sb, "\n");
+
+    String ast_str = string_builder_to_string(&sb);
+    printf("%.*s", (int)ast_str.length, ast_str.data);
+    free(sb.allocator, ast_str.data);
+
+    string_builder_destroy(&sb);
 
     return 0;
 }

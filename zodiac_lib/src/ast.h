@@ -1,6 +1,7 @@
 #pragma once
 
 #include <common.h>
+#include <string_builder.h>
 #include <zodiac_context.h>
 
 namespace Zodiac
@@ -77,5 +78,5 @@ ZAPI AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, AST_Unary_Operator 
 ZAPI AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs);
 ZAPI AST_Expression *ast_expression_new(Zodiac_Context *ctx);
 
-ZAPI void ast_print_expression(AST_Expression *expr);
+ZAPI void ast_print_expression(String_Builder *sb, AST_Expression *expr);
 }

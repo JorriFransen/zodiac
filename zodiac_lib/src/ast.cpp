@@ -1,8 +1,7 @@
 #include "ast.h"
 
 #include <asserts.h>
-
-#include <stdio.h> //nocheckin stringbuilder
+#include <string_builder.h>
 
 namespace Zodiac
 {
@@ -70,31 +69,31 @@ AST_Expression *ast_expression_new(Zodiac_Context *ctx)
     return alloc<AST_Expression>(ctx->expression_allocator);
 }
 
-void ast_print_expression(AST_Expression *expr)
+void ast_print_expression(String_Builder *sb, AST_Expression *expr)
 {
-    assert(expr);
+    assert(sb && expr);
 
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false);
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
-            printf("%llu", expr->integer_literal.value.u64);
+            string_builder_append(sb, "%llu", expr->integer_literal.value.u64);
             break;
         }
 
         case AST_Expression_Kind::UNARY: {
-            printf("%c(", (char)expr->unary.op);
-            ast_print_expression(expr->unary.operand);
-            printf(")");
+            string_builder_append(sb, "%c(", (char)expr->unary.op);
+            ast_print_expression(sb, expr->unary.operand);
+            string_builder_append(sb, ")");
             break;
         }
 
         case AST_Expression_Kind::BINARY: {
-            printf("%c(", (char)expr->binary.op);
-            ast_print_expression(expr->binary.lhs);
-            printf(", ");
-            ast_print_expression(expr->binary.rhs);
-            printf(")");
+            string_builder_append(sb, "%c(", (char)expr->binary.op);
+            ast_print_expression(sb, expr->binary.lhs);
+            string_builder_append(sb, ", ");
+            ast_print_expression(sb, expr->binary.rhs);
+            string_builder_append(sb, ")");
             break;
         }
 
