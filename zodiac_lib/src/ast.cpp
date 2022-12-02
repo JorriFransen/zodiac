@@ -131,20 +131,21 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
         }
 
         case AST_Expression_Kind::MEMBER: {
+            string_builder_append(sb, "(. ");
             ast_print_expression(sb, expr->member.base);
-            string_builder_append(sb, ".%.*s", (int)expr->member.member_name.length, expr->member.member_name.data);
+            string_builder_append(sb, ", %.*s)", (int)expr->member.member_name.length, expr->member.member_name.data);
             break;
         }
 
         case AST_Expression_Kind::UNARY: {
-            string_builder_append(sb, "%c(", (char)expr->unary.op);
+            string_builder_append(sb, "(%c ", (char)expr->unary.op);
             ast_print_expression(sb, expr->unary.operand);
             string_builder_append(sb, ")");
             break;
         }
 
         case AST_Expression_Kind::BINARY: {
-            string_builder_append(sb, "%c(", (char)expr->binary.op);
+            string_builder_append(sb, "(%c ", (char)expr->binary.op);
             ast_print_expression(sb, expr->binary.lhs);
             string_builder_append(sb, ", ");
             ast_print_expression(sb, expr->binary.rhs);
