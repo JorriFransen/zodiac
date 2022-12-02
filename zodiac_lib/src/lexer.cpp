@@ -108,7 +108,12 @@ case (first_char): {                                                \
         }
 
         case '.': {
-            if (!lex_real(lex)) return false;
+            if (isdigit(lex->stream[1])) {
+                if (!lex_real(lex)) return false;
+            } else {
+                lex->token.kind = (Token_Kind)*lex->stream;
+                lex->stream += 1;
+            }
             break;
         }
 
