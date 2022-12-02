@@ -24,6 +24,16 @@ void ast_identifier_expr_create(Atom atom, AST_Expression *out_expr)
     out_expr->identifier.atom = atom;
 }
 
+void ast_member_expr_create(AST_Expression *base, Atom atom, AST_Expression *out_expr)
+{
+    assert(base && out_expr);
+
+    ast_expression_create(AST_Expression_Kind::MEMBER, out_expr);
+
+    out_expr->member.base = base;
+    out_expr->member.member_name = atom;
+}
+
 void ast_unary_expr_create(AST_Unary_Operator op, AST_Expression *operand, AST_Expression *out_expr)
 {
     assert(operand && out_expr);
@@ -54,6 +64,8 @@ void ast_expression_create(AST_Expression_Kind kind, AST_Expression *out_expr)
 
 AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Integer_Value value)
 {
+    assert(ctx);
+
     auto expr = ast_expression_new(ctx);
     ast_integer_literal_expr_create(value, expr);
     return expr;
@@ -61,13 +73,26 @@ AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Integer_Value 
 
 AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Atom atom)
 {
+    assert(ctx);
+
     auto expr = ast_expression_new(ctx);
     ast_identifier_expr_create(atom, expr);
     return expr;
 }
 
+AST_Expression *ast_member_expr_new(Zodiac_Context *ctx, AST_Expression *base, Atom atom)
+{
+    assert(ctx && base);
+
+    auto expr = ast_expression_new(ctx);
+    ast_member_expr_create(base, atom, expr);
+    return expr;
+}
+
 AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, AST_Unary_Operator op, AST_Expression *operand)
 {
+    assert(ctx && operand);
+
     auto expr = ast_expression_new(ctx);
     ast_unary_expr_create(op, operand, expr);
     return expr;
@@ -75,6 +100,8 @@ AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, AST_Unary_Operator op, A
 
 AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs)
 {
+    assert(ctx && lhs && rhs);
+
     auto expr = ast_expression_new(ctx);
     ast_binary_expr_create(op, lhs, rhs, expr);
     return expr;
@@ -100,6 +127,12 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
         case AST_Expression_Kind::IDENTIFIER: {
             Atom name = expr->identifier.atom;
             string_builder_append(sb, "%.*s", (int)name.length, name.data);
+            break;
+        }
+
+        case AST_Expression_Kind::MEMBER: {
+            ast_print_expression(sb, expr->member.base);
+            string_builder_append(sb, ".%.*s", (int)expr->member.member_name.length, expr->member.member_name.data);
             break;
         }
 

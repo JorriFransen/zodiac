@@ -53,11 +53,15 @@ AST_Expression *parse_expr_base(Parser *parser)
     while (is_token(parser, '(') || is_token(parser, '[') || is_token(parser, '.')) {
 
         if (match_token(parser, '(')) {
-            assert_msg(false, "TODO: Implement");
+            assert_msg(false, "TODO: Implement (call_expression_ast_node)");
         } else if (match_token(parser, '[')) {
-            assert_msg(false, "TODO: Implement");
+            assert_msg(false, "TODO: Implement (subscript expression ast node)");
         } else if (match_token(parser, '.')) {
-            assert_msg(false, "TODO: Implement");
+
+            Token name_tok = cur_tok(parser);
+            expect_token(parser, TOK_NAME);
+            expr = ast_member_expr_new(parser->context, expr, name_tok.atom);
+
         } else {
             auto tmp_tok_str = tmp_token_string(cur_tok(parser));
             ZFATAL("Unexpected token: '%.*s'", (int)tmp_tok_str.length, tmp_tok_str.data);

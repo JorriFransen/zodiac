@@ -30,8 +30,8 @@ int main() {
     Lexer lexer;
     lexer_create(&c, &lexer);
     lxr = &lexer;
-    lexer_init_stream(&lexer, "1 + x * -3");
-    // lexer_init_stream(&lexer, "abc.def");
+    // lexer_init_stream(&lexer, "1 + x * -3");
+    lexer_init_stream(&lexer, "(abc + 1).def");
 
 
     Parser parser;

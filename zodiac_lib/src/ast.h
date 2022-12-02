@@ -14,6 +14,8 @@ enum class AST_Expression_Kind
     INTEGER_LITERAL,
     IDENTIFIER,
 
+    MEMBER,
+
     UNARY,
     BINARY,
 };
@@ -28,6 +30,12 @@ struct AST_Integer_Literal_Expression
 struct AST_Identifier_Expression
 {
     Atom atom;
+};
+
+struct AST_Member_Expression
+{
+    AST_Expression *base;
+    Atom member_name;
 };
 
 enum class AST_Unary_Operator
@@ -69,6 +77,7 @@ struct AST_Expression
     {
         AST_Integer_Literal_Expression integer_literal;
         AST_Identifier_Expression identifier;
+        AST_Member_Expression member;
         AST_Unary_Expression unary;
         AST_Binary_Expression binary;
     };
@@ -76,6 +85,7 @@ struct AST_Expression
 
 ZAPI void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_expr);
 ZAPI void ast_identifier_expr_create(Atom atom, AST_Expression *out_expr);
+ZAPI void ast_member_expr_create(AST_Expression *base, Atom atom, AST_Expression *out_expr);
 ZAPI void ast_unary_expr_create(AST_Unary_Operator op, AST_Expression *operand, AST_Expression *out_expr);
 ZAPI void ast_binary_expr_create(AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs, AST_Expression *out_expr);
 ZAPI void ast_expression_create(AST_Expression_Kind kind, AST_Expression *out_expr);
@@ -83,6 +93,7 @@ ZAPI void ast_expression_create(AST_Expression_Kind kind, AST_Expression *out_ex
 
 ZAPI AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Integer_Value value);
 ZAPI AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Atom atom);
+ZAPI AST_Expression *ast_member_expr_new(Zodiac_Context *ctx, AST_Expression *base, Atom atom);
 ZAPI AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, AST_Unary_Operator op, AST_Expression *operand);
 ZAPI AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs);
 ZAPI AST_Expression *ast_expression_new(Zodiac_Context *ctx);
