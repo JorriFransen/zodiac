@@ -15,6 +15,15 @@ void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_ex
     out_expr->integer_literal.value = value;
 }
 
+void ast_identifier_expr_create(Atom atom, AST_Expression *out_expr)
+{
+    assert(out_expr);
+
+    ast_expression_create(AST_Expression_Kind::IDENTIFIER, out_expr);
+
+    out_expr->identifier.atom = atom;
+}
+
 void ast_unary_expr_create(AST_Unary_Operator op, AST_Expression *operand, AST_Expression *out_expr)
 {
     assert(operand && out_expr);
@@ -50,6 +59,13 @@ AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Integer_Value 
     return expr;
 }
 
+AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Atom atom)
+{
+    auto expr = ast_expression_new(ctx);
+    ast_identifier_expr_create(atom, expr);
+    return expr;
+}
+
 AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, AST_Unary_Operator op, AST_Expression *operand)
 {
     auto expr = ast_expression_new(ctx);
@@ -78,6 +94,12 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
             string_builder_append(sb, "%llu", expr->integer_literal.value.u64);
+            break;
+        }
+
+        case AST_Expression_Kind::IDENTIFIER: {
+            Atom name = expr->identifier.atom;
+            string_builder_append(sb, "%.*s", (int)name.length, name.data);
             break;
         }
 

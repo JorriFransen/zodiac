@@ -11,7 +11,8 @@
 
 using namespace Zodiac;
 
-file_local AST_Expression *parse_expr3();
+file_local AST_Expression *parse_expr_operand();
+file_local AST_Expression *parse_expr_base();
 file_local AST_Expression *parse_expr2();
 file_local AST_Expression *parse_expr1();
 file_local AST_Expression *parse_expression();
@@ -34,7 +35,9 @@ int main() {
 
     Lexer lexer;
     lexer_create(&c, &lexer);
-    lexer_init_stream(&lexer, "1 + 2 * -3"); // -5
+    // lexer_init_stream(&lexer, "1 + x * -3");
+    lexer_init_stream(&lexer, "abc.def");
+
 
     lxr = &lexer;
     auto result = parse_expression();
@@ -42,11 +45,6 @@ int main() {
     String_Builder sb;
     string_builder_create(&sb);
 
-    ast_print_expression(&sb, result);
-    string_builder_append(&sb, "\n");
-
-    lexer_init_stream(&lexer, "(1 + 2) * -3"); // -9
-    result = parse_expression();
     ast_print_expression(&sb, result);
     string_builder_append(&sb, "\n");
 
@@ -59,18 +57,24 @@ int main() {
     return 0;
 }
 
-// expr3 = INT | '(' expr ')'
-// expr2 = ([+-] expr2) | expr3
+// expr_operand = INT | NAME | '(' expr ')'
+// expr_base = expr_operand ( '(' call_args ')' | '[' expr ']' | '.' NAME )*
+// expr2 = ([+-] expr2) | expr_base
 // expr1 = expr2 ([/*] expr2)*
 // expr = expr1 ([+-] expr1)*
 
-file_local AST_Expression *parse_expr3()
+file_local AST_Expression *parse_expr_operand()
 {
     if (is_token(lxr, TOK_INT)) {
         u64 value = lxr->token.integer;
         next_token(lxr);
 
         return ast_integer_literal_expr_new(ctx, { .u64 = value });
+    } else if (is_token(lxr, TOK_NAME)) {
+        Atom name_atom = lxr->token.atom;
+        next_token(lxr);
+
+        return ast_identifier_expr_new(ctx, name_atom);
     } else {
 
         if (match_token(lxr, '(')) {
@@ -81,8 +85,28 @@ file_local AST_Expression *parse_expr3()
             ZFATAL("Expected '('");
             return 0;
         }
-
     }
+}
+
+file_local AST_Expression *parse_expr_base()
+{
+    AST_Expression *expr = parse_expr_operand();
+
+    while (is_token(lxr, '(') || is_token(lxr, '[') || is_token(lxr, '.')) {
+
+        if (match_token(lxr, '(')) {
+            assert_msg(false, "TODO: Implement");
+        } else if (match_token(lxr, '[')) {
+            assert_msg(false, "TODO: Implement");
+        } else if (match_token(lxr, '.')) {
+            assert_msg(false, "TODO: Implement");
+        } else {
+            auto tmp_tok_str = tmp_token_string(lxr->token);
+            ZFATAL("Unexpected token: '%.*s'", (int)tmp_tok_str.length, tmp_tok_str.data);
+        }
+    }
+
+    return expr;
 }
 
 file_local AST_Expression *parse_expr2()
@@ -95,7 +119,7 @@ file_local AST_Expression *parse_expr2()
         AST_Expression *operand = parse_expr2();
         return ast_unary_expr_new(ctx, AST_Unary_Operator::MINUS, operand);
     } else {
-        return parse_expr3();
+        return parse_expr_base();
     }
 }
 
