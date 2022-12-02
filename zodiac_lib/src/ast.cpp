@@ -34,6 +34,26 @@ void ast_member_expr_create(AST_Expression *base, Atom atom, AST_Expression *out
     out_expr->member.member_name = atom;
 }
 
+void ast_index_expr_create(AST_Expression *base, AST_Expression *index, AST_Expression *out_expr)
+{
+    assert(base && index && out_expr);
+
+    ast_expression_create(AST_Expression_Kind::INDEX, out_expr);
+
+    out_expr->index.base = base;
+    out_expr->index.index = index;
+}
+
+void ast_call_expr_create(AST_Expression *base, Dynamic_Array<AST_Expression *> args, AST_Expression *out_expr)
+{
+    assert(base && out_expr);
+
+    ast_expression_create(AST_Expression_Kind::CALL, out_expr);
+
+    out_expr->call.base = base;
+    out_expr->call.args = args;
+}
+
 void ast_unary_expr_create(AST_Unary_Operator op, AST_Expression *operand, AST_Expression *out_expr)
 {
     assert(operand && out_expr);
@@ -89,6 +109,25 @@ AST_Expression *ast_member_expr_new(Zodiac_Context *ctx, AST_Expression *base, A
     return expr;
 }
 
+AST_Expression *ast_index_expr_new(Zodiac_Context *ctx, AST_Expression *base, AST_Expression *index)
+{
+    assert(ctx && base && index);
+
+    auto expr = ast_expression_new(ctx);
+    ast_index_expr_create(base, index, expr);
+    return expr;
+}
+
+AST_Expression *ast_call_expr_new(Zodiac_Context *ctx, AST_Expression *base, Dynamic_Array<AST_Expression *> args)
+{
+    assert(ctx && base);
+
+    auto expr = ast_expression_new(ctx);
+    ast_call_expr_create(base, args, expr);
+    return expr;
+
+}
+
 AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, AST_Unary_Operator op, AST_Expression *operand)
 {
     assert(ctx && operand);
@@ -134,6 +173,29 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
             string_builder_append(sb, "(. ");
             ast_print_expression(sb, expr->member.base);
             string_builder_append(sb, ", %.*s)", (int)expr->member.member_name.length, expr->member.member_name.data);
+            break;
+        }
+
+        case AST_Expression_Kind::INDEX: {
+            string_builder_append(sb, "([] ");
+            ast_print_expression(sb, expr->index.base);
+            string_builder_append(sb, ", ");
+            ast_print_expression(sb, expr->index.index);
+            string_builder_append(sb, ")");
+            break;
+        }
+
+        case AST_Expression_Kind::CALL: {
+            string_builder_append(sb, "(() ");
+            ast_print_expression(sb, expr->call.base);
+            string_builder_append(sb, ", (");
+            for (u64 i = 0; i < expr->call.args.count; i++) {
+                if (i != 0) {
+                    string_builder_append(sb, ", ");
+                }
+                ast_print_expression(sb, expr->call.args[i]);
+            }
+            string_builder_append(sb, "))");
             break;
         }
 

@@ -1,5 +1,6 @@
 #include "parser.h"
 
+#include <containers/dynamic_array.h>
 #include <logger.h>
 
 namespace Zodiac
@@ -12,6 +13,7 @@ void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser)
     out_parser->lxr = lxr;
 }
 
+// call_args = (expr ( ',' expr )* )*
 // expr_operand = INT | NAME | '(' expr ')'
 // expr_base = expr_operand ( '(' call_args ')' | '[' expr ']' | '.' NAME )*
 // expr_unary = ([+-] expr_unary) | expr_base
@@ -53,9 +55,30 @@ AST_Expression *parse_expr_base(Parser *parser)
     while (is_token(parser, '(') || is_token(parser, '[') || is_token(parser, '.')) {
 
         if (match_token(parser, '(')) {
-            assert_msg(false, "TODO: Implement (call_expression_ast_node)");
+
+            Dynamic_Array<AST_Expression*> args;
+            dynamic_array_create(&dynamic_allocator, &args, 0);
+
+            while (!match_token(parser, ')')) {
+
+                if (args.count != 0) {
+                    expect_token(parser, ',');
+                }
+
+                AST_Expression *arg = parse_expression(parser);
+                dynamic_array_append(&args, arg);
+            }
+
+            expr = ast_call_expr_new(parser->context, expr, args);
+
+
         } else if (match_token(parser, '[')) {
-            assert_msg(false, "TODO: Implement (subscript expression ast node)");
+
+            AST_Expression *index = parse_expression(parser);
+            expect_token(parser, ']');
+            expr = ast_index_expr_new(parser->context, expr, index);
+
+
         } else if (match_token(parser, '.')) {
 
             Token name_tok = cur_tok(parser);
