@@ -33,11 +33,11 @@ AST_Expression *parse_expr_operand(Parser *parser)
             auto result = parse_expression(parser);
             expect_token(parser, ')');
             return result;
-        } else {
-            ZFATAL("Expected '('");
-            return 0;
         }
     }
+
+    ZFATAL("Expected INT, NAME or '(' when parsing expression");
+    return nullptr;
 }
 
 AST_Expression *parse_expr_base(Parser *parser)
@@ -49,7 +49,7 @@ AST_Expression *parse_expr_base(Parser *parser)
         if (match_token(parser, '(')) {
 
             Dynamic_Array<AST_Expression*> args;
-            dynamic_array_create(&dynamic_allocator, &args, 0);
+            dynamic_array_create(parser->context->ast_allocator, &args, 0);
 
             while (!match_token(parser, ')')) {
 
@@ -152,22 +152,36 @@ AST_Statement *parse_statement(Parser *parser)
 {
     assert(parser);
 
-    // TODO: Check keywords first
+    if (match_token(parser, '{')) {
+        Dynamic_Array<AST_Statement *> statements;
+        dynamic_array_create(parser->context->ast_allocator, &statements);
 
+        while (!match_token(parser, '}')) {
+
+            AST_Statement *stmt = parse_statement(parser);
+            dynamic_array_append(&statements, stmt);
+        }
+
+        return ast_block_stmt_new(parser->context, statements);
+    }
+
+    // All remaining options start with an expression
+    AST_Statement *result = nullptr;
     AST_Expression *expr = parse_expression(parser);
     if (expr->kind == AST_Expression_Kind::CALL) {
-        // assert_msg(false, "TODO: Implement call_expression ast");
+        result = ast_call_stmt_new(parser->context, expr);
     } else {
         expect_token(parser, '=');
-        AST_Expression *avalue = parse_expression(parser);
-        assert(avalue);
-        // assert_msg(false, "TODO: Implement assign_expression ast");
+        AST_Expression *value = parse_expression(parser);
+        assert(value);
+        result = ast_assign_stmt_new(parser->context, expr, value);
     }
+
+    assert(result);
 
     expect_token(parser, ';');
 
-    assert(false);
-    return nullptr;
+    return result;
 }
 
 bool is_token(Parser *parser, Token_Kind kind)

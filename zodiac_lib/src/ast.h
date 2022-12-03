@@ -8,22 +8,8 @@
 namespace Zodiac
 {
 
-enum class AST_Expression_Kind
-{
-    INVALID,
-
-    INTEGER_LITERAL,
-    IDENTIFIER,
-
-    MEMBER,
-    INDEX,
-    CALL,
-
-    UNARY,
-    BINARY,
-};
-
 struct AST_Expression;
+struct AST_Statement;
 
 struct AST_Integer_Literal_Expression
 {
@@ -84,6 +70,21 @@ struct AST_Binary_Expression
     AST_Expression *rhs;
 };
 
+enum class AST_Expression_Kind
+{
+    INVALID,
+
+    INTEGER_LITERAL,
+    IDENTIFIER,
+
+    MEMBER,
+    INDEX,
+    CALL,
+
+    UNARY,
+    BINARY,
+};
+
 struct AST_Expression
 {
     AST_Expression_Kind kind;
@@ -100,9 +101,27 @@ struct AST_Expression
     };
 };
 
+struct AST_Block_Statement
+{
+    Dynamic_Array<AST_Statement *> statements;
+};
+
+struct AST_Assign_Statement
+{
+    AST_Expression *dest;
+    AST_Expression *value;
+};
+
+struct AST_Call_Statement
+{
+    AST_Expression *call;
+};
+
 enum class AST_Statement_Kind
 {
     INVALID,
+
+    BLOCK,
 
     ASSIGN,
     CALL,
@@ -111,6 +130,13 @@ enum class AST_Statement_Kind
 struct AST_Statement
 {
     AST_Statement_Kind kind;
+
+    union
+    {
+        AST_Block_Statement block;
+        AST_Assign_Statement assign;
+        AST_Call_Statement call;
+    };
 };
 
 ZAPI void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_expr);
@@ -122,6 +148,10 @@ ZAPI void ast_unary_expr_create(AST_Unary_Operator op, AST_Expression *operand, 
 ZAPI void ast_binary_expr_create(AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs, AST_Expression *out_expr);
 ZAPI void ast_expression_create(AST_Expression_Kind kind, AST_Expression *out_expr);
 
+ZAPI void ast_block_stmt_create(Dynamic_Array<AST_Statement *> statements, AST_Statement *out_stmt);
+ZAPI void ast_assign_stmt_create(AST_Expression *dest, AST_Expression *value, AST_Statement *out_stmt);
+ZAPI void ast_call_stmt_create(AST_Expression *call, AST_Statement *out_stmt);
+ZAPI void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt);
 
 ZAPI AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Integer_Value value);
 ZAPI AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Atom atom);
@@ -132,6 +162,12 @@ ZAPI AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, AST_Unary_Operator 
 ZAPI AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs);
 ZAPI AST_Expression *ast_expression_new(Zodiac_Context *ctx);
 
+ZAPI AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Dynamic_Array<AST_Statement *> statements);
+ZAPI AST_Statement *ast_assign_stmt_new(Zodiac_Context *ctx, AST_Expression *dest, AST_Expression *value);
+ZAPI AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, AST_Expression *call);
+ZAPI AST_Statement *ast_statement_new(Zodiac_Context *ctx);
+
 ZAPI void ast_print_expression(String_Builder *sb, AST_Expression *expr);
-ZAPI void ast_print_statement(String_Builder *sb, AST_Statement *stmt);
+ZAPI void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent = 0);
+
 }

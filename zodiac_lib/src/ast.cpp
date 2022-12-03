@@ -79,7 +79,44 @@ void ast_binary_expr_create(AST_Binary_Operator op, AST_Expression *lhs, AST_Exp
 
 void ast_expression_create(AST_Expression_Kind kind, AST_Expression *out_expr)
 {
+    assert(out_expr);
+
     out_expr->kind = kind;
+}
+
+void ast_block_stmt_create(Dynamic_Array<AST_Statement *> statements, AST_Statement *out_stmt)
+{
+    assert(out_stmt);
+
+    ast_statement_create(AST_Statement_Kind::BLOCK, out_stmt);
+
+    out_stmt->block.statements = statements;
+}
+
+void ast_assign_stmt_create(AST_Expression *dest, AST_Expression *value, AST_Statement *out_stmt)
+{
+    assert(dest && value && out_stmt);
+
+    ast_statement_create(AST_Statement_Kind::ASSIGN, out_stmt);
+
+    out_stmt->assign.dest = dest;
+    out_stmt->assign.value = value;
+}
+
+void ast_call_stmt_create(AST_Expression *call, AST_Statement *out_stmt)
+{
+    assert(call && out_stmt);
+
+    ast_statement_create(AST_Statement_Kind::CALL, out_stmt);
+
+    out_stmt->call.call = call;
+}
+
+void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
+{
+    assert(out_stmt);
+
+    out_stmt->kind = kind;
 }
 
 AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Integer_Value value)
@@ -148,7 +185,39 @@ AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, AST_Binary_Operator op,
 
 AST_Expression *ast_expression_new(Zodiac_Context *ctx)
 {
-    return alloc<AST_Expression>(ctx->expression_allocator);
+    return alloc<AST_Expression>(ctx->ast_allocator);
+}
+
+AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Dynamic_Array<AST_Statement *> statements)
+{
+    assert(ctx);
+
+    auto stmt = ast_statement_new(ctx);
+    ast_block_stmt_create(statements, stmt);
+    return stmt;
+}
+
+AST_Statement *ast_assign_stmt_new(Zodiac_Context *ctx, AST_Expression *dest, AST_Expression *value)
+{
+    assert(ctx && dest && value);
+
+    auto stmt = ast_statement_new(ctx);
+    ast_assign_stmt_create(dest, value, stmt);
+    return stmt;
+}
+
+AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, AST_Expression *call)
+{
+    assert(ctx && call);
+
+    auto stmt = ast_statement_new(ctx);
+    ast_call_stmt_create(call, stmt);
+    return stmt;
+}
+
+AST_Statement *ast_statement_new(Zodiac_Context *ctx)
+{
+    return alloc<AST_Statement>(ctx->ast_allocator);
 }
 
 void ast_print_expression(String_Builder *sb, AST_Expression *expr)
@@ -210,11 +279,49 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
     }
 }
 
-void ast_print_statement(String_Builder *sb, AST_Statement *stmt)
+void ast_print_indent(String_Builder *sb, int indent) {
+    for (int i = 0; i < indent; i++) {
+        string_builder_append(sb, "  ");
+    }
+}
+
+void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0*/)
 {
     assert(sb && stmt);
 
-    assert_msg(false, "TODO: Implement ast_print_statement");
+    bool semicolon = true;
+
+    ast_print_indent(sb, indent);
+
+    switch (stmt->kind) {
+        case AST_Statement_Kind::INVALID: assert(false);
+
+        case AST_Statement_Kind::BLOCK: {
+            semicolon = false;
+            string_builder_append(sb, "{ \n");
+            for (u64 i = 0; i < stmt->block.statements.count; i++) {
+                ast_print_statement(sb, stmt->block.statements[i], indent + 1);
+                string_builder_append(sb, "\n");
+            }
+            ast_print_indent(sb, indent);
+            string_builder_append(sb, "}");
+            break;
+        }
+
+        case AST_Statement_Kind::ASSIGN: {
+            ast_print_expression(sb, stmt->assign.dest);
+            string_builder_append(sb, " = ");
+            ast_print_expression(sb, stmt->assign.value);
+            break;
+        }
+
+        case AST_Statement_Kind::CALL: {
+            ast_print_expression(sb, stmt->call.call);
+            break;
+        }
+    }
+
+    if (semicolon) string_builder_append(sb, ";");
 }
 
 }
