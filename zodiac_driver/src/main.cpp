@@ -11,9 +11,6 @@
 
 using namespace Zodiac;
 
-Zodiac_Context *ctx;
-Lexer *lxr;
-
 int main() {
 
     if (!Zodiac::logging_system_initialize()) return 1;
@@ -25,18 +22,16 @@ int main() {
 
     Zodiac_Context c;
     zodiac_context_create(&expr_allocator, &c);
-    ctx = &c;
 
     Lexer lexer;
     lexer_create(&c, &lexer);
-    lxr = &lexer;
     // lexer_init_stream(&lexer, "1 + x * -3");
     lexer_init_stream(&lexer, "(abc + 1)[x].def(1)");
     // lexer_init_stream(&lexer, "abc[0].def()");
 
 
     Parser parser;
-    parser_create(ctx, lxr, &parser);
+    parser_create(&c, &lexer, &parser);
 
     auto result = parse_expression(&parser);
 

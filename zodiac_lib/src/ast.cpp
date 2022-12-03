@@ -159,62 +159,54 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
         case AST_Expression_Kind::INVALID: assert(false);
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
-            string_builder_append(sb, "%llu", expr->integer_literal.value.u64);
+            string_builder_append(sb, "%i", expr->integer_literal.value.u64);
             break;
         }
 
         case AST_Expression_Kind::IDENTIFIER: {
-            Atom name = expr->identifier.atom;
-            string_builder_append(sb, "%.*s", (int)name.length, name.data);
+            string_builder_append(sb, "%s", expr->identifier.atom.data);
             break;
         }
 
         case AST_Expression_Kind::MEMBER: {
-            string_builder_append(sb, "(. ");
             ast_print_expression(sb, expr->member.base);
-            string_builder_append(sb, ", %.*s)", (int)expr->member.member_name.length, expr->member.member_name.data);
+            string_builder_append(sb, ".%s", expr->member.member_name.data);
             break;
         }
 
         case AST_Expression_Kind::INDEX: {
-            string_builder_append(sb, "([] ");
             ast_print_expression(sb, expr->index.base);
-            string_builder_append(sb, ", ");
+            string_builder_append(sb, "[");
             ast_print_expression(sb, expr->index.index);
-            string_builder_append(sb, ")");
+            string_builder_append(sb, "]");
             break;
         }
 
         case AST_Expression_Kind::CALL: {
-            string_builder_append(sb, "(() ");
-            ast_print_expression(sb, expr->call.base);
-            string_builder_append(sb, ", (");
+            ast_print_expression(sb, expr->index.base);
+            string_builder_append(sb, "(");
             for (u64 i = 0; i < expr->call.args.count; i++) {
-                if (i != 0) {
-                    string_builder_append(sb, ", ");
-                }
+                if (i != 0) string_builder_append(sb, ", ");
                 ast_print_expression(sb, expr->call.args[i]);
             }
-            string_builder_append(sb, "))");
+            string_builder_append(sb, ")");
             break;
         }
 
         case AST_Expression_Kind::UNARY: {
-            string_builder_append(sb, "(%c ", (char)expr->unary.op);
+            string_builder_append(sb, "%c", (char)expr->unary.op);
             ast_print_expression(sb, expr->unary.operand);
-            string_builder_append(sb, ")");
             break;
         }
 
         case AST_Expression_Kind::BINARY: {
-            string_builder_append(sb, "(%c ", (char)expr->binary.op);
+            string_builder_append(sb, "(");
             ast_print_expression(sb, expr->binary.lhs);
-            string_builder_append(sb, ", ");
+            string_builder_append(sb, " %c ", (char)expr->binary.op);
             ast_print_expression(sb, expr->binary.rhs);
             string_builder_append(sb, ")");
             break;
         }
-
     }
 }
 
