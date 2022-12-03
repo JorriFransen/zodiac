@@ -26,19 +26,19 @@ int main() {
     Lexer lexer;
     lexer_create(&c, &lexer);
     // lexer_init_stream(&lexer, "1 + x * -3");
-    lexer_init_stream(&lexer, "(abc + 1)[x].def(1)");
     // lexer_init_stream(&lexer, "abc[0].def()");
+    lexer_init_stream(&lexer, "i = i + 1; some_func(a, b, c)");
 
 
     Parser parser;
     parser_create(&c, &lexer, &parser);
 
-    auto result = parse_expression(&parser);
+    auto result = parse_statement(&parser);
 
     String_Builder sb;
     string_builder_create(&sb);
 
-    ast_print_expression(&sb, result);
+    ast_print_statement(&sb, result);
     string_builder_append(&sb, "\n");
 
     String ast_str = string_builder_to_string(&sb);

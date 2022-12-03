@@ -210,4 +210,11 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
     }
 }
 
+void ast_print_statement(String_Builder *sb, AST_Statement *stmt)
+{
+    assert(sb && stmt);
+
+    assert_msg(false, "TODO: Implement ast_print_statement");
+}
+
 }

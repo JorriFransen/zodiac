@@ -100,6 +100,19 @@ struct AST_Expression
     };
 };
 
+enum class AST_Statement_Kind
+{
+    INVALID,
+
+    ASSIGN,
+    CALL,
+};
+
+struct AST_Statement
+{
+    AST_Statement_Kind kind;
+};
+
 ZAPI void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_expr);
 ZAPI void ast_identifier_expr_create(Atom atom, AST_Expression *out_expr);
 ZAPI void ast_member_expr_create(AST_Expression *base, Atom atom, AST_Expression *out_expr);
@@ -120,4 +133,5 @@ ZAPI AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, AST_Binary_Operato
 ZAPI AST_Expression *ast_expression_new(Zodiac_Context *ctx);
 
 ZAPI void ast_print_expression(String_Builder *sb, AST_Expression *expr);
+ZAPI void ast_print_statement(String_Builder *sb, AST_Statement *stmt);
 }

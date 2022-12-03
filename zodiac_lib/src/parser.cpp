@@ -13,14 +13,6 @@ void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser)
     out_parser->lxr = lxr;
 }
 
-// call_args = (expr ( ',' expr )* )*
-// expr_operand = INT | NAME | '(' expr ')'
-// expr_base = expr_operand ( '(' call_args ')' | '[' expr ']' | '.' NAME )*
-// expr_unary = ([+-] expr_unary) | expr_base
-// expr_mul = expr_unary ([/*] expr_unary)*
-// expr_add = expr_mul ([+-] expr_mul)*
-// expr = expr_add;
-
 AST_Expression *parse_expr_operand(Parser *parser)
 {
     assert(parser);
@@ -156,6 +148,27 @@ AST_Expression *parse_expression(Parser *parser)
     return parse_expr_add(parser);
 }
 
+AST_Statement *parse_statement(Parser *parser)
+{
+    assert(parser);
+
+    // TODO: Check keywords first
+
+    AST_Expression *expr = parse_expression(parser);
+    if (expr->kind == AST_Expression_Kind::CALL) {
+        // assert_msg(false, "TODO: Implement call_expression ast");
+    } else {
+        expect_token(parser, '=');
+        AST_Expression *avalue = parse_expression(parser);
+        assert(avalue);
+        // assert_msg(false, "TODO: Implement assign_expression ast");
+    }
+
+    expect_token(parser, ';');
+
+    assert(false);
+    return nullptr;
+}
 
 bool is_token(Parser *parser, Token_Kind kind)
 {
