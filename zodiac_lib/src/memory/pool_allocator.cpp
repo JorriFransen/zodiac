@@ -43,7 +43,7 @@ Allocator pool_allocator_allocator(Pool_Allocator *state)
     assert(state);
 
     Allocator result;
-    allocator_create(pool_alloc_func, state, &result);
+    allocator_create(&result, pool_alloc_func, state, ALLOCATOR_FLAG_CANT_REALLOC);
     return result;
 }
 

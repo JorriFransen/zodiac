@@ -6,6 +6,34 @@
 namespace Zodiac
 {
 
+
+template <typename T>
+struct Temp_Array
+{
+    Temporary_Allocator_Mark mark;
+    Dynamic_Array<T> array;
+};
+
+template <typename T>
+file_local Temp_Array<T> temp_array_create(Parser *parser)
+{
+    assert(parser);
+
+    Temp_Array<T> result;
+
+    result.mark = temporary_allocator_get_mark(&parser->context->temp_allocator_state);
+    dynamic_array_create(&parser->context->temp_allocator, &result.array, 0);
+    return result;
+}
+
+template <typename T>
+file_local Dynamic_Array<T> temp_array_finalize(Parser *parser, Temp_Array<T> ta)
+{
+    auto result = dynamic_array_copy(&ta.array, parser->context->ast_allocator);
+    temporary_allocator_reset(&parser->context->temp_allocator_state, ta.mark);
+    return result;
+}
+
 void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser)
 {
     assert(ctx && lxr && out_parser);
@@ -48,21 +76,20 @@ AST_Expression *parse_expr_base(Parser *parser)
 
         if (match_token(parser, '(')) {
 
-            Dynamic_Array<AST_Expression*> args;
-            dynamic_array_create(parser->context->ast_allocator, &args, 0);
+            auto temp_args = temp_array_create<AST_Expression *>(parser);
 
             while (!match_token(parser, ')')) {
 
-                if (args.count != 0) {
+                if (temp_args.array.count != 0) {
                     expect_token(parser, ',');
                 }
 
                 AST_Expression *arg = parse_expression(parser);
-                dynamic_array_append(&args, arg);
+                dynamic_array_append(&temp_args.array, arg);
             }
 
+            auto args = temp_array_finalize(parser, temp_args);
             expr = ast_call_expr_new(parser->context, expr, args);
-
 
         } else if (match_token(parser, '[')) {
 
@@ -153,15 +180,15 @@ AST_Statement *parse_statement(Parser *parser)
     assert(parser);
 
     if (match_token(parser, '{')) {
-        Dynamic_Array<AST_Statement *> statements;
-        dynamic_array_create(parser->context->ast_allocator, &statements);
+        auto temp_statements = temp_array_create<AST_Statement *>(parser);
 
         while (!match_token(parser, '}')) {
 
             AST_Statement *stmt = parse_statement(parser);
-            dynamic_array_append(&statements, stmt);
+            dynamic_array_append(&temp_statements.array, stmt);
         }
 
+        auto statements = temp_array_finalize(parser, temp_statements);
         return ast_block_stmt_new(parser->context, statements);
     }
 

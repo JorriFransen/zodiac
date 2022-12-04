@@ -57,7 +57,7 @@ Allocator dynamic_allocator_allocator(Dynamic_Allocator *state)
     assert(state);
 
     Allocator result;
-    allocator_create(dynamic_alloc_func, state, &result);
+    allocator_create(&result, dynamic_alloc_func, state, ALLOCATOR_FLAG_CANT_REALLOC);
     return result;
 }
 

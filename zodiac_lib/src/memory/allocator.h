@@ -23,13 +23,24 @@ typedef void *(*Alloc_Function)(Allocator *allocator,
                                 u64 alignment,
                                 void *old_ptr);
 
+typedef u64 Allocator_Flags;
+
+enum Allocator_Flag : Allocator_Flags
+{
+    ALLOCATOR_FLAG_NONE         = 0x00,
+    ALLOCATOR_FLAG_CANT_FREE    = 0x01,
+    ALLOCATOR_FLAG_CANT_REALLOC = 0x02,
+};
+
 struct Allocator
 {
+    Allocator_Flags flags;
+
     Alloc_Function alloc_func = nullptr;
     void *user_data = nullptr;
 };
 
-ZAPI void allocator_create(Alloc_Function alloc_func, void *user_data, Allocator *out_allocator);
+ZAPI void allocator_create(Allocator *out_allocator, Alloc_Function alloc_func, void *user_data, Allocator_Flags flags = ALLOCATOR_FLAG_NONE);
 
 ZAPI void *alloc(Allocator *allocator, u64 size);
 ZAPI void *alloc_aligned(Allocator *allocator, u64 size, u64 alignment);

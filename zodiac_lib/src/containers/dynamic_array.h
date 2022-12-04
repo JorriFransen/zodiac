@@ -47,7 +47,9 @@ void dynamic_array_free(Dynamic_Array<Element_Type> *array)
 {
     if (array->data) {
         assert(array->capacity);
-        free(array->backing_allocator, array->data);
+        if (!(array->backing_allocator->flags & ALLOCATOR_FLAG_CANT_FREE)) {
+            free(array->backing_allocator, array->data);
+        }
     }
 
     zzeromem(array, sizeof(Dynamic_Array<Element_Type>));
@@ -56,8 +58,7 @@ void dynamic_array_free(Dynamic_Array<Element_Type> *array)
 template <typename Element_Type>
 void dynamic_array_grow(Dynamic_Array<Element_Type> *array)
 {
-    u64 new_cap = array->capacity * 2;
-    if (new_cap == 0) new_cap = ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY;
+    u64 new_cap = max(array->capacity * 2, (u64)1);
     assert(new_cap);
 
     Element_Type *new_data = alloc_array<Element_Type>(array->backing_allocator, new_cap);
@@ -68,7 +69,9 @@ void dynamic_array_grow(Dynamic_Array<Element_Type> *array)
 
     if (array->capacity) {
         assert(array->data);
-        free(array->backing_allocator, array->data);
+        if (!(array->backing_allocator->flags & ALLOCATOR_FLAG_CANT_FREE)) {
+            free(array->backing_allocator, array->data);
+        }
     }
     array->data = new_data;
     array->capacity = new_cap;
@@ -84,6 +87,21 @@ void dynamic_array_append(Dynamic_Array<Element_Type> *array, Element_Type eleme
 
     array->data[array->count] = element;
     array->count += 1;
+}
+
+template <typename Element_Type>
+Dynamic_Array<Element_Type> dynamic_array_copy(Dynamic_Array<Element_Type> *source, Allocator *allocator)
+{
+    assert(source);
+    if (source->count == 0) return {};
+
+    Dynamic_Array<Element_Type> result;
+    dynamic_array_create(allocator, &result, source->count);
+
+    zmemcpy(result.data, source->data, sizeof(Element_Type) * source->count);
+    result.count = source->count;
+
+    return result;
 }
 
 }

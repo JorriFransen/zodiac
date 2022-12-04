@@ -27,7 +27,14 @@ int main() {
     lexer_create(&c, &lexer);
     // lexer_init_stream(&lexer, "1 + x * -3");
     // lexer_init_stream(&lexer, "abc[0].def();");
-    lexer_init_stream(&lexer, "{ i = i + 1; some_func(a, b, c); }");
+    const char *stream =
+        "{"
+          "i = i + 1;"
+          "some_func(a, b, c);"
+          
+        "}" ;
+
+    lexer_init_stream(&lexer, stream);
 
 
     Parser parser;

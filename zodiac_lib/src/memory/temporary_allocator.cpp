@@ -30,8 +30,7 @@ Allocator temporary_allocator_allocator(Temporary_Allocator *state)
     assert(state);
 
     Allocator result;
-    allocator_create(temporary_alloc_func, state, &result);
-
+    allocator_create(&result, temporary_alloc_func, state, ALLOCATOR_FLAG_CANT_FREE | ALLOCATOR_FLAG_CANT_REALLOC);
     return result;
 }
 

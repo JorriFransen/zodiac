@@ -42,7 +42,7 @@ Allocator linear_allocator_allocator(Linear_Allocator *state)
     assert(state);
 
     Allocator result;
-    allocator_create(linear_alloc_func, state, &result);
+    allocator_create(&result, linear_alloc_func, state, ALLOCATOR_FLAG_CANT_FREE | ALLOCATOR_FLAG_CANT_REALLOC);
     return result;
 }
 

@@ -5,10 +5,11 @@
 namespace Zodiac
 {
 
-void allocator_create(Alloc_Function alloc_func, void *user_data, Allocator *out_allocator)
+void allocator_create(Allocator *out_allocator, Alloc_Function alloc_func, void *user_data, Allocator_Flags flags/*=ALLOCATOR_FLAG_NONE*/)
 {
     assert(alloc_func && out_allocator);
 
+    out_allocator->flags = flags;
     out_allocator->alloc_func = alloc_func;
     out_allocator->user_data = user_data;
 }

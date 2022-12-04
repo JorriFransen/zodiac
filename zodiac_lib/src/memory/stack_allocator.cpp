@@ -53,7 +53,7 @@ Allocator stack_allocator_allocator(Stack_Allocator *state)
     assert(state);
 
     Allocator result;
-    allocator_create(stack_alloc_func, state, &result);
+    allocator_create(&result, stack_alloc_func, state, ALLOCATOR_FLAG_CANT_REALLOC);
     return result;
 }
 
