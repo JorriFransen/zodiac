@@ -112,6 +112,18 @@ void ast_call_stmt_create(AST_Expression *call, AST_Statement *out_stmt)
     out_stmt->call.call = call;
 }
 
+void ast_if_stmt_create(AST_Expression *cond, AST_Statement *then_stmt, Dynamic_Array<AST_Else_If> else_ifs, AST_Statement *else_stmt, AST_Statement *out_stmt)
+{
+    assert(cond && then_stmt && out_stmt);
+
+    ast_statement_create(AST_Statement_Kind::IF, out_stmt);
+
+    out_stmt->if_stmt.cond = cond;
+    out_stmt->if_stmt.then_stmt = then_stmt;
+    out_stmt->if_stmt.else_ifs = else_ifs;
+    out_stmt->if_stmt.else_stmt = else_stmt;
+}
+
 void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
 {
     assert(out_stmt);
@@ -215,10 +227,34 @@ AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, AST_Expression *call)
     return stmt;
 }
 
+AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, AST_Expression *cond, AST_Statement *then_stmt, Dynamic_Array<AST_Else_If> else_ifs, AST_Statement *else_stmt)
+{
+    assert(ctx && cond && then_stmt);
+
+    auto stmt = ast_statement_new(ctx);
+    ast_if_stmt_create(cond, then_stmt, else_ifs, else_stmt, stmt);
+    return stmt;
+}
+
 AST_Statement *ast_statement_new(Zodiac_Context *ctx)
 {
     return alloc<AST_Statement>(ctx->ast_allocator);
 }
+
+file_local const char *ast_binop_to_string[(int)AST_Binary_Operator::LAST_BINOP + 1] = {
+
+    [(int)AST_Binary_Operator::ADD] = "+",
+    [(int)AST_Binary_Operator::SUB] = "-",
+    [(int)AST_Binary_Operator::MUL] = "*",
+    [(int)AST_Binary_Operator::DIV] = "/",
+
+    [(int)AST_Binary_Operator::EQ] = "==",
+    [(int)AST_Binary_Operator::NEQ] = "!=",
+    [(int)AST_Binary_Operator::LT] = "<",
+    [(int)AST_Binary_Operator::GT] = ">",
+    [(int)AST_Binary_Operator::LTEQ] = "<=",
+    [(int)AST_Binary_Operator::GTEQ] = ">=",
+};
 
 void ast_print_expression(String_Builder *sb, AST_Expression *expr)
 {
@@ -271,7 +307,7 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
         case AST_Expression_Kind::BINARY: {
             string_builder_append(sb, "(");
             ast_print_expression(sb, expr->binary.lhs);
-            string_builder_append(sb, " %c ", (char)expr->binary.op);
+            string_builder_append(sb, " %s ", ast_binop_to_string[(int)expr->binary.op]);
             ast_print_expression(sb, expr->binary.rhs);
             string_builder_append(sb, ")");
             break;
@@ -282,6 +318,24 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
 void ast_print_indent(String_Builder *sb, int indent) {
     for (int i = 0; i < indent; i++) {
         string_builder_append(sb, "  ");
+    }
+}
+
+file_local void ast__print_statement_internal(String_Builder *sb, AST_Statement *stmt, int indent, bool newline = true)
+{
+    if (stmt->kind == AST_Statement_Kind::BLOCK) {
+        string_builder_append(sb, " {\n");
+        for (u64 i = 0; i < stmt->block.statements.count; i++) {
+            ast_print_statement(sb, stmt->block.statements[i], indent + 1);
+        }
+        string_builder_append(sb, "\n");
+        ast_print_indent(sb, indent);
+        string_builder_append(sb, "}");
+
+    } else {
+        string_builder_append(sb, "\n");
+        ast_print_statement(sb, stmt, indent + 1);
+        if (newline) string_builder_append(sb, "\n");
     }
 }
 
@@ -317,6 +371,37 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
 
         case AST_Statement_Kind::CALL: {
             ast_print_expression(sb, stmt->call.call);
+            break;
+        }
+
+        case AST_Statement_Kind::IF: {
+            semicolon = false;
+            string_builder_append(sb, "if ");
+            ast_print_expression(sb, stmt->if_stmt.cond);
+            ast__print_statement_internal(sb, stmt->if_stmt.then_stmt, indent);
+
+            bool indent_else_if = stmt->if_stmt.then_stmt->kind != AST_Statement_Kind::BLOCK;
+
+            for (u64 i = 0; i < stmt->if_stmt.else_ifs.count; i++) {
+                auto else_if = stmt->if_stmt.else_ifs[i];
+                if (indent_else_if) ast_print_indent(sb, indent);
+                else string_builder_append(sb, " ");
+                string_builder_append(sb, "else if ");
+                ast_print_expression(sb, else_if.cond);
+                ast__print_statement_internal(sb, else_if.then, indent);
+
+                indent_else_if = else_if.then->kind != AST_Statement_Kind::BLOCK;
+            }
+
+            bool indent_else = indent_else_if;
+
+            if (stmt->if_stmt.else_stmt) {
+                if (indent_else) ast_print_indent(sb, indent);
+                else string_builder_append(sb, " ");
+                string_builder_append(sb, "else ");
+                ast__print_statement_internal(sb, stmt->if_stmt.else_stmt, indent, !indent_else);
+            }
+
             break;
         }
     }

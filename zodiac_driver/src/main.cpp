@@ -29,9 +29,17 @@ int main() {
     // lexer_init_stream(&lexer, "abc[0].def();");
     const char *stream =
         "{"
-          "i = i + 1;"
+          "i = i * 5 + 1;"
           "some_func(a, b, c);"
-          
+          "if i > 3 "
+            "i_bigger_than_3();"
+          " else if i > 2 "
+            "i_bigger_than_2();"
+          " else if i > 0 "
+            "i_bigger_than_0();"
+          " else {"
+            "dunno();"
+          "}"
         "}" ;
 
     lexer_init_stream(&lexer, stream);

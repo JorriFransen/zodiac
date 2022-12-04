@@ -22,16 +22,20 @@ ZAPI void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser);
 // expr_unary = ([+-] expr_unary) | expr_base
 // expr_mul = expr_unary ([/*] expr_unary)*
 // expr_add = expr_mul ([+-] expr_mul)*
-// expr = expr_add;
+// expr_cmp = expr_add (([<>] | '==' | '!=' | '<=' | '>=') expr_add )*
+// expr = expr_cmp;
 
 ZAPI AST_Expression *parse_expr_operand(Parser *parser);
 ZAPI AST_Expression *parse_expr_base(Parser *parser);
 ZAPI AST_Expression *parse_expr_unary(Parser *parser);
 ZAPI AST_Expression *parse_expr_mul(Parser *parser);
 ZAPI AST_Expression *parse_expr_add(Parser *parser);
+ZAPI AST_Expression *parse_expr_cmp(Parser *parser);
 ZAPI AST_Expression *parse_expression(Parser *parser);
 
 ZAPI AST_Statement *parse_statement(Parser *parser);
+
+ZAPI bool match_keyword(Parser *parser, Atom keyword);
 
 ZAPI bool is_token(Parser *parser, Token_Kind kind);
 ZAPI bool is_token(Parser *parser, char c);

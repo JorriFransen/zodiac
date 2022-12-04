@@ -2,6 +2,7 @@
 
 #include <common.h>
 #include <containers/dynamic_array.h>
+#include <lexer.h>
 #include <string_builder.h>
 #include <zodiac_context.h>
 
@@ -55,12 +56,21 @@ struct AST_Unary_Expression
 
 enum class AST_Binary_Operator
 {
-    INVALID,
+    INVALID = 0,
 
-    ADD = '+',
-    SUB = '-',
-    MUL = '*',
-    DIV = '/',
+    ADD,
+    SUB,
+    MUL,
+    DIV,
+
+    EQ,
+    NEQ,
+    LT,
+    GT,
+    LTEQ,
+    GTEQ,
+
+    LAST_BINOP = GTEQ,
 };
 
 struct AST_Binary_Expression
@@ -117,6 +127,20 @@ struct AST_Call_Statement
     AST_Expression *call;
 };
 
+struct AST_Else_If
+{
+    AST_Expression *cond;
+    AST_Statement *then;
+};
+
+struct AST_If_Statement
+{
+    AST_Expression *cond;
+    AST_Statement *then_stmt;
+    Dynamic_Array<AST_Else_If> else_ifs;
+    AST_Statement *else_stmt;
+};
+
 enum class AST_Statement_Kind
 {
     INVALID,
@@ -125,6 +149,8 @@ enum class AST_Statement_Kind
 
     ASSIGN,
     CALL,
+
+    IF,
 };
 
 struct AST_Statement
@@ -136,6 +162,7 @@ struct AST_Statement
         AST_Block_Statement block;
         AST_Assign_Statement assign;
         AST_Call_Statement call;
+        AST_If_Statement if_stmt;
     };
 };
 
@@ -152,6 +179,7 @@ ZAPI void ast_block_stmt_create(Dynamic_Array<AST_Statement *> statements, AST_S
 ZAPI void ast_assign_stmt_create(AST_Expression *dest, AST_Expression *value, AST_Statement *out_stmt);
 ZAPI void ast_call_stmt_create(AST_Expression *call, AST_Statement *out_stmt);
 ZAPI void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt);
+ZAPI void ast_if_stmt_create(AST_Expression *cond, AST_Statement *then_stmt, Dynamic_Array<AST_Else_If> else_ifs, AST_Statement *else_stmt, AST_Statement *out_stmt);
 
 ZAPI AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Integer_Value value);
 ZAPI AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Atom atom);
@@ -165,6 +193,7 @@ ZAPI AST_Expression *ast_expression_new(Zodiac_Context *ctx);
 ZAPI AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Dynamic_Array<AST_Statement *> statements);
 ZAPI AST_Statement *ast_assign_stmt_new(Zodiac_Context *ctx, AST_Expression *dest, AST_Expression *value);
 ZAPI AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, AST_Expression *call);
+ZAPI AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, AST_Expression *cond, AST_Statement *then_stmt, Dynamic_Array<AST_Else_If> else_ifs, AST_Statement *else_stmt);
 ZAPI AST_Statement *ast_statement_new(Zodiac_Context *ctx);
 
 ZAPI void ast_print_expression(String_Builder *sb, AST_Expression *expr);

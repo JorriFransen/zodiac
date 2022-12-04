@@ -127,11 +127,21 @@ AST_Expression *parse_expr_unary(Parser *parser)
     }
 }
 
-file_local AST_Binary_Operator char_to_ast_binop[256] = {
+file_local AST_Binary_Operator token_kind_to_ast_binop[256] = {
+
     ['+'] = AST_Binary_Operator::ADD,
     ['-'] = AST_Binary_Operator::SUB,
     ['*'] = AST_Binary_Operator::MUL,
     ['/'] = AST_Binary_Operator::DIV,
+
+    [TOK_EQ] = AST_Binary_Operator::EQ,
+    [TOK_NEQ] = AST_Binary_Operator::NEQ,
+    ['<'] = AST_Binary_Operator::LT,
+    ['>'] = AST_Binary_Operator::GT,
+    [TOK_LTEQ] = AST_Binary_Operator::LTEQ,
+    [TOK_GTEQ] = AST_Binary_Operator::GTEQ,
+
+
 };
 
 AST_Expression *parse_expr_mul(Parser *parser)
@@ -144,7 +154,7 @@ AST_Expression *parse_expr_mul(Parser *parser)
 
         AST_Expression *rhs = parse_expr_unary(parser);
 
-        auto ast_op = char_to_ast_binop[(int)op];
+        auto ast_op = token_kind_to_ast_binop[(int)op];
         assert(ast_op != AST_Binary_Operator::INVALID);
         lhs = ast_binary_expr_new(parser->context, ast_op, lhs, rhs);
     }
@@ -162,7 +172,7 @@ AST_Expression *parse_expr_add(Parser *parser)
 
         AST_Expression *rhs = parse_expr_mul(parser);
 
-        auto ast_op = char_to_ast_binop[(int)op];
+        auto ast_op = token_kind_to_ast_binop[(int)op];
         assert(ast_op != AST_Binary_Operator::INVALID);
         lhs = ast_binary_expr_new(parser->context, ast_op, lhs, rhs);
     }
@@ -170,14 +180,56 @@ AST_Expression *parse_expr_add(Parser *parser)
     return lhs;
 }
 
+AST_Expression *parse_expr_cmp(Parser *parser)
+{
+    AST_Expression *lhs = parse_expr_add(parser);
+
+    while (is_token(parser, '<') || is_token(parser, '>') || is_token(parser, TOK_EQ) || is_token(parser, TOK_NEQ) || is_token(parser, TOK_LTEQ) || is_token(parser, TOK_GTEQ)) {
+        auto op = cur_tok(parser).kind;
+        next_token(parser);
+
+        AST_Expression *rhs = parse_expr_add(parser);
+
+        auto cmp_op = token_kind_to_ast_binop[(int)op];
+        assert(cmp_op != AST_Binary_Operator::INVALID);
+        lhs = ast_binary_expr_new(parser->context, cmp_op, lhs, rhs);
+    }
+
+    return lhs;
+}
+
 AST_Expression *parse_expression(Parser *parser)
 {
-    return parse_expr_add(parser);
+    return parse_expr_cmp(parser);
 }
 
 AST_Statement *parse_statement(Parser *parser)
 {
     assert(parser);
+
+    if (match_keyword(parser, keyword_if)) {
+        AST_Expression *cond = parse_expression(parser);
+        AST_Statement *then_stmt = parse_statement(parser);
+        AST_Statement *else_stmt = nullptr;
+
+        auto temp_else_ifs = temp_array_create<AST_Else_If>(parser);
+
+        while (match_keyword(parser, keyword_else)) {
+            if (match_keyword(parser, keyword_if)) {
+                AST_Expression *else_if_cond = parse_expression(parser);
+                AST_Statement *else_if_then = parse_statement(parser);
+                AST_Else_If else_if = { else_if_cond, else_if_then };
+                dynamic_array_append(&temp_else_ifs.array, else_if);
+            } else {
+                else_stmt = parse_statement(parser);
+                break;
+            }
+        }
+
+        auto else_ifs = temp_array_finalize(parser, temp_else_ifs);
+
+        return ast_if_stmt_new(parser->context, cond, then_stmt, else_ifs, else_stmt);
+    }
 
     if (match_token(parser, '{')) {
         auto temp_statements = temp_array_create<AST_Statement *>(parser);
@@ -209,6 +261,18 @@ AST_Statement *parse_statement(Parser *parser)
     expect_token(parser, ';');
 
     return result;
+}
+
+bool match_keyword(Parser *parser, Atom keyword)
+{
+    assert(is_keyword(keyword));
+
+    if (is_token(parser, TOK_KEYWORD) && cur_tok(parser).atom == keyword) {
+        next_token(parser);
+        return true;
+    }
+
+    return false;
 }
 
 bool is_token(Parser *parser, Token_Kind kind)
