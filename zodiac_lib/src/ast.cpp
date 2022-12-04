@@ -398,7 +398,7 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
             if (stmt->if_stmt.else_stmt) {
                 if (indent_else) ast_print_indent(sb, indent);
                 else string_builder_append(sb, " ");
-                string_builder_append(sb, "else ");
+                string_builder_append(sb, "else");
                 ast__print_statement_internal(sb, stmt->if_stmt.else_stmt, indent, !indent_else);
             }
 

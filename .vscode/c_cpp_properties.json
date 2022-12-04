@@ -18,17 +18,30 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/zodiac_lib/src/**",
+                "${workspaceFolder}/zodiac_lib/src",
                 "${workspaceFolder}/zodiac_driver/src/**",
                 "${workspaceFolder}/zodiac_tests/src/**",
                 "${workspaceFolder}/zodiac_tests/munit",
-                "D:\\llvm_install_debug\\include"
+                "${workspaceFolder}/bin/llvm_install_debug/include"
             ],
-            "defines": [ "_DEBUG" ],
-            "compilerPath": "C:\\Program Files\\LLVM\\bin\\clang.exe",
+            "defines": [
+                "_DEBUG"
+            ],
+            "compilerPath": "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/bin/clang.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "clang-x64",
-            "configurationProvider": "ms-vscode.makefile-tools"
+            "configurationProvider": "ms-vscode.makefile-tools",
+            "compilerArgs": [
+                "-g",
+                "-MD",
+                "-MP",
+                "-Wall",
+                "-Werror",
+                "-Wno-c99-designator",
+                "-Wvla",
+                "-fdeclspec"
+            ]
         }
     ],
     "version": 4

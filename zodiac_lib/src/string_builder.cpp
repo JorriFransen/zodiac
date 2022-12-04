@@ -3,6 +3,8 @@
 #include <memory/zmemory.h>
 #include <memory/temporary_allocator.h>
 
+#include <cstdarg>
+
 namespace Zodiac
 {
 

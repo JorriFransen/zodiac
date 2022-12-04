@@ -35,9 +35,9 @@ int main() {
             "i_bigger_than_3();"
           " else if i > 2 "
             "i_bigger_than_2();"
-          " else if i > 0 "
+          " else if i > 0 {"
             "i_bigger_than_0();"
-          " else {"
+          "} else {"
             "dunno();"
           "}"
         "}" ;
