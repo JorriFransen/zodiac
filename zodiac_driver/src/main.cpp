@@ -26,7 +26,11 @@ int main() {
     Lexer lexer;
     lexer_create(&c, &lexer);
     const char *stream =
-        "{"
+        "add_fn :: (a: u64, b: u64) -> u64 {"
+          "result := a + b;"
+          "return result;"
+        "}"
+        "main :: () -> s64 {"
           "i := 0;"
           "j : u32 = 5;"
           "k := u64(7);"
