@@ -571,10 +571,14 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
             if (decl->variable.type_spec) {
                 string_builder_append(sb, " ");
                 ast_print_type_spec(sb, decl->variable.type_spec);
-                string_builder_append(sb, " ");
             }
-            string_builder_append(sb, "= ");
-            ast_print_expression(sb, decl->variable.value);
+            if (decl->variable.value) {
+                if (decl->variable.type_spec) {
+                    string_builder_append(sb, " ");
+                }
+                string_builder_append(sb, "= ");
+                ast_print_expression(sb, decl->variable.value);
+            }
             break;
         }
     }

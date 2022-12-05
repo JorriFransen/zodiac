@@ -13,7 +13,7 @@ void zodiac_context_create(Allocator *ast_allocator, Zodiac_Context *out_context
 
     out_context->ast_allocator = ast_allocator;
 
-    temporary_allocator_create(KIBIBYTE(4), nullptr, &out_context->temp_allocator_state);
+    temporary_allocator_create(KIBIBYTE(16), nullptr, &out_context->temp_allocator_state);
     out_context->temp_allocator = temporary_allocator_allocator(&out_context->temp_allocator_state);
 
     zodiac_register_keywords(&out_context->atoms);

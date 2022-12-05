@@ -274,11 +274,12 @@ AST_Statement *parse_statement(Parser *parser)
     if (match_token(parser, '{')) {
         auto temp_statements = temp_array_create<AST_Statement *>(parser);
 
-        while (!match_token(parser, '}')) {
+        while (!is_token(parser, '}')) {
 
             AST_Statement *stmt = parse_statement(parser);
             dynamic_array_append(&temp_statements.array, stmt);
         }
+        expect_token(parser, '}');
 
         auto statements = temp_array_finalize(parser, temp_statements);
         return ast_block_stmt_new(parser->context, statements);
@@ -296,10 +297,9 @@ AST_Statement *parse_statement(Parser *parser)
         if (!is_token(parser, '=')) {
             type_spec = parse_type_spec(parser);
         }
-        expect_token(parser, '=');
 
         AST_Expression *value = nullptr;
-        if (!is_token(parser, ';')) {
+        if (match_token(parser, '=')) {
             value = parse_expression(parser);
         }
 

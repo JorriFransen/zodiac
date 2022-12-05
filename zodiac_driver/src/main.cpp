@@ -17,7 +17,7 @@ int main() {
     if (!Zodiac::memory_system_initialize()) return 1;
 
     Linear_Allocator ast_linear_allocator;
-    linear_allocator_create(KIBIBYTE(4), nullptr, &ast_linear_allocator);
+    linear_allocator_create(MEBIBYTE(1), nullptr, &ast_linear_allocator);
     Allocator ast_allocator = linear_allocator_allocator(&ast_linear_allocator);
 
     Zodiac_Context c;
@@ -29,8 +29,9 @@ int main() {
         "{"
           "i := 0;"
           "j : u32 = 5;"
-          // "k := u64(7);"
+          "k := u64(7);"
           "i = i * 5 + 1;"
+          "y : s64;"
           "some_func(a, b, c);"
           "if i > 3 "
             "i_bigger_than_3();"
