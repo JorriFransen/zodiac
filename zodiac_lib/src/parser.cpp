@@ -6,6 +6,12 @@
 namespace Zodiac
 {
 
+// Builtin type atoms
+#define ZODIAC_TYPE_DEF(sign, size) Atom atom_##sign##size;
+ZODIAC_BUILTIN_TYPES
+#undef ZODIAC_TYPE_DEF
+
+file_local bool builtin_types_initialized = false;
 
 template <typename T>
 struct Temp_Array
@@ -13,6 +19,20 @@ struct Temp_Array
     Temporary_Allocator_Mark mark;
     Dynamic_Array<T> array;
 };
+
+file_local void initialize_builtin_types(Zodiac_Context *ctx)
+{
+    assert(!builtin_types_initialized);
+
+    auto at = &ctx->atoms;
+
+#define ZODIAC_TYPE_DEF(sign, size) atom_##sign##size = atom_get(at, #sign#size);
+ZODIAC_BUILTIN_TYPES
+#undef ZODIAC_TYPE_DEF
+
+
+    builtin_types_initialized = true;
+}
 
 template <typename T>
 file_local Temp_Array<T> temp_array_create(Parser *parser)
@@ -39,6 +59,8 @@ void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser)
     assert(ctx && lxr && out_parser);
     out_parser->context = ctx;
     out_parser->lxr = lxr;
+
+    if (!builtin_types_initialized) initialize_builtin_types(ctx);
 }
 
 AST_Expression *parse_expr_operand(Parser *parser)
@@ -64,7 +86,7 @@ AST_Expression *parse_expr_operand(Parser *parser)
         }
     }
 
-    ZFATAL("Expected INT, NAME or '(' when parsing expression");
+    ZFATAL("Expected INT, NAME or '(' when parsing expression, got: '%s'", tmp_token_string(cur_tok(parser)).data);
     return nullptr;
 }
 
@@ -267,10 +289,12 @@ AST_Statement *parse_statement(Parser *parser)
     AST_Expression *expr = parse_expression(parser);
     if (expr->kind == AST_Expression_Kind::CALL) {
         result = ast_call_stmt_new(parser->context, expr);
+
     } else if (expr->kind == AST_Expression_Kind::IDENTIFIER && match_token(parser, ':')) {
 
+        AST_Type_Spec *type_spec = nullptr;
         if (!is_token(parser, '=')) {
-            assert_msg(false, "TODO: Implement type spec parsing");
+            type_spec = parse_type_spec(parser);
         }
         expect_token(parser, '=');
 
@@ -279,8 +303,10 @@ AST_Statement *parse_statement(Parser *parser)
             value = parse_expression(parser);
         }
 
-        assert_msg(false, "TODO: Implement variable declaration statement ast");
-        assert(value);
+        expect_token(parser, ';');
+
+        AST_Declaration *decl = ast_variable_decl_new(parser->context, expr, type_spec, value);
+        return ast_declaration_stmt_new(parser->context, decl);
 
     } else {
         expect_token(parser, '=');
@@ -294,6 +320,35 @@ AST_Statement *parse_statement(Parser *parser)
     expect_token(parser, ';');
 
     return result;
+}
+
+AST_Type_Spec *parse_type_spec(Parser *parser)
+{
+    auto name_tok = cur_tok(parser);
+    expect_token(parser, TOK_NAME);
+
+    if (name_tok.atom == atom_u8) {
+        return ast_integer_ts_new(parser->context, false, 8);
+    } else if (name_tok.atom == atom_u16) {
+        return ast_integer_ts_new(parser->context, false, 16);
+    } else if (name_tok.atom == atom_u32) {
+        return ast_integer_ts_new(parser->context, false, 32);
+    } else if (name_tok.atom == atom_u64) {
+        return ast_integer_ts_new(parser->context, false, 64);
+    } else if (name_tok.atom == atom_s8) {
+        return ast_integer_ts_new(parser->context, true, 8);
+    } else if (name_tok.atom == atom_s16) {
+        return ast_integer_ts_new(parser->context, true, 16);
+    } else if (name_tok.atom == atom_s32) {
+        return ast_integer_ts_new(parser->context, true, 32);
+    } else if (name_tok.atom == atom_s64) {
+        return ast_integer_ts_new(parser->context, true, 64);
+    } else {
+        assert(false);
+    }
+
+    assert(false);
+    return nullptr;
 }
 
 bool match_keyword(Parser *parser, Atom keyword)

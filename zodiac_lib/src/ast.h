@@ -11,6 +11,8 @@ namespace Zodiac
 
 struct AST_Expression;
 struct AST_Statement;
+struct AST_Declaration;
+struct AST_Type_Spec;
 
 struct AST_Integer_Literal_Expression
 {
@@ -116,6 +118,11 @@ struct AST_Block_Statement
     Dynamic_Array<AST_Statement *> statements;
 };
 
+struct AST_Declaration_Statement
+{
+    AST_Declaration *decl;
+};
+
 struct AST_Assign_Statement
 {
     AST_Expression *dest;
@@ -158,6 +165,7 @@ enum class AST_Statement_Kind
 
     BLOCK,
 
+    DECLARATION,
     ASSIGN,
     CALL,
 
@@ -174,11 +182,61 @@ struct AST_Statement
     union
     {
         AST_Block_Statement block;
+        AST_Declaration_Statement decl;
         AST_Assign_Statement assign;
         AST_Call_Statement call;
         AST_If_Statement if_stmt;
         AST_While_Statement while_stmt;
         AST_Return_Statement return_stmt;
+    };
+};
+
+struct AST_Variable_Declaration
+{
+    AST_Type_Spec *type_spec;
+    AST_Expression *value;
+};
+
+enum class AST_Declaration_Kind
+{
+    INVALID,
+
+    VARIABLE,
+};
+
+struct AST_Declaration
+{
+    AST_Declaration_Kind kind;
+
+    AST_Expression *identifier;
+
+    union
+    {
+        AST_Variable_Declaration variable;
+    };
+};
+
+enum class AST_Type_Spec_Kind
+{
+    INVALID,
+
+    INTEGER,
+};
+
+struct AST_Integer_Type_Spec
+{
+    bool sign;
+};
+
+struct AST_Type_Spec
+{
+    AST_Type_Spec_Kind kind;
+
+    u64 bit_size;
+
+    union
+    {
+        AST_Integer_Type_Spec integer;
     };
 };
 
@@ -192,12 +250,19 @@ ZAPI void ast_binary_expr_create(AST_Binary_Operator op, AST_Expression *lhs, AS
 ZAPI void ast_expression_create(AST_Expression_Kind kind, AST_Expression *out_expr);
 
 ZAPI void ast_block_stmt_create(Dynamic_Array<AST_Statement *> statements, AST_Statement *out_stmt);
+ZAPI void ast_declaration_stmt_create(AST_Declaration *decl, AST_Statement *out_stmt);
 ZAPI void ast_assign_stmt_create(AST_Expression *dest, AST_Expression *value, AST_Statement *out_stmt);
 ZAPI void ast_call_stmt_create(AST_Expression *call, AST_Statement *out_stmt);
 ZAPI void ast_if_stmt_create(AST_Expression *cond, AST_Statement *then_stmt, Dynamic_Array<AST_Else_If> else_ifs, AST_Statement *else_stmt, AST_Statement *out_stmt);
 ZAPI void ast_while_stmt_create(AST_Expression *cond, AST_Statement *do_stmt, AST_Statement *out_stmt);
 ZAPI void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt);
 ZAPI void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt);
+
+ZAPI void ast_variable_decl_create(AST_Expression *identitifer, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
+ZAPI void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl);
+
+ZAPI void ast_integer_ts_create(bool sign, u64 size, AST_Type_Spec *out_ts);
+ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
 
 ZAPI AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Integer_Value value);
 ZAPI AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Atom atom);
@@ -209,6 +274,7 @@ ZAPI AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, AST_Binary_Operato
 ZAPI AST_Expression *ast_expression_new(Zodiac_Context *ctx);
 
 ZAPI AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Dynamic_Array<AST_Statement *> statements);
+ZAPI AST_Statement *ast_declaration_stmt_new(Zodiac_Context *ctx, AST_Declaration *decl);
 ZAPI AST_Statement *ast_assign_stmt_new(Zodiac_Context *ctx, AST_Expression *dest, AST_Expression *value);
 ZAPI AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, AST_Expression *call);
 ZAPI AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, AST_Expression *cond, AST_Statement *then_stmt, Dynamic_Array<AST_Else_If> else_ifs, AST_Statement *else_stmt);
@@ -216,7 +282,16 @@ ZAPI AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, AST_Expression *cond
 ZAPI AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, AST_Expression *value);
 ZAPI AST_Statement *ast_statement_new(Zodiac_Context *ctx);
 
+ZAPI AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value);
+ZAPI AST_Declaration *ast_declaration_new(Zodiac_Context *ctx);
+
+ZAPI AST_Type_Spec *ast_integer_ts_new(Zodiac_Context *ctx, bool sign, u64 bit_size);
+ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx);
+
+
 ZAPI void ast_print_expression(String_Builder *sb, AST_Expression *expr);
 ZAPI void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent = 0);
+ZAPI void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent = 0);
+ZAPI void ast_print_type_spec(String_Builder *sb, AST_Type_Spec *ts, int indent = 0);
 
 }

@@ -93,6 +93,15 @@ void ast_block_stmt_create(Dynamic_Array<AST_Statement *> statements, AST_Statem
     out_stmt->block.statements = statements;
 }
 
+void ast_declaration_stmt_create(AST_Declaration *decl, AST_Statement *out_stmt)
+{
+    assert(decl && out_stmt);
+
+    ast_statement_create(AST_Statement_Kind::DECLARATION, out_stmt);
+
+    out_stmt->decl.decl = decl;
+}
+
 void ast_assign_stmt_create(AST_Expression *dest, AST_Expression *value, AST_Statement *out_stmt)
 {
     assert(dest && value && out_stmt);
@@ -148,6 +157,41 @@ void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
     assert(out_stmt);
 
     out_stmt->kind = kind;
+}
+
+void ast_variable_decl_create(AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl)
+{
+    assert(identifier && out_decl);
+
+    ast_declaration_create(AST_Declaration_Kind::VARIABLE, out_decl);
+
+    out_decl->identifier = identifier;
+    out_decl->variable.type_spec = ts;
+    out_decl->variable.value = value;
+}
+
+void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl)
+{
+    assert(out_decl);
+
+    out_decl->kind = kind;
+}
+
+void ast_integer_ts_create(bool sign, u64 bit_size, AST_Type_Spec *out_ts)
+{
+    assert(bit_size && out_ts);
+
+    ast_type_spec_create(AST_Type_Spec_Kind::INTEGER, out_ts);
+
+    out_ts->bit_size = bit_size;
+    out_ts->integer.sign = sign;
+}
+
+void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts)
+{
+    assert(out_ts);
+
+    out_ts->kind = kind;
 }
 
 AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Integer_Value value)
@@ -228,6 +272,15 @@ AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Dynamic_Array<AST_Stateme
     return stmt;
 }
 
+AST_Statement *ast_declaration_stmt_new(Zodiac_Context *ctx, AST_Declaration *decl)
+{
+    assert(ctx && decl);
+
+    auto stmt = ast_statement_new(ctx);
+    ast_declaration_stmt_create(decl, stmt);
+    return stmt;
+}
+
 AST_Statement *ast_assign_stmt_new(Zodiac_Context *ctx, AST_Expression *dest, AST_Expression *value)
 {
     assert(ctx && dest && value);
@@ -275,7 +328,25 @@ AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, AST_Expression *value)
 
 AST_Statement *ast_statement_new(Zodiac_Context *ctx)
 {
+    assert(ctx);
+
     return alloc<AST_Statement>(ctx->ast_allocator);
+}
+
+AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value)
+{
+    assert(ctx && identifier);
+
+    auto decl = ast_declaration_new(ctx);
+    ast_variable_decl_create(identifier, ts, value, decl);
+    return decl;
+}
+
+AST_Declaration *ast_declaration_new(Zodiac_Context *ctx)
+{
+    assert(ctx);
+
+    return alloc<AST_Declaration>(ctx->ast_allocator);
 }
 
 file_local const char *ast_binop_to_string[(int)AST_Binary_Operator::LAST_BINOP + 1] = {
@@ -292,6 +363,22 @@ file_local const char *ast_binop_to_string[(int)AST_Binary_Operator::LAST_BINOP 
     [(int)AST_Binary_Operator::LTEQ] = "<=",
     [(int)AST_Binary_Operator::GTEQ] = ">=",
 };
+
+AST_Type_Spec *ast_integer_ts_new(Zodiac_Context *ctx, bool sign, u64 bit_size)
+{
+    assert(ctx && bit_size);
+
+    auto ts = ast_type_spec_new(ctx);
+    ast_integer_ts_create(sign, bit_size, ts);
+    return ts;
+}
+
+AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx)
+{
+    assert(ctx);
+
+    return alloc<AST_Type_Spec>(ctx->ast_allocator);
+}
 
 void ast_print_expression(String_Builder *sb, AST_Expression *expr)
 {
@@ -401,6 +488,11 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
             break;
         }
 
+        case AST_Statement_Kind::DECLARATION: {
+            ast_print_declaration(sb, stmt->decl.decl, indent);
+            break;
+        }
+
         case AST_Statement_Kind::ASSIGN: {
             ast_print_expression(sb, stmt->assign.dest);
             string_builder_append(sb, " = ");
@@ -464,6 +556,46 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
     }
 
     if (semicolon) string_builder_append(sb, ";");
+}
+
+void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent/*=0*/)
+{
+    assert(sb && decl);
+
+    switch (decl->kind) {
+        case AST_Declaration_Kind::INVALID: assert(false);
+
+        case AST_Declaration_Kind::VARIABLE: {
+            ast_print_expression(sb, decl->identifier);
+            string_builder_append(sb, " :");
+            if (decl->variable.type_spec) {
+                string_builder_append(sb, " ");
+                ast_print_type_spec(sb, decl->variable.type_spec);
+                string_builder_append(sb, " ");
+            }
+            string_builder_append(sb, "= ");
+            ast_print_expression(sb, decl->variable.value);
+            break;
+        }
+    }
+}
+
+void ast_print_type_spec(String_Builder *sb, AST_Type_Spec *ts, int indent/*=0*/)
+{
+    assert(sb && ts);
+
+    switch (ts->kind) {
+        case AST_Type_Spec_Kind::INVALID: assert(false);
+
+        case AST_Type_Spec_Kind::INTEGER: {
+            string_builder_append(sb, "type_spec(");
+            if (ts->integer.sign) string_builder_append(sb, "s");
+            else string_builder_append(sb, "u");
+            string_builder_append(sb, "%i", ts->bit_size);
+            string_builder_append(sb, ")");
+            break;
+        }
+    }
 }
 
 }

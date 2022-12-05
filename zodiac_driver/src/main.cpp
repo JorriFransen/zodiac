@@ -28,10 +28,8 @@ int main() {
     const char *stream =
         "{"
           "i := 0;"
-          "j : u32 = 5"
-          "j : u32 = 5"
-          "i := 0;"
-          "k := u64(7);"
+          "j : u32 = 5;"
+          // "k := u64(7);"
           "i = i * 5 + 1;"
           "some_func(a, b, c);"
           "if i > 3 "
@@ -49,8 +47,7 @@ int main() {
             "i = i - 1;"
           "}"
           "while i > 0 i = i - 1;"
-
-        "}" ;
+        "}";
 
     lexer_init_stream(&lexer, stream);
 

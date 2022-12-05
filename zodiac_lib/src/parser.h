@@ -35,6 +35,23 @@ ZAPI AST_Expression *parse_expression(Parser *parser);
 
 ZAPI AST_Statement *parse_statement(Parser *parser);
 
+#define ZODIAC_BUILTIN_TYPES \
+    ZODIAC_TYPE_DEF(u, 8)    \
+    ZODIAC_TYPE_DEF(u, 16)   \
+    ZODIAC_TYPE_DEF(u, 32)   \
+    ZODIAC_TYPE_DEF(u, 64)   \
+    ZODIAC_TYPE_DEF(s, 8)    \
+    ZODIAC_TYPE_DEF(s, 16)   \
+    ZODIAC_TYPE_DEF(s, 32)   \
+    ZODIAC_TYPE_DEF(s, 64)   \
+
+// Builtin type atoms
+#define ZODIAC_TYPE_DEF(sign, size) ZAPI extern Atom atom_##sign##size;
+ZODIAC_BUILTIN_TYPES
+#undef ZODIAC_TYPE_DEF
+
+ZAPI AST_Type_Spec *parse_type_spec(Parser *parser);
+
 ZAPI bool match_keyword(Parser *parser, Atom keyword);
 
 ZAPI bool is_token(Parser *parser, Token_Kind kind);
