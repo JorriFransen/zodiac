@@ -25,8 +25,6 @@ int main() {
 
     Lexer lexer;
     lexer_create(&c, &lexer);
-    // lexer_init_stream(&lexer, "1 + x * -3");
-    // lexer_init_stream(&lexer, "abc[0].def();");
     const char *stream =
         "{"
           "i = i * 5 + 1;"
@@ -40,6 +38,8 @@ int main() {
           "} else {"
             "dunno();"
           "}"
+          "return i;"
+          "return;"
         "}" ;
 
     lexer_init_stream(&lexer, stream);

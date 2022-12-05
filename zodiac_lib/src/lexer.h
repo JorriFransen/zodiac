@@ -53,6 +53,7 @@ struct Lexer
 #define ALL_ZODIAC_KEYWORDS \
     ZODIAC_KEYWORD(if)      \
     ZODIAC_KEYWORD(else)    \
+    ZODIAC_KEYWORD(return)  \
     ZODIAC_KEYWORD(for)     \
     ZODIAC_KEYWORD(sizeof)  \
     ZODIAC_KEYWORD(struct)

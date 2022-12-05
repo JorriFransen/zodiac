@@ -229,6 +229,17 @@ AST_Statement *parse_statement(Parser *parser)
         auto else_ifs = temp_array_finalize(parser, temp_else_ifs);
 
         return ast_if_stmt_new(parser->context, cond, then_stmt, else_ifs, else_stmt);
+
+    } else if (match_keyword(parser, keyword_return)) {
+
+        AST_Expression *value = nullptr;
+        if (!is_token(parser, ';')) {
+            value = parse_expression(parser);
+        }
+
+        expect_token(parser, ';');
+
+        return ast_return_stmt_new(parser->context, value);
     }
 
     if (match_token(parser, '{')) {

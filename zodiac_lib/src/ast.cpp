@@ -124,6 +124,15 @@ void ast_if_stmt_create(AST_Expression *cond, AST_Statement *then_stmt, Dynamic_
     out_stmt->if_stmt.else_stmt = else_stmt;
 }
 
+void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
+{
+    assert(out_stmt);
+
+    ast_statement_create(AST_Statement_Kind::RETURN, out_stmt);
+
+    out_stmt->return_stmt.value = value;
+}
+
 void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
 {
     assert(out_stmt);
@@ -233,6 +242,15 @@ AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, AST_Expression *cond, AST_St
 
     auto stmt = ast_statement_new(ctx);
     ast_if_stmt_create(cond, then_stmt, else_ifs, else_stmt, stmt);
+    return stmt;
+}
+
+AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, AST_Expression *value)
+{
+    assert(ctx);
+
+    auto stmt = ast_statement_new(ctx);
+    ast_return_stmt_create(value, stmt);
     return stmt;
 }
 
@@ -402,6 +420,15 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
                 ast__print_statement_internal(sb, stmt->if_stmt.else_stmt, indent, !indent_else);
             }
 
+            break;
+        }
+
+        case AST_Statement_Kind::RETURN: {
+            string_builder_append(sb, "return");
+            if (stmt->return_stmt.value) {
+                string_builder_append(sb, " ");
+                ast_print_expression(sb, stmt->return_stmt.value);
+            }
             break;
         }
     }
