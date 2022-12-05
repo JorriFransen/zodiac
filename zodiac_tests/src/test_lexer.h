@@ -223,14 +223,14 @@ static MunitResult Lex_Keyword(const MunitParameter params[], void *user_data_or
 {
     auto lexer = (Lexer *)user_data_or_fixture;
 
-    const char *stream = "for sizeof struct sstruct or sizeofstruct";
+    const char *stream = "while sizeof struct sstruct or sizeofstruct";
     lexer_init_stream(lexer, stream);
 
     ZTRACE("");
     ZTRACE("TEST: Lex_Keyword");
     ZTRACE("  stream: '%s'", stream);
 
-    ASSERT_TOK_KW(keyword_for);
+    ASSERT_TOK_KW(keyword_while);
     ASSERT_TOK_KW(keyword_sizeof);
     ASSERT_TOK_KW(keyword_struct);
     ASSERT_TOK_NAME("sstruct");

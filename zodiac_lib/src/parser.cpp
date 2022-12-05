@@ -230,6 +230,13 @@ AST_Statement *parse_statement(Parser *parser)
 
         return ast_if_stmt_new(parser->context, cond, then_stmt, else_ifs, else_stmt);
 
+    } else if (match_keyword(parser, keyword_while)) {
+
+        AST_Expression *cond = parse_expression(parser);
+        AST_Statement *do_stmt = parse_statement(parser);
+
+        return ast_while_stmt_new(parser->context, cond, do_stmt);
+
     } else if (match_keyword(parser, keyword_return)) {
 
         AST_Expression *value = nullptr;

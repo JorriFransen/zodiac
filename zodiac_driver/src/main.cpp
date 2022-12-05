@@ -40,6 +40,10 @@ int main() {
           "}"
           "return i;"
           "return;"
+          "while i > 0 {"
+            "i = i - 1;"
+          "}"
+          "while i > 0 i = i - 1;"
         "}" ;
 
     lexer_init_stream(&lexer, stream);

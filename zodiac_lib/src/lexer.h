@@ -54,7 +54,7 @@ struct Lexer
     ZODIAC_KEYWORD(if)      \
     ZODIAC_KEYWORD(else)    \
     ZODIAC_KEYWORD(return)  \
-    ZODIAC_KEYWORD(for)     \
+    ZODIAC_KEYWORD(while)   \
     ZODIAC_KEYWORD(sizeof)  \
     ZODIAC_KEYWORD(struct)
 

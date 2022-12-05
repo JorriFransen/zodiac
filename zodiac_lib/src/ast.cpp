@@ -124,6 +124,16 @@ void ast_if_stmt_create(AST_Expression *cond, AST_Statement *then_stmt, Dynamic_
     out_stmt->if_stmt.else_stmt = else_stmt;
 }
 
+void ast_while_stmt_create(AST_Expression *cond, AST_Statement *do_stmt, AST_Statement *out_stmt)
+{
+    assert(cond && do_stmt && out_stmt);
+
+    ast_statement_create(AST_Statement_Kind::WHILE, out_stmt);
+
+    out_stmt->while_stmt.cond = cond;
+    out_stmt->while_stmt.do_stmt = do_stmt;
+}
+
 void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
 {
     assert(out_stmt);
@@ -245,6 +255,15 @@ AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, AST_Expression *cond, AST_St
     return stmt;
 }
 
+AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, AST_Expression *cond, AST_Statement *do_stmt)
+{
+    assert(ctx && cond && do_stmt);
+
+    auto stmt = ast_statement_new(ctx);
+    ast_while_stmt_create(cond, do_stmt, stmt);
+    return stmt;
+}
+
 AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, AST_Expression *value)
 {
     assert(ctx);
@@ -341,6 +360,8 @@ void ast_print_indent(String_Builder *sb, int indent) {
 
 file_local void ast__print_statement_internal(String_Builder *sb, AST_Statement *stmt, int indent, bool newline = true)
 {
+    assert(stmt);
+
     if (stmt->kind == AST_Statement_Kind::BLOCK) {
         string_builder_append(sb, " {\n");
         for (u64 i = 0; i < stmt->block.statements.count; i++) {
@@ -423,8 +444,17 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
             break;
         }
 
+        case AST_Statement_Kind::WHILE: {
+            semicolon = false;
+            string_builder_append(sb, "while ");
+            ast_print_expression(sb, stmt->while_stmt.cond);
+            ast__print_statement_internal(sb, stmt->while_stmt.do_stmt, indent, false);
+            break;
+        }
+
         case AST_Statement_Kind::RETURN: {
             string_builder_append(sb, "return");
+
             if (stmt->return_stmt.value) {
                 string_builder_append(sb, " ");
                 ast_print_expression(sb, stmt->return_stmt.value);
