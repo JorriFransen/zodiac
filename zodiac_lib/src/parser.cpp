@@ -267,6 +267,21 @@ AST_Statement *parse_statement(Parser *parser)
     AST_Expression *expr = parse_expression(parser);
     if (expr->kind == AST_Expression_Kind::CALL) {
         result = ast_call_stmt_new(parser->context, expr);
+    } else if (expr->kind == AST_Expression_Kind::IDENTIFIER && match_token(parser, ':')) {
+
+        if (!is_token(parser, '=')) {
+            assert_msg(false, "TODO: Implement type spec parsing");
+        }
+        expect_token(parser, '=');
+
+        AST_Expression *value = nullptr;
+        if (!is_token(parser, ';')) {
+            value = parse_expression(parser);
+        }
+
+        assert_msg(false, "TODO: Implement variable declaration statement ast");
+        assert(value);
+
     } else {
         expect_token(parser, '=');
         AST_Expression *value = parse_expression(parser);
