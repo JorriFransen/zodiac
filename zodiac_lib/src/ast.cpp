@@ -162,12 +162,35 @@ void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
 void ast_variable_decl_create(AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl)
 {
     assert(identifier && out_decl);
+    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
 
     ast_declaration_create(AST_Declaration_Kind::VARIABLE, out_decl);
 
     out_decl->identifier = identifier;
     out_decl->variable.type_spec = ts;
     out_decl->variable.value = value;
+}
+
+void ast_constant_variable_decl_create(AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl)
+{
+    assert(identifier && out_decl);
+    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+
+    ast_declaration_create(AST_Declaration_Kind::CONSTANT_VARIABLE, out_decl);
+
+    out_decl->identifier = identifier;
+    out_decl->constant_variable.type_spec = ts;
+    out_decl->constant_variable.value = value;
+}
+
+void ast_function_decl_create(AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, AST_Declaration *out_decl)
+{
+    assert(out_decl);
+    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+
+    out_decl->identifier = identifier;
+    out_decl->function.args = args;
+    out_decl->function.return_ts = return_ts;
 }
 
 void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl)
@@ -336,9 +359,30 @@ AST_Statement *ast_statement_new(Zodiac_Context *ctx)
 AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value)
 {
     assert(ctx && identifier);
+    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
 
     auto decl = ast_declaration_new(ctx);
     ast_variable_decl_create(identifier, ts, value, decl);
+    return decl;
+}
+
+AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value)
+{
+    assert(ctx && identifier);
+    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+
+    auto decl = ast_declaration_new(ctx);
+    ast_constant_variable_decl_create(identifier, ts, value, decl);
+    return decl;
+}
+
+AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts)
+{
+    assert(ctx && identifier);
+    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+
+    auto decl = ast_declaration_new(ctx);
+    ast_function_decl_create(identifier, args, return_ts, decl);
     return decl;
 }
 
@@ -562,10 +606,13 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
 {
     assert(sb && decl);
 
+    bool semicolon = false;
+
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
 
         case AST_Declaration_Kind::VARIABLE: {
+            semicolon = true;
             ast_print_expression(sb, decl->identifier);
             string_builder_append(sb, " :");
             if (decl->variable.type_spec) {
@@ -581,7 +628,32 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
             }
             break;
         }
+
+        case AST_Declaration_Kind::CONSTANT_VARIABLE: {
+            semicolon = true;
+            ast_print_expression(sb, decl->identifier);
+            string_builder_append(sb, " :");
+            if (decl->variable.type_spec) {
+                string_builder_append(sb, " ");
+                ast_print_type_spec(sb, decl->variable.type_spec);
+            }
+            if (decl->variable.value) {
+                if (decl->variable.type_spec) {
+                    string_builder_append(sb, " ");
+                }
+                string_builder_append(sb, ": ");
+                ast_print_expression(sb, decl->variable.value);
+            }
+            break;
+        }
+
+        case AST_Declaration_Kind::FUNCTION: {
+            assert(false);
+            break;
+        }
     }
+
+    if (semicolon) string_builder_append(sb, ";");
 }
 
 void ast_print_type_spec(String_Builder *sb, AST_Type_Spec *ts, int indent/*=0*/)

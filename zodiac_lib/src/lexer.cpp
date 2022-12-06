@@ -215,7 +215,8 @@ bool expect_token(Lexer *lexer, Token_Kind kind)
         return true;
     }
 
-    ZFATAL("Expected token %s, '%c'", token_kind_str(kind), (char)kind);
+    Token t = lexer->token;
+    ZFATAL("Expected token %s, '%c', got: %s, '%c'", token_kind_str(kind), (char)kind, token_kind_str(t.kind), (char)t.kind);
     return false;
 }
 

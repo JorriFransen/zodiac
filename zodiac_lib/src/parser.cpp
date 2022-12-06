@@ -225,7 +225,7 @@ AST_Expression *parse_expression(Parser *parser)
     return parse_expr_cmp(parser);
 }
 
-AST_Statement *parse_statement(Parser *parser)
+AST_Statement *parse_keyword_statement(Parser *parser)
 {
     assert(parser);
 
@@ -269,6 +269,18 @@ AST_Statement *parse_statement(Parser *parser)
         expect_token(parser, ';');
 
         return ast_return_stmt_new(parser->context, value);
+    }
+
+    assert_msg(false, "Unhandled keyword in parse_keyword_statement");
+    return nullptr;
+}
+
+AST_Statement *parse_statement(Parser *parser)
+{
+    assert(parser);
+
+    if (is_token(parser, TOK_KEYWORD)) {
+        return parse_keyword_statement(parser);
     }
 
     if (match_token(parser, '{')) {
@@ -320,6 +332,45 @@ AST_Statement *parse_statement(Parser *parser)
     expect_token(parser, ';');
 
     return result;
+}
+
+AST_Declaration *parse_declaration(Parser *parser)
+{
+    AST_Expression *ident_expression = parse_expression(parser);
+
+    expect_token(parser, ':');
+
+    AST_Type_Spec *ts = nullptr;
+
+    if (!is_token(parser, ':') &&  !is_token(parser, '=')) {
+        ts = parse_type_spec(parser);
+    }
+
+    if (match_token(parser, ':')) {
+        // Constant
+        if (is_token(parser, '(')) assert(false) // Function
+
+        // TODO: struct, enum etc.
+
+        AST_Expression *const_value = parse_expression(parser);
+        expect_token(parser, ';');
+
+        return ast_constant_variable_decl_new(parser->context, ident_expression, ts, const_value);
+
+    } else if (is_token(parser, '=') || is_token(parser, ';')) {
+        // Variable
+        AST_Expression *value = nullptr;
+        if (match_token(parser, '=')) {
+            value = parse_expression(parser);
+        }
+        expect_token(parser, ';');
+
+        return ast_variable_decl_new(parser->context, ident_expression, ts, value);
+    }
+
+    auto tmp_tok_str = tmp_token_string(cur_tok(parser));
+    ZFATAL("Unexpected token: '%.*s' when parsing declaration", (int)tmp_tok_str.length, tmp_tok_str.data);
+    return nullptr;
 }
 
 AST_Type_Spec *parse_type_spec(Parser *parser)

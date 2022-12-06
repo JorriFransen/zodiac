@@ -197,11 +197,31 @@ struct AST_Variable_Declaration
     AST_Expression *value;
 };
 
+struct AST_Constant_Variable_Declaration
+{
+    AST_Type_Spec *type_spec;
+    AST_Expression *value;
+};
+
+struct AST_Field_Declaration
+{
+    Atom name;
+    AST_Type_Spec *type_spec;
+};
+
+struct AST_Function_Declaration
+{
+    Dynamic_Array<AST_Field_Declaration> args;
+    AST_Type_Spec *return_ts;
+};
+
 enum class AST_Declaration_Kind
 {
     INVALID,
 
     VARIABLE,
+    CONSTANT_VARIABLE,
+    FUNCTION,
 };
 
 struct AST_Declaration
@@ -213,6 +233,8 @@ struct AST_Declaration
     union
     {
         AST_Variable_Declaration variable;
+        AST_Constant_Variable_Declaration constant_variable;
+        AST_Function_Declaration function;
     };
 };
 
@@ -259,6 +281,8 @@ ZAPI void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
 ZAPI void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt);
 
 ZAPI void ast_variable_decl_create(AST_Expression *identitifer, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
+ZAPI void ast_constant_variable_decl_create(AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
+ZAPI void ast_function_decl_create(Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, AST_Declaration *out_decl);
 ZAPI void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl);
 
 ZAPI void ast_integer_ts_create(bool sign, u64 size, AST_Type_Spec *out_ts);
@@ -283,6 +307,8 @@ ZAPI AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, AST_Expression *val
 ZAPI AST_Statement *ast_statement_new(Zodiac_Context *ctx);
 
 ZAPI AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value);
+ZAPI AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value);
+ZAPI AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts);
 ZAPI AST_Declaration *ast_declaration_new(Zodiac_Context *ctx);
 
 ZAPI AST_Type_Spec *ast_integer_ts_new(Zodiac_Context *ctx, bool sign, u64 bit_size);

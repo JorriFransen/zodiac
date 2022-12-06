@@ -33,7 +33,10 @@ ZAPI AST_Expression *parse_expr_add(Parser *parser);
 ZAPI AST_Expression *parse_expr_cmp(Parser *parser);
 ZAPI AST_Expression *parse_expression(Parser *parser);
 
+ZAPI AST_Statement *parse_keyword_statement(Parser *parser);
 ZAPI AST_Statement *parse_statement(Parser *parser);
+
+ZAPI AST_Declaration *parse_declaration(Parser *parser);
 
 #define ZODIAC_BUILTIN_TYPES \
     ZODIAC_TYPE_DEF(u, 8)    \
