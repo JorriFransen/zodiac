@@ -43,6 +43,7 @@ int main() {
         "  float_value: r32;"
         "}"
 
+        "ptr : *u64 = null;"
         "var := 42;"
         "var2 : u16 = 8;"
         "var3 : s8;"

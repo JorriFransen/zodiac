@@ -490,10 +490,25 @@ AST_Declaration *parse_declaration(Parser *parser)
 
 AST_Type_Spec *parse_type_spec(Parser *parser)
 {
-    auto name_tok = cur_tok(parser);
-    expect_token(parser, TOK_NAME);
+    switch (cur_tok(parser).kind) {
 
-    return ast_name_ts_new(parser->context, name_tok.atom);
+        case TOK_STAR: {
+            next_token(parser);
+            AST_Type_Spec *base = parse_type_spec(parser);
+            return ast_pointer_ts_new(parser->context, base);
+        }
+
+        case TOK_NAME: {
+            auto name_tok = cur_tok(parser);
+            next_token(parser);
+            return ast_name_ts_new(parser->context, name_tok.atom);
+        }
+
+        default: assert(false);
+    }
+
+    assert(false);
+    return nullptr;
 }
 
 bool is_keyword(Parser *parser, Atom keyword)

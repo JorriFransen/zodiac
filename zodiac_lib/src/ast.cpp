@@ -224,6 +224,15 @@ void ast_name_ts_create(Atom name, AST_Type_Spec *out_ts)
     out_ts->name = name;
 }
 
+void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts)
+{
+    assert(base && out_ts);
+
+    ast_type_spec_create(AST_Type_Spec_Kind::POINTER, out_ts);
+
+    out_ts->base = base;
+}
+
 void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts)
 {
     assert(out_ts);
@@ -439,6 +448,15 @@ AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Atom name)
 
     auto ts = ast_type_spec_new(ctx);
     ast_name_ts_create(name, ts);
+    return ts;
+}
+
+AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, AST_Type_Spec *base)
+{
+    assert(ctx && base);
+
+    auto ts = ast_type_spec_new(ctx);
+    ast_pointer_ts_create(base, ts);
     return ts;
 }
 
@@ -720,7 +738,7 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
     if (semicolon) string_builder_append(sb, ";");
 }
 
-void ast_print_type_spec(String_Builder *sb, AST_Type_Spec *ts, int indent/*=0*/)
+file_local void ast__print_type_spec_internal(String_Builder *sb, AST_Type_Spec *ts, int indent)
 {
     assert(sb && ts);
 
@@ -728,10 +746,23 @@ void ast_print_type_spec(String_Builder *sb, AST_Type_Spec *ts, int indent/*=0*/
         case AST_Type_Spec_Kind::INVALID: assert(false);
 
         case AST_Type_Spec_Kind::NAME: {
-            string_builder_append(sb, "type_spec(%s)", ts->name.data);
+            string_builder_append(sb, "%s", ts->name.data);
+            break;
+        }
+
+        case AST_Type_Spec_Kind::POINTER: {
+            string_builder_append(sb, "*");
+            ast__print_type_spec_internal(sb, ts->base, indent);
             break;
         }
     }
+}
+
+void ast_print_type_spec(String_Builder *sb, AST_Type_Spec *ts, int indent/*=0*/)
+{
+    string_builder_append(sb, "type_spec(");
+    ast__print_type_spec_internal(sb, ts, indent);
+    string_builder_append(sb, ")");
 }
 
 }

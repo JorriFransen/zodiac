@@ -255,6 +255,7 @@ enum class AST_Type_Spec_Kind
     INVALID,
 
     NAME,
+    POINTER,
 };
 
 struct AST_Type_Spec
@@ -264,6 +265,7 @@ struct AST_Type_Spec
     union
     {
         Atom name;
+        AST_Type_Spec *base;
     };
 };
 
@@ -292,6 +294,7 @@ ZAPI void ast_aggregate_decl_create(AST_Declaration *identifier, AST_Declaration
 ZAPI void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl);
 
 ZAPI void ast_name_ts_create(Atom name, AST_Type_Spec *out_ts);
+ZAPI void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts);
 ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
 
 ZAPI AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Integer_Value value);
@@ -319,6 +322,7 @@ ZAPI AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, AST_Expression
 ZAPI AST_Declaration *ast_declaration_new(Zodiac_Context *ctx);
 
 ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Atom name);
+ZAPI AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, AST_Type_Spec *base);
 ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx);
 
 

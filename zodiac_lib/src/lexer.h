@@ -13,6 +13,7 @@ enum Token_Kind
     TOK_INVALID = 0,
 
     // Ascii range
+    TOK_STAR = '*',
 
     TOK_INT = 128,
     TOK_REAL,
