@@ -213,6 +213,8 @@ struct AST_Function_Declaration
 {
     Dynamic_Array<AST_Field_Declaration> args;
     AST_Type_Spec *return_ts;
+
+    Dynamic_Array<AST_Statement *> body; 
 };
 
 enum class AST_Declaration_Kind
@@ -282,7 +284,7 @@ ZAPI void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
 
 ZAPI void ast_variable_decl_create(AST_Expression *identitifer, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
 ZAPI void ast_constant_variable_decl_create(AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
-ZAPI void ast_function_decl_create(Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, AST_Declaration *out_decl);
+ZAPI void ast_function_decl_create(AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl);
 ZAPI void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl);
 
 ZAPI void ast_integer_ts_create(bool sign, u64 size, AST_Type_Spec *out_ts);
@@ -308,7 +310,7 @@ ZAPI AST_Statement *ast_statement_new(Zodiac_Context *ctx);
 
 ZAPI AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value);
 ZAPI AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value);
-ZAPI AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts);
+ZAPI AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body);
 ZAPI AST_Declaration *ast_declaration_new(Zodiac_Context *ctx);
 
 ZAPI AST_Type_Spec *ast_integer_ts_new(Zodiac_Context *ctx, bool sign, u64 bit_size);

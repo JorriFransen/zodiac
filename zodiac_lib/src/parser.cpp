@@ -358,13 +358,29 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Expression *iden
         } while (match_token(parser, ','));
 
         args = temp_array_finalize(parser, temp_args);
+
+        expect_token(parser, ')');
     }
 
+    AST_Type_Spec *return_ts = nullptr;
+
     if (match_token(parser, TOK_RIGHT_ARROW)) {
-        assert(false);
+        return_ts = parse_type_spec(parser);
     }
-    assert(false);
-    return nullptr;
+
+    expect_token(parser, '{');
+
+    auto temp_stmts = temp_array_create<AST_Statement *>(parser);
+
+    while (!match_token(parser, '}')) {
+        AST_Statement *stmt = parse_statement(parser);
+        assert(stmt);
+        dynamic_array_append(&temp_stmts.array, stmt);
+    }
+
+    auto statements = temp_array_finalize(parser, temp_stmts);
+
+    return ast_function_decl_new(parser->context, identifier, args, return_ts, statements);
 }
 
 AST_Declaration *parse_declaration(Parser *parser)
@@ -481,7 +497,6 @@ bool next_token(Parser *parser)
 bool match_token(Parser *parser, Token_Kind kind)
 {
     assert(parser && parser->lxr);
-    return match_token(parser->lxr, kind);
 
     if (is_token(parser, kind)) {
         next_token(parser);

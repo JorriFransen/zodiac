@@ -183,14 +183,17 @@ void ast_constant_variable_decl_create(AST_Expression *identifier, AST_Type_Spec
     out_decl->constant_variable.value = value;
 }
 
-void ast_function_decl_create(AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, AST_Declaration *out_decl)
+void ast_function_decl_create(AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl)
 {
     assert(out_decl);
     assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
 
+    ast_declaration_create(AST_Declaration_Kind::FUNCTION, out_decl);
+
     out_decl->identifier = identifier;
     out_decl->function.args = args;
     out_decl->function.return_ts = return_ts;
+    out_decl->function.body = body;
 }
 
 void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl)
@@ -376,13 +379,13 @@ AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, AST_Express
     return decl;
 }
 
-AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts)
+AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body)
 {
     assert(ctx && identifier);
     assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
 
     auto decl = ast_declaration_new(ctx);
-    ast_function_decl_create(identifier, args, return_ts, decl);
+    ast_function_decl_create(identifier, args, return_ts, body, decl);
     return decl;
 }
 
@@ -533,6 +536,7 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
         }
 
         case AST_Statement_Kind::DECLARATION: {
+            semicolon = false;
             ast_print_declaration(sb, stmt->decl.decl, indent);
             break;
         }
@@ -648,7 +652,25 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
         }
 
         case AST_Declaration_Kind::FUNCTION: {
-            assert(false);
+            ast_print_expression(sb, decl->identifier);
+            string_builder_append(sb, " :: (");
+            for (u64 i = 0; i < decl->function.args.count; i++) {
+                if (i > 0) string_builder_append(sb, ", ");
+                string_builder_append(sb, "%s: ", decl->function.args[i].name.data);
+                ast_print_type_spec(sb, decl->function.args[i].type_spec);
+            }
+            string_builder_append(sb, ") -> ");
+            if (decl->function.return_ts) {
+                ast_print_type_spec(sb, decl->function.return_ts);
+            } else {
+                string_builder_append(sb, "void");
+            }
+            string_builder_append(sb, " {\n");
+            for (u64 i = 0; i < decl->function.body.count; i++) {
+                ast_print_statement(sb, decl->function.body[i], 1);
+                string_builder_append(sb, "\n");
+            }
+            string_builder_append(sb, "}");
             break;
         }
     }
