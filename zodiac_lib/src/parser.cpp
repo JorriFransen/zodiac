@@ -47,10 +47,16 @@ file_local Temp_Array<T> temp_array_create(Parser *parser)
 }
 
 template <typename T>
+file_local void temp_array_destroy(Parser *parser, Temp_Array<T> ta)
+{
+    temporary_allocator_reset(&parser->context->temp_allocator_state, ta.mark);
+}
+
+template <typename T>
 file_local Dynamic_Array<T> temp_array_finalize(Parser *parser, Temp_Array<T> ta)
 {
     auto result = dynamic_array_copy(&ta.array, parser->context->ast_allocator);
-    temporary_allocator_reset(&parser->context->temp_allocator_state, ta.mark);
+    temp_array_destroy(parser, ta);
     return result;
 }
 
@@ -359,8 +365,9 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Expression *iden
 
         args = temp_array_finalize(parser, temp_args);
 
-        expect_token(parser, ')');
     }
+
+    expect_token(parser, ')');
 
     AST_Type_Spec *return_ts = nullptr;
 
@@ -383,6 +390,55 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Expression *iden
     return ast_function_decl_new(parser->context, identifier, args, return_ts, statements);
 }
 
+AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Expression *identifier)
+{
+    assert(parser && identifier);
+    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+
+    AST_Declaration_Kind kind = AST_Declaration_Kind::INVALID;
+
+    if (match_keyword(parser, keyword_struct)) {
+        kind = AST_Declaration_Kind::STRUCT;
+    } else {
+        expect_keyword(parser, keyword_union);
+        kind = AST_Declaration_Kind::UNION;
+    }
+
+    assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
+    
+    expect_token(parser, '{');
+
+    auto temp_fields = temp_array_create<AST_Field_Declaration>(parser);
+
+    while (!match_token(parser, '}')) {
+
+        auto temp_names = temp_array_create<Atom>(parser);
+
+        // At least one name
+        Atom first_name_atom = cur_tok(parser).atom;
+        expect_token(parser, TOK_NAME);
+        dynamic_array_append(&temp_names.array, first_name_atom);
+
+        while (match_token(parser, ',')) {
+            Atom name = cur_tok(parser).atom;
+            expect_token(parser, TOK_NAME);
+            dynamic_array_append(&temp_names.array, name);
+        }
+
+        expect_token(parser, ':');
+
+        AST_Type_Spec *ts = parse_type_spec(parser);
+        expect_token(parser, ';');
+
+        for (u64 i = 0; i < temp_names.array.count; i++) {
+            dynamic_array_append(&temp_fields.array, { temp_names.array[i], ts });
+        }
+    }
+
+    auto fields = temp_array_finalize(parser, temp_fields);
+    return ast_aggregate_decl_new(parser->context, identifier, kind, fields);
+}
+
 AST_Declaration *parse_declaration(Parser *parser)
 {
     AST_Expression *ident_expression = parse_expression(parser);
@@ -396,7 +452,10 @@ AST_Declaration *parse_declaration(Parser *parser)
     }
 
     if (match_token(parser, ':')) {
-        // TODO: struct, enum etc.
+
+        if (is_keyword(parser, keyword_struct) || is_keyword(parser, keyword_union)) {
+            return parse_aggregate_declaration(parser, ident_expression);
+        }
 
         // Constant
         if (is_token(parser, '(')) {
@@ -434,35 +493,33 @@ AST_Type_Spec *parse_type_spec(Parser *parser)
     auto name_tok = cur_tok(parser);
     expect_token(parser, TOK_NAME);
 
-    if (name_tok.atom == atom_u8) {
-        return ast_integer_ts_new(parser->context, false, 8);
-    } else if (name_tok.atom == atom_u16) {
-        return ast_integer_ts_new(parser->context, false, 16);
-    } else if (name_tok.atom == atom_u32) {
-        return ast_integer_ts_new(parser->context, false, 32);
-    } else if (name_tok.atom == atom_u64) {
-        return ast_integer_ts_new(parser->context, false, 64);
-    } else if (name_tok.atom == atom_s8) {
-        return ast_integer_ts_new(parser->context, true, 8);
-    } else if (name_tok.atom == atom_s16) {
-        return ast_integer_ts_new(parser->context, true, 16);
-    } else if (name_tok.atom == atom_s32) {
-        return ast_integer_ts_new(parser->context, true, 32);
-    } else if (name_tok.atom == atom_s64) {
-        return ast_integer_ts_new(parser->context, true, 64);
-    } else {
-        assert(false);
-    }
+    return ast_name_ts_new(parser->context, name_tok.atom);
+}
 
-    assert(false);
-    return nullptr;
+bool is_keyword(Parser *parser, Atom keyword)
+{
+    assert(parser && is_keyword(keyword));
+
+    return is_token(parser, TOK_KEYWORD) && cur_tok(parser).atom == keyword;
 }
 
 bool match_keyword(Parser *parser, Atom keyword)
 {
-    assert(is_keyword(keyword));
+    assert(parser && is_keyword(keyword));
 
-    if (is_token(parser, TOK_KEYWORD) && cur_tok(parser).atom == keyword) {
+    if (is_keyword(parser, keyword)) {
+        next_token(parser);
+        return true;
+    }
+
+    return false;
+}
+
+bool expect_keyword(Parser *parser, Atom keyword)
+{
+    assert(parser && is_keyword(keyword));
+
+    if (is_keyword(parser, keyword)) {
         next_token(parser);
         return true;
     }

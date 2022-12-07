@@ -196,6 +196,18 @@ void ast_function_decl_create(AST_Expression *identifier, Dynamic_Array<AST_Fiel
     out_decl->function.body = body;
 }
 
+void ast_aggregate_decl_create(AST_Expression *identifier, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields, AST_Declaration *out_decl)
+{
+    assert(identifier && out_decl);
+    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+    assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
+
+    ast_declaration_create(kind, out_decl);
+
+    out_decl->identifier = identifier;
+    out_decl->aggregate.fields = fields;
+}
+
 void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl)
 {
     assert(out_decl);
@@ -203,14 +215,13 @@ void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl
     out_decl->kind = kind;
 }
 
-void ast_integer_ts_create(bool sign, u64 bit_size, AST_Type_Spec *out_ts)
+void ast_name_ts_create(Atom name, AST_Type_Spec *out_ts)
 {
-    assert(bit_size && out_ts);
+    assert(out_ts);
 
-    ast_type_spec_create(AST_Type_Spec_Kind::INTEGER, out_ts);
+    ast_type_spec_create(AST_Type_Spec_Kind::NAME, out_ts);
 
-    out_ts->bit_size = bit_size;
-    out_ts->integer.sign = sign;
+    out_ts->name = name;
 }
 
 void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts)
@@ -389,6 +400,17 @@ AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, AST_Expression *iden
     return decl;
 }
 
+AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields)
+{
+    assert(ctx); 
+    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+    assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
+
+    auto decl = ast_declaration_new(ctx);
+    ast_aggregate_decl_create(identifier, kind, fields, decl);
+    return decl;
+}
+
 AST_Declaration *ast_declaration_new(Zodiac_Context *ctx)
 {
     assert(ctx);
@@ -411,12 +433,12 @@ file_local const char *ast_binop_to_string[(int)AST_Binary_Operator::LAST_BINOP 
     [(int)AST_Binary_Operator::GTEQ] = ">=",
 };
 
-AST_Type_Spec *ast_integer_ts_new(Zodiac_Context *ctx, bool sign, u64 bit_size)
+AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Atom name)
 {
-    assert(ctx && bit_size);
+    assert(ctx);
 
     auto ts = ast_type_spec_new(ctx);
-    ast_integer_ts_create(sign, bit_size, ts);
+    ast_name_ts_create(name, ts);
     return ts;
 }
 
@@ -673,6 +695,26 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
             string_builder_append(sb, "}");
             break;
         }
+
+        case AST_Declaration_Kind::STRUCT:
+        case AST_Declaration_Kind::UNION: {
+            semicolon = false;
+            ast_print_expression(sb, decl->identifier);
+            string_builder_append(sb, " :: ");
+            if (decl->kind == AST_Declaration_Kind::STRUCT) {
+                string_builder_append(sb, "struct {\n");
+            } else {
+                string_builder_append(sb, "union {\n");
+            }
+            for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
+                ast_print_indent(sb, indent + 1);
+                string_builder_append(sb, "%s: ", decl->aggregate.fields[i].name.data);
+                ast_print_type_spec(sb, decl->aggregate.fields[i].type_spec);
+                string_builder_append(sb, ";\n");
+            }
+            string_builder_append(sb, "}");
+            break;
+        }
     }
 
     if (semicolon) string_builder_append(sb, ";");
@@ -685,12 +727,8 @@ void ast_print_type_spec(String_Builder *sb, AST_Type_Spec *ts, int indent/*=0*/
     switch (ts->kind) {
         case AST_Type_Spec_Kind::INVALID: assert(false);
 
-        case AST_Type_Spec_Kind::INTEGER: {
-            string_builder_append(sb, "type_spec(");
-            if (ts->integer.sign) string_builder_append(sb, "s");
-            else string_builder_append(sb, "u");
-            string_builder_append(sb, "%i", ts->bit_size);
-            string_builder_append(sb, ")");
+        case AST_Type_Spec_Kind::NAME: {
+            string_builder_append(sb, "type_spec(%s)", ts->name.data);
             break;
         }
     }

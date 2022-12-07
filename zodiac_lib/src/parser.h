@@ -40,6 +40,7 @@ ZAPI AST_Statement *parse_keyword_statement(Parser *parser);
 ZAPI AST_Statement *parse_statement(Parser *parser);
 
 ZAPI AST_Declaration *parse_function_declaration(Parser *parser, AST_Expression *identifier);
+ZAPI AST_Declaration *parse_aggregate_decl(Parser *parser, AST_Expression *identifier);
 ZAPI AST_Declaration *parse_declaration(Parser *parser);
 
 #define ZODIAC_BUILTIN_TYPES \
@@ -59,7 +60,9 @@ ZODIAC_BUILTIN_TYPES
 
 ZAPI AST_Type_Spec *parse_type_spec(Parser *parser);
 
+ZAPI bool is_keyword(Parser *parser, Atom keyword);
 ZAPI bool match_keyword(Parser *parser, Atom keyword);
+ZAPI bool expect_keyword(Parser *parser, Atom keyword);
 
 ZAPI bool is_token(Parser *parser, Token_Kind kind);
 ZAPI bool is_token(Parser *parser, char c);

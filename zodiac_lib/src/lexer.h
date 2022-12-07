@@ -58,7 +58,8 @@ struct Lexer
     ZODIAC_KEYWORD(return)  \
     ZODIAC_KEYWORD(while)   \
     ZODIAC_KEYWORD(sizeof)  \
-    ZODIAC_KEYWORD(struct)
+    ZODIAC_KEYWORD(struct)  \
+    ZODIAC_KEYWORD(union)
 
 // Emit variable declaration for all keywords
 #define ZODIAC_KEYWORD(n) ZAPI extern Atom keyword_##n;

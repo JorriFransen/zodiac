@@ -14,6 +14,7 @@ using namespace Zodiac;
 
 int main() {
 
+    // Comment...
     if (!Zodiac::logging_system_initialize()) return 1;
     if (!Zodiac::memory_system_initialize()) return 1;
 
@@ -28,39 +29,54 @@ int main() {
     lexer_create(&c, &lexer);
     const char *stream =
 
-          // "var := 42;"
-          // "var2 : u16 = 8;"
-          // "var3 : s8;"
-          // "c_var :: 5;"
-          // "c_var2 : u32 : 2;"
+        "Vec2 :: struct {"
+        "  x: s32;"
+        "  y: s32;"
+        "}"
 
-          "add_fn :: (a: u64, b: u64) -> u64 {"
-            "result := a + b;"
-            "return result;"
-          "}";
-        // "main :: () -> s64 {"
-          // "i := 0;"
-          // "j : u32 = 5;"
-          // "k := u64(7);"
-          // "i = i * 5 + 1;"
-          // "y : s64;"
-          // "some_func(a, b, c);"
-          // "if i > 3 "
-          //   "i_bigger_than_3();"
-          // " else if i > 2 "
-          //   "i_bigger_than_2();"
-          // " else if i > 0 {"
-          //   "i_bigger_than_0();"
-          // "} else {"
-          //   "dunno();"
-          // "}"
-          // "return i;"
-          // "return;"
-          // "while i > 0 {"
-          //   "i = i - 1;"
-          // "}"
-          // "while i > 0 i = i - 1;"
-        // "}";
+        "AABB :: struct {"
+        "  top_left, dim: Vec2;"
+        "}"
+
+        "Value :: union {"
+        "  int_value: s32;"
+        "  float_value: r32;"
+        "}"
+
+        "var := 42;"
+        "var2 : u16 = 8;"
+        "var3 : s8;"
+        "c_var :: 5;"
+        "c_var2 : u32 : 2;"
+        
+        "add_fn :: (a: u64, b: u64) -> u64 {"
+          "result := a + b;"
+          "return result;"
+        "}"
+
+        "main :: () -> s64 {"
+          "i := 0;"
+          "j : u32 = 5;"
+          "k := u64(7);"
+          "i = i * 5 + 1;"
+          "y : s64;"
+          "some_func(a, b, c);"
+          "if i > 3 "
+            "i_bigger_than_3();"
+          " else if i > 2 "
+            "i_bigger_than_2();"
+          " else if i > 0 {"
+            "i_bigger_than_0();"
+          "} else {"
+            "dunno();"
+          "}"
+          "return i;"
+          "return;"
+          "while i > 0 {"
+            "i = i - 1;"
+          "}"
+          "while i > 0 i = i - 1;"
+        "}";
 
     lexer_init_stream(&lexer, stream);
 
@@ -82,7 +98,7 @@ int main() {
 
     for (u64 i = 0; i < global_decls.count; i++) {
         ast_print_declaration(&sb, global_decls[i]);
-        string_builder_append(&sb, "\n");
+        string_builder_append(&sb, "\n\n");
     }
 
     String ast_str = string_builder_to_string(&sb);
