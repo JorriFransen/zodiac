@@ -152,6 +152,7 @@ case (first_char): {                                                \
         TWO_CHAR_TOKEN_CASE('!', '=', TOK_NEQ);
         TWO_CHAR_TOKEN_CASE('<', '=', TOK_LTEQ);
         TWO_CHAR_TOKEN_CASE('>', '=', TOK_GTEQ);
+        TWO_CHAR_TOKEN_CASE('-', '>', TOK_RIGHT_ARROW);
 
         default: {
             if (*lex->stream && std::isprint(*lex->stream)) {

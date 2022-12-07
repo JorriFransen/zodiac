@@ -19,6 +19,8 @@ enum Token_Kind
     TOK_NAME,
     TOK_KEYWORD,
 
+    TOK_RIGHT_ARROW,
+
     TOK_EQ,
     TOK_NEQ,
     TOK_LTEQ,

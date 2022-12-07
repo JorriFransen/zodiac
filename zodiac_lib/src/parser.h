@@ -3,6 +3,7 @@
 #include <defines.h>
 
 #include <ast.h>
+#include <containers/queue.h>
 #include <lexer.h>
 
 namespace Zodiac
@@ -12,6 +13,8 @@ struct Parser
 {
     Zodiac_Context *context;
     Lexer *lxr;
+
+    Queue<Token> peeked_tokens;
 };
 
 ZAPI void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser);
@@ -65,6 +68,7 @@ ZAPI bool match_token(Parser *parser, char c);
 ZAPI bool expect_token(Parser *parser, Token_Kind kind);
 ZAPI bool expect_token(Parser *parser, char c);
 ZAPI Token cur_tok(Parser *parser);
+ZAPI Token peek_token(Parser *parser, u64 offset = 1);
 
 
 }

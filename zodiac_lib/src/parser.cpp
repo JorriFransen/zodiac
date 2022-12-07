@@ -59,6 +59,7 @@ void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser)
     assert(ctx && lxr && out_parser);
     out_parser->context = ctx;
     out_parser->lxr = lxr;
+    queue_create(&dynamic_allocator, &out_parser->peeked_tokens);
 
     if (!builtin_types_initialized) initialize_builtin_types(ctx);
 }
@@ -348,7 +349,36 @@ AST_Declaration *parse_declaration(Parser *parser)
 
     if (match_token(parser, ':')) {
         // Constant
-        if (is_token(parser, '(')) assert(false) // Function
+        if (is_token(parser, '(')) {
+            if ((peek_token(parser).kind == Token_Kind::TOK_NAME && peek_token(parser, 2).kind == ':') ||
+                 peek_token(parser).kind == ')') {
+
+                expect_token(parser, '(');
+
+                Dynamic_Array<AST_Field_Declaration> args = {};
+
+                if (is_token(parser, TOK_NAME)) {
+
+                    auto temp_args = temp_array_create<AST_Field_Declaration>(parser);
+                    do {
+
+                        Token name_tok = cur_tok(parser);
+                        expect_token(parser, TOK_NAME);
+                        expect_token(parser, ':');
+                        AST_Type_Spec *ts = parse_type_spec(parser);
+
+                        dynamic_array_append(&temp_args.array, { name_tok.atom, ts });
+                    } while (match_token(parser, ','));
+
+                    args = temp_array_finalize(parser, temp_args);
+                }
+
+                if (match_token(parser, TOK_RIGHT_ARROW)) {
+                    assert(false);
+                }
+                assert(false);
+            }
+        }
 
         // TODO: struct, enum etc.
 
@@ -416,50 +446,96 @@ bool match_keyword(Parser *parser, Atom keyword)
 
 bool is_token(Parser *parser, Token_Kind kind)
 {
-    assert(parser && parser->lxr);
-    return is_token(parser->lxr, kind);
+    assert(parser);
+    return cur_tok(parser).kind == kind;
 }
 
 bool is_token(Parser *parser, char c)
 {
-    assert(parser && parser->lxr);
-    return is_token(parser->lxr, c);
+    assert(parser);
+    return (char)cur_tok(parser).kind == c;
 }
 
 bool next_token(Parser *parser)
 {
     assert(parser && parser->lxr);
-    return next_token(parser->lxr);
+
+    if (!queue_empty(&parser->peeked_tokens)) {
+        queue_dequeue(&parser->peeked_tokens);
+        return true;
+    } else {
+        return next_token(parser->lxr);
+    }
 }
 
 bool match_token(Parser *parser, Token_Kind kind)
 {
     assert(parser && parser->lxr);
     return match_token(parser->lxr, kind);
+
+    if (is_token(parser, kind)) {
+        next_token(parser);
+        return true;
+    }
+
+    return false;
 }
 
 bool match_token(Parser *parser, char c)
 {
-    assert(parser && parser->lxr);
-    return match_token(parser->lxr, c);
+    return match_token(parser, (Token_Kind)c);
 }
 
 bool expect_token(Parser *parser, Token_Kind kind)
 {
     assert(parser && parser->lxr);
-    return expect_token(parser->lxr, kind);
+
+    if (is_token(parser, kind)) {
+        next_token(parser);
+        return true;
+    }
+
+    Token t = cur_tok(parser);
+    ZFATAL("Expected token %s, '%c', got: %s, '%c'", token_kind_str(kind), (char)kind, token_kind_str(t.kind), (char)t.kind);
+    return false;
 }
 
 bool expect_token(Parser *parser, char c)
 {
-    assert(parser && parser->lxr);
-    return expect_token(parser->lxr, c);
+    return expect_token(parser, (Token_Kind)c);
 }
 
 Token cur_tok(Parser *parser)
 {
     assert(parser && parser->lxr);
-    return parser->lxr->token;
+
+    if (queue_empty(&parser->peeked_tokens)) {
+        return parser->lxr->token;
+    } else {
+        return queue_peek(&parser->peeked_tokens, 0);
+    }
+}
+
+Token peek_token(Parser *parser, u64 offset/*=1*/)
+{
+    assert(parser && parser->lxr);
+    assert(offset >= 1);
+
+    if (queue_empty(&parser->peeked_tokens)) {
+        for (u64 i = 0; i < offset + 1; i++) {
+            queue_enqueue(&parser->peeked_tokens, parser->lxr->token);
+            next_token(parser->lxr);
+        }
+    } else {
+        u64 peeked_count = queue_used(&parser->peeked_tokens);
+
+        for (u64 i = 0; i < (offset + 1) - peeked_count; i++) {
+            queue_enqueue(&parser->peeked_tokens, parser->lxr->token);
+            next_token(parser->lxr);
+        }
+    }
+
+    return queue_peek(&parser->peeked_tokens, offset);
 }
 
 }

@@ -55,7 +55,7 @@ s64 queue_used(Queue<Element_Type> *queue)
 }
 
 template <typename Element_Type>
-void queue_enqueue(Queue<Element_Type> *queue, Element_Type *element)
+void queue_enqueue(Queue<Element_Type> *queue, Element_Type element)
 {
     if (queue_used(queue) == queue->capacity) {
         assert_msg(false, "TODO: Grow queue");
@@ -82,25 +82,29 @@ Element_Type queue_dequeue(Queue<Element_Type> *queue)
     }
 
     Element_Type result = queue->data[queue->front];
-    queue->front += 1;
     if (queue->front == queue->capacity - 1) {
         queue->front = 0;
     } else if (queue->front == queue->back) {
         queue->front = -1;
         queue->back = -1;
+    } else {
+        queue->front += 1;
     }
 
     return result;
 }
 
 template <typename Element_Type>
-Element_Type queue_peek(Queue<Element_Type> *queue)
+Element_Type queue_peek(Queue<Element_Type> *queue, u64 offset = 0)
 {
     if (queue->front == -1) {
         assert_msg(false, "Cannot peek empty queue");
     }
 
-    return queue->data[queue->front];
+    assert(offset < queue_used(queue));
+
+    u64 index = (queue->front + offset) % (queue->capacity - 1);
+    return queue->data[index];
 }
 
 }

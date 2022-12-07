@@ -28,16 +28,16 @@ int main() {
     lexer_create(&c, &lexer);
     const char *stream =
 
-          "var := 42;"
-          "var2 : u16 = 8;"
-          "var3 : s8;"
-          "c_var :: 5;"
-          "c_var2 : u32 : 2;";
+          // "var := 42;"
+          // "var2 : u16 = 8;"
+          // "var3 : s8;"
+          // "c_var :: 5;"
+          // "c_var2 : u32 : 2;"
 
-          // "add_fn :: (a: u64, b: u64) -> u64 {"
-          //   "result := a + b;"
-          //   "return result;"
-          // "}";
+          "add_fn :: (a: u64, b: u64) -> u64 {"
+            "result := a + b;"
+            "return result;"
+          "}";
         // "main :: () -> s64 {"
           // "i := 0;"
           // "j : u32 = 5;"
