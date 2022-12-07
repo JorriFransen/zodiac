@@ -335,6 +335,38 @@ AST_Statement *parse_statement(Parser *parser)
     return result;
 }
 
+AST_Declaration *parse_function_declaration(Parser *parser, AST_Expression *identifier)
+{
+    assert(parser && identifier);
+    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+
+    expect_token(parser, '(');
+
+    Dynamic_Array<AST_Field_Declaration> args = {};
+
+    if (is_token(parser, TOK_NAME)) {
+
+        auto temp_args = temp_array_create<AST_Field_Declaration>(parser);
+        do {
+
+            Token name_tok = cur_tok(parser);
+            expect_token(parser, TOK_NAME);
+            expect_token(parser, ':');
+            AST_Type_Spec *ts = parse_type_spec(parser);
+
+            dynamic_array_append(&temp_args.array, { name_tok.atom, ts });
+        } while (match_token(parser, ','));
+
+        args = temp_array_finalize(parser, temp_args);
+    }
+
+    if (match_token(parser, TOK_RIGHT_ARROW)) {
+        assert(false);
+    }
+    assert(false);
+    return nullptr;
+}
+
 AST_Declaration *parse_declaration(Parser *parser)
 {
     AST_Expression *ident_expression = parse_expression(parser);
@@ -348,39 +380,17 @@ AST_Declaration *parse_declaration(Parser *parser)
     }
 
     if (match_token(parser, ':')) {
+        // TODO: struct, enum etc.
+
         // Constant
         if (is_token(parser, '(')) {
             if ((peek_token(parser).kind == Token_Kind::TOK_NAME && peek_token(parser, 2).kind == ':') ||
                  peek_token(parser).kind == ')') {
 
-                expect_token(parser, '(');
-
-                Dynamic_Array<AST_Field_Declaration> args = {};
-
-                if (is_token(parser, TOK_NAME)) {
-
-                    auto temp_args = temp_array_create<AST_Field_Declaration>(parser);
-                    do {
-
-                        Token name_tok = cur_tok(parser);
-                        expect_token(parser, TOK_NAME);
-                        expect_token(parser, ':');
-                        AST_Type_Spec *ts = parse_type_spec(parser);
-
-                        dynamic_array_append(&temp_args.array, { name_tok.atom, ts });
-                    } while (match_token(parser, ','));
-
-                    args = temp_array_finalize(parser, temp_args);
-                }
-
-                if (match_token(parser, TOK_RIGHT_ARROW)) {
-                    assert(false);
-                }
-                assert(false);
+                assert(!ts);
+                return parse_function_declaration(parser, ident_expression);
             }
         }
-
-        // TODO: struct, enum etc.
 
         AST_Expression *const_value = parse_expression(parser);
         expect_token(parser, ';');

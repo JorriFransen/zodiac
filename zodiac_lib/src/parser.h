@@ -39,6 +39,7 @@ ZAPI AST_Expression *parse_expression(Parser *parser);
 ZAPI AST_Statement *parse_keyword_statement(Parser *parser);
 ZAPI AST_Statement *parse_statement(Parser *parser);
 
+ZAPI AST_Declaration *parse_function_declaration(Parser *parser, AST_Expression *identifier);
 ZAPI AST_Declaration *parse_declaration(Parser *parser);
 
 #define ZODIAC_BUILTIN_TYPES \
