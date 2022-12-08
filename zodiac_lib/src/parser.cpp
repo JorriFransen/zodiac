@@ -84,11 +84,19 @@ AST_Expression *parse_expr_operand(Parser *parser)
         next_token(parser);
 
         return ast_integer_literal_expr_new(parser->context, { .u64 = value });
+
     } else if (is_token(parser, TOK_NAME)) {
         Atom name_atom = cur_tok(parser).atom;
         next_token(parser);
 
         return ast_identifier_expr_new(parser->context, name_atom);
+
+    } else if (is_token(parser, TOK_STRING)) {
+        Atom token_atom = cur_tok(parser).atom;
+        next_token(parser);
+
+        Atom content_atom = atom_get(&parser->context->atoms, token_atom.data + 1, token_atom.length - 2);
+        return ast_string_literal_expr_new(parser->context, content_atom);
     } else {
 
         if (match_token(parser, '(')) {

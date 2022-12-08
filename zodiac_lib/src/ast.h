@@ -19,6 +19,11 @@ struct AST_Integer_Literal_Expression
     Integer_Value value;
 };
 
+struct AST_String_Literal_Expression
+{
+    Atom atom;
+};
+
 struct AST_Identifier_Expression
 {
     Atom atom;
@@ -87,6 +92,8 @@ enum class AST_Expression_Kind
     INVALID,
 
     INTEGER_LITERAL,
+    STRING_LITERAL,
+
     IDENTIFIER,
 
     MEMBER,
@@ -104,6 +111,7 @@ struct AST_Expression
     union
     {
         AST_Integer_Literal_Expression integer_literal;
+        AST_String_Literal_Expression string_literal;
         AST_Identifier_Expression identifier;
         AST_Member_Expression member;
         AST_Index_Expression index;
@@ -270,6 +278,7 @@ struct AST_Type_Spec
 };
 
 ZAPI void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_expr);
+ZAPI void ast_string_literal_expr_create(Atom atom, AST_Expression *out_expr);
 ZAPI void ast_identifier_expr_create(Atom atom, AST_Expression *out_expr);
 ZAPI void ast_member_expr_create(AST_Expression *base, Atom atom, AST_Expression *out_expr);
 ZAPI void ast_call_expr_create(AST_Expression *base, Dynamic_Array<AST_Expression *> args, AST_Expression *out_expr);
@@ -298,6 +307,7 @@ ZAPI void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts);
 ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
 
 ZAPI AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Integer_Value value);
+ZAPI AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Atom atom);
 ZAPI AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Atom atom);
 ZAPI AST_Expression *ast_member_expr_new(Zodiac_Context *ctx, AST_Expression *base, Atom atom);
 ZAPI AST_Expression *ast_index_expr_new(Zodiac_Context *ctx, AST_Expression *base, AST_Expression *index);
