@@ -25,9 +25,10 @@ int main() {
     Lexer lexer;
     lexer_create(&c, &lexer);
     String stream = {};
-    bool read_result = filesystem_read_entire_file(&dynamic_allocator, "tests/test.zc", &stream);
+    auto filename = "tests/test.zc";
+    bool read_result = filesystem_read_entire_file(&dynamic_allocator, filename, &stream);
 
-    lexer_init_stream(&lexer, stream, "test");
+    lexer_init_stream(&lexer, stream, filename);
 
     Parser parser;
     parser_create(&c, &lexer, &parser);
