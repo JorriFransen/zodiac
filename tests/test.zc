@@ -1,35 +1,36 @@
 
-Vec2 :: struct {
-    x: s32;
-    y: s32;
-}
-
-AABB :: struct {
-    top_left, dim: Vec2;
-}
-
-Value :: union {
-    int_value: s32;
-    float_value: r32;
-}
-
-ptr : *u64 = null;
-var := 42;
-var2 : u16 = 8;
-var3 : s8;
-c_var :: 5;
-c_var2 : u32 : 2;
-
-add_fn :: (a: u64, b: u64) -> u64 {
-    result := a + b;
-    return result;
-}
+//Vec2 :: struct {
+//    x: s32;
+//    y: s32;
+//}
+//
+//AABB :: struct {
+//    top_left, dim: Vec2;
+//}
+//
+//Value :: union {
+//    int_value: s32;
+//    float_value: r32;
+//}
+//
+//ptr : *u64 = null;
+//var := 42;
+//var2 : u16 = 8;
+//var3 : s8;
+//c_var :: 5;
+//c_var2 : u32 : 2;
+//
+//add_fn :: (a: u64, b: u64) -> u64 {
+//    result := a + b;
+//    return result;
+//}
 
 main :: () -> s64 {
 
     str : String = "This is a string literal";
     print(str);
 
-    return add_fn(40, 2);
+    //return add_fn(40, 2);
+    return 42;
 }
 

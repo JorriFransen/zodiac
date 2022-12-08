@@ -122,14 +122,26 @@ case (first_char): {                                                \
             break;
         }
 
-        case '"':
-        {
+        case '"': {
             lex->token.kind = TOK_STRING;
             lex->stream += 1;
             while (*lex->stream != '"') {
                 lex->stream += 1;
             }
             lex->stream += 1;
+            break;
+        }
+
+        case '/': {
+            lex->token.kind = (Token_Kind)'/';
+            lex->stream += 1;
+            if (*lex->stream == '/') {
+                // Single line comment
+                while (lex->stream && *lex->stream != '\n') {
+                    lex->stream += 1;
+                }
+                goto next_token__start_lexing_token;
+            }
             break;
         }
 
