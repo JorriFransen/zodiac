@@ -19,12 +19,8 @@ int main() {
     if (!Zodiac::logging_system_initialize()) return 1;
     if (!Zodiac::memory_system_initialize()) return 1;
 
-    Linear_Allocator ast_linear_allocator;
-    linear_allocator_create(MEBIBYTE(1), nullptr, &ast_linear_allocator);
-    Allocator ast_allocator = linear_allocator_allocator(&ast_linear_allocator);
-
     Zodiac_Context c;
-    zodiac_context_create(&ast_allocator, &c);
+    zodiac_context_create(&c);
 
     Lexer lexer;
     lexer_create(&c, &lexer);
@@ -40,16 +36,7 @@ int main() {
     if (parser.error) return 1;
     assert(file);
 
-    String_Builder sb;
-    string_builder_create(&sb);
-
-    ast_print_file(&sb, file);
-
-    String ast_str = string_builder_to_string(&sb);
-    printf("%.*s", (int)ast_str.length, ast_str.data);
-    free(sb.allocator, ast_str.data);
-
-    string_builder_destroy(&sb);
+    ast_print_file(file);
 
     return 0;
 }

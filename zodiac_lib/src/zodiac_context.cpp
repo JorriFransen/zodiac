@@ -5,13 +5,14 @@
 namespace Zodiac
 {
 
-void zodiac_context_create(Allocator *ast_allocator, Zodiac_Context *out_context)
+void zodiac_context_create(Zodiac_Context *out_context)
 {
-    assert(ast_allocator && out_context);
+    assert(out_context);
 
     atom_table_init(&out_context->atoms);
 
-    out_context->ast_allocator = ast_allocator;
+    linear_allocator_create(MEBIBYTE(1), nullptr, &out_context->ast_allocator_state);
+    out_context->ast_allocator = linear_allocator_allocator(&out_context->ast_allocator_state);
 
     temporary_allocator_create(KIBIBYTE(64), nullptr, &out_context->temp_allocator_state);
     out_context->temp_allocator = temporary_allocator_allocator(&out_context->temp_allocator_state);

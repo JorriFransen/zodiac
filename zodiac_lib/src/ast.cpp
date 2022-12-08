@@ -340,7 +340,7 @@ AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, AST_Binary_Operator op,
 
 AST_Expression *ast_expression_new(Zodiac_Context *ctx)
 {
-    return alloc<AST_Expression>(ctx->ast_allocator);
+    return alloc<AST_Expression>(&ctx->ast_allocator);
 }
 
 AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Dynamic_Array<AST_Statement *> statements)
@@ -419,7 +419,7 @@ AST_Statement *ast_statement_new(Zodiac_Context *ctx)
 {
     assert(ctx);
 
-    return alloc<AST_Statement>(ctx->ast_allocator);
+    return alloc<AST_Statement>(&ctx->ast_allocator);
 }
 
 AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value)
@@ -467,7 +467,7 @@ AST_Declaration *ast_declaration_new(Zodiac_Context *ctx)
 {
     assert(ctx);
 
-    return alloc<AST_Declaration>(ctx->ast_allocator);
+    return alloc<AST_Declaration>(&ctx->ast_allocator);
 }
 
 file_local const char *ast_binop_to_string[(int)AST_Binary_Operator::LAST_BINOP + 1] = {
@@ -507,14 +507,14 @@ AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx)
 {
     assert(ctx);
 
-    return alloc<AST_Type_Spec>(ctx->ast_allocator);
+    return alloc<AST_Type_Spec>(&ctx->ast_allocator);
 }
 
 AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *> decls)
 {
     assert(ctx);
 
-    auto file = alloc<AST_File>(ctx->ast_allocator);
+    auto file = alloc<AST_File>(&ctx->ast_allocator);
     ast_file_create(decls, file);
     return file;
 }
@@ -838,6 +838,20 @@ void ast_print_file(String_Builder *sb, AST_File *file)
         ast_print_declaration(sb, file->declarations[i]);
         string_builder_append(sb, "\n\n");
     }
+}
+
+void ast_print_file(AST_File *file)
+{
+    String_Builder sb;
+    string_builder_create(&sb);
+
+    ast_print_file(&sb, file);
+
+    String ast_str = string_builder_to_string(&sb);
+    printf("%.*s", (int)ast_str.length, ast_str.data);
+    free(sb.allocator, ast_str.data);
+
+    string_builder_destroy(&sb);
 }
 
 }

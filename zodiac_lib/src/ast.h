@@ -356,5 +356,6 @@ ZAPI void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int inden
 ZAPI void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent = 0);
 ZAPI void ast_print_type_spec(String_Builder *sb, AST_Type_Spec *ts, int indent = 0);
 ZAPI void ast_print_file(String_Builder *sb, AST_File *file);
+ZAPI void ast_print_file(AST_File *file);
 
 }

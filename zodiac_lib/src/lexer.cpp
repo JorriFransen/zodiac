@@ -273,22 +273,6 @@ void print_token(Token token)
     printf("%.*s\n", (int)str.length, str.data);
 }
 
-String_Ref tmp_token_str(Token token)
-{
-    static char buffer[1024];
-    i32 length = 0;
-
-    if (token.atom.length > 0) {
-        length = string_format(buffer, "%s", token.atom.data);
-    } else {
-        assert(false);
-    }
-
-    auto buf = buffer;
-    if (length == 0) buf = nullptr;
-    return String_Ref(buf, length);
-}
-
 file_local String_Ref token_kind_to_string[TOK_LAST + 1] = {
     [TOK_INT] = "INT",
     [TOK_REAL] = "REAL",
@@ -302,6 +286,24 @@ file_local String_Ref token_kind_to_string[TOK_LAST + 1] = {
     [TOK_GTEQ] = ">=",
     [TOK_EOF] = "EOF",
 };
+
+String_Ref tmp_token_str(Token token)
+{
+    static char buffer[1024];
+    i32 length = 0;
+
+    if (token.atom.length > 0) {
+        length = string_format(buffer, "%s", token.atom.data);
+    } else if (token.kind == TOK_EOF) {
+        return token_kind_to_string[token.kind];
+    } else {
+        assert(false);
+    }
+
+    auto buf = buffer;
+    if (length == 0) buf = nullptr;
+    return String_Ref(buf, length);
+}
 
 String_Ref tmp_token_kind_str(Token_Kind kind)
 {

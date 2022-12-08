@@ -59,7 +59,7 @@ file_local void temp_array_destroy(Parser *parser, Temp_Array<T> ta)
 template <typename T>
 file_local Dynamic_Array<T> temp_array_finalize(Parser *parser, Temp_Array<T> ta)
 {
-    auto result = dynamic_array_copy(&ta.array, parser->context->ast_allocator);
+    auto result = dynamic_array_copy(&ta.array, &parser->context->ast_allocator);
     temp_array_destroy(parser, ta);
     return result;
 }
@@ -545,7 +545,7 @@ AST_Type_Spec *parse_type_spec(Parser *parser)
 AST_File *parse_file(Parser *parser)
 {
     Dynamic_Array<AST_Declaration *> decls;
-    dynamic_array_create(parser->context->ast_allocator, &decls);
+    dynamic_array_create(&parser->context->ast_allocator, &decls);
 
     while (!is_token(parser, TOK_EOF)) {
         AST_Declaration *decl = parse_declaration(parser);
