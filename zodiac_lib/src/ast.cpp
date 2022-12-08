@@ -161,6 +161,15 @@ void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
     out_stmt->return_stmt.value = value;
 }
 
+void ast_print_stmt_create(AST_Expression *print_expr, AST_Statement *out_stmt)
+{
+    assert(print_expr && out_stmt);
+
+    ast_statement_create(AST_Statement_Kind::PRINT, out_stmt);
+
+    out_stmt->print_expr = print_expr;
+}
+
 void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
 {
     assert(out_stmt);
@@ -387,6 +396,15 @@ AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, AST_Expression *value)
 
     auto stmt = ast_statement_new(ctx);
     ast_return_stmt_create(value, stmt);
+    return stmt;
+}
+
+AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, AST_Expression *print_expr)
+{
+    assert(ctx);
+
+    auto stmt = ast_statement_new(ctx);
+    ast_print_stmt_create(print_expr, stmt);
     return stmt;
 }
 
@@ -663,6 +681,13 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
                 string_builder_append(sb, " ");
                 ast_print_expression(sb, stmt->return_stmt.value);
             }
+            break;
+        }
+
+        case AST_Statement_Kind::PRINT: {
+            string_builder_append(sb, "print(");
+            ast_print_expression(sb, stmt->print_expr);
+            string_builder_append(sb, ")");
             break;
         }
     }

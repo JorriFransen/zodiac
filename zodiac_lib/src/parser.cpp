@@ -289,9 +289,19 @@ AST_Statement *parse_keyword_statement(Parser *parser)
         expect_token(parser, ';');
 
         return ast_return_stmt_new(parser->context, value);
+
+    } else if (match_keyword(parser, keyword_print)) {
+
+        expect_token(parser, '(');
+        AST_Expression *print_expr = parse_expression(parser);
+        expect_token(parser, ')');
+        expect_token(parser, ';');
+
+        return ast_print_statement_new(parser->context, print_expr);
     }
 
-    assert_msg(false, "Unhandled keyword in parse_keyword_statement");
+    Token t = cur_tok(parser);
+    fatal_syntax_error(parser, "Unexpected keyword token when parsing statment: '%s'", tmp_token_str(t).data);
     return nullptr;
 }
 
