@@ -5,6 +5,8 @@
 
 #include <platform/platform.h>
 
+#include <cstdarg>
+
 namespace Zodiac
 {
 

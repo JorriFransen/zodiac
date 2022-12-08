@@ -104,7 +104,7 @@ case (first_char): {                                                \
             break;
         }
 
-        case ' ': case '\n': case '\t': {
+        case ' ': case '\n': case '\r': case '\t': {
             if (*lex->stream == '\n') {
                 lex->token.start.line += 1;
                 lex->line_start = lex->stream + 1;
