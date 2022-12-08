@@ -16,7 +16,6 @@ using namespace Zodiac;
 
 int main() {
 
-    // Comment...
     if (!Zodiac::logging_system_initialize()) return 1;
     if (!Zodiac::memory_system_initialize()) return 1;
 

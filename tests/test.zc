@@ -27,31 +27,9 @@ add_fn :: (a: u64, b: u64) -> u64 {
 
 main :: () -> s64 {
 
-    i := 0;
-    j : u32 = 5;
-    k := u64(7);
-    i = i * 5 + 1;
-    y : s64;
+    str : String = "This is a string literal";
+    print(str);
 
-    some_func(a, b, c);
-
-    if i > 3 
-        i_bigger_than_3();
-    else if i > 2 
-        i_bigger_than_2();
-    else if i > 0 {
-        i_bigger_than_0();
-    } else {
-        dunno();
-    }
-
-    while i > 0 {
-        i = i - 1;
-    }
-
-    while i > 0 i = i - 1;
-
-    return i;
-    return;
+    return add_fn(40, 2);
 }
 

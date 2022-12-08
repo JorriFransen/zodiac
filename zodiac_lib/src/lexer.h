@@ -17,6 +17,7 @@ enum Token_Kind
 
     TOK_INT = 128,
     TOK_REAL,
+    TOK_STRING,
     TOK_NAME,
     TOK_KEYWORD,
 

@@ -122,6 +122,17 @@ case (first_char): {                                                \
             break;
         }
 
+        case '"':
+        {
+            lex->token.kind = TOK_STRING;
+            lex->stream += 1;
+            while (*lex->stream != '"') {
+                lex->stream += 1;
+            }
+            lex->stream += 1;
+            break;
+        }
+
         case '.': {
             if (isdigit(lex->stream[1])) {
                 if (!lex_real(lex)) return false;
@@ -185,6 +196,12 @@ case (first_char): {                                                \
     }
 
     auto length = lex->stream - start;
+
+    if (lex->token.kind == TOK_STRING) {
+        start += 1;
+        length -= 2;
+    }
+
     if (length) {
         lex->token.atom = atom_get(&lex->context->atoms, start, length);
 

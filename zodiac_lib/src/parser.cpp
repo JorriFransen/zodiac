@@ -98,7 +98,7 @@ AST_Expression *parse_expr_operand(Parser *parser)
         }
     }
 
-   fatal_syntax_error(parser, "Expected INT, NAME or '(' when parsing expression, got: '%s'", cur_tok(parser).atom.data);
+    fatal_syntax_error(parser, "Expected INT, NAME or '(' when parsing expression, got: '%s'", cur_tok(parser).atom.data);
     return nullptr;
 }
 
