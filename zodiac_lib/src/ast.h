@@ -282,6 +282,11 @@ struct AST_Type_Spec
     };
 };
 
+struct AST_File
+{
+    Dynamic_Array<AST_Declaration *> declarations;
+};
+
 ZAPI void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_expr);
 ZAPI void ast_string_literal_expr_create(Atom atom, AST_Expression *out_expr);
 ZAPI void ast_identifier_expr_create(Atom atom, AST_Expression *out_expr);
@@ -311,6 +316,8 @@ ZAPI void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out
 ZAPI void ast_name_ts_create(Atom name, AST_Type_Spec *out_ts);
 ZAPI void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts);
 ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
+
+ZAPI void ast_file_create(Dynamic_Array<AST_Declaration *> decls, AST_File *out_file);
 
 ZAPI AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Integer_Value value);
 ZAPI AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Atom atom);
@@ -342,10 +349,12 @@ ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Atom name);
 ZAPI AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, AST_Type_Spec *base);
 ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx);
 
+ZAPI AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *> decls);
 
 ZAPI void ast_print_expression(String_Builder *sb, AST_Expression *expr);
 ZAPI void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent = 0);
 ZAPI void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent = 0);
 ZAPI void ast_print_type_spec(String_Builder *sb, AST_Type_Spec *ts, int indent = 0);
+ZAPI void ast_print_file(String_Builder *sb, AST_File *file);
 
 }

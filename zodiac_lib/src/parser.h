@@ -62,6 +62,8 @@ ZODIAC_BUILTIN_TYPES
 
 ZAPI AST_Type_Spec *parse_type_spec(Parser *parser);
 
+ZAPI AST_File *parse_file(Parser *parser);
+
 ZAPI bool is_keyword(Parser *parser, Atom keyword);
 ZAPI bool match_keyword(Parser *parser, Atom keyword);
 ZAPI bool expect_keyword(Parser *parser, Atom keyword);

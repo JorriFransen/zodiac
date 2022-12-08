@@ -542,6 +542,21 @@ AST_Type_Spec *parse_type_spec(Parser *parser)
     return nullptr;
 }
 
+AST_File *parse_file(Parser *parser)
+{
+    Dynamic_Array<AST_Declaration *> decls;
+    dynamic_array_create(parser->context->ast_allocator, &decls);
+
+    while (!is_token(parser, TOK_EOF)) {
+        AST_Declaration *decl = parse_declaration(parser);
+        if (parser->error) break;
+
+        dynamic_array_append(&decls, decl);
+    }
+
+    return ast_file_new(parser->context, decls);
+}
+
 bool is_keyword(Parser *parser, Atom keyword)
 {
     assert(parser && is_keyword(keyword));

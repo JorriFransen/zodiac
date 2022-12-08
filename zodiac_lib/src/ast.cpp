@@ -258,6 +258,13 @@ void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts)
     out_ts->kind = kind;
 }
 
+void ast_file_create(Dynamic_Array<AST_Declaration *> decls, AST_File *out_file)
+{
+    assert(out_file);
+
+    out_file->declarations = decls;
+}
+
 AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Integer_Value value)
 {
     assert(ctx);
@@ -501,6 +508,15 @@ AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx)
     assert(ctx);
 
     return alloc<AST_Type_Spec>(ctx->ast_allocator);
+}
+
+AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *> decls)
+{
+    assert(ctx);
+
+    auto file = alloc<AST_File>(ctx->ast_allocator);
+    ast_file_create(decls, file);
+    return file;
 }
 
 void ast_print_expression(String_Builder *sb, AST_Expression *expr)
@@ -812,6 +828,16 @@ void ast_print_type_spec(String_Builder *sb, AST_Type_Spec *ts, int indent/*=0*/
     string_builder_append(sb, "type_spec(");
     ast__print_type_spec_internal(sb, ts, indent);
     string_builder_append(sb, ")");
+}
+
+void ast_print_file(String_Builder *sb, AST_File *file)
+{
+    assert(sb && file);
+
+    for (u64 i = 0; i < file->declarations.count; i++) {
+        ast_print_declaration(sb, file->declarations[i]);
+        string_builder_append(sb, "\n\n");
+    }
 }
 
 }
