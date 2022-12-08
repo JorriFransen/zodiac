@@ -75,7 +75,7 @@ void log_message(Log_Level log_level, const String_Ref fmt, ...)
     va_list args;
     va_start(args, fmt);
 
-    auto out_length = string_format(out_message, fmt.data, args);
+    auto out_length = string_format(out_message, fmt, args);
 
     va_end(args);
 

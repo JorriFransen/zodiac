@@ -27,6 +27,8 @@ ZAPI bool filesystem_size(File_Handle *handle, u64 *out_size);
 ZAPI bool filesystem_read(File_Handle *handle, u64 size, u8 *out_bytes, u64 *out_size);
 ZAPI bool filesystem_write(File_Handle *handle, u64 data_size, const void *data, u64 *out_size);
 
+ZAPI bool filesystem_read_entire_file(Allocator *allocator, const String_Ref path, String *out_string);
+
 ZAPI File_Handle *filesystem_stdout_file();
 ZAPI File_Handle *filesystem_stderr_file();
 

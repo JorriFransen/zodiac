@@ -163,11 +163,16 @@ i32 string_format(char *dest, const String_Ref fmt, ...)
     va_list args;
     va_start(args, fmt);
 
-    i32 result = string_format(dest, fmt, args);
+    char out_message[ZSTRING_FORMAT_STACK_BUFFER_SIZE];
+
+    auto out_length = string_format(out_message, fmt, args);
+    assert(out_length < ZSTRING_FORMAT_STACK_BUFFER_SIZE);
 
     va_end(args);
 
-    return result;
+    zmemcpy(dest, out_message, out_length + 1);
+
+    return out_length;
 }
 
 i32 string_format(char *dest, const String_Ref fmt, va_list args)

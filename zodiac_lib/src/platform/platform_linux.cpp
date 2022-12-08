@@ -121,6 +121,10 @@ void platform_console_write_error(const String_Ref message, Platform_Console_Col
     platform_file_write(filesystem_stderr_file(), message, color);
 }
 
+void platform_exit(int exit_code)
+{
+    exit(exit_code);
+}
 
 }
 

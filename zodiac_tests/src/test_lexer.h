@@ -86,7 +86,7 @@ static MunitResult Create_And_Free(const MunitParameter params[], void *user_dat
     auto lexer = &l;
 
     const char *stream = "(";
-    lexer_init_stream(lexer, stream);
+    lexer_init_stream(lexer, stream, "test");
 
     munit_assert_ptr_equal(lexer->stream_start, stream);
     munit_assert_ptr_equal(lexer->stream, stream + 1);
@@ -109,7 +109,7 @@ static MunitResult Lex_Name(const MunitParameter params[], void *user_data_or_fi
     auto lexer = (Lexer *)user_data_or_fixture;
 
     const char *stream = "first SECOND Th3rd  _fourth \tfifth_56_sixth\n _Seventh_and_EIGHTH";
-    lexer_init_stream(lexer, stream);
+    lexer_init_stream(lexer, stream, "test");
 
     ZTRACE("");
     ZTRACE("TEST: Lex_Name");
@@ -134,7 +134,7 @@ static MunitResult Lex_Multi_Char(const MunitParameter params[], void *user_data
     auto lexer = (Lexer *)user_data_or_fixture;
 
     const char *stream = "= = == ! = != < = <= > = >=";
-    lexer_init_stream(lexer, stream);
+    lexer_init_stream(lexer, stream, "test");
 
     ZTRACE("");
     ZTRACE("TEST: Lex_Multi_Char");
@@ -165,7 +165,7 @@ static MunitResult Lex_Int(const MunitParameter params[], void *user_data_or_fix
     auto lexer = (Lexer *)user_data_or_fixture;
 
     const char *stream = "0 10 42 18446744073709551615 2147483647 0x7FFFFFFF 0x7fffffff 0Xf 0b101 0B11110000";
-    lexer_init_stream(lexer, stream);
+    lexer_init_stream(lexer, stream, "test");
 
     ZTRACE("");
     ZTRACE("TEST: Lex_Int");
@@ -194,7 +194,7 @@ static MunitResult Lex_Float(const MunitParameter params[], void *user_data_or_f
     auto lexer = (Lexer *)user_data_or_fixture;
 
     const char *stream = ".0 0. 0.0 4.2 .314 55. 0.54 4e3 4e+3 4e-3 4.2e4";
-    lexer_init_stream(lexer, stream);
+    lexer_init_stream(lexer, stream, "test");
 
     ZTRACE("");
     ZTRACE("TEST: Lex_Float");
@@ -224,7 +224,7 @@ static MunitResult Lex_Keyword(const MunitParameter params[], void *user_data_or
     auto lexer = (Lexer *)user_data_or_fixture;
 
     const char *stream = "while sizeof struct sstruct or sizeofstruct";
-    lexer_init_stream(lexer, stream);
+    lexer_init_stream(lexer, stream, "test");
 
     ZTRACE("");
     ZTRACE("TEST: Lex_Keyword");

@@ -66,7 +66,7 @@ bool filesystem_size(File_Handle *handle, u64 *out_size)
     assert(handle && handle->valid && handle->handle);
     assert(out_size);
 
-    if (fseek((FILE *)handle->handle, 0, SEEK_END) != 0) {
+    if (fseek((FILE *)handle->handle, 0, SEEK_END) == -1) {
         ZERROR("fseek failed....");
         return false;
     }
@@ -106,6 +106,37 @@ bool filesystem_write(File_Handle *handle, u64 data_size, const void *data, u64 
 
 file_local File_Handle zodiac_stdout = { nullptr, false };
 file_local File_Handle zodiac_stderr = { nullptr, false };
+
+bool filesystem_read_entire_file(Allocator *allocator, const String_Ref path, String *out_string)
+{
+    assert(allocator && path.data && out_string);
+    assert(out_string->data == nullptr && out_string->length == 0);
+
+    if (!filesystem_exists(path)) {
+        ZERROR("Path does not exist: '%s', in read_entire_file()", path.data);
+        return false;
+    }
+
+    File_Handle file_handle = {};
+    bool open_result = filesystem_open(path, FILE_MODE_READ, &file_handle);
+    assert(open_result);
+
+    u64 size;
+    bool size_result = filesystem_size(&file_handle, &size);
+    assert(size_result);
+
+    out_string->data = alloc_array<char>(allocator, size + 1);
+    assert(out_string->data);
+
+    u64 read_size;
+    filesystem_read(&file_handle, size, (u8 *)out_string->data, &read_size);
+
+
+    out_string->data[size] = '\0';
+    out_string->length = size;
+
+    return true;
+}
 
 File_Handle *filesystem_stdout_file()
 {

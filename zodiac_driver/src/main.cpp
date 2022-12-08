@@ -10,6 +10,8 @@
 #include <memory/allocator.h>
 #include <memory/linear_allocator.h>
 
+#include "platform/filesystem.h"
+
 using namespace Zodiac;
 
 int main() {
@@ -27,59 +29,10 @@ int main() {
 
     Lexer lexer;
     lexer_create(&c, &lexer);
-    const char *stream =
+    String stream = {};
+    bool read_result = filesystem_read_entire_file(&dynamic_allocator, "tests/test.zc", &stream);
 
-        "Vec2 :: struct {"
-        "  x: s32;"
-        "  y: s32;"
-        "}"
-
-        "AABB :: struct {"
-        "  top_left, dim: Vec2;"
-        "}"
-
-        "Value :: union {"
-        "  int_value: s32;"
-        "  float_value: r32;"
-        "}"
-
-        "ptr : *u64 = null;"
-        "var := 42;"
-        "var2 : u16 = 8;"
-        "var3 : s8;"
-        "c_var :: 5;"
-        "c_var2 : u32 : 2;"
-        
-        "add_fn :: (a: u64, b: u64) -> u64 {"
-          "result := a + b;"
-          "return result;"
-        "}"
-
-        "main :: () -> s64 {"
-          "i := 0;"
-          "j : u32 = 5;"
-          "k := u64(7);"
-          "i = i * 5 + 1;"
-          "y : s64;"
-          "some_func(a, b, c);"
-          "if i > 3 "
-            "i_bigger_than_3();"
-          " else if i > 2 "
-            "i_bigger_than_2();"
-          " else if i > 0 {"
-            "i_bigger_than_0();"
-          "} else {"
-            "dunno();"
-          "}"
-          "return i;"
-          "return;"
-          "while i > 0 {"
-            "i = i - 1;"
-          "}"
-          "while i > 0 i = i - 1;"
-        "}";
-
-    lexer_init_stream(&lexer, stream);
+    lexer_init_stream(&lexer, stream, "test");
 
 
     Parser parser;
@@ -90,9 +43,12 @@ int main() {
 
     while (!is_token(&parser, TOK_EOF)) {
         auto decl = parse_declaration(&parser);
-        assert(decl);
+        if (parser.error) break;
+
         dynamic_array_append(&global_decls, decl);
     }
+
+    if (parser.error) return 1;
 
     String_Builder sb;
     string_builder_create(&sb);

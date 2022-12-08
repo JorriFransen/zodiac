@@ -34,4 +34,6 @@ ZAPI void platform_console_write(const String_Ref message, Platform_Console_Colo
 ZAPI void platform_console_write_error(const String_Ref message);
 ZAPI void platform_console_write_error(const String_Ref message, Platform_Console_Color color);
 
+ZAPI void platform_exit(int exit_code);
+
 }

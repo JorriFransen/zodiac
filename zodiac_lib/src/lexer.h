@@ -30,11 +30,20 @@ enum Token_Kind
     TOK_EOF,
 };
 
+struct Source_Pos
+{
+    String_Ref name;
+    u64 line;
+    u64 index_in_line;
+};
+
 struct Token
 {
     Token_Kind kind;
 
     Atom atom;
+
+    Source_Pos start;
 
     union
     {
@@ -49,6 +58,7 @@ struct Lexer
 
     const char *stream_start;
     const char *stream;
+    const char *line_start;
 
     Token token;
 };
@@ -72,7 +82,7 @@ ZAPI bool is_keyword(const Atom &atom);
 
 
 ZAPI void lexer_create(Zodiac_Context *context, Lexer *out_lexer);
-ZAPI void lexer_init_stream(Lexer *lexer, const char *stream);
+ZAPI void lexer_init_stream(Lexer *lexer, const String_Ref stream, const String_Ref stream_name);
 ZAPI void lexer_destroy(Lexer *lexer);
 
 ZAPI bool next_token(Lexer *lexer);

@@ -3,6 +3,8 @@
 #include <containers/dynamic_array.h>
 #include <logger.h>
 
+#include <platform/platform.h>
+
 namespace Zodiac
 {
 
@@ -65,6 +67,7 @@ void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser)
     assert(ctx && lxr && out_parser);
     out_parser->context = ctx;
     out_parser->lxr = lxr;
+    out_parser->error = false;
     queue_create(&dynamic_allocator, &out_parser->peeked_tokens);
 
     if (!builtin_types_initialized) initialize_builtin_types(ctx);
@@ -93,7 +96,7 @@ AST_Expression *parse_expr_operand(Parser *parser)
         }
     }
 
-    ZFATAL("Expected INT, NAME or '(' when parsing expression, got: '%s'", tmp_token_string(cur_tok(parser)).data);
+   fatal_syntax_error(parser, "Expected INT, NAME or '(' when parsing expression, got: '%s'", cur_tok(parser).atom.data);
     return nullptr;
 }
 
@@ -135,7 +138,7 @@ AST_Expression *parse_expr_base(Parser *parser)
 
         } else {
             auto tmp_tok_str = tmp_token_string(cur_tok(parser));
-            ZFATAL("Unexpected token: '%.*s'", (int)tmp_tok_str.length, tmp_tok_str.data);
+            fatal_syntax_error(parser, "Unexpected token: '%.*s'", (int)tmp_tok_str.length, tmp_tok_str.data);
         }
     }
 
@@ -449,6 +452,11 @@ AST_Declaration *parse_declaration(Parser *parser)
 
     if (!is_token(parser, ':') &&  !is_token(parser, '=')) {
         ts = parse_type_spec(parser);
+
+        if (!(is_token(parser, '=') || is_token(parser, ':') || is_token(parser, ';'))) {
+            fatal_syntax_error(parser, "Expected '=', ':' or ';' after typespec in variable on constant declaration, got '%s'", cur_tok(parser).atom.data);
+            return nullptr;
+        }
     }
 
     if (match_token(parser, ':')) {
@@ -483,14 +491,14 @@ AST_Declaration *parse_declaration(Parser *parser)
         return ast_variable_decl_new(parser->context, ident_expression, ts, value);
     }
 
-    auto tmp_tok_str = tmp_token_string(cur_tok(parser));
-    ZFATAL("Unexpected token: '%.*s' when parsing declaration", (int)tmp_tok_str.length, tmp_tok_str.data);
+    fatal_syntax_error(parser, "Unexpected token: '%s' when parsing declaration", cur_tok(parser).atom.data);
     return nullptr;
 }
 
 AST_Type_Spec *parse_type_spec(Parser *parser)
 {
-    switch (cur_tok(parser).kind) {
+    Token t = cur_tok(parser);
+    switch (t.kind) {
 
         case TOK_STAR: {
             next_token(parser);
@@ -504,7 +512,10 @@ AST_Type_Spec *parse_type_spec(Parser *parser)
             return ast_name_ts_new(parser->context, name_tok.atom);
         }
 
-        default: assert(false);
+        default: {
+            fatal_syntax_error(parser, "Unexpected token when parsing typespec: '%s'", t.atom.data);
+            return nullptr;
+        }
     }
 
     assert(false);
@@ -593,7 +604,7 @@ bool expect_token(Parser *parser, Token_Kind kind)
     }
 
     Token t = cur_tok(parser);
-    ZFATAL("Expected token %s, '%c', got: %s, '%c'", token_kind_str(kind), (char)kind, token_kind_str(t.kind), (char)t.kind);
+    fatal_syntax_error(parser, "Expected token %s, '%c', got: '%s'", token_kind_str(kind), (char)kind, t.atom.data);
     return false;
 }
 
@@ -633,6 +644,56 @@ Token peek_token(Parser *parser, u64 offset/*=1*/)
     }
 
     return queue_peek(&parser->peeked_tokens, offset);
+}
+
+void syntax_error(Parser *parser, const String_Ref fmt, ...)
+{
+    assert(parser);
+    assert(fmt.length && fmt.data);
+    assert(fmt.data[fmt.length] == '\0');
+
+    va_list args;
+    va_start(args, fmt);
+
+    syntax_error(parser, fmt, args);
+
+    va_end(args);
+}
+
+void syntax_error(Parser *parser, const String_Ref fmt, va_list args)
+{
+    char err_msg[ZSTRING_FORMAT_STACK_BUFFER_SIZE];
+
+    auto out_length = string_format(err_msg, fmt, args);
+
+    if (out_length + 1 > ZSTRING_FORMAT_STACK_BUFFER_SIZE) {
+        assert(false && "Formatted syntax error does not fit in stack buffer");
+        return;
+    }
+
+    Token t = cur_tok(parser);
+    Source_Pos pos = t.start;
+
+    out_length = string_format(err_msg, "%s:%i:%i: error: %s", pos.name.data, pos.line, pos.index_in_line, err_msg);
+
+    if (out_length + 1 > ZSTRING_FORMAT_STACK_BUFFER_SIZE) {
+        assert(false && "Formatted syntax error does not fit in stack buffer");
+        return;
+    }
+
+    parser->error = true;
+    printf("%s\n", err_msg);
+}
+
+void fatal_syntax_error(Parser *parser, const String_Ref fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+
+    syntax_error(parser, fmt, args);
+
+    va_end(args);
+    platform_exit(1);
 }
 
 }

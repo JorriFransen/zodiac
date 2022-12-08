@@ -49,16 +49,23 @@ void lexer_create(Zodiac_Context *context, Lexer *out_lexer)
     out_lexer->context = context;
     out_lexer->stream_start = nullptr;
     out_lexer->stream = nullptr;
+    out_lexer->line_start = nullptr;
 
-    out_lexer->token.kind = TOK_INVALID;
+    out_lexer->token = {};
 }
 
-void lexer_init_stream(Lexer *lexer, const char *stream)
+void lexer_init_stream(Lexer *lexer, const String_Ref stream, const String_Ref stream_name)
 {
-    assert(lexer && lexer->context && stream);
+    assert(lexer && lexer->context && stream.data);
 
-    lexer->stream_start = stream;
-    lexer->stream = stream;
+    lexer->stream_start = stream.data;
+    lexer->stream = stream.data;
+    lexer->line_start = stream.data;
+
+    lexer->token.kind = TOK_INVALID;
+    lexer->token.start.name = stream_name;
+    lexer->token.start.line = 1;
+    lexer->token.start.index_in_line = 0;
 
     next_token(lexer);
 }
@@ -98,8 +105,16 @@ case (first_char): {                                                \
         }
 
         case ' ': case '\n': case '\t': {
+            if (*lex->stream == '\n') {
+                lex->token.start.line += 1;
+                lex->line_start = lex->stream + 1;
+            }
             lex->stream += 1;
             while (isspace(*lex->stream)) {
+                if (*lex->stream == '\n') {
+                    lex->token.start.line += 1;
+                    lex->line_start = lex->stream + 1;
+                }
                 lex->stream += 1;
             }
 
@@ -180,6 +195,8 @@ case (first_char): {                                                \
     } else {
         lex->token.atom = {};
     }
+
+    lex->token.start.index_in_line = lex->stream - lex->line_start - length + 1;
 
     return true;
 }

@@ -14,6 +14,8 @@ struct Parser
     Zodiac_Context *context;
     Lexer *lxr;
 
+    bool error = true;
+
     Queue<Token> peeked_tokens;
 };
 
@@ -73,6 +75,11 @@ ZAPI bool expect_token(Parser *parser, Token_Kind kind);
 ZAPI bool expect_token(Parser *parser, char c);
 ZAPI Token cur_tok(Parser *parser);
 ZAPI Token peek_token(Parser *parser, u64 offset = 1);
+
+ZAPI void syntax_error(Parser *parser, const String_Ref fmt, ...);
+ZAPI void syntax_error(Parser *parser, const String_Ref fmt, va_list args);
+
+ZAPI void fatal_syntax_error(Parser *parser, const String_Ref fmt, ...);
 
 
 }
