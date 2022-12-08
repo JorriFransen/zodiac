@@ -163,14 +163,10 @@ i32 string_format(char *dest, const String_Ref fmt, ...)
     va_list args;
     va_start(args, fmt);
 
-    char out_message[ZSTRING_FORMAT_STACK_BUFFER_SIZE];
-
-    auto out_length = string_format(out_message, fmt, args);
+    auto out_length = string_format(dest, fmt, args);
     assert(out_length < ZSTRING_FORMAT_STACK_BUFFER_SIZE);
 
     va_end(args);
-
-    zmemcpy(dest, out_message, out_length + 1);
 
     return out_length;
 }
@@ -179,7 +175,7 @@ i32 string_format(char *dest, const String_Ref fmt, va_list args)
 {
     assert(dest && fmt.data);
 
-    char buffer[ZSTRING_FORMAT_STACK_BUFFER_SIZE];
+    static char buffer[ZSTRING_FORMAT_STACK_BUFFER_SIZE];
 
     assert_msg(fmt.data[fmt.length] == '\0', "Null terminated string expected");
     auto written_size = vsnprintf(buffer, ZSTRING_FORMAT_STACK_BUFFER_SIZE, fmt.data, args);

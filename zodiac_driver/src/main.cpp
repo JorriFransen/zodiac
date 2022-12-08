@@ -33,6 +33,12 @@ int main() {
 
     lexer_init_stream(&lexer, stream, "test");
 
+    // while (!is_token(&lexer, TOK_EOF)) {
+    //     print_token(lexer.token);
+    //     next_token(&lexer);
+    // }
+
+    // return 0;
 
     Parser parser;
     parser_create(&c, &lexer, &parser);

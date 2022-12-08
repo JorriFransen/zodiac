@@ -9,7 +9,7 @@
 namespace Zodiac { namespace Lexer_Tests {
 
 #define PRINT_TOK() {                                               \
-    auto str_rep = tmp_token_string(lexer->token);                  \
+    auto str_rep = tmp_token_str(lexer->token);                     \
     ZTRACE("Lexed token: %.*s", (int)str_rep.length, str_rep.data); \
 }
 

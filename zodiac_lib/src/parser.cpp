@@ -139,8 +139,8 @@ AST_Expression *parse_expr_base(Parser *parser)
             expr = ast_member_expr_new(parser->context, expr, name_tok.atom);
 
         } else {
-            auto tmp_tok_str = tmp_token_string(cur_tok(parser));
-            fatal_syntax_error(parser, "Unexpected token: '%.*s'", (int)tmp_tok_str.length, tmp_tok_str.data);
+            Token t = cur_tok(parser);
+            fatal_syntax_error(parser, "Unexpected token: '%s'", tmp_token_str(t).data);
         }
     }
 
@@ -605,8 +605,9 @@ bool expect_token(Parser *parser, Token_Kind kind)
         return true;
     }
 
+    String_Ref kind_str = tmp_token_kind_str(kind);
     Token t = cur_tok(parser);
-    fatal_syntax_error(parser, "Expected token %s, '%c', got: '%s'", token_kind_str(kind), (char)kind, t.atom.data);
+    fatal_syntax_error(parser, "Expected token: '%s', got: '%s'", kind_str.data, t.atom.data);
     return false;
 }
 

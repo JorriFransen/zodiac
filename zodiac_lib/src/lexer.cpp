@@ -197,11 +197,6 @@ case (first_char): {                                                \
 
     auto length = lex->stream - start;
 
-    if (lex->token.kind == TOK_STRING) {
-        start += 1;
-        length -= 2;
-    }
-
     if (length) {
         lex->token.atom = atom_get(&lex->context->atoms, start, length);
 
@@ -251,7 +246,7 @@ bool expect_token(Lexer *lexer, Token_Kind kind)
     }
 
     Token t = lexer->token;
-    ZFATAL("Expected token %s, '%c', got: %s, '%c'", token_kind_str(kind), (char)kind, token_kind_str(t.kind), (char)t.kind);
+    ZFATAL("Expected token '%s', got: '%s'", tmp_token_kind_str(kind).data,  tmp_token_str(t).data);
     return false;
 }
 
@@ -262,66 +257,54 @@ bool expect_token(Lexer *lexer, char c)
 
 void print_token(Token token)
 {
-    auto str = tmp_token_string(token);
+    auto str = tmp_token_str(token);
     printf("%.*s\n", (int)str.length, str.data);
 }
 
-String_Ref tmp_token_string(Token token)
+String_Ref tmp_token_str(Token token)
 {
     static char buffer[1024];
-
-    i32 length;
-
-    const char *name = token_kind_str(token.kind);
+    i32 length = 0;
 
     if (token.atom.length > 0) {
-        length = string_format(buffer, "%s '%.*s'", name, (int)token.atom.length, token.atom.data);
+        length = string_format(buffer, "%s", token.atom.data);
     } else {
-        length = string_format(buffer, "%s", name);
+        assert(false);
     }
 
-    // Optionally print value
-    switch (token.kind) {
-        case TOK_INT: {
-            length = string_format(buffer, "%s, %llu", buffer, token.integer);
-            break;
-        }
-
-        case TOK_REAL: {
-            length = string_format(buffer, "%s, %f", buffer, token.real.r64);
-            break;
-        }
-
-        default: break;
-    }
-
-    return String_Ref(buffer, length);
+    auto buf = buffer;
+    if (length == 0) buf = nullptr;
+    return String_Ref(buf, length);
 }
 
-const char *token_kind_str(Token_Kind kind)
-{
-    switch (kind) {
-        case TOK_INVALID: return "<INVALID>";
-        case TOK_INT: return "<INT>";
-        case TOK_REAL: return "<REAL>";
-        case TOK_NAME: return "<NAME>";
-        case TOK_KEYWORD: return "<KEYWORD>";
-        case TOK_EQ: return "<TOK_EQ>";
-        case TOK_NEQ: return "<TOK_NEQ>";
-        case TOK_LTEQ: return "<TOK_LTEQ>";
-        case TOK_GTEQ: return "<TOK_GTEQ>";
-        case TOK_EOF: return "<EOF>";
+file_local String_Ref token_kind_to_string[TOK_LAST + 1] = {
+    [TOK_INT] = "INT",
+    [TOK_REAL] = "REAL",
+    [TOK_STRING] = "STRING",
+    [TOK_NAME] = "NAME",
+    [TOK_KEYWORD] = "KEYWORD",
+    [TOK_RIGHT_ARROW] = "->",
+    [TOK_EQ] = "==",
+    [TOK_NEQ] = "!=",
+    [TOK_LTEQ] = "<=",
+    [TOK_GTEQ] = ">=",
+    [TOK_EOF] = "EOF",
+};
 
-        default:
-        {
-            if (kind < 128 && isprint(kind)) {
-                return "<ASCII>";
-            } else {
-                assert_msg(false, "Unhandled token kind in token_kind_str()");
-                return nullptr;
-            }
-        }
+String_Ref tmp_token_kind_str(Token_Kind kind)
+{
+    static char buffer[256];
+    i32 length = 0;
+
+    if (isprint((char)kind)) {
+        length = string_format(buffer, "%c", (char)kind); 
+    } else {
+        return token_kind_to_string[kind];
     }
+
+    auto buf = buffer;
+    if (length == 0) buf = nullptr;
+    return String_Ref(buf, length);
 }
 
 file_local u8 char_to_digit[256] = {

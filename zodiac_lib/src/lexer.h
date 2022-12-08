@@ -29,6 +29,7 @@ enum Token_Kind
     TOK_GTEQ,
 
     TOK_EOF,
+    TOK_LAST = TOK_EOF,
 };
 
 struct Source_Pos
@@ -95,7 +96,8 @@ ZAPI bool expect_token(Lexer *lexer, Token_Kind kind);
 ZAPI bool expect_token(Lexer *lexer, char c);
 
 ZAPI void print_token(Token token);
-ZAPI String_Ref tmp_token_string(Token token);
-ZAPI const char *token_kind_str(Token_Kind kind);
+
+ZAPI String_Ref tmp_token_str(Token token);
+ZAPI String_Ref tmp_token_kind_str(Token_Kind kind);
 
 }
