@@ -12,8 +12,6 @@
 
 #include "platform/filesystem.h"
 
-#include <inttypes.h>
-
 using namespace Zodiac;
 
 void resolve_test(Zodiac_Context *ctx, AST_File *file);
@@ -96,8 +94,6 @@ void resolve_error(AST_Declaration *decl, const String_Ref fmt, ...);
 void resolve_error(AST_Statement *stmt, const String_Ref fmt, ...);
 void resolve_error(AST_Expression *expr, const String_Ref fmt, ...);
 void resolve_error(AST_Type_Spec *ts, const String_Ref fmt, ...);
-
-// #define resolve_error(fmt, ...) ZFATAL(fmt, ##__VA_ARGS__);
 
 void resolve_test(Zodiac_Context *ctx, AST_File *file)
 {
