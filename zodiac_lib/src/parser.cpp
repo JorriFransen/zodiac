@@ -11,9 +11,11 @@ namespace Zodiac
 {
 
 // Builtin type atoms
-#define ZODIAC_TYPE_DEF(sign, size) Atom atom_##sign##size;
+#define ZODIAC_NUMERIC_TYPE_DEF(type, size) Atom atom_##type##size;
+#define ZODIAC_NAME_TYPE_DEF(name) Atom atom_##name;
 ZODIAC_BUILTIN_TYPES
-#undef ZODIAC_TYPE_DEF
+#undef ZODIAC_NAME_TYPE_DEF
+#undef ZODIAC_NUMERIC_TYPE_DEF
 
 file_local bool builtin_types_initialized = false;
 
@@ -30,9 +32,11 @@ file_local void initialize_builtin_types(Zodiac_Context *ctx)
 
     auto at = &ctx->atoms;
 
-#define ZODIAC_TYPE_DEF(sign, size) atom_##sign##size = atom_get(at, #sign#size);
+#define ZODIAC_NUMERIC_TYPE_DEF(sign, size) atom_##sign##size = atom_get(at, #sign#size);
+#define ZODIAC_NAME_TYPE_DEF(name) atom_##name = atom_get(at, #name);
 ZODIAC_BUILTIN_TYPES
-#undef ZODIAC_TYPE_DEF
+#undef ZODIAC_NAME_TYPE_DEF
+#undef ZODIAC_NUMERIC_TYPE_DEF
 
 
     builtin_types_initialized = true;

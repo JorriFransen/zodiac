@@ -45,20 +45,19 @@ ZAPI AST_Declaration *parse_function_declaration(Parser *parser, AST_Expression 
 ZAPI AST_Declaration *parse_aggregate_decl(Parser *parser, AST_Expression *identifier);
 ZAPI AST_Declaration *parse_declaration(Parser *parser);
 
-#define ZODIAC_BUILTIN_TYPES \
-    ZODIAC_TYPE_DEF(u, 8)    \
-    ZODIAC_TYPE_DEF(u, 16)   \
-    ZODIAC_TYPE_DEF(u, 32)   \
-    ZODIAC_TYPE_DEF(u, 64)   \
-    ZODIAC_TYPE_DEF(s, 8)    \
-    ZODIAC_TYPE_DEF(s, 16)   \
-    ZODIAC_TYPE_DEF(s, 32)   \
-    ZODIAC_TYPE_DEF(s, 64)   \
+#define ZODIAC_BUILTIN_TYPES         \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 64)   \
+    ZODIAC_NUMERIC_TYPE_DEF(r, 32)   \
+    ZODIAC_NAME_TYPE_DEF(String)     \
 
 // Builtin type atoms
-#define ZODIAC_TYPE_DEF(sign, size) ZAPI extern Atom atom_##sign##size;
+#define ZODIAC_NUMERIC_TYPE_DEF(type, size) ZAPI extern Atom atom_##type##size;
+#define ZODIAC_NAME_TYPE_DEF(name) ZAPI extern Atom atom_##name;
 ZODIAC_BUILTIN_TYPES
-#undef ZODIAC_TYPE_DEF
+#undef ZODIAC_NAME_TYPE_DEF
+#undef ZODIAC_NUMERIC_TYPE_DEF
+
+
 
 ZAPI AST_Type_Spec *parse_type_spec(Parser *parser);
 

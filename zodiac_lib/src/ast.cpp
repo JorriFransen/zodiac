@@ -30,7 +30,7 @@ void ast_identifier_expr_create(Atom atom, AST_Expression *out_expr)
 
     ast_expression_create(AST_Expression_Kind::IDENTIFIER, out_expr);
 
-    out_expr->identifier.atom = atom;
+    out_expr->identifier = atom;
 }
 
 void ast_member_expr_create(AST_Expression *base, Atom atom, AST_Expression *out_expr)
@@ -209,7 +209,7 @@ void ast_function_decl_create(AST_Expression *identifier, Dynamic_Array<AST_Fiel
     ast_declaration_create(AST_Declaration_Kind::FUNCTION, out_decl);
 
     out_decl->identifier = identifier;
-    out_decl->function.args = args;
+    out_decl->function.params = args;
     out_decl->function.return_ts = return_ts;
     out_decl->function.body = body;
 }
@@ -538,7 +538,7 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
         }
 
         case AST_Expression_Kind::IDENTIFIER: {
-            string_builder_append(sb, "%s", expr->identifier.atom.data);
+            string_builder_append(sb, "%s", expr->identifier.data);
             break;
         }
 
@@ -759,10 +759,10 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
         case AST_Declaration_Kind::FUNCTION: {
             ast_print_expression(sb, decl->identifier);
             string_builder_append(sb, " :: (");
-            for (u64 i = 0; i < decl->function.args.count; i++) {
+            for (u64 i = 0; i < decl->function.params.count; i++) {
                 if (i > 0) string_builder_append(sb, ", ");
-                string_builder_append(sb, "%s: ", decl->function.args[i].name.data);
-                ast_print_type_spec(sb, decl->function.args[i].type_spec);
+                string_builder_append(sb, "%s: ", decl->function.params[i].name.data);
+                ast_print_type_spec(sb, decl->function.params[i].type_spec);
             }
             string_builder_append(sb, ") -> ");
             if (decl->function.return_ts) {

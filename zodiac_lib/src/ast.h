@@ -24,11 +24,6 @@ struct AST_String_Literal_Expression
     Atom atom;
 };
 
-struct AST_Identifier_Expression
-{
-    Atom atom;
-};
-
 struct AST_Member_Expression
 {
     AST_Expression *base;
@@ -112,7 +107,7 @@ struct AST_Expression
     {
         AST_Integer_Literal_Expression integer_literal;
         AST_String_Literal_Expression string_literal;
-        AST_Identifier_Expression identifier;
+        Atom identifier;
         AST_Member_Expression member;
         AST_Index_Expression index;
         AST_Call_Expression call;
@@ -224,7 +219,7 @@ struct AST_Field_Declaration
 
 struct AST_Function_Declaration
 {
-    Dynamic_Array<AST_Field_Declaration> args;
+    Dynamic_Array<AST_Field_Declaration> params;
     AST_Type_Spec *return_ts;
 
     Dynamic_Array<AST_Statement *> body; 

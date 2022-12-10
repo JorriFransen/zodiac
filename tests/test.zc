@@ -1,36 +1,41 @@
 
-//Vec2 :: struct {
-//    x: s32;
-//    y: s32;
-//}
-//
-//AABB :: struct {
-//    top_left, dim: Vec2;
-//}
-//
+Vec2 :: struct {
+    x: r32;
+    y: r32;
+}
+
+AABB :: struct {
+    top_left, dim: Vec2;
+}
+
+x :: 1;
+y :: x;
+
 //Value :: union {
 //    int_value: s32;
 //    float_value: r32;
 //}
 //
-//ptr : *u64 = null;
-//var := 42;
+
+ptr : *s64 = null;
+var := 42;
+
 //var2 : u16 = 8;
 //var3 : s8;
 //c_var :: 5;
 //c_var2 : u32 : 2;
-//
-//add_fn :: (a: u64, b: u64) -> u64 {
-//    result := a + b;
-//    return result;
-//}
+
+add_fn :: (a: s64, b: s64) -> s64 {
+    result := a + b;
+    return result;
+}
 
 main :: () -> s64 {
 
+    // foo : x; // Should generate "Not a type 'x'" error
     str : String = "This is a string literal";
     print(str);
 
-    //return add_fn(40, 2);
-    return 42;
+    return add_fn(40, 2);
 }
 
