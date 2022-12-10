@@ -1,15 +1,16 @@
 
-Vec2 :: struct {
-    x: r32;
-    y: r32;
-}
-
-AABB :: struct {
-    top_left, dim: Vec2;
-}
-
 x :: 1;
 y :: x;
+
+
+//Vec2 :: struct {
+//    x: r32;
+//    y: r32;
+//}
+//
+//AABB :: struct {
+//    top_left, dim: Vec2;
+//}
 
 //Value :: union {
 //    int_value: s32;
@@ -17,8 +18,8 @@ y :: x;
 //}
 //
 
-ptr : *s64 = null;
-var := 42;
+//ptr : *s64 = null;
+//var := 42;
 
 //var2 : u16 = 8;
 //var3 : s8;
@@ -32,8 +33,9 @@ add_fn :: (a: s64, b: s64) -> s64 {
 
 main :: () -> s64 {
 
-    // foo : x; // Should generate "Not a type 'x'" error
+    foo : x; // Should generate "Not a type 'x'" error
     str : String = "This is a string literal";
+    str := "abc";
     print(str);
 
     return add_fn(40, 2);

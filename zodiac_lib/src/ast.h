@@ -103,6 +103,8 @@ struct AST_Expression
 {
     AST_Expression_Kind kind;
 
+    Source_Pos pos;
+
     union
     {
         AST_Integer_Literal_Expression integer_literal;
@@ -185,6 +187,8 @@ struct AST_Statement
 {
     AST_Statement_Kind kind;
 
+    Source_Pos pos;
+
     union
     {
         AST_Block_Statement block;
@@ -247,6 +251,8 @@ struct AST_Declaration
 {
     AST_Declaration_Kind kind;
 
+    Source_Pos pos;
+
     AST_Expression *identifier;
 
     union
@@ -269,6 +275,8 @@ enum class AST_Type_Spec_Kind
 struct AST_Type_Spec
 {
     AST_Type_Spec_Kind kind;
+
+    Source_Pos pos;
 
     union
     {

@@ -12,9 +12,13 @@
 
 #include "platform/filesystem.h"
 
+#include <inttypes.h>
+
 using namespace Zodiac;
 
 void resolve_test(Zodiac_Context *ctx, AST_File *file);
+
+Zodiac_Context *ctx;
 
 int main() {
 
@@ -23,6 +27,7 @@ int main() {
 
     Zodiac_Context c;
     zodiac_context_create(&c);
+    ctx = &c;
 
     Lexer lexer;
     lexer_create(&c, &lexer);
@@ -67,7 +72,15 @@ struct Symbol
     AST_Declaration *decl;    
 };
 
+struct Resolve_Error
+{
+    String message;
+    Source_Pos pos;
+};
+
 Dynamic_Array<Symbol> name_resolved_symbols;
+
+Dynamic_Array<Resolve_Error> resolve_errors;
 
 void name_resolve_decl(AST_Declaration *decl);
 void name_resolve_stmt(AST_Statement *stmt);
@@ -77,7 +90,14 @@ void name_resolve_ts(AST_Type_Spec *ts);
 Symbol *get_symbol(const Atom name);
 void add_symbol(Symbol_Kind kind, Atom name, AST_Declaration *decl);
 
-#define resolve_error(fmt, ...) ZFATAL(fmt, ##__VA_ARGS__);
+
+void resolve_error(Source_Pos pos, const String_Ref fmt, va_list args);
+void resolve_error(AST_Declaration *decl, const String_Ref fmt, ...);
+void resolve_error(AST_Statement *stmt, const String_Ref fmt, ...);
+void resolve_error(AST_Expression *expr, const String_Ref fmt, ...);
+void resolve_error(AST_Type_Spec *ts, const String_Ref fmt, ...);
+
+// #define resolve_error(fmt, ...) ZFATAL(fmt, ##__VA_ARGS__);
 
 void resolve_test(Zodiac_Context *ctx, AST_File *file)
 {
@@ -86,6 +106,7 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
     auto at = &ctx->atoms;
 
     dynamic_array_create(&dynamic_allocator, &name_resolved_symbols);
+    dynamic_array_create(&dynamic_allocator, &resolve_errors);
 
     add_symbol(SYM_TYPE, atom_s64, nullptr);
     add_symbol(SYM_TYPE, atom_r32, nullptr);
@@ -99,6 +120,11 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
         if (decl) {
             name_resolve_decl(decl);
         }
+    }
+
+    for (u64 i = 0; i < resolve_errors.count; i++) {
+        auto err = resolve_errors[i];
+        printf("%s:%llu:%llu: error: %s\n", err.pos.name.data, err.pos.line, err.pos.index_in_line, err.message.data);
     }
 }
 
@@ -221,7 +247,7 @@ void name_resolve_expr(AST_Expression *expr)
         case AST_Expression_Kind::IDENTIFIER: {
             auto sym = get_symbol(expr->identifier);
             if (!sym) {
-                resolve_error("Undefined symbol '%s'", expr->identifier.data);
+                resolve_error(expr, "Undefined symbol '%s'", expr->identifier.data);
             }
             break;
         }
@@ -260,10 +286,9 @@ void name_resolve_ts(AST_Type_Spec *ts)
         case AST_Type_Spec_Kind::NAME: {
             auto sym = get_symbol(ts->name);
             if (!sym) {
-                resolve_error("Undefined symbol '%s'", ts->name.data);
-            }
-            if (sym->kind != SYM_TYPE) {
-                resolve_error("Not a type '%s'", ts->name.data);
+                resolve_error(ts, "Undefined symbol '%s'", ts->name.data);
+            } else if (sym->kind != SYM_TYPE) {
+                resolve_error(ts, "Not a type '%s'", ts->name.data);
             }
             break;
         }
@@ -292,7 +317,49 @@ void add_symbol(Symbol_Kind kind, Atom name, AST_Declaration *decl)
     assert(kind != Symbol_Kind::SYM_INVALID);
 
     if (get_symbol(name)) {
-        resolve_error("Redeclaration of symbol '%s'", name);
+        resolve_error(decl, "Redeclaration of symbol '%s'", name);
     }
     dynamic_array_append(&name_resolved_symbols, { kind, name, decl });
+}
+
+void resolve_error(Source_Pos pos, const String_Ref fmt, va_list args)
+{
+    Resolve_Error err;
+
+    err.message = string_format(&ctx->resolve_error_allocator, fmt, args);
+    err.pos = pos;
+
+    dynamic_array_append(&resolve_errors, err);
+}
+
+void resolve_error(AST_Declaration *decl, const String_Ref fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    resolve_error(decl->pos, fmt, args);
+    va_end(args);
+}
+
+void resolve_error(AST_Statement *stmt, const String_Ref fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    resolve_error(stmt->pos, fmt, args);
+    va_end(args);
+}
+
+void resolve_error(AST_Expression *expr, const String_Ref fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    resolve_error(expr->pos, fmt, args);
+    va_end(args);
+}
+
+void resolve_error(AST_Type_Spec *ts, const String_Ref fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    resolve_error(ts->pos, fmt, args);
+    va_end(args);
 }

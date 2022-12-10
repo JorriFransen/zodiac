@@ -16,6 +16,9 @@ struct Zodiac_Context
 
     Temporary_Allocator temp_allocator_state;
     Allocator temp_allocator;
+
+    Temporary_Allocator resolve_error_allocator_state;
+    Allocator resolve_error_allocator;
 };
 
 ZAPI void zodiac_context_create(Zodiac_Context *out_context);
