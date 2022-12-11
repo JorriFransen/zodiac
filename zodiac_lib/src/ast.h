@@ -4,7 +4,6 @@
 #include <containers/dynamic_array.h>
 #include <lexer.h>
 #include <string_builder.h>
-#include <zodiac_context.h>
 
 namespace Zodiac
 {
@@ -322,35 +321,35 @@ ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
 
 ZAPI void ast_file_create(Dynamic_Array<AST_Declaration *> decls, AST_File *out_file);
 
-ZAPI AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Integer_Value value);
-ZAPI AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Atom atom);
-ZAPI AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Atom atom);
-ZAPI AST_Expression *ast_member_expr_new(Zodiac_Context *ctx, AST_Expression *base, Atom atom);
-ZAPI AST_Expression *ast_index_expr_new(Zodiac_Context *ctx, AST_Expression *base, AST_Expression *index);
-ZAPI AST_Expression *ast_call_expr_new(Zodiac_Context *ctx, AST_Expression *base, Dynamic_Array<AST_Expression *> args);
-ZAPI AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, AST_Unary_Operator op, AST_Expression *operand);
-ZAPI AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs);
-ZAPI AST_Expression *ast_expression_new(Zodiac_Context *ctx);
+ZAPI AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Source_Pos pos, Integer_Value value);
+ZAPI AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Source_Pos pos, Atom atom);
+ZAPI AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Source_Pos pos, Atom atom);
+ZAPI AST_Expression *ast_member_expr_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *base, Atom atom);
+ZAPI AST_Expression *ast_index_expr_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *base, AST_Expression *index);
+ZAPI AST_Expression *ast_call_expr_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *base, Dynamic_Array<AST_Expression *> args);
+ZAPI AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, Source_Pos pos, AST_Unary_Operator op, AST_Expression *operand);
+ZAPI AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, Source_Pos pos, AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs);
+ZAPI AST_Expression *ast_expression_new(Zodiac_Context *ctx, Source_Pos pos);
 
-ZAPI AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Dynamic_Array<AST_Statement *> statements);
-ZAPI AST_Statement *ast_declaration_stmt_new(Zodiac_Context *ctx, AST_Declaration *decl);
-ZAPI AST_Statement *ast_assign_stmt_new(Zodiac_Context *ctx, AST_Expression *dest, AST_Expression *value);
-ZAPI AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, AST_Expression *call);
-ZAPI AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, AST_Expression *cond, AST_Statement *then_stmt, Dynamic_Array<AST_Else_If> else_ifs, AST_Statement *else_stmt);
-ZAPI AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, AST_Expression *cond, AST_Statement *do_stmt);
-ZAPI AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, AST_Expression *value);
-ZAPI AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, AST_Expression *print_expr);
-ZAPI AST_Statement *ast_statement_new(Zodiac_Context *ctx);
+ZAPI AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Source_Pos pos, Dynamic_Array<AST_Statement *> statements);
+ZAPI AST_Statement *ast_declaration_stmt_new(Zodiac_Context *ctx, Source_Pos pos, AST_Declaration *decl);
+ZAPI AST_Statement *ast_assign_stmt_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *dest, AST_Expression *value);
+ZAPI AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *call);
+ZAPI AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *cond, AST_Statement *then_stmt, Dynamic_Array<AST_Else_If> else_ifs, AST_Statement *else_stmt);
+ZAPI AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *cond, AST_Statement *do_stmt);
+ZAPI AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *value);
+ZAPI AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *print_expr);
+ZAPI AST_Statement *ast_statement_new(Zodiac_Context *ctx, Source_Pos pos);
 
-ZAPI AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value);
-ZAPI AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value);
-ZAPI AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body);
-ZAPI AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, AST_Expression *identifier, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields);
-ZAPI AST_Declaration *ast_declaration_new(Zodiac_Context *ctx);
+ZAPI AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value);
+ZAPI AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value);
+ZAPI AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body);
+ZAPI AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *identifier, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields);
+ZAPI AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Pos pos);
 
-ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Atom name);
-ZAPI AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, AST_Type_Spec *base);
-ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx);
+ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Pos pos, Atom name);
+ZAPI AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Pos pos, AST_Type_Spec *base);
+ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Pos pos);
 
 ZAPI AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *> decls);
 

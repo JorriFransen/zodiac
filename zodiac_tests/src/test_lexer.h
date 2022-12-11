@@ -5,6 +5,7 @@
 #include <lexer.h>
 #include <logger.h>
 #include <memory/zmemory.h>
+#include <zodiac_context.h>
 
 namespace Zodiac { namespace Lexer_Tests {
 

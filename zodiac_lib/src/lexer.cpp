@@ -2,6 +2,7 @@
 
 #include <logger.h>
 #include <memory/zmemory.h>
+#include <zodiac_context.h>
 
 #include <cfloat>
 #include <cmath>

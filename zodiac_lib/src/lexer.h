@@ -2,7 +2,6 @@
 
 #include <defines.h>
 
-#include <zodiac_context.h>
 #include <zstring.h>
 
 namespace Zodiac
@@ -53,6 +52,8 @@ struct Token
         Real_Value real;
     };
 };
+
+struct Zodiac_Context;
 
 struct Lexer
 {
