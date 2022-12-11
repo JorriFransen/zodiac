@@ -12,6 +12,8 @@
 
 #include "platform/filesystem.h"
 
+#include <cstdarg>
+
 using namespace Zodiac;
 
 void resolve_test(Zodiac_Context *ctx, AST_File *file);
