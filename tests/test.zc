@@ -1,7 +1,7 @@
 
-x :: 1;
-y :: x;
-
+x :: y;
+y :: z;
+z :: 1;
 
 //Vec2 :: struct {
 //    x: r32;
@@ -26,17 +26,17 @@ y :: x;
 //c_var :: 5;
 //c_var2 : u32 : 2;
 
-add_fn :: (a: s64, b: s64) -> s64 {
-    result := a + b;
-    return result;
-}
-
-main :: () -> s64 {
-
-    //foo : x; // Should generate "Not a type 'x'" error
-    str : String = "This is a string literal";
-    print(str);
-
-    return add_fn(40, 2);
-}
+//add_fn :: (a: s64, b: s64) -> s64 {
+//    result := a + b;
+//    return result;
+//}
+//
+//main :: () -> s64 {
+//
+//    //foo : x; // Should generate "Not a type 'x'" error
+//    str : String = "This is a string literal";
+//    print(str);
+//
+//    return add_fn(40, 2);
+//}
 

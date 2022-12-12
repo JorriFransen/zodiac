@@ -76,26 +76,65 @@ struct Resolve_Error
 {
     String message;
     Source_Pos pos;
+    bool fatal;
 };
 
 Dynamic_Array<Symbol> name_resolved_symbols;
 
 Dynamic_Array<Resolve_Error> resolve_errors;
+bool fatal_resolve_error = false;
 
-void name_resolve_decl(AST_Declaration *decl);
-void name_resolve_stmt(AST_Statement *stmt);
-void name_resolve_expr(AST_Expression *expr);
-void name_resolve_ts(AST_Type_Spec *ts);
+bool name_resolve_decl_(AST_Declaration *decl);
+bool name_resolve_stmt_(AST_Statement *stmt);
+bool name_resolve_expr_(AST_Expression *expr);
+bool name_resolve_ts_(AST_Type_Spec *ts);
+
+#define name_resolve_decl(decl) {    \
+    if (!name_resolve_decl_(decl)) { \
+        return false;                \
+    }                                \
+}
+
+#define name_resolve_stmt(stmt) {    \
+    if (!name_resolve_stmt_(stmt)) { \
+        return false;                \
+    }                                \
+}
+
+#define name_resolve_expr(expr) {    \
+    if (!name_resolve_expr_(expr)) { \
+        return false;                \
+    }                                \
+}
+
+#define name_resolve_ts(ts) {    \
+    if (!name_resolve_ts_(ts)) { \
+        return false;            \
+    }                            \
+}
 
 Symbol *get_symbol(const Atom name);
-void add_symbol(Symbol_Kind kind, Atom name, AST_Declaration *decl);
 
+bool add_symbol_(Symbol_Kind kind, Atom name, AST_Declaration *decl);
 
-void resolve_error(Source_Pos pos, const String_Ref fmt, va_list args);
-void resolve_error(AST_Declaration *decl, const String_Ref fmt, ...);
-void resolve_error(AST_Statement *stmt, const String_Ref fmt, ...);
-void resolve_error(AST_Expression *expr, const String_Ref fmt, ...);
-void resolve_error(AST_Type_Spec *ts, const String_Ref fmt, ...);
+#define add_symbol(kind, name, decl) {          \
+    if (!add_symbol_((kind), (name), (decl))) { \
+        return false;                           \
+    }                                           \
+}
+
+void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args);
+void resolve_error_(AST_Declaration *decl, bool fatal, const String_Ref fmt, ...);
+void resolve_error_(AST_Statement *stmt, bool fatal, const String_Ref fmt, ...);
+void resolve_error_(AST_Expression *expr, bool fatal, const String_Ref fmt, ...);
+void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ...);
+
+#define resolve_error(node, fmt, ...) resolve_error_((node), false, (fmt), ##__VA_ARGS__);
+
+#define fatal_resolve_error(node, fmt, ...) {    \
+    resolve_error_((node), true, (fmt), ##__VA_ARGS__); \
+    fatal_resolve_error = true;                  \
+}
 
 void resolve_test(Zodiac_Context *ctx, AST_File *file)
 {
@@ -106,27 +145,65 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
     dynamic_array_create(&dynamic_allocator, &name_resolved_symbols);
     dynamic_array_create(&dynamic_allocator, &resolve_errors);
 
-    add_symbol(SYM_TYPE, atom_s64, nullptr);
-    add_symbol(SYM_TYPE, atom_r32, nullptr);
-    add_symbol(SYM_TYPE, atom_String, nullptr);
-    add_symbol(SYM_TYPE, atom_get(at, "null"), nullptr);
+    add_symbol_(SYM_TYPE, atom_s64, nullptr);
+    add_symbol_(SYM_TYPE, atom_r32, nullptr);
+    add_symbol_(SYM_TYPE, atom_String, nullptr);
+    add_symbol_(SYM_TYPE, atom_get(at, "null"), nullptr);
 
-    for (u64 i = 0; i < file->declarations.count; i++) {
-        
-        auto decl = file->declarations[i];
+    u64 name_resolved_count = name_resolved_symbols.count;
+    bool progress = true;
+    bool done = false;
 
-        if (decl) {
-            name_resolve_decl(decl);
+
+    auto file_decls = dynamic_array_copy(&file->declarations, &dynamic_allocator);
+
+    while (progress && !done && !fatal_resolve_error) {
+
+        done = true;
+        for (u64 i = 0; i < file_decls.count; i++) {
+            
+            auto decl = file_decls[i];
+
+            if (decl) {
+                if (name_resolve_decl_(decl)) {
+                    
+                    // Set the decl to null instead of removing it (don't want to do unordered removal)
+                    file_decls[i] = nullptr;
+                } else {
+                    done = false;
+                }
+            }
+        }
+
+        progress = name_resolved_count < name_resolved_symbols.count;
+        name_resolved_count = name_resolved_symbols.count;
+
+        if (progress && !fatal_resolve_error) {
+            resolve_errors.count = 0;
+            temporary_allocator_reset(&ctx->resolve_error_allocator_state);
         }
     }
 
     for (u64 i = 0; i < resolve_errors.count; i++) {
         auto err = resolve_errors[i];
-        printf("%s:%llu:%llu: error: %s\n", err.pos.name.data, err.pos.line, err.pos.index_in_line, err.message.data);
+
+        if (!fatal_resolve_error) assert(err.fatal == false);
+
+        bool print = fatal_resolve_error == err.fatal;
+
+        if (print) {
+            printf("%s:%llu:%llu: error: %s\n", err.pos.name.data, err.pos.line, err.pos.index_in_line, err.message.data);
+        }
     }
+
+    for (u64 i = 0; i < name_resolved_symbols.count; i++) {
+        printf("%s\n", name_resolved_symbols[i].name.data);
+    }
+
+    dynamic_array_free(&file_decls);
 }
 
-void name_resolve_decl(AST_Declaration *decl)
+bool name_resolve_decl_(AST_Declaration *decl)
 {
     assert(decl);
 
@@ -146,7 +223,8 @@ void name_resolve_decl(AST_Declaration *decl)
 
             //TODO: HACK: Don't put this in the global symbol table!!!
             add_symbol(SYM_VAR, decl_name, decl);
-            break;
+
+            return true;
         }
 
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
@@ -158,7 +236,8 @@ void name_resolve_decl(AST_Declaration *decl)
 
             //TODO: HACK: Don't put this in the global symbol table!!!
             add_symbol(SYM_VAR, decl_name, decl);
-            break;
+
+            return true;
         }
 
         case AST_Declaration_Kind::FUNCTION: {
@@ -180,7 +259,8 @@ void name_resolve_decl(AST_Declaration *decl)
             }
 
             add_symbol(SYM_FUNC, decl_name, decl);
-            break;
+
+            return true;
         } 
 
         case AST_Declaration_Kind::STRUCT: {
@@ -191,15 +271,18 @@ void name_resolve_decl(AST_Declaration *decl)
             }
 
             add_symbol(SYM_TYPE, decl_name, decl);
-            break;
+
+            return true;
         }
 
         case AST_Declaration_Kind::UNION: assert(false);
-            break;
     }
+
+    assert(false);
+    return false;
 }
 
-void name_resolve_stmt(AST_Statement *stmt)
+bool name_resolve_stmt_(AST_Statement *stmt)
 {
     assert(stmt);
 
@@ -230,9 +313,12 @@ void name_resolve_stmt(AST_Statement *stmt)
             break;
         }
     }
+
+    assert(false);
+    return false;
 }
 
-void name_resolve_expr(AST_Expression *expr)
+bool name_resolve_expr_(AST_Expression *expr)
 {
     assert(expr);
 
@@ -240,14 +326,16 @@ void name_resolve_expr(AST_Expression *expr)
         case AST_Expression_Kind::INVALID: assert(false);
 
         case AST_Expression_Kind::INTEGER_LITERAL:
-        case AST_Expression_Kind::STRING_LITERAL: break;
+        case AST_Expression_Kind::STRING_LITERAL: return true;
 
         case AST_Expression_Kind::IDENTIFIER: {
             auto sym = get_symbol(expr->identifier);
             if (!sym) {
                 resolve_error(expr, "Undefined symbol '%s'", expr->identifier.data);
+                return false;
             }
-            break;
+
+            return true;
         }
 
         case AST_Expression_Kind::MEMBER: assert(false);
@@ -260,7 +348,8 @@ void name_resolve_expr(AST_Expression *expr)
                 auto arg_expr = expr->call.args[i];
                 name_resolve_expr(arg_expr);
             }
-            break;
+
+            return true;
         }
 
         case AST_Expression_Kind::UNARY: assert(false);
@@ -268,12 +357,16 @@ void name_resolve_expr(AST_Expression *expr)
         case AST_Expression_Kind::BINARY: {
             name_resolve_expr(expr->binary.lhs);
             name_resolve_expr(expr->binary.rhs);
-            break;
+
+            return true;
         }
     }
+
+    assert(false);
+    return false;
 }
 
-void name_resolve_ts(AST_Type_Spec *ts)
+bool name_resolve_ts_(AST_Type_Spec *ts)
 {
     assert(ts);
 
@@ -296,6 +389,9 @@ void name_resolve_ts(AST_Type_Spec *ts)
             break;
         }
     }
+    
+    assert(false);
+    return false;
 }
 
 Symbol *get_symbol(const Atom name)
@@ -310,54 +406,58 @@ Symbol *get_symbol(const Atom name)
     return nullptr;
 }
 
-void add_symbol(Symbol_Kind kind, Atom name, AST_Declaration *decl)
+bool add_symbol_(Symbol_Kind kind, Atom name, AST_Declaration *decl)
 {
     assert(kind != Symbol_Kind::SYM_INVALID);
 
     if (get_symbol(name)) {
-        resolve_error(decl, "Redeclaration of symbol '%s'", name);
+        fatal_resolve_error(decl, "Redeclaration of symbol '%s'", name);
+        return false;
     }
+
     dynamic_array_append(&name_resolved_symbols, { kind, name, decl });
+    return true;
 }
 
-void resolve_error(Source_Pos pos, const String_Ref fmt, va_list args)
+void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args)
 {
     Resolve_Error err;
 
     err.message = string_format(&ctx->resolve_error_allocator, fmt, args);
     err.pos = pos;
+    err.fatal = fatal;
 
     dynamic_array_append(&resolve_errors, err);
 }
 
-void resolve_error(AST_Declaration *decl, const String_Ref fmt, ...)
+void resolve_error_(AST_Declaration *decl, bool fatal, const String_Ref fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    resolve_error(decl->pos, fmt, args);
+    resolve_error_(decl->pos, fatal, fmt, args);
     va_end(args);
 }
 
-void resolve_error(AST_Statement *stmt, const String_Ref fmt, ...)
+void resolve_error_(AST_Statement *stmt, bool fatal, const String_Ref fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    resolve_error(stmt->pos, fmt, args);
+    resolve_error_(stmt->pos, fatal, fmt, args);
     va_end(args);
 }
 
-void resolve_error(AST_Expression *expr, const String_Ref fmt, ...)
+void resolve_error_(AST_Expression *expr, bool fatal, const String_Ref fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    resolve_error(expr->pos, fmt, args);
+    resolve_error_(expr->pos, fatal, fmt, args);
     va_end(args);
 }
 
-void resolve_error(AST_Type_Spec *ts, const String_Ref fmt, ...)
+void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    resolve_error(ts->pos, fmt, args);
+    resolve_error_(ts->pos, fatal, fmt, args);
     va_end(args);
 }
