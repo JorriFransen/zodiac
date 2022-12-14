@@ -208,13 +208,15 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
         }
     }
 
-    for (u64 i = 0; i < name_resolved_symbols.count; i++) {
-        // printf("%s\n", name_resolved_symbols[i].name.data);
-        auto resolved_sym = name_resolved_symbols[i];
+    if (resolve_errors.count == 0) {
+        for (u64 i = 0; i < name_resolved_symbols.count; i++) {
+            // printf("%s\n", name_resolved_symbols[i].name.data);
+            auto resolved_sym = name_resolved_symbols[i];
 
-        if (resolved_sym.decl && (resolved_sym.flags & SYM_FLAG_GLOBAL)) {
-            ast_print_declaration(resolved_sym.decl);
-            printf("\n\n");
+            if (resolved_sym.decl && (resolved_sym.flags & SYM_FLAG_GLOBAL)) {
+                ast_print_declaration(resolved_sym.decl);
+                printf("\n\n");
+            }
         }
     }
 
@@ -227,6 +229,15 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
 
     assert(decl->identifier->kind == AST_Expression_Kind::IDENTIFIER);
     auto decl_name = decl->identifier->identifier;
+
+    {
+        auto sym = get_symbol(decl_name);
+        if (sym) {
+            assert((sym->flags & SYM_FLAG_GLOBAL) == global);
+            assert(sym->decl == decl);
+            return true;
+        }
+    }
 
     Symbol_Flags sym_flags = SYM_FLAG_NONE;
     if (global) sym_flags |= SYM_FLAG_GLOBAL;
