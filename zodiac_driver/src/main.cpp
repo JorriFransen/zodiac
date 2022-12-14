@@ -233,8 +233,11 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
     {
         auto sym = get_symbol(decl_name);
         if (sym) {
+            if (sym->decl != decl) {
+                fatal_resolve_error(decl, "Redeclaration of symbol '%s'", decl_name.data);
+                return false;
+            }
             assert((sym->flags & SYM_FLAG_GLOBAL) == global);
-            assert(sym->decl == decl);
             return true;
         }
     }
@@ -276,6 +279,19 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
 
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 auto param_field = decl->function.params[i];
+                
+                {
+                    auto sym = get_symbol(param_field.name);
+                    if (sym) {
+                        if (sym->decl != decl) {
+                            fatal_resolve_error(decl, "Redeclaration of symbol '%s'", decl_name.data);
+                            return false;
+                        }
+
+                        assert(sym->kind == SYM_PARAM);
+                        continue;
+                    }
+                }
                 name_resolve_ts(param_field.type_spec);
 
                 //TODO: HACK: Don't put this in the global symbol table!!!
@@ -443,7 +459,7 @@ bool add_symbol_(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaratio
     assert(kind != Symbol_Kind::SYM_INVALID);
 
     if (get_symbol(name)) {
-        fatal_resolve_error(decl, "Redeclaration of symbol '%s'", name);
+        fatal_resolve_error(decl, "Redeclaration of symbol '%s'", name.data);
         return false;
     }
 
