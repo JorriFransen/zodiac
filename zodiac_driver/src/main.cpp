@@ -44,7 +44,7 @@ int main() {
     if (parser.error) return 1;
     assert(file);
 
-    ast_print_file(file);
+    // ast_print_file(file);
 
     resolve_test(&c, file);
 
@@ -53,7 +53,7 @@ int main() {
     return 0;
 }
 
-enum Symbol_Kind
+enum Symbol_Kind : u32
 {
     SYM_INVALID,
 
@@ -65,9 +65,21 @@ enum Symbol_Kind
     SYM_TYPE,
 };
 
+typedef u32 Symbol_Flags;
+
+enum Symbol_Flag : Symbol_Flags 
+{
+    SYM_FLAG_NONE    = 0x00,
+    SYM_FLAG_BUILTIN = 0x01,
+    SYM_FLAG_GLOBAL  = 0x02,
+};
+
+
 struct Symbol
 {
     Symbol_Kind kind;
+    Symbol_Flags flags;
+
     Atom name;
     AST_Declaration *decl;    
 };
@@ -84,15 +96,15 @@ Dynamic_Array<Symbol> name_resolved_symbols;
 Dynamic_Array<Resolve_Error> resolve_errors;
 bool fatal_resolve_error = false;
 
-bool name_resolve_decl_(AST_Declaration *decl);
+bool name_resolve_decl_(AST_Declaration *decl, bool global);
 bool name_resolve_stmt_(AST_Statement *stmt);
 bool name_resolve_expr_(AST_Expression *expr);
 bool name_resolve_ts_(AST_Type_Spec *ts);
 
-#define name_resolve_decl(decl) {    \
-    if (!name_resolve_decl_(decl)) { \
-        return false;                \
-    }                                \
+#define name_resolve_decl(decl) {           \
+    if (!name_resolve_decl_(decl, false)) { \
+        return false;                       \
+    }                                       \
 }
 
 #define name_resolve_stmt(stmt) {    \
@@ -115,12 +127,12 @@ bool name_resolve_ts_(AST_Type_Spec *ts);
 
 Symbol *get_symbol(const Atom name);
 
-bool add_symbol_(Symbol_Kind kind, Atom name, AST_Declaration *decl);
+bool add_symbol_(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
 
-#define add_symbol(kind, name, decl) {          \
-    if (!add_symbol_((kind), (name), (decl))) { \
-        return false;                           \
-    }                                           \
+#define add_symbol(kind, flags, name, decl) {            \
+    if (!add_symbol_((kind), (flags), (name), (decl))) { \
+        return false;                                    \
+    }                                                    \
 }
 
 void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args);
@@ -145,10 +157,10 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
     dynamic_array_create(&dynamic_allocator, &name_resolved_symbols);
     dynamic_array_create(&dynamic_allocator, &resolve_errors);
 
-    add_symbol_(SYM_TYPE, atom_s64, nullptr);
-    add_symbol_(SYM_TYPE, atom_r32, nullptr);
-    add_symbol_(SYM_TYPE, atom_String, nullptr);
-    add_symbol_(SYM_TYPE, atom_get(at, "null"), nullptr);
+    add_symbol_(SYM_TYPE, SYM_FLAG_GLOBAL, atom_s64, nullptr);
+    add_symbol_(SYM_TYPE, SYM_FLAG_GLOBAL, atom_r32, nullptr);
+    add_symbol_(SYM_TYPE, SYM_FLAG_GLOBAL, atom_String, nullptr);
+    add_symbol_(SYM_TYPE, SYM_FLAG_GLOBAL, atom_get(at, "null"), nullptr);
 
     u64 name_resolved_count = name_resolved_symbols.count;
     bool progress = true;
@@ -165,7 +177,7 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
             auto decl = file_decls[i];
 
             if (decl) {
-                if (name_resolve_decl_(decl)) {
+                if (name_resolve_decl_(decl, true)) {
                     
                     // Set the decl to null instead of removing it (don't want to do unordered removal)
                     file_decls[i] = nullptr;
@@ -197,18 +209,27 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
     }
 
     for (u64 i = 0; i < name_resolved_symbols.count; i++) {
-        printf("%s\n", name_resolved_symbols[i].name.data);
+        // printf("%s\n", name_resolved_symbols[i].name.data);
+        auto resolved_sym = name_resolved_symbols[i];
+
+        if (resolved_sym.decl && (resolved_sym.flags & SYM_FLAG_GLOBAL)) {
+            ast_print_declaration(resolved_sym.decl);
+            printf("\n\n");
+        }
     }
 
     dynamic_array_free(&file_decls);
 }
 
-bool name_resolve_decl_(AST_Declaration *decl)
+bool name_resolve_decl_(AST_Declaration *decl, bool global)
 {
     assert(decl);
 
     assert(decl->identifier->kind == AST_Expression_Kind::IDENTIFIER);
     auto decl_name = decl->identifier->identifier;
+
+    Symbol_Flags sym_flags = SYM_FLAG_NONE;
+    if (global) sym_flags |= SYM_FLAG_GLOBAL;
 
     switch (decl->kind) {
 
@@ -222,7 +243,7 @@ bool name_resolve_decl_(AST_Declaration *decl)
             if (expr) name_resolve_expr(expr);
 
             //TODO: HACK: Don't put this in the global symbol table!!!
-            add_symbol(SYM_VAR, decl_name, decl);
+            add_symbol(SYM_VAR, sym_flags, decl_name, decl);
 
             return true;
         }
@@ -235,7 +256,7 @@ bool name_resolve_decl_(AST_Declaration *decl)
             if (expr) name_resolve_expr(expr);
 
             //TODO: HACK: Don't put this in the global symbol table!!!
-            add_symbol(SYM_VAR, decl_name, decl);
+            add_symbol(SYM_VAR, sym_flags, decl_name, decl);
 
             return true;
         }
@@ -247,7 +268,7 @@ bool name_resolve_decl_(AST_Declaration *decl)
                 name_resolve_ts(param_field.type_spec);
 
                 //TODO: HACK: Don't put this in the global symbol table!!!
-                add_symbol(SYM_PARAM, param_field.name, decl);
+                add_symbol(SYM_PARAM, SYM_FLAG_NONE, param_field.name, decl);
             }
 
             name_resolve_ts(decl->function.return_ts);
@@ -258,24 +279,24 @@ bool name_resolve_decl_(AST_Declaration *decl)
                 name_resolve_stmt(stmt);
             }
 
-            add_symbol(SYM_FUNC, decl_name, decl);
+            add_symbol(SYM_FUNC, sym_flags, decl_name, decl);
 
             return true;
         } 
 
-        case AST_Declaration_Kind::STRUCT: {
-            // TODO: Start creating struct type and add resolved fields to it
+        case AST_Declaration_Kind::STRUCT:
+        case AST_Declaration_Kind::UNION: {
+            // TODO: Start creating struct/union type and add resolved fields to it
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
                 name_resolve_ts(field.type_spec);
             }
 
-            add_symbol(SYM_TYPE, decl_name, decl);
+            add_symbol(SYM_TYPE, sym_flags, decl_name, decl);
 
             return true;
         }
 
-        case AST_Declaration_Kind::UNION: assert(false);
     }
 
     assert(false);
@@ -293,7 +314,7 @@ bool name_resolve_stmt_(AST_Statement *stmt)
 
         case AST_Statement_Kind::DECLARATION: {
             name_resolve_decl(stmt->decl.decl);
-            break;
+            return true;
         }
 
         case AST_Statement_Kind::ASSIGN: assert(false);
@@ -305,12 +326,12 @@ bool name_resolve_stmt_(AST_Statement *stmt)
             if (stmt->return_stmt.value) {
                 name_resolve_expr(stmt->return_stmt.value);
             }
-            break;
+            return true;
         }
 
         case AST_Statement_Kind::PRINT: {
             name_resolve_expr(stmt->print_expr);
-            break;
+            return true;
         }
     }
 
@@ -381,12 +402,12 @@ bool name_resolve_ts_(AST_Type_Spec *ts)
             } else if (sym->kind != SYM_TYPE) {
                 resolve_error(ts, "Not a type '%s'", ts->name.data);
             }
-            break;
+            return true;
         }
 
         case AST_Type_Spec_Kind::POINTER: {
             name_resolve_ts(ts->base);
-            break;
+            return true;
         }
     }
     
@@ -406,7 +427,7 @@ Symbol *get_symbol(const Atom name)
     return nullptr;
 }
 
-bool add_symbol_(Symbol_Kind kind, Atom name, AST_Declaration *decl)
+bool add_symbol_(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
     assert(kind != Symbol_Kind::SYM_INVALID);
 
@@ -415,7 +436,7 @@ bool add_symbol_(Symbol_Kind kind, Atom name, AST_Declaration *decl)
         return false;
     }
 
-    dynamic_array_append(&name_resolved_symbols, { kind, name, decl });
+    dynamic_array_append(&name_resolved_symbols, { kind, flags, name, decl });
     return true;
 }
 

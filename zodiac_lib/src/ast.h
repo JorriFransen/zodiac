@@ -247,6 +247,7 @@ enum class AST_Declaration_Kind
 };
 
 struct AST_Declaration
+
 {
     AST_Declaration_Kind kind;
 
@@ -355,8 +356,12 @@ ZAPI AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *
 
 ZAPI void ast_print_expression(String_Builder *sb, AST_Expression *expr);
 ZAPI void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent = 0);
+
 ZAPI void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent = 0);
+ZAPI void ast_print_declaration(AST_Declaration *decl);
+
 ZAPI void ast_print_type_spec(String_Builder *sb, AST_Type_Spec *ts, int indent = 0);
+
 ZAPI void ast_print_file(String_Builder *sb, AST_File *file);
 ZAPI void ast_print_file(AST_File *file);
 

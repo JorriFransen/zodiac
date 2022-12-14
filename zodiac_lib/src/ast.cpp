@@ -812,6 +812,22 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
     if (semicolon) string_builder_append(sb, ";");
 }
 
+void ast_print_declaration(AST_Declaration *decl)
+{
+    assert(decl);
+
+    String_Builder sb;
+    string_builder_create(&sb);
+
+    ast_print_declaration(&sb, decl, 0);
+
+    String ast_str = string_builder_to_string(&sb);
+    printf("%.*s", (int)ast_str.length, ast_str.data);
+    free(sb.allocator, ast_str.data);
+
+    string_builder_destroy(&sb);
+}
+
 file_local void ast__print_type_spec_internal(String_Builder *sb, AST_Type_Spec *ts, int indent)
 {
     assert(sb && ts);
