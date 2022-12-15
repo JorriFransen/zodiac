@@ -184,11 +184,11 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
     add_builtin_symbol(Symbol_Kind::TYPE, atom_String);
     add_builtin_symbol(Symbol_Kind::TYPE, atom_get(at, "null"));
 
-    auto file_decls = dynamic_array_copy(&file->declarations, &dynamic_allocator);
+    auto decls_to_resolve = dynamic_array_copy(&file->declarations, &dynamic_allocator);
 
     // Add global symbols
-    for (u64 i = 0; i < file_decls.count; i++) {
-        auto decl = file_decls[i];
+    for (u64 i = 0; i < decls_to_resolve.count; i++) {
+        auto decl = decls_to_resolve[i];
         add_unresolved_decl_symbol(decl, true);
     }
 
@@ -200,14 +200,14 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
         auto last_name_resolved_count = name_resolved_count;
 
         done = true;
-        for (u64 i = 0; i < file_decls.count; i++) {
+        for (u64 i = 0; i < decls_to_resolve.count; i++) {
             
-            AST_Declaration *decl = file_decls[i];
+            AST_Declaration *decl = decls_to_resolve[i];
 
             if (decl) {
                 if (name_resolve_decl_(decl, true)) {
-                    // Set the decl to null instead of removing it (don't want to do unordered removal)
-                    file_decls[i] = nullptr;
+                    // Set the decl to null instead of removing it, don't want to do unordered removal!
+                    decls_to_resolve[i] = nullptr;
 
                 } else {
                     done = false;
@@ -223,7 +223,7 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
         }
     }
 
-    dynamic_array_free(&file_decls);
+    dynamic_array_free(&decls_to_resolve);
 
     for (u64 i = 0; i < resolve_errors.count; i++) {
         auto err = resolve_errors[i];
@@ -327,7 +327,6 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
 
     Symbol_Flags flags = SYM_FLAG_NONE;
     if (global) flags |= SYM_FLAG_GLOBAL;
-
 
     return add_unresolved_symbol(kind, flags, decl->identifier, decl);
 }
