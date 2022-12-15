@@ -74,7 +74,6 @@ enum Symbol_Flag : Symbol_Flags
     SYM_FLAG_GLOBAL  = 0x02,
 };
 
-
 struct Symbol
 {
     Symbol_Kind kind;
@@ -82,6 +81,8 @@ struct Symbol
 
     Atom name;
     AST_Declaration *decl;    
+
+    Dynamic_Array<Symbol *> dependencies;
 };
 
 struct Resolve_Error
@@ -91,14 +92,14 @@ struct Resolve_Error
     bool fatal;
 };
 
-Dynamic_Array<Symbol> name_resolved_symbols;
+Dynamic_Array<Symbol *> name_resolved_symbols;
 
 Dynamic_Array<Resolve_Error> resolve_errors;
 bool fatal_resolve_error = false;
 
 bool name_resolve_decl_(AST_Declaration *decl, bool global);
-bool name_resolve_stmt_(AST_Statement *stmt);
-bool name_resolve_expr_(AST_Expression *expr);
+bool name_resolve_stmt_(AST_Statement *stmt, Symbol *depender);
+bool name_resolve_expr_(AST_Expression *expr, Symbol *depender);
 bool name_resolve_ts_(AST_Type_Spec *ts);
 
 #define name_resolve_decl(decl) {           \
@@ -107,16 +108,16 @@ bool name_resolve_ts_(AST_Type_Spec *ts);
     }                                       \
 }
 
-#define name_resolve_stmt(stmt) {    \
-    if (!name_resolve_stmt_(stmt)) { \
-        return false;                \
-    }                                \
+#define name_resolve_stmt(stmt, depender) {        \
+    if (!name_resolve_stmt_((stmt), (depender))) { \
+        return false;                              \
+    }                                              \
 }
 
-#define name_resolve_expr(expr) {    \
-    if (!name_resolve_expr_(expr)) { \
-        return false;                \
-    }                                \
+#define name_resolve_expr(expr, depender) {        \
+    if (!name_resolve_expr_((expr), (depender))) { \
+        return false;                              \
+    }                                              \
 }
 
 #define name_resolve_ts(ts) {    \
@@ -127,13 +128,14 @@ bool name_resolve_ts_(AST_Type_Spec *ts);
 
 Symbol *get_symbol(const Atom name);
 
-bool add_symbol_(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
+bool add_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
 
-#define add_symbol(kind, flags, name, decl) {            \
-    if (!add_symbol_((kind), (flags), (name), (decl))) { \
-        return false;                                    \
-    }                                                    \
-}
+Symbol *register_symbol(AST_Declaration *decl, bool global);
+
+void register_dependency(Symbol *depender, Symbol *dependency);
+
+bool has_dependency(AST_Declaration *a, AST_Declaration *b);
+void report_circular_dep(AST_Declaration *decl);
 
 void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args);
 void resolve_error_(AST_Declaration *decl, bool fatal, const String_Ref fmt, ...);
@@ -157,15 +159,20 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
     dynamic_array_create(&dynamic_allocator, &name_resolved_symbols);
     dynamic_array_create(&dynamic_allocator, &resolve_errors);
 
-    add_symbol_(SYM_TYPE, SYM_FLAG_GLOBAL, atom_s64, nullptr);
-    add_symbol_(SYM_TYPE, SYM_FLAG_GLOBAL, atom_r32, nullptr);
-    add_symbol_(SYM_TYPE, SYM_FLAG_GLOBAL, atom_String, nullptr);
-    add_symbol_(SYM_TYPE, SYM_FLAG_GLOBAL, atom_get(at, "null"), nullptr);
+    add_symbol(SYM_TYPE, SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN, atom_s64, nullptr);
+    add_symbol(SYM_TYPE, SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN, atom_r32, nullptr);
+    add_symbol(SYM_TYPE, SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN, atom_String, nullptr);
+    add_symbol(SYM_TYPE, SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN, atom_get(at, "null"), nullptr);
+
+    for (u64 i = 0; i < file->declarations.count; i++) {
+
+        auto decl = file->declarations[i];
+        register_symbol(decl, true);
+    }
 
     u64 name_resolved_count = name_resolved_symbols.count;
     bool progress = true;
     bool done = false;
-
 
     auto file_decls = dynamic_array_copy(&file->declarations, &dynamic_allocator);
 
@@ -181,6 +188,11 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
                     
                     // Set the decl to null instead of removing it (don't want to do unordered removal)
                     file_decls[i] = nullptr;
+
+                    if (has_dependency(decl, decl)) {
+                        report_circular_dep(decl);
+                        break;
+                    }
                 } else {
                     done = false;
                 }
@@ -213,8 +225,8 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
             // printf("%s\n", name_resolved_symbols[i].name.data);
             auto resolved_sym = name_resolved_symbols[i];
 
-            if (resolved_sym.decl && (resolved_sym.flags & SYM_FLAG_GLOBAL)) {
-                ast_print_declaration(resolved_sym.decl);
+            if (resolved_sym->decl && (resolved_sym->flags & SYM_FLAG_GLOBAL)) {
+                ast_print_declaration(resolved_sym->decl);
                 printf("\n\n");
             }
         }
@@ -230,17 +242,34 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
     assert(decl->identifier->kind == AST_Expression_Kind::IDENTIFIER);
     auto decl_name = decl->identifier->identifier;
 
-    {
-        auto sym = get_symbol(decl_name);
+    Symbol *sym = nullptr;
+
+    if (global) {
+        sym = get_symbol(decl_name);
         if (sym) {
             if (sym->decl != decl) {
                 fatal_resolve_error(decl, "Redeclaration of symbol '%s'", decl_name.data);
                 return false;
             }
-            assert((sym->flags & SYM_FLAG_GLOBAL) == global);
-            return true;
+            assert(((sym->flags & SYM_FLAG_GLOBAL) == SYM_FLAG_GLOBAL) == global);
+        } else {
+            assert_msg(false, "Expected symbol for global decl");
+        }
+
+    } else {
+        
+        // Non global
+        sym = get_symbol(decl_name);
+        if (sym && sym->decl != decl) {
+            fatal_resolve_error(decl, "Redeclaration of symbol '%s'", decl_name.data);
+            return false;
+        }
+        if (!sym) {
+            sym = register_symbol(decl, global);
         }
     }
+
+    assert(sym);
 
     Symbol_Flags sym_flags = SYM_FLAG_NONE;
     if (global) sym_flags |= SYM_FLAG_GLOBAL;
@@ -254,11 +283,10 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
             auto expr = decl->variable.value;
 
             if (ts) name_resolve_ts(ts);
-            if (expr) name_resolve_expr(expr);
+            if (expr) name_resolve_expr(expr, sym);
 
             //TODO: HACK: Don't put this in the global symbol table!!!
-            add_symbol(SYM_VAR, sym_flags, decl_name, decl);
-
+            // add_symbol(SYM_VAR, sym_flags, decl_name, decl);
             return true;
         }
 
@@ -267,11 +295,10 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
             auto expr = decl->constant_variable.value;
 
             if (ts) name_resolve_ts(ts);
-            if (expr) name_resolve_expr(expr);
+            if (expr) name_resolve_expr(expr, sym);
 
             //TODO: HACK: Don't put this in the global symbol table!!!
-            add_symbol(SYM_VAR, sym_flags, decl_name, decl);
-
+            // add_symbol(SYM_VAR, sym_flags, decl_name, decl);
             return true;
         }
 
@@ -295,7 +322,9 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
                 name_resolve_ts(param_field.type_spec);
 
                 //TODO: HACK: Don't put this in the global symbol table!!!
-                add_symbol(SYM_PARAM, SYM_FLAG_NONE, param_field.name, decl);
+                if (!add_symbol(SYM_PARAM, SYM_FLAG_NONE, param_field.name, decl)) {
+                    assert(false);
+                }
             }
 
             name_resolve_ts(decl->function.return_ts);
@@ -303,11 +332,10 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
             for (u64 i = 0; i < decl->function.body.count; i++) {
                 auto stmt = decl->function.body[i];
 
-                name_resolve_stmt(stmt);
+                name_resolve_stmt(stmt, sym);
             }
 
-            add_symbol(SYM_FUNC, sym_flags, decl_name, decl);
-
+            // add_symbol(SYM_FUNC, sym_flags, decl_name, decl);
             return true;
         } 
 
@@ -319,8 +347,7 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
                 name_resolve_ts(field.type_spec);
             }
 
-            add_symbol(SYM_TYPE, sym_flags, decl_name, decl);
-
+            // add_symbol(SYM_TYPE, sym_flags, decl_name, decl);
             return true;
         }
 
@@ -330,7 +357,7 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
     return false;
 }
 
-bool name_resolve_stmt_(AST_Statement *stmt)
+bool name_resolve_stmt_(AST_Statement *stmt, Symbol *depender)
 {
     assert(stmt);
 
@@ -351,13 +378,13 @@ bool name_resolve_stmt_(AST_Statement *stmt)
 
         case AST_Statement_Kind::RETURN: {
             if (stmt->return_stmt.value) {
-                name_resolve_expr(stmt->return_stmt.value);
+                name_resolve_expr(stmt->return_stmt.value, depender);
             }
             return true;
         }
 
         case AST_Statement_Kind::PRINT: {
-            name_resolve_expr(stmt->print_expr);
+            name_resolve_expr(stmt->print_expr, depender);
             return true;
         }
     }
@@ -366,7 +393,7 @@ bool name_resolve_stmt_(AST_Statement *stmt)
     return false;
 }
 
-bool name_resolve_expr_(AST_Expression *expr)
+bool name_resolve_expr_(AST_Expression *expr, Symbol *depender)
 {
     assert(expr);
 
@@ -383,6 +410,10 @@ bool name_resolve_expr_(AST_Expression *expr)
                 return false;
             }
 
+            if (depender) {
+                register_dependency(depender, sym);
+            }
+
             return true;
         }
 
@@ -390,11 +421,11 @@ bool name_resolve_expr_(AST_Expression *expr)
         case AST_Expression_Kind::INDEX: assert(false);
 
         case AST_Expression_Kind::CALL: {
-            name_resolve_expr(expr->call.base);
+            name_resolve_expr(expr->call.base, depender);
 
             for (u64 i = 0; i < expr->call.args.count; i++) {
                 auto arg_expr = expr->call.args[i];
-                name_resolve_expr(arg_expr);
+                name_resolve_expr(arg_expr, depender);
             }
 
             return true;
@@ -403,8 +434,8 @@ bool name_resolve_expr_(AST_Expression *expr)
         case AST_Expression_Kind::UNARY: assert(false);
 
         case AST_Expression_Kind::BINARY: {
-            name_resolve_expr(expr->binary.lhs);
-            name_resolve_expr(expr->binary.rhs);
+            name_resolve_expr(expr->binary.lhs, depender);
+            name_resolve_expr(expr->binary.rhs, depender);
 
             return true;
         }
@@ -445,7 +476,7 @@ bool name_resolve_ts_(AST_Type_Spec *ts)
 Symbol *get_symbol(const Atom name)
 {
     for (u64 i = 0; i < name_resolved_symbols.count; i++) {
-        auto sym = &name_resolved_symbols[i];
+        auto sym = name_resolved_symbols[i];
         if (sym->name == name) {
             return sym;
         }
@@ -454,7 +485,7 @@ Symbol *get_symbol(const Atom name)
     return nullptr;
 }
 
-bool add_symbol_(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
+bool add_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
     assert(kind != Symbol_Kind::SYM_INVALID);
 
@@ -463,8 +494,124 @@ bool add_symbol_(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaratio
         return false;
     }
 
-    dynamic_array_append(&name_resolved_symbols, { kind, flags, name, decl });
+    Symbol *result = alloc<Symbol>(&dynamic_allocator);
+    result->kind = kind;
+    result->flags = flags;
+    result->name = name;
+    result->decl = decl;
+    dynamic_array_create(&dynamic_allocator, &result->dependencies, 0);
+
+
+    dynamic_array_append(&name_resolved_symbols, result);
     return true;
+}
+
+Symbol *register_symbol(AST_Declaration *decl, bool global)
+{
+    assert(decl);
+    assert(decl->identifier);
+    assert(decl->identifier->kind == AST_Expression_Kind::IDENTIFIER);
+
+    Symbol_Kind kind = SYM_INVALID;
+
+    switch (decl->kind) {
+        case AST_Declaration_Kind::INVALID: assert(false);
+
+        case AST_Declaration_Kind::VARIABLE:
+        case AST_Declaration_Kind::CONSTANT_VARIABLE: kind = SYM_VAR; break;
+
+        case AST_Declaration_Kind::FUNCTION: kind = SYM_FUNC; break;
+
+        case AST_Declaration_Kind::STRUCT:
+        case AST_Declaration_Kind::UNION: kind = SYM_TYPE; break;
+    }
+
+    assert(kind != SYM_INVALID);
+
+    Symbol_Flags flags = SYM_FLAG_NONE;
+    if (global) flags |= SYM_FLAG_GLOBAL;
+
+    auto decl_name = decl->identifier->identifier;
+
+    bool result = add_symbol(kind, flags, decl_name, decl);
+    assert(result);
+
+    auto sym = get_symbol(decl_name);
+    assert(sym->decl == decl);
+    return sym;
+}
+
+void register_dependency(Symbol *depender, Symbol *dependency)
+{
+    assert(depender && dependency);
+
+    bool found = false;
+
+    for (u64 i = 0; i < depender->dependencies.count; i++) {
+        if (depender->dependencies[i] == dependency) {
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        dynamic_array_append(&depender->dependencies, dependency);
+    }
+}
+
+bool has_dependency(Symbol *a, Symbol *b)
+{
+    assert(a && b);
+
+    for (u64 i = 0; i < a->dependencies.count; i++) {
+
+        if (a->dependencies[i] == b) return true;
+
+        if (has_dependency(a->dependencies[i], b)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool has_dependency(AST_Declaration *a, AST_Declaration *b)
+{
+    assert(a && b);
+    assert(a->identifier && a->identifier->kind == AST_Expression_Kind::IDENTIFIER);
+    assert(b->identifier && b->identifier->kind == AST_Expression_Kind::IDENTIFIER);
+
+    auto sym_a = get_symbol(a->identifier->identifier);
+    auto sym_b = get_symbol(b->identifier->identifier);
+    assert(sym_a && sym_b);
+
+    return has_dependency(sym_a, sym_b);
+}
+
+void report_circular_dep(Symbol *current, Symbol *root)
+{
+    assert(current && root);
+
+    for (u64 i = 0; i < current->dependencies.count; i++) {
+        if (has_dependency(current->dependencies[i], root)) {
+            auto dep = current->dependencies[i];
+            fatal_resolve_error(current->decl, "'%s' depends on '%s'", current->name.data, dep->name.data);
+            if (dep != root) report_circular_dep(dep, root);
+            break;
+        }
+    }
+}
+
+void report_circular_dep(AST_Declaration *root_decl)
+{
+    assert(root_decl);
+    assert(root_decl->identifier && root_decl->identifier->kind == AST_Expression_Kind::IDENTIFIER);
+
+    auto sym = get_symbol(root_decl->identifier->identifier);
+    assert(sym);
+
+    fatal_resolve_error(root_decl, "Cyclic dependency detected");
+    report_circular_dep(sym, sym);
 }
 
 void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args)
