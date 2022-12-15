@@ -223,7 +223,7 @@ struct AST_Constant_Variable_Declaration
 
 struct AST_Field_Declaration
 {
-    Atom name;
+    AST_Identifier ident;
     AST_Type_Spec *type_spec;
 };
 

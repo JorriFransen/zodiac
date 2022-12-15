@@ -771,7 +771,7 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
             string_builder_append(sb, "%s :: (", decl->identifier.name.data);
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 if (i > 0) string_builder_append(sb, ", ");
-                string_builder_append(sb, "%s: ", decl->function.params[i].name.data);
+                string_builder_append(sb, "%s: ", decl->function.params[i].ident.name.data);
                 ast_print_type_spec(sb, decl->function.params[i].type_spec);
             }
             string_builder_append(sb, ") -> ");
@@ -800,7 +800,7 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
             }
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
                 ast_print_indent(sb, indent + 1);
-                string_builder_append(sb, "%s: ", decl->aggregate.fields[i].name.data);
+                string_builder_append(sb, "%s: ", decl->aggregate.fields[i].ident.name.data);
                 ast_print_type_spec(sb, decl->aggregate.fields[i].type_spec);
                 string_builder_append(sb, ";\n");
             }

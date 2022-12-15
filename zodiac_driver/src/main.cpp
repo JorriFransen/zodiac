@@ -88,7 +88,7 @@ struct Symbol
     Symbol_State state;
     Symbol_Flags flags;
 
-    Atom name;
+    AST_Identifier ident;
     AST_Declaration *decl;    
 };
 
@@ -104,11 +104,12 @@ u64 name_resolved_count = 0;
 Dynamic_Array<Resolve_Error> resolve_errors;
 bool fatal_resolve_error = false;
 
-bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
-bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
+bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl);
+bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl);
 bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global);
 
-Symbol *get_symbol(Atom name);
+Symbol *get_symbol(const AST_Identifier &ident);
+Symbol *get_symbol(const Atom &name);
 
 bool name_resolve_decl_(AST_Declaration *decl);
 bool name_resolve_stmt_(AST_Statement *stmt);
@@ -156,6 +157,11 @@ void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ...);
     resolve_error_((node), true, fmt, ##__VA_ARGS__); \
 }
 
+#define add_builtin_symbol(kind, atom) {                                                         \
+    Source_Pos pos = { "<builtin>", 0, 0 };                                                      \
+    add_resolved_symbol((kind), (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), { (atom), pos }, nullptr); \
+}
+
 void resolve_test(Zodiac_Context *ctx, AST_File *file)
 {
     assert(ctx);
@@ -167,10 +173,10 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
 
     Symbol_Flags builtin_global_flags = SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN;
 
-    add_resolved_symbol(Symbol_Kind::TYPE, builtin_global_flags, atom_s64, nullptr);
-    add_resolved_symbol(Symbol_Kind::TYPE, builtin_global_flags, atom_r32, nullptr);
-    add_resolved_symbol(Symbol_Kind::TYPE, builtin_global_flags, atom_String, nullptr);
-    add_resolved_symbol(Symbol_Kind::TYPE, builtin_global_flags, atom_get(at, "null"), nullptr);
+    add_builtin_symbol(Symbol_Kind::TYPE, atom_s64);
+    add_builtin_symbol(Symbol_Kind::TYPE, atom_r32);
+    add_builtin_symbol(Symbol_Kind::TYPE, atom_String);
+    add_builtin_symbol(Symbol_Kind::TYPE, atom_get(at, "null"));
 
     auto file_decls = dynamic_array_copy(&file->declarations, &dynamic_allocator);
 
@@ -237,13 +243,13 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
     }
 }
 
-bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
+bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl)
 {
     assert(kind != Symbol_Kind::INVALID);
     assert(decl);
 
-    if (get_symbol(name)) {
-        fatal_resolve_error(decl, "Redeclaration of symbol: '%s'", name.data);
+    if (get_symbol(ident)) {
+        fatal_resolve_error(decl, "Redeclaration of symbol: '%s'", ident.name.data);
         return false;
     }
 
@@ -251,7 +257,7 @@ bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_
         kind,
         Symbol_State::UNRESOLVED,
         flags,
-        name,
+        ident,
         decl,
     };
 
@@ -259,13 +265,13 @@ bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_
     return true;
 }
 
-bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
+bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl)
 {
     assert(kind != Symbol_Kind::INVALID);
     assert(decl || (flags & SYM_FLAG_BUILTIN));
 
-    if (get_symbol(name)) {
-        fatal_resolve_error(decl, "Redeclaration of symbol: '%s'", name.data);
+    if (get_symbol(ident)) {
+        fatal_resolve_error(decl, "Redeclaration of symbol: '%s'", ident.name.data);
         return false;
     }
 
@@ -273,7 +279,7 @@ bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_De
         kind,
         Symbol_State::RESOLVED,
         flags,
-        name,
+        ident,
         decl,
     };
 
@@ -298,7 +304,7 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
 
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
-                if (!add_unresolved_symbol(Symbol_Kind::PARAM, SYM_FLAG_NONE, param.name, decl)) {
+                if (!add_unresolved_symbol(Symbol_Kind::PARAM, SYM_FLAG_NONE, param.ident, decl)) {
                     return false;
                 }
             }
@@ -314,15 +320,19 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
     Symbol_Flags flags = SYM_FLAG_NONE;
     if (global) flags |= SYM_FLAG_GLOBAL;
 
-    auto name = decl->identifier.name;
 
-    return add_unresolved_symbol(kind, flags, name, decl);
+    return add_unresolved_symbol(kind, flags, decl->identifier, decl);
 }
 
-Symbol *get_symbol(Atom name)
+Symbol *get_symbol(const AST_Identifier &ident)
+{
+    return get_symbol(ident.name);
+}
+
+Symbol *get_symbol(const Atom &name)
 {
     for (u64 i = 0; i < symbols.count; i++) {
-        if (symbols[i].name == name) {
+        if (symbols[i].ident.name == name) {
             return &symbols[i];
         }
     }

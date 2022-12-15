@@ -396,11 +396,11 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
 
     expect_token(parser, '(');
 
-    Dynamic_Array<AST_Field_Declaration> args = {};
+    Dynamic_Array<AST_Field_Declaration> params = {};
 
     if (is_token(parser, TOK_NAME)) {
 
-        auto temp_args = temp_array_create<AST_Field_Declaration>(parser);
+        auto temp_params = temp_array_create<AST_Field_Declaration>(parser);
         do {
 
             Token name_tok = cur_tok(parser);
@@ -408,10 +408,13 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
             expect_token(parser, ':');
             AST_Type_Spec *ts = parse_type_spec(parser);
 
-            dynamic_array_append(&temp_args.array, { name_tok.atom, ts });
+            AST_Identifier param_ident;
+            ast_identifier_create(name_tok.atom, name_tok.start, &param_ident);
+
+            dynamic_array_append(&temp_params.array, { param_ident, ts });
         } while (match_token(parser, ','));
 
-        args = temp_array_finalize(parser, temp_args);
+        params = temp_array_finalize(parser, temp_params);
 
     }
 
@@ -435,7 +438,7 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
 
     auto statements = temp_array_finalize(parser, temp_stmts);
 
-    return ast_function_decl_new(parser->context, ident.pos, ident, args, return_ts, statements);
+    return ast_function_decl_new(parser->context, ident.pos, ident, params, return_ts, statements);
 }
 
 AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier ident)
@@ -459,17 +462,23 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
 
     while (!match_token(parser, '}')) {
 
-        auto temp_names = temp_array_create<Atom>(parser);
+        auto temp_idents = temp_array_create<AST_Identifier>(parser);
 
         // At least one name
-        Atom first_name_atom = cur_tok(parser).atom;
+        Token first_name_tok = cur_tok(parser);
         expect_token(parser, TOK_NAME);
-        dynamic_array_append(&temp_names.array, first_name_atom);
+
+        AST_Identifier first_ident;
+        ast_identifier_create(first_name_tok.atom, first_name_tok.start, &first_ident);
+        dynamic_array_append(&temp_idents.array, first_ident);
 
         while (match_token(parser, ',')) {
-            Atom name = cur_tok(parser).atom;
+            Token name_tok = cur_tok(parser);
             expect_token(parser, TOK_NAME);
-            dynamic_array_append(&temp_names.array, name);
+
+            AST_Identifier ident;
+            ast_identifier_create(name_tok.atom, name_tok.start, &ident);
+            dynamic_array_append(&temp_idents.array, ident);
         }
 
         expect_token(parser, ':');
@@ -477,8 +486,8 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
         AST_Type_Spec *ts = parse_type_spec(parser);
         expect_token(parser, ';');
 
-        for (u64 i = 0; i < temp_names.array.count; i++) {
-            dynamic_array_append(&temp_fields.array, { temp_names.array[i], ts });
+        for (u64 i = 0; i < temp_idents.array.count; i++) {
+            dynamic_array_append(&temp_fields.array, { temp_idents.array[i], ts });
         }
     }
 
