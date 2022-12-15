@@ -312,7 +312,7 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
 
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
-                if (!add_unresolved_symbol(Symbol_Kind::PARAM, SYM_FLAG_NONE, param.ident, decl)) {
+                if (!add_unresolved_symbol(Symbol_Kind::PARAM, SYM_FLAG_NONE, param.identifier, decl)) {
                     return false;
                 }
             }
@@ -392,7 +392,7 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
         case AST_Declaration_Kind::FUNCTION: {
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
-                auto param_sym = get_symbol(param.ident);
+                auto param_sym = get_symbol(param.identifier);
                 assert(param_sym);
 
                 switch (param_sym->state) {
@@ -525,7 +525,7 @@ bool name_resolve_expr_(AST_Expression *expr)
             assert(base_sym);
 
             if (base_sym->kind != Symbol_Kind::FUNC) {
-                assert(base->kind ==AST_Expression_Kind::IDENTIFIER);
+                assert(base->kind == AST_Expression_Kind::IDENTIFIER);
                 fatal_resolve_error(base, "Call expression base is not a function: '%s'", base->identifier.name.data);
                 return false;
             }
@@ -562,9 +562,9 @@ bool name_resolve_ts_(AST_Type_Spec *ts)
         case AST_Type_Spec_Kind::INVALID: assert(false);
 
         case AST_Type_Spec_Kind::NAME: {
-            auto sym = get_symbol(ts->name); 
+            auto sym = get_symbol(ts->identifier); 
             if (!sym) {
-                resolve_error(ts, "Undeclared symbol: '%s'", ts->name.data);
+                resolve_error(ts, "Undeclared symbol: '%s'", ts->identifier.name.data);
                 return false;
             }
 

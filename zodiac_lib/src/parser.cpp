@@ -561,9 +561,12 @@ AST_Type_Spec *parse_type_spec(Parser *parser)
         }
 
         case TOK_NAME: {
-            auto name_tok = cur_tok(parser);
             next_token(parser);
-            return ast_name_ts_new(parser->context, t.start, name_tok.atom);
+
+            AST_Identifier ident;
+            ast_identifier_create(t.atom, t.start, &ident);
+        
+            return ast_name_ts_new(parser->context, t.start, ident);
         }
 
         default: {

@@ -238,14 +238,14 @@ void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl
     out_decl->kind = kind;
 }
 
-void ast_name_ts_create(Atom name, AST_Type_Spec *out_ts)
+void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts)
 {
     assert(out_ts)
 
 
     ast_type_spec_create(AST_Type_Spec_Kind::NAME, out_ts);
 
-    out_ts->name = name;
+    out_ts->identifier = ident;
 }
 
 void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts)
@@ -496,12 +496,12 @@ file_local const char *ast_binop_to_string[(int)AST_Binary_Operator::LAST_BINOP 
     [(int)AST_Binary_Operator::GTEQ] = ">=",
 };
 
-AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Pos pos, Atom name)
+AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident)
 {
     assert(ctx);
 
     auto ts = ast_type_spec_new(ctx, pos);
-    ast_name_ts_create(name, ts);
+    ast_name_ts_create(ident, ts);
     return ts;
 }
 
@@ -771,7 +771,7 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
             string_builder_append(sb, "%s :: (", decl->identifier.name.data);
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 if (i > 0) string_builder_append(sb, ", ");
-                string_builder_append(sb, "%s: ", decl->function.params[i].ident.name.data);
+                string_builder_append(sb, "%s: ", decl->function.params[i].identifier.name.data);
                 ast_print_type_spec(sb, decl->function.params[i].type_spec);
             }
             string_builder_append(sb, ") -> ");
@@ -800,7 +800,7 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
             }
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
                 ast_print_indent(sb, indent + 1);
-                string_builder_append(sb, "%s: ", decl->aggregate.fields[i].ident.name.data);
+                string_builder_append(sb, "%s: ", decl->aggregate.fields[i].identifier.name.data);
                 ast_print_type_spec(sb, decl->aggregate.fields[i].type_spec);
                 string_builder_append(sb, ";\n");
             }
@@ -836,7 +836,7 @@ file_local void ast__print_type_spec_internal(String_Builder *sb, AST_Type_Spec 
         case AST_Type_Spec_Kind::INVALID: assert(false);
 
         case AST_Type_Spec_Kind::NAME: {
-            string_builder_append(sb, "%s", ts->name.data);
+            string_builder_append(sb, "%s", ts->identifier.name.data);
             break;
         }
 

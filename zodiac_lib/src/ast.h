@@ -223,7 +223,7 @@ struct AST_Constant_Variable_Declaration
 
 struct AST_Field_Declaration
 {
-    AST_Identifier ident;
+    AST_Identifier identifier;
     AST_Type_Spec *type_spec;
 };
 
@@ -287,7 +287,7 @@ struct AST_Type_Spec
 
     union
     {
-        Atom name;
+        AST_Identifier identifier;
         AST_Type_Spec *base;
     };
 };
@@ -325,7 +325,7 @@ ZAPI void ast_function_decl_create(AST_Identifier ident, Dynamic_Array<AST_Field
 ZAPI void ast_aggregate_decl_create(AST_Identifier *ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields, AST_Declaration *out_decl);
 ZAPI void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl);
 
-ZAPI void ast_name_ts_create(Atom name, AST_Type_Spec *out_ts);
+ZAPI void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts);
 ZAPI void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts);
 ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
 
@@ -357,7 +357,7 @@ ZAPI AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Pos pos,
 ZAPI AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields);
 ZAPI AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Pos pos);
 
-ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Pos pos, Atom name);
+ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident);
 ZAPI AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Pos pos, AST_Type_Spec *base);
 ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Pos pos);
 
