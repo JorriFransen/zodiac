@@ -39,9 +39,9 @@ z :: 1;
 //    return add_fn(40, 2);
 //}
 
-add_fn :: (a: s64, a: s64) -> s64 {
-    //x := a;
-    result := a + b;
-    return result;
-}
+//add_fn :: (a: s64, b: s64) -> s64 {
+//    //x := a;
+//    result := a + b;
+//    return result;
+//}
 

@@ -13,6 +13,13 @@ struct AST_Statement;
 struct AST_Declaration;
 struct AST_Type_Spec;
 
+struct AST_Identifier
+{
+    Atom name;
+
+    Source_Pos pos;
+};
+
 struct AST_Integer_Literal_Expression
 {
     Integer_Value value;
@@ -108,7 +115,7 @@ struct AST_Expression
     {
         AST_Integer_Literal_Expression integer_literal;
         AST_String_Literal_Expression string_literal;
-        Atom identifier;
+        AST_Identifier identifier;
         AST_Member_Expression member;
         AST_Index_Expression index;
         AST_Call_Expression call;
@@ -253,7 +260,7 @@ struct AST_Declaration
 
     Source_Pos pos;
 
-    AST_Expression *identifier;
+    AST_Identifier identifier;
 
     union
     {
@@ -290,9 +297,11 @@ struct AST_File
     Dynamic_Array<AST_Declaration *> declarations;
 };
 
+ZAPI void ast_identifier_create(Atom name, Source_Pos pos, AST_Identifier *out_ident);
+
 ZAPI void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_expr);
 ZAPI void ast_string_literal_expr_create(Atom atom, AST_Expression *out_expr);
-ZAPI void ast_identifier_expr_create(Atom atom, AST_Expression *out_expr);
+ZAPI void ast_identifier_expr_create(AST_Identifier ident, AST_Expression *out_expr);
 ZAPI void ast_member_expr_create(AST_Expression *base, Atom atom, AST_Expression *out_expr);
 ZAPI void ast_call_expr_create(AST_Expression *base, Dynamic_Array<AST_Expression *> args, AST_Expression *out_expr);
 ZAPI void ast_index_expr_create(AST_Expression *base, AST_Expression *index, AST_Expression *out_expr);
@@ -310,10 +319,10 @@ ZAPI void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
 ZAPI void ast_print_stmt_create(AST_Expression *print_expr, AST_Statement *out_stmt);
 ZAPI void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt);
 
-ZAPI void ast_variable_decl_create(AST_Expression *identitifer, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
-ZAPI void ast_constant_variable_decl_create(AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
-ZAPI void ast_function_decl_create(AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl);
-ZAPI void ast_aggregate_decl_create(AST_Declaration *identifier, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields, AST_Declaration *out_decl);
+ZAPI void ast_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
+ZAPI void ast_constant_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
+ZAPI void ast_function_decl_create(AST_Identifier ident, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl);
+ZAPI void ast_aggregate_decl_create(AST_Identifier *ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields, AST_Declaration *out_decl);
 ZAPI void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl);
 
 ZAPI void ast_name_ts_create(Atom name, AST_Type_Spec *out_ts);
@@ -342,10 +351,10 @@ ZAPI AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Pos pos, AST
 ZAPI AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *print_expr);
 ZAPI AST_Statement *ast_statement_new(Zodiac_Context *ctx, Source_Pos pos);
 
-ZAPI AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value);
-ZAPI AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value);
-ZAPI AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body);
-ZAPI AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *identifier, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields);
+ZAPI AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value);
+ZAPI AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value);
+ZAPI AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body);
+ZAPI AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields);
 ZAPI AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Pos pos);
 
 ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Pos pos, Atom name);

@@ -7,6 +7,14 @@
 namespace Zodiac
 {
 
+void ast_identifier_create(Atom name, Source_Pos pos, AST_Identifier *out_ident)
+{
+    assert(out_ident);
+
+    out_ident->name = name;
+    out_ident->pos = pos;
+}
+
 void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_expr)
 {
     assert(out_expr);
@@ -25,13 +33,13 @@ void ast_string_literal_expr_create(Atom atom, AST_Expression *out_expr)
     out_expr->string_literal.atom = atom;
 }
 
-void ast_identifier_expr_create(Atom atom, AST_Expression *out_expr)
+void ast_identifier_expr_create(AST_Identifier ident, AST_Expression *out_expr)
 {
-    assert(out_expr);
+    assert(&out_expr);
 
     ast_expression_create(AST_Expression_Kind::IDENTIFIER, out_expr);
 
-    out_expr->identifier = atom;
+    out_expr->identifier = ident;
 }
 
 void ast_member_expr_create(AST_Expression *base, Atom atom, AST_Expression *out_expr)
@@ -178,52 +186,48 @@ void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
     out_stmt->kind = kind;
 }
 
-void ast_variable_decl_create(AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl)
+void ast_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl)
 {
-    assert(identifier && out_decl);
-    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+    assert(out_decl);
 
     ast_declaration_create(AST_Declaration_Kind::VARIABLE, out_decl);
 
-    out_decl->identifier = identifier;
+    out_decl->identifier = ident;
     out_decl->variable.type_spec = ts;
     out_decl->variable.value = value;
 }
 
-void ast_constant_variable_decl_create(AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl)
+void ast_constant_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl)
 {
-    assert(identifier && out_decl);
-    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+    assert(out_decl);
 
     ast_declaration_create(AST_Declaration_Kind::CONSTANT_VARIABLE, out_decl);
 
-    out_decl->identifier = identifier;
+    out_decl->identifier = ident;
     out_decl->constant_variable.type_spec = ts;
     out_decl->constant_variable.value = value;
 }
 
-void ast_function_decl_create(AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl)
+void ast_function_decl_create(AST_Identifier ident, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl)
 {
     assert(out_decl);
-    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
 
     ast_declaration_create(AST_Declaration_Kind::FUNCTION, out_decl);
 
-    out_decl->identifier = identifier;
+    out_decl->identifier = ident;
     out_decl->function.params = args;
     out_decl->function.return_ts = return_ts;
     out_decl->function.body = body;
 }
 
-void ast_aggregate_decl_create(AST_Expression *identifier, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields, AST_Declaration *out_decl)
+void ast_aggregate_decl_create(AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields, AST_Declaration *out_decl)
 {
-    assert(identifier && out_decl);
-    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+    assert(out_decl);
     assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
 
     ast_declaration_create(kind, out_decl);
 
-    out_decl->identifier = identifier;
+    out_decl->identifier = ident;
     out_decl->aggregate.fields = fields;
 }
 
@@ -289,8 +293,11 @@ AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Source_Pos pos, Ato
 {
     assert(ctx);
 
+    AST_Identifier ident;
+    ast_identifier_create(atom, pos, &ident);
+
     auto expr = ast_expression_new(ctx, pos);
-    ast_identifier_expr_create(atom, expr);
+    ast_identifier_expr_create(ident, expr);
     return expr;
 }
 
@@ -428,44 +435,40 @@ AST_Statement *ast_statement_new(Zodiac_Context *ctx, Source_Pos pos)
     return result;
 }
 
-AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value)
+AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value)
 {
-    assert(ctx && identifier);
-    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+    assert(ctx);
 
     auto decl = ast_declaration_new(ctx, pos);
-    ast_variable_decl_create(identifier, ts, value, decl);
+    ast_variable_decl_create(ident, ts, value, decl);
     return decl;
 }
 
-AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *identifier, AST_Type_Spec *ts, AST_Expression *value)
+AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value)
 {
-    assert(ctx && identifier);
-    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+    assert(ctx);
 
     auto decl = ast_declaration_new(ctx, pos);
-    ast_constant_variable_decl_create(identifier, ts, value, decl);
+    ast_constant_variable_decl_create(ident, ts, value, decl);
     return decl;
 }
 
-AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *identifier, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body)
+AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body)
 {
-    assert(ctx && identifier);
-    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+    assert(ctx);
 
     auto decl = ast_declaration_new(ctx, pos);
-    ast_function_decl_create(identifier, args, return_ts, body, decl);
+    ast_function_decl_create(ident, args, return_ts, body, decl);
     return decl;
 }
 
-AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *identifier, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields)
+AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields)
 {
     assert(ctx); 
-    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
     assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
 
     auto decl = ast_declaration_new(ctx, pos);
-    ast_aggregate_decl_create(identifier, kind, fields, decl);
+    ast_aggregate_decl_create(ident, kind, fields, decl);
     return decl;
 }
 
@@ -548,7 +551,7 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
         }
 
         case AST_Expression_Kind::IDENTIFIER: {
-            string_builder_append(sb, "%s", expr->identifier.data);
+            string_builder_append(sb, "%s", expr->identifier.name.data);
             break;
         }
 
@@ -732,8 +735,7 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
 
         case AST_Declaration_Kind::VARIABLE: {
             semicolon = true;
-            ast_print_expression(sb, decl->identifier);
-            string_builder_append(sb, " :");
+            string_builder_append(sb, "%s :", decl->identifier.name.data);
             if (decl->variable.type_spec) {
                 string_builder_append(sb, " ");
                 ast_print_type_spec(sb, decl->variable.type_spec);
@@ -750,8 +752,7 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
 
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
             semicolon = true;
-            ast_print_expression(sb, decl->identifier);
-            string_builder_append(sb, " :");
+            string_builder_append(sb, "%s :", decl->identifier.name.data);
             if (decl->variable.type_spec) {
                 string_builder_append(sb, " ");
                 ast_print_type_spec(sb, decl->variable.type_spec);
@@ -767,8 +768,7 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
         }
 
         case AST_Declaration_Kind::FUNCTION: {
-            ast_print_expression(sb, decl->identifier);
-            string_builder_append(sb, " :: (");
+            string_builder_append(sb, "%s :: (", decl->identifier.name.data);
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 if (i > 0) string_builder_append(sb, ", ");
                 string_builder_append(sb, "%s: ", decl->function.params[i].name.data);
@@ -792,8 +792,7 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
         case AST_Declaration_Kind::STRUCT:
         case AST_Declaration_Kind::UNION: {
             semicolon = false;
-            ast_print_expression(sb, decl->identifier);
-            string_builder_append(sb, " :: ");
+            string_builder_append(sb, "%s :: ", decl->identifier.name.data);
             if (decl->kind == AST_Declaration_Kind::STRUCT) {
                 string_builder_append(sb, "struct {\n");
             } else {

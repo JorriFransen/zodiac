@@ -80,6 +80,16 @@ void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser)
     if (!builtin_types_initialized) initialize_builtin_types(ctx);
 }
 
+AST_Identifier parse_identifier(Parser *parser)
+{
+    Token ident_tok = cur_tok(parser);
+    expect_token(parser, TOK_NAME);
+
+    AST_Identifier result;
+    ast_identifier_create(ident_tok.atom, ident_tok.start, &result);
+    return result;
+}
+
 AST_Expression *parse_expr_operand(Parser *parser)
 {
     assert(parser);
@@ -363,7 +373,7 @@ AST_Statement *parse_statement(Parser *parser)
 
         expect_token(parser, ';');
 
-        AST_Declaration *decl = ast_variable_decl_new(parser->context, start_pos, expr, type_spec, value);
+        AST_Declaration *decl = ast_variable_decl_new(parser->context, start_pos, expr->identifier, type_spec, value);
         return ast_declaration_stmt_new(parser->context, start_pos, decl);
 
     } else {
@@ -380,10 +390,9 @@ AST_Statement *parse_statement(Parser *parser)
     return result;
 }
 
-AST_Declaration *parse_function_declaration(Parser *parser, AST_Expression *identifier)
+AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident)
 {
-    assert(parser && identifier);
-    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+    assert(parser);
 
     expect_token(parser, '(');
 
@@ -426,13 +435,12 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Expression *iden
 
     auto statements = temp_array_finalize(parser, temp_stmts);
 
-    return ast_function_decl_new(parser->context, identifier->pos, identifier, args, return_ts, statements);
+    return ast_function_decl_new(parser->context, ident.pos, ident, args, return_ts, statements);
 }
 
-AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Expression *identifier)
+AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier ident)
 {
-    assert(parser && identifier);
-    assert(identifier->kind == AST_Expression_Kind::IDENTIFIER);
+    assert(parser);
 
     AST_Declaration_Kind kind = AST_Declaration_Kind::INVALID;
 
@@ -475,12 +483,13 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Expression *ide
     }
 
     auto fields = temp_array_finalize(parser, temp_fields);
-    return ast_aggregate_decl_new(parser->context, identifier->pos, identifier, kind, fields);
+    return ast_aggregate_decl_new(parser->context, ident.pos, ident, kind, fields);
 }
 
 AST_Declaration *parse_declaration(Parser *parser)
 {
-    AST_Expression *ident_expression = parse_expression(parser);
+    AST_Identifier ident = parse_identifier(parser);
+    assert(ident.name.data)
 
     expect_token(parser, ':');
 
@@ -498,7 +507,7 @@ AST_Declaration *parse_declaration(Parser *parser)
     if (match_token(parser, ':')) {
 
         if (is_keyword(parser, keyword_struct) || is_keyword(parser, keyword_union)) {
-            return parse_aggregate_declaration(parser, ident_expression);
+            return parse_aggregate_declaration(parser, ident);
         }
 
         // Constant
@@ -507,14 +516,14 @@ AST_Declaration *parse_declaration(Parser *parser)
                  peek_token(parser).kind == ')') {
 
                 assert(!ts);
-                return parse_function_declaration(parser, ident_expression);
+                return parse_function_declaration(parser, ident);
             }
         }
 
         AST_Expression *const_value = parse_expression(parser);
         expect_token(parser, ';');
 
-        return ast_constant_variable_decl_new(parser->context, ident_expression->pos, ident_expression, ts, const_value);
+        return ast_constant_variable_decl_new(parser->context, ident.pos, ident, ts, const_value);
 
     } else if (is_token(parser, '=') || is_token(parser, ';')) {
         // Variable
@@ -524,7 +533,7 @@ AST_Declaration *parse_declaration(Parser *parser)
         }
         expect_token(parser, ';');
 
-        return ast_variable_decl_new(parser->context, ident_expression->pos, ident_expression, ts, value);
+        return ast_variable_decl_new(parser->context, ident.pos, ident, ts, value);
     }
 
     fatal_syntax_error(parser, "Unexpected token: '%s' when parsing declaration", cur_tok(parser).atom.data);

@@ -314,8 +314,7 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
     Symbol_Flags flags = SYM_FLAG_NONE;
     if (global) flags |= SYM_FLAG_GLOBAL;
 
-    assert(decl->identifier && decl->identifier->kind == AST_Expression_Kind::IDENTIFIER);
-    auto name = decl->identifier->identifier;
+    auto name = decl->identifier.name;
 
     return add_unresolved_symbol(kind, flags, name, decl);
 }
@@ -335,8 +334,7 @@ bool name_resolve_decl_(AST_Declaration *decl)
 {
     assert(decl);
 
-    assert(decl->identifier && decl->identifier->kind == AST_Expression_Kind::IDENTIFIER);
-    auto decl_sym = get_symbol(decl->identifier->identifier);
+    auto decl_sym = get_symbol(decl->identifier.name);
     assert(decl_sym && decl_sym->decl == decl);
 
     switch (decl_sym->state) {
@@ -375,7 +373,7 @@ bool name_resolve_decl_(AST_Declaration *decl)
 
 
 exit:
-    decl_sym = get_symbol(decl->identifier->identifier);
+    decl_sym = get_symbol(decl->identifier.name);
     assert(decl_sym->state == Symbol_State::RESOLVING);
 
     if (result) {
@@ -421,10 +419,10 @@ bool name_resolve_expr_(AST_Expression *expr)
         case AST_Expression_Kind::STRING_LITERAL: return true;
 
         case AST_Expression_Kind::IDENTIFIER: {
-            Symbol *sym = get_symbol(expr->identifier);
+            Symbol *sym = get_symbol(expr->identifier.name);
 
             if (!sym) {
-                resolve_error(expr, "Undefined symbol: '%s'", expr->identifier.data);
+                resolve_error(expr, "Undefined symbol: '%s'", expr->identifier.name.data);
                 return false;
             }
 
