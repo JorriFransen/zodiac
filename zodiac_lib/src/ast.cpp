@@ -236,7 +236,8 @@ void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl
 
 void ast_name_ts_create(Atom name, AST_Type_Spec *out_ts)
 {
-    assert(out_ts);
+    assert(out_ts)
+
 
     ast_type_spec_create(AST_Type_Spec_Kind::NAME, out_ts);
 

@@ -293,7 +293,17 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
         case AST_Declaration_Kind::VARIABLE:
         case AST_Declaration_Kind::CONSTANT_VARIABLE: kind = Symbol_Kind::VAR; break;
 
-        case AST_Declaration_Kind::FUNCTION: kind = Symbol_Kind::FUNC; break;
+        case AST_Declaration_Kind::FUNCTION: {
+            kind = Symbol_Kind::FUNC;
+
+            for (u64 i = 0; i < decl->function.params.count; i++) {
+                auto param = decl->function.params[i];
+                if (!add_unresolved_symbol(Symbol_Kind::PARAM, SYM_FLAG_NONE, param.name, decl)) {
+                    return false;
+                }
+            }
+            break;
+        }
 
         case AST_Declaration_Kind::STRUCT:
         case AST_Declaration_Kind::UNION: kind = Symbol_Kind::TYPE; break;
@@ -351,7 +361,13 @@ bool name_resolve_decl_(AST_Declaration *decl)
             break;
         }
 
-        case AST_Declaration_Kind::FUNCTION: assert(false);
+        case AST_Declaration_Kind::FUNCTION: {
+            assert_msg(false, "TODO: Implement function resolving");
+            for (u64 i = 0; i < decl->function.params.count; i++) {
+            }
+            break;
+        }
+
         case AST_Declaration_Kind::STRUCT: assert(false);
         case AST_Declaration_Kind::UNION: assert(false);
     }
@@ -396,6 +412,8 @@ bool name_resolve_expr_(AST_Expression *expr)
 {
     assert(expr);
 
+    bool result = true;
+
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false);
 
@@ -411,15 +429,20 @@ bool name_resolve_expr_(AST_Expression *expr)
             }
 
             if (sym->state == Symbol_State::RESOLVING) {
-                assert(false); // circ dep
-                return false;
+
+                fatal_resolve_error(expr, "Circular dependency detected");
+                result = false;
+                break;
+
             } else if (sym->state == Symbol_State::UNRESOLVED) {
-                resolve_error(expr, "Unresolved symbol: '%s'", expr->identifier.data);
-                return false;
+
+                name_resolve_decl(sym->decl);
+
             } else {
                 assert(sym->state == Symbol_State::RESOLVED);
             }
-            return true;
+
+            break;
         }
                                               
         case AST_Expression_Kind::MEMBER: assert(false);
@@ -429,8 +452,8 @@ bool name_resolve_expr_(AST_Expression *expr)
         case AST_Expression_Kind::BINARY: assert(false);
     }
 
-    assert(false);
-    return false;
+exit:
+    return result;
 }
 
 bool name_resolve_ts_(AST_Type_Spec *ts)
