@@ -4,8 +4,8 @@ y :: z;
 z :: 1;
 
 // Should report circular dependency
-//a :: b;
-//b :: a;
+//aa :: bb;
+//bb :: aa;
 
 //Vec2 :: struct {
 //    x: r32;
@@ -20,26 +20,27 @@ z :: 1;
 //    int_value: s32;
 //    float_value: r32;
 //}
-//
-//
-//ptr : *s64 = null;
-//var := 42;
-//
+
+
+ptr : *s64 = null;
+var := 42;
+
 //var2 : u16 = 8;
 //var3 : s8;
-//c_var :: 5;
+c_var :: 5;
 //c_var2 : u32 : 2;
-//
-//main :: () -> s64 {
-//
-//    //foo : x; // Should generate "Not a type 'x'" error
-//    str : String = "This is a string literal";
-//    print(str);
-//
-//    return add_fn(40, 2);
-//}
 
-add_fn :: (a: s64, a: s64) -> s64 {
+main :: () -> s64 {
+
+    //foo : x; // Should generate "Not a type 'x'" error
+    str : String = "This is a string literal";
+    print(str);
+
+    //return x(42, 2);
+    return add_fn(40, 2);
+}
+
+add_fn :: (a: s64, b: s64) -> s64 {
     //x := a;
     result := a + b;
     return result;

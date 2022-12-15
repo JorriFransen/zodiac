@@ -111,16 +111,16 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global);
 Symbol *get_symbol(const AST_Identifier &ident);
 Symbol *get_symbol(const Atom &name);
 
-bool name_resolve_decl_(AST_Declaration *decl);
+bool name_resolve_decl_(AST_Declaration *decl, bool global);
 bool name_resolve_stmt_(AST_Statement *stmt);
 bool name_resolve_expr_(AST_Expression *expr);
 bool name_resolve_ts_(AST_Type_Spec *ts);
 
-#define name_resolve_decl(decl) {    \
-    if (!name_resolve_decl_(decl)) { \
-        result = false;              \
-        goto exit;                   \
-    }                                \
+#define name_resolve_decl(decl, glob) {        \
+    if (!name_resolve_decl_((decl), (glob))) { \
+        result = false;                        \
+        goto exit;                             \
+    }                                          \
 }
 
 #define name_resolve_stmt(stmt) {    \
@@ -156,6 +156,11 @@ void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ...);
 #define fatal_resolve_error(node, fmt, ...) {           \
     fatal_resolve_error = true;                         \
     resolve_error_((node), true, (fmt), ##__VA_ARGS__); \
+}
+
+#define report_redecl(old_sym, new_ident) {\
+    fatal_resolve_error((new_ident).pos, "Redeclaration of symbol: '%s'", (new_ident).name.data); \
+    fatal_resolve_error((old_sym)->ident.pos, "<---- Previous declaration was here"); \
 }
 
 #define add_builtin_symbol(kind, atom) {                                                         \
@@ -200,7 +205,7 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
             AST_Declaration *decl = file_decls[i];
 
             if (decl) {
-                if (name_resolve_decl_(decl)) {
+                if (name_resolve_decl_(decl, true)) {
                     // Set the decl to null instead of removing it (don't want to do unordered removal)
                     file_decls[i] = nullptr;
 
@@ -251,8 +256,7 @@ bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier 
 
     auto ex_sym = get_symbol(ident);
     if (ex_sym) {
-        fatal_resolve_error(ident.pos, "Redeclaration of symbol: '%s'", ident.name.data);
-        fatal_resolve_error(ex_sym->ident.pos, "<---- Previous declaration was here");
+        report_redecl(ex_sym, ident);
         return false;
     }
 
@@ -273,8 +277,9 @@ bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier id
     assert(kind != Symbol_Kind::INVALID);
     assert(decl || (flags & SYM_FLAG_BUILTIN));
 
-    if (get_symbol(ident)) {
-        fatal_resolve_error(decl, "Redeclaration of symbol: '%s'", ident.name.data);
+    auto ex_sym = get_symbol(ident);
+    if (ex_sym) {
+        report_redecl(ex_sym, ident);
         return false;
     }
 
@@ -343,11 +348,23 @@ Symbol *get_symbol(const Atom &name)
     return nullptr;
 }
 
-bool name_resolve_decl_(AST_Declaration *decl)
+bool name_resolve_decl_(AST_Declaration *decl, bool global)
 {
     assert(decl);
 
     auto decl_sym = get_symbol(decl->identifier.name);
+    if (decl_sym && decl_sym->decl != decl) {
+        report_redecl(decl_sym, decl->identifier);
+        return false;
+    }
+
+    if (global) {
+        assert_msg(decl_sym, "Global symbol should have been registered already");
+    } else if (!decl_sym) {
+        // First time local symbol is encountered 
+        add_unresolved_decl_symbol(decl, global);
+        decl_sym = get_symbol(decl->identifier);
+    }
     assert(decl_sym && decl_sym->decl == decl);
 
     switch (decl_sym->state) {
@@ -360,8 +377,8 @@ bool name_resolve_decl_(AST_Declaration *decl)
 
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
-        case AST_Declaration_Kind::VARIABLE: assert(false);
 
+        case AST_Declaration_Kind::VARIABLE:
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
             auto ts = decl->constant_variable.type_spec;
             auto expr = decl->constant_variable.value;
@@ -373,9 +390,30 @@ bool name_resolve_decl_(AST_Declaration *decl)
         }
 
         case AST_Declaration_Kind::FUNCTION: {
-            assert_msg(false, "TODO: Implement function resolving");
             for (u64 i = 0; i < decl->function.params.count; i++) {
+                auto param = decl->function.params[i];
+                auto param_sym = get_symbol(param.ident);
+                assert(param_sym);
+
+                switch (param_sym->state) {
+                    case Symbol_State::UNRESOLVED: param_sym->state = Symbol_State::RESOLVING; break;
+                    case Symbol_State::RESOLVING: assert(false); // Circular dependency
+                    case Symbol_State::RESOLVED: continue;
+                }
+
+                name_resolve_ts(param.type_spec);
+                param_sym->state = Symbol_State::RESOLVED;
             }
+
+            auto return_ts = decl->function.return_ts;
+            if (return_ts) name_resolve_ts(return_ts);
+
+            for (u64 i = 0; i < decl->function.body.count; i++) {
+                auto stmt = decl->function.body[i];
+
+                name_resolve_stmt(stmt);
+            }
+
             break;
         }
 
@@ -403,20 +441,36 @@ bool name_resolve_stmt_(AST_Statement *stmt)
 {
     assert(stmt);
 
+    bool result = true;
+
     switch (stmt->kind) {
         case AST_Statement_Kind::INVALID: assert(false);
         case AST_Statement_Kind::BLOCK: assert(false);
-        case AST_Statement_Kind::DECLARATION: assert(false);
+
+        case AST_Statement_Kind::DECLARATION: {
+            name_resolve_decl(stmt->decl.decl, false);
+            break;
+        }
+
         case AST_Statement_Kind::ASSIGN: assert(false);
         case AST_Statement_Kind::CALL: assert(false);
         case AST_Statement_Kind::IF: assert(false);
         case AST_Statement_Kind::WHILE: assert(false);
-        case AST_Statement_Kind::RETURN: assert(false);
-        case AST_Statement_Kind::PRINT: assert(false);
+
+        case AST_Statement_Kind::RETURN: {
+            auto value = stmt->return_stmt.value;
+            if (value) name_resolve_expr(value);
+            break;
+        }
+
+        case AST_Statement_Kind::PRINT: {
+            name_resolve_expr(stmt->print_expr);    
+            break;
+        }
     }   
 
-    assert(false);
-    return false;
+exit:
+    return result;
 }
 
 bool name_resolve_expr_(AST_Expression *expr)
@@ -447,7 +501,8 @@ bool name_resolve_expr_(AST_Expression *expr)
 
             } else if (sym->state == Symbol_State::UNRESOLVED) {
 
-                name_resolve_decl(sym->decl);
+                bool global = sym->flags & SYM_FLAG_GLOBAL;
+                name_resolve_decl(sym->decl, global);
 
             } else {
                 assert(sym->state == Symbol_State::RESOLVED);
@@ -458,9 +513,39 @@ bool name_resolve_expr_(AST_Expression *expr)
                                               
         case AST_Expression_Kind::MEMBER: assert(false);
         case AST_Expression_Kind::INDEX: assert(false);
-        case AST_Expression_Kind::CALL: assert(false);
+
+        case AST_Expression_Kind::CALL: {
+
+            auto base = expr->call.base;
+            name_resolve_expr(base);
+            
+            // TODO: Support more complex base expressions
+            assert(base->kind == AST_Expression_Kind::IDENTIFIER);
+            auto base_sym = get_symbol(base->identifier);
+            assert(base_sym);
+
+            if (base_sym->kind != Symbol_Kind::FUNC) {
+                assert(base->kind ==AST_Expression_Kind::IDENTIFIER);
+                fatal_resolve_error(base, "Call expression base is not a function: '%s'", base->identifier.name.data);
+                return false;
+            }
+
+            for (u64 i = 0; i < expr->call.args.count; i++) {
+                auto arg = expr->call.args[i];
+
+                name_resolve_expr(arg);
+            }
+
+            break;
+        }
+
         case AST_Expression_Kind::UNARY: assert(false);
-        case AST_Expression_Kind::BINARY: assert(false);
+
+        case AST_Expression_Kind::BINARY: {
+            name_resolve_expr(expr->binary.lhs);
+            name_resolve_expr(expr->binary.rhs);
+            break;
+        }
     }
 
 exit:
@@ -471,14 +556,34 @@ bool name_resolve_ts_(AST_Type_Spec *ts)
 {
     assert(ts);
 
+    bool result = true;
+
     switch (ts->kind) {
         case AST_Type_Spec_Kind::INVALID: assert(false);
-        case AST_Type_Spec_Kind::NAME: assert(false);
-        case AST_Type_Spec_Kind::POINTER: assert(false);
+
+        case AST_Type_Spec_Kind::NAME: {
+            auto sym = get_symbol(ts->name); 
+            if (!sym) {
+                resolve_error(ts, "Undeclared symbol: '%s'", ts->name.data);
+                return false;
+            }
+
+            switch (sym->state) {
+                case Symbol_State::UNRESOLVED: assert(false);
+                case Symbol_State::RESOLVING: assert(false);
+                case Symbol_State::RESOLVED: return true;
+            }
+            break;
+        }
+
+        case AST_Type_Spec_Kind::POINTER: {
+            name_resolve_ts(ts->base); 
+            break;
+        }
     }
 
-    assert(false);
-    return false;
+exit:
+    return result;
 }
 
 void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args)
