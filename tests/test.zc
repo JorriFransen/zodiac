@@ -1,25 +1,25 @@
 
-x :: y;
-y :: z;
-z :: 1;
+xx :: yy;
+yy :: zz;
+zz :: 11;
 
 // Should report circular dependency
 //aa :: bb;
 //bb :: aa;
 
-//Vec2 :: struct {
-//    x: r32;
-//    y: r32;
-//}
-//
-//AABB :: struct {
-//    top_left, dim: Vec2;
-//}
-//
-//Value :: union {
-//    int_value: s32;
-//    float_value: r32;
-//}
+AABB :: struct {
+    top_left, dim: Vec2;
+}
+
+Vec2 :: struct {
+    x: r32;
+    y: r32;
+}
+
+Value :: union {
+    int_value: s64;
+    float_value: r32;
+}
 
 
 ptr : *s64 = null;

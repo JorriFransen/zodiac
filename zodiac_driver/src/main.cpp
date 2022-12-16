@@ -63,6 +63,7 @@ enum class Symbol_Kind : u16
     PARAM,
 
     TYPE,
+    MEMBER,
 };
 
 enum class Symbol_State : u16
@@ -320,7 +321,17 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
         }
 
         case AST_Declaration_Kind::STRUCT:
-        case AST_Declaration_Kind::UNION: kind = Symbol_Kind::TYPE; break;
+        case AST_Declaration_Kind::UNION: {
+            kind = Symbol_Kind::TYPE;
+
+            for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
+                auto field = decl->aggregate.fields[i];
+                if (!add_unresolved_symbol(Symbol_Kind::MEMBER, SYM_FLAG_NONE, field.identifier, decl)) {
+                    return false;
+                }
+            }
+            break;
+        }
     }
 
     assert(kind != Symbol_Kind::INVALID);
@@ -394,6 +405,7 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
                 auto param = decl->function.params[i];
                 auto param_sym = get_symbol(param.identifier);
                 assert(param_sym);
+                assert(param_sym->kind == Symbol_Kind::PARAM);
 
                 switch (param_sym->state) {
                     case Symbol_State::UNRESOLVED: param_sym->state = Symbol_State::RESOLVING; break;
@@ -402,6 +414,8 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
                 }
 
                 name_resolve_ts(param.type_spec);
+
+                param_sym = get_symbol(param.identifier);
                 param_sym->state = Symbol_State::RESOLVED;
             }
 
@@ -417,13 +431,44 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
             break;
         }
 
-        case AST_Declaration_Kind::STRUCT: assert(false);
-        case AST_Declaration_Kind::UNION: assert(false);
+        case AST_Declaration_Kind::STRUCT:
+        case AST_Declaration_Kind::UNION: {
+            for (u64 i = 0 ; i < decl->aggregate.fields.count; i++) {
+                auto field = decl->aggregate.fields[i];
+                auto field_sym = get_symbol(field.identifier);
+                assert(field_sym);
+                assert(field_sym->kind == Symbol_Kind::MEMBER);
+
+                switch (field_sym->state) {
+                    case Symbol_State::UNRESOLVED: field_sym->state = Symbol_State::RESOLVING; break;
+                    case Symbol_State::RESOLVING: assert(false); // Circular dependency
+                    case Symbol_State::RESOLVED: continue;
+                }
+
+                name_resolve_ts(field.type_spec);
+
+                field_sym = get_symbol(field.identifier);
+                field_sym->state = Symbol_State::RESOLVED;
+            }
+            break;
+        }
     }
 
 
 
 exit:
+    if (decl->kind == AST_Declaration_Kind::STRUCT || decl->kind == AST_Declaration_Kind::UNION) {
+        for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
+            auto field_sym = get_symbol(decl->aggregate.fields[i].identifier);
+            if (field_sym->state == Symbol_State::RESOLVING) field_sym->state = Symbol_State::UNRESOLVED;
+        }
+    } else if (decl->kind == AST_Declaration_Kind::FUNCTION) {
+        for (u64 i = 0; i < decl->function.params.count; i++) {
+            auto param_sym = get_symbol(decl->function.params[i].identifier);
+            if (param_sym->state == Symbol_State::RESOLVING) param_sym->state = Symbol_State::UNRESOLVED;
+        }
+    }
+
     decl_sym = get_symbol(decl->identifier.name);
     assert(decl_sym->state == Symbol_State::RESOLVING);
 
@@ -505,7 +550,8 @@ bool name_resolve_expr_(AST_Expression *expr)
                 switch (sym->kind) {
                     case Symbol_Kind::INVALID:
                     case Symbol_Kind::FUNC:
-                    case Symbol_Kind::TYPE: {
+                    case Symbol_Kind::TYPE:
+                    case Symbol_Kind::MEMBER: {
                         assert(global);
                         resolve_error(expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
                         return false;
@@ -590,7 +636,10 @@ bool name_resolve_ts_(AST_Type_Spec *ts)
             }
 
             switch (sym->state) {
-                case Symbol_State::UNRESOLVED: assert(false);
+                case Symbol_State::UNRESOLVED: {
+                    resolve_error(ts, "Unresolved symbol: '%s'", ts->identifier.name.data);
+                    return false;
+                }
                 case Symbol_State::RESOLVING: assert(false);
                 case Symbol_State::RESOLVED: return true;
             }
