@@ -81,7 +81,7 @@
 #endif
 
 #if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)
-#  include <stdbool.h>
+#  include <stdbool.h> // IWYU pragma: keep
 #elif defined(_WIN32)
 /* https://msdn.microsoft.com/en-us/library/tf4dy80a.aspx */
 #endif
@@ -115,7 +115,7 @@
 
 #if !defined(_WIN32)
 #  include <unistd.h>
-#  include <sys/types.h>
+#  include <sys/types.h> // IWYU pragma: keep
 #  include <sys/wait.h>
 #else
 #  include <windows.h>
@@ -387,8 +387,9 @@ struct PsnipClockTimespec {
    <limits.h> (<features.h> isn't available everywhere). */
 
 #if defined(__unix__) || defined(__unix) || defined(__linux__)
-#  include <limits.h>
-#  include <unistd.h>
+#  include <features.h>
+#  include <limits.h> // IWYU pragma: keep
+#  include <unistd.h> // IWYU pragma: keep
 #endif
 
 #if defined(_POSIX_TIMERS) && (_POSIX_TIMERS > 0)
@@ -419,7 +420,7 @@ struct PsnipClockTimespec {
 #endif
 
 #if defined(PSNIP_CLOCK_HAVE_CLOCK_GETTIME)
-#  include <time.h>
+#  include <time.h> // IWYU pragma: keep
 #  if !defined(PSNIP_CLOCK_WALL_METHOD)
 #    if defined(CLOCK_REALTIME_PRECISE)
 #      define PSNIP_CLOCK_WALL_METHOD PSNIP_CLOCK_METHOD_CLOCK_GETTIME
@@ -483,7 +484,7 @@ struct PsnipClockTimespec {
   (defined(PSNIP_CLOCK_CPU_METHOD)       && (PSNIP_CLOCK_CPU_METHOD       == PSNIP_CLOCK_METHOD_TIME)) || \
   (defined(PSNIP_CLOCK_WALL_METHOD)      && (PSNIP_CLOCK_WALL_METHOD      == PSNIP_CLOCK_METHOD_TIME)) || \
   (defined(PSNIP_CLOCK_MONOTONIC_METHOD) && (PSNIP_CLOCK_MONOTONIC_METHOD == PSNIP_CLOCK_METHOD_TIME))
-#  include <time.h>
+#  include <time.h> // IWYU pragma: keep
 #endif
 
 #if \

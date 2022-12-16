@@ -25,8 +25,11 @@
 #if !defined(MUNIT_H)
 #define MUNIT_H
 
-#include <stdarg.h>
-#include <stdlib.h>
+#include <stdbool.h>
+#include <stdarg.h> // IWYU pragma: keep
+
+struct MunitArgument_;
+struct MunitSuite_;
 
 #define MUNIT_VERSION(major, minor, revision) \
   (((major) << 16) | ((minor) << 8) | (revision))
@@ -43,7 +46,7 @@
 #  define munit_int64_t  __int64
 #  define munit_uint64_t unsigned __int64
 #else
-#  include <stdint.h>
+#  include <stdint.h> // IWYU pragma: keep
 #  define munit_int8_t   int8_t
 #  define munit_uint8_t  uint8_t
 #  define munit_int16_t  int16_t
@@ -307,7 +310,7 @@ void munit_errorf_ex(const char* filename, int line, const char* format, ...);
   } while (0) \
   MUNIT_POP_DISABLE_MSVC_C4127_
 
-#include <string.h>
+#include <string.h> // IWYU pragma: keep
 #define munit_assert_string_equal(a, b) \
   do { \
     const char* munit_tmp_a_ = a; \
