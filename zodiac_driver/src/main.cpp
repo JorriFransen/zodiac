@@ -502,14 +502,23 @@ bool name_resolve_expr_(AST_Expression *expr)
             } else if (sym->state == Symbol_State::UNRESOLVED) {
 
                 bool global = sym->flags & SYM_FLAG_GLOBAL;
-                if (global) {
-                    resolve_error(expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
-                    return false;
-                }
+                switch (sym->kind) {
+                    case Symbol_Kind::INVALID:
+                    case Symbol_Kind::FUNC:
+                    case Symbol_Kind::TYPE: {
+                        assert(global);
+                        resolve_error(expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
+                        return false;
+                    }
 
-                assert(false); // Might be a valid case we want to recurse into
-                resolve_error(expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
-                result = false;
+                    case Symbol_Kind::VAR:
+                    case Symbol_Kind::PARAM: {
+                        assert(global);
+                        assert(sym->decl);
+                        name_resolve_decl(sym->decl, global);
+                        break;
+                    }
+                }
 
             } else {
                 assert(sym->state == Symbol_State::RESOLVED);
