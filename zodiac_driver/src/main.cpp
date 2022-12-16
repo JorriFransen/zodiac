@@ -361,7 +361,8 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
         assert_msg(decl_sym, "Global symbol should have been registered already");
     } else if (!decl_sym) {
         // First time local symbol is encountered 
-        add_unresolved_decl_symbol(decl, global);
+        bool add_res = add_unresolved_decl_symbol(decl, global);
+        assert(add_res);
         decl_sym = get_symbol(decl->identifier);
     }
     assert(decl_sym && decl_sym->decl == decl);
@@ -501,7 +502,14 @@ bool name_resolve_expr_(AST_Expression *expr)
             } else if (sym->state == Symbol_State::UNRESOLVED) {
 
                 bool global = sym->flags & SYM_FLAG_GLOBAL;
-                name_resolve_decl(sym->decl, global);
+                if (global) {
+                    resolve_error(expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
+                    return false;
+                }
+
+                assert(false); // Might be a valid case we want to recurse into
+                resolve_error(expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
+                result = false;
 
             } else {
                 assert(sym->state == Symbol_State::RESOLVED);
@@ -564,6 +572,11 @@ bool name_resolve_ts_(AST_Type_Spec *ts)
             auto sym = get_symbol(ts->identifier); 
             if (!sym) {
                 resolve_error(ts, "Undeclared symbol: '%s'", ts->identifier.name.data);
+                return false;
+            }
+
+            if (sym->kind != Symbol_Kind::TYPE) {
+                fatal_resolve_error(ts, "Not a type: '%s'", ts->identifier.name.data);
                 return false;
             }
 
