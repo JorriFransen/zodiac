@@ -1,9 +1,9 @@
 #pragma once
 
-#include <munit/munit.h>
-
 #include "test_dynamic_array.h"
 #include "test_freelist.h"
+
+#include <munit/munit.h>
 
 namespace Zodiac
 {

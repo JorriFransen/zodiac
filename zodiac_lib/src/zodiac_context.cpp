@@ -1,6 +1,5 @@
 #include "zodiac_context.h"
-
-#include <lexer.h>
+#include "lexer.h"
 
 namespace Zodiac
 {

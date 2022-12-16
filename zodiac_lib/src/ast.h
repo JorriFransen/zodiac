@@ -1,9 +1,10 @@
 #pragma once
 
-#include <common.h>
-#include <containers/dynamic_array.h>
-#include <lexer.h>
-#include <string_builder.h>
+#include "atom.h"
+#include "common.h"
+#include "containers/dynamic_array.h"
+#include "lexer.h"
+#include "string_builder.h"
 
 namespace Zodiac
 {

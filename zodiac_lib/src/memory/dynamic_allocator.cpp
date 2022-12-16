@@ -1,8 +1,8 @@
 #include "dynamic_allocator.h"
 
-#include <logger.h>
-#include <memory/zmemory.h>
-#include <platform/platform.h>
+#include "asserts.h"
+#include "logger.h"
+#include "zmemory.h"
 
 namespace Zodiac
 {

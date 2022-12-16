@@ -2,9 +2,8 @@
 
 #include <defines.h>
 
-#include <containers/freelist.h>
-
 #include "allocator.h"
+#include "containers/freelist.h"
 
 namespace Zodiac
 {

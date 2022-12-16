@@ -2,11 +2,6 @@
 
 #ifdef ZPLATFORM_LINUX
 
-#include <common.h>
-
-#include <cstring>
-#include <stdlib.h>
-
 namespace Zodiac
 {
 

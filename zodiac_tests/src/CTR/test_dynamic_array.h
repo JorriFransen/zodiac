@@ -1,9 +1,9 @@
 #pragma once
 
-#include <test_common.h>
+#include "containers/dynamic_array.h"
+#include "test_common.h"
 
-#include <containers/dynamic_array.h>
-
+#include <munit/munit.h>
 
 namespace Zodiac { namespace Dynamic_Array_Tests {
 

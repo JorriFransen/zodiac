@@ -1,12 +1,6 @@
 #include "parser.h"
 
-#include <containers/dynamic_array.h>
-#include <logger.h>
-#include <zodiac_context.h>
-
-#include <platform/platform.h>
-
-#include <cstdarg>
+#include "memory/zmemory.h"
 
 namespace Zodiac
 {

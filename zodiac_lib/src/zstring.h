@@ -1,9 +1,11 @@
 #pragma once
 
-#include <atom.h>
-#include <common.h>
 #include <defines.h>
-#include <memory/allocator.h>
+
+#include "asserts.h"
+#include "atom.h"
+#include "common.h"
+#include "memory/allocator.h"
 
 // We need both of these because we are using c++ std::strings, and strlen for c style strings
 #include <string>

@@ -1,9 +1,8 @@
 #pragma once
 
-#include <defines.h>
-
-#include <memory/temporary_allocator.h>
-#include <zstring.h>
+#include "defines.h"
+#include "memory/allocator.h"
+#include "zstring.h"
 
 #define ZSTRINGBUILDER_DEFAULT_BLOCK_SIZE 4096
 #define ZSTRINGBUILDER_DEFAULT_TEMP_SIZE 2048

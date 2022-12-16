@@ -2,9 +2,10 @@
 
 #include <defines.h>
 
-#include <ast.h>
-#include <containers/queue.h>
-#include <lexer.h>
+#include "ast.h"
+#include "containers/queue.h"
+#include "lexer.h"
+#include "zodiac_context.h"
 
 namespace Zodiac
 {

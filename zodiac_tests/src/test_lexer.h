@@ -1,11 +1,12 @@
 #pragma once
 
-#include <test_common.h>
+#include "lexer.h"
+#include "logger.h"
+#include "memory/zmemory.h"
+#include "test_common.h"
+#include "zodiac_context.h"
 
-#include <lexer.h>
-#include <logger.h>
-#include <memory/zmemory.h>
-#include <zodiac_context.h>
+#include <munit/munit.h>
 
 namespace Zodiac { namespace Lexer_Tests {
 

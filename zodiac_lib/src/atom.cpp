@@ -1,7 +1,6 @@
 #include "atom.h"
 
-#include <memory/zmemory.h>
-#include <zstring.h>
+#include "memory/zmemory.h"
 
 namespace Zodiac
 {

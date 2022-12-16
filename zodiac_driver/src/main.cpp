@@ -1,18 +1,10 @@
 
-#include <asserts.h>
-#include <logger.h>
-#include <memory/zmemory.h>
-
-#include <lexer.h>
-#include <parser.h>
-#include <zodiac_context.h>
-
-#include <memory/allocator.h>
-#include <memory/linear_allocator.h>
-
-#include "platform/filesystem.h"
-
-#include <cstdarg>
+#include "ast.h"
+#include "lexer.h"
+#include "logger.h"
+#include "memory/zmemory.h"
+#include "parser.h"
+#include "zodiac_context.h"
 
 using namespace Zodiac;
 

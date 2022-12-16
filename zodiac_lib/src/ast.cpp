@@ -1,8 +1,6 @@
 #include "ast.h"
 
-#include <asserts.h>
-#include <string_builder.h>
-#include <zodiac_context.h>
+#include "zodiac_context.h"
 
 namespace Zodiac
 {

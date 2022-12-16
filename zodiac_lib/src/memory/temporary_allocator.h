@@ -1,7 +1,5 @@
 #pragma once
 
-#include <defines.h>
-
 #include "linear_allocator.h"
 
 namespace Zodiac

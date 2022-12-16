@@ -1,7 +1,7 @@
 #include "zstring.h"
 
-#include <common.h>
-#include <memory/zmemory.h>
+#include "asserts.h"
+#include "memory/zmemory.h"
 
 #ifdef _WIN32
 #include <Windows.h>

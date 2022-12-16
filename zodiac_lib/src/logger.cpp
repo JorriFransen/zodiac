@@ -1,13 +1,10 @@
 #include "logger.h"
 
-#include <platform/platform.h>
-#include <zstring.h>
+#include "platform/platform.h"
 
-#include <cstdarg>
 
 namespace Zodiac
 {
-
 
 struct Logging_System_State
 {

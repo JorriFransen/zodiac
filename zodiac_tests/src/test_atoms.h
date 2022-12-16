@@ -1,7 +1,10 @@
+#pragma once
 
-#include <test_common.h>
+#include "atom.h"
+#include "memory/allocator.h"
+#include "test_common.h"
 
-#include <atom.h>
+#include <munit/munit.h>
 
 namespace Zodiac { namespace Atom_Tests {
 

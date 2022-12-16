@@ -1,14 +1,12 @@
 
-#include <munit/munit.h>
-
 #include "test_strings.h"
 #include "test_atoms.h"
 #include "test_string_builder.h"
-
+#include "test_lexer.h"
 #include "CTR/test_containers.h"
 #include "MEM/test_memory.h"
 
-#include "test_lexer.h"
+#include <munit/munit.h>
 
 namespace Zodiac
 {

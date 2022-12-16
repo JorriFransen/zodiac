@@ -1,7 +1,8 @@
 #include "filesystem.h"
 
+#include "logger.h"
+
 #include <sys/stat.h>
-#include <logger.h>
 
 namespace Zodiac
 {

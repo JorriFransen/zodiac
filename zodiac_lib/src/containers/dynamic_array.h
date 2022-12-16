@@ -1,9 +1,6 @@
 #pragma once
 
-#include <defines.h>
-
-#include <memory/allocator.h>
-#include <memory/zmemory.h>
+#include "memory/zmemory.h"
 
 namespace Zodiac
 {

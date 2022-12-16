@@ -1,8 +1,6 @@
 #pragma once
 
-#include <defines.h>
-
-#include <zstring.h>
+#include "zstring.h"
 
 namespace Zodiac
 {

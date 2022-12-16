@@ -1,6 +1,10 @@
-#include <test_common.h>
+#pragma once
 
-#include <zstring.h>
+#include "zstring.h"
+
+#include "test_common.h"
+
+#include <munit/munit.h>
 
 namespace Zodiac { namespace String_Tests {
 

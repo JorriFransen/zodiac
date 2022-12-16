@@ -1,12 +1,12 @@
 #pragma once
 
-#include <munit/munit.h>
-
 #include "test_dynamic_allocator.h"
 #include "test_linear_allocator.h"
-#include "test_pool_allocator.h"
 #include "test_temp_allocator.h"
+#include "test_pool_allocator.h"
 #include "test_stack_allocator.h"
+
+#include <munit/munit.h>
 
 namespace Zodiac
 {

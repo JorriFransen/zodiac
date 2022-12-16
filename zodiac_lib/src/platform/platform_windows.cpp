@@ -2,14 +2,6 @@
 
 #ifdef ZPLATFORM_WINDOWS
 
-#include <common.h>
-
-#include <cstring>
-#include <stdlib.h>
-
-#include <windows.h>
-#include <io.h>
-
 namespace Zodiac
 {
 

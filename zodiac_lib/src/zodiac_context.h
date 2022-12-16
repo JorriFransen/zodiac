@@ -1,10 +1,8 @@
 #pragma once
 
-#include <ast.h>
-#include <lexer.h>
-#include <atom.h>
-#include <memory/allocator.h>
-#include <memory/temporary_allocator.h>
+#include "atom.h"
+#include "memory/linear_allocator.h"
+#include "memory/temporary_allocator.h"
 
 namespace Zodiac
 {

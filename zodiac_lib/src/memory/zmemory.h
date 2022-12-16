@@ -1,9 +1,11 @@
 #pragma once
 
-#include <common.h>
-#include <memory/allocator.h>
-#include <memory/dynamic_allocator.h>
-#include <platform/platform.h>
+#include <defines.h>
+
+#include "allocator.h"
+#include "asserts.h"
+#include "dynamic_allocator.h"
+#include "platform/platform.h"
 
 namespace Zodiac
 {

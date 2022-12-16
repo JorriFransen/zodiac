@@ -1,9 +1,7 @@
 #include "string_builder.h"
 
-#include <memory/zmemory.h>
-#include <memory/temporary_allocator.h>
-
-#include <cstdarg>
+#include "memory/temporary_allocator.h"
+#include "memory/zmemory.h"
 
 namespace Zodiac
 {
