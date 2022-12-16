@@ -32,14 +32,18 @@ int main() {
     Lexer lexer;
     lexer_create(&c, &lexer);
     String stream = {};
+
     auto filename = "tests/test.zc";
     bool read_result = filesystem_read_entire_file(&dynamic_allocator, filename, &stream);
+    assert(read_result);
+    if (!read_result) {
+        return 1;
+    }
 
     lexer_init_stream(&lexer, stream, filename);
 
     Parser parser;
     parser_create(&c, &lexer, &parser);
-
     AST_File *file = parse_file(&parser);
     if (parser.error) return 1;
     assert(file);
@@ -75,7 +79,7 @@ enum class Symbol_State : u16
 
 typedef u32 Symbol_Flags;
 
-enum Symbol_Flag : Symbol_Flags 
+enum Symbol_Flag : Symbol_Flags
 {
     SYM_FLAG_NONE    = 0x00,
     SYM_FLAG_BUILTIN = 0x01,
@@ -89,8 +93,8 @@ struct Symbol
     Symbol_State state;
     Symbol_Flags flags;
 
-    AST_Identifier ident;
-    AST_Declaration *decl;    
+    AST_Identifier identifier;
+    AST_Declaration *decl;
 };
 
 struct Resolve_Error
@@ -159,9 +163,9 @@ void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ...);
     resolve_error_((node), true, (fmt), ##__VA_ARGS__); \
 }
 
-#define report_redecl(old_sym, new_ident) {\
+#define report_redecl(old_sym, new_ident) {                                                       \
     fatal_resolve_error((new_ident).pos, "Redeclaration of symbol: '%s'", (new_ident).name.data); \
-    fatal_resolve_error((old_sym)->ident.pos, "<---- Previous declaration was here"); \
+    fatal_resolve_error((old_sym)->identifier.pos, "<---- Previous declaration was here");        \
 }
 
 #define add_builtin_symbol(kind, atom) {                                                         \
@@ -177,8 +181,6 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
 
     dynamic_array_create(&dynamic_allocator, &symbols);
     dynamic_array_create(&dynamic_allocator, &resolve_errors);
-
-    Symbol_Flags builtin_global_flags = SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN;
 
     add_builtin_symbol(Symbol_Kind::TYPE, atom_s64);
     add_builtin_symbol(Symbol_Kind::TYPE, atom_r32);
@@ -202,7 +204,7 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
 
         done = true;
         for (u64 i = 0; i < decls_to_resolve.count; i++) {
-            
+
             AST_Declaration *decl = decls_to_resolve[i];
 
             if (decl) {
@@ -350,7 +352,7 @@ Symbol *get_symbol(const AST_Identifier &ident)
 Symbol *get_symbol(const Atom &name)
 {
     for (u64 i = 0; i < symbols.count; i++) {
-        if (symbols[i].ident.name == name) {
+        if (symbols[i].identifier.name == name) {
             return &symbols[i];
         }
     }
@@ -371,7 +373,7 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
     if (global) {
         assert_msg(decl_sym, "Global symbol should have been registered already");
     } else if (!decl_sym) {
-        // First time local symbol is encountered 
+        // First time local symbol is encountered
         bool add_res = add_unresolved_decl_symbol(decl, global);
         assert(add_res);
         decl_sym = get_symbol(decl->identifier);
@@ -509,10 +511,10 @@ bool name_resolve_stmt_(AST_Statement *stmt)
         }
 
         case AST_Statement_Kind::PRINT: {
-            name_resolve_expr(stmt->print_expr);    
+            name_resolve_expr(stmt->print_expr);
             break;
         }
-    }   
+    }
 
 exit:
     return result;
@@ -572,7 +574,7 @@ bool name_resolve_expr_(AST_Expression *expr)
 
             break;
         }
-                                              
+
         case AST_Expression_Kind::MEMBER: assert(false);
         case AST_Expression_Kind::INDEX: assert(false);
 
@@ -580,7 +582,7 @@ bool name_resolve_expr_(AST_Expression *expr)
 
             auto base = expr->call.base;
             name_resolve_expr(base);
-            
+
             // TODO: Support more complex base expressions
             assert(base->kind == AST_Expression_Kind::IDENTIFIER);
             auto base_sym = get_symbol(base->identifier);
@@ -624,7 +626,7 @@ bool name_resolve_ts_(AST_Type_Spec *ts)
         case AST_Type_Spec_Kind::INVALID: assert(false);
 
         case AST_Type_Spec_Kind::NAME: {
-            auto sym = get_symbol(ts->identifier); 
+            auto sym = get_symbol(ts->identifier);
             if (!sym) {
                 resolve_error(ts, "Undeclared symbol: '%s'", ts->identifier.name.data);
                 return false;
@@ -647,7 +649,7 @@ bool name_resolve_ts_(AST_Type_Spec *ts)
         }
 
         case AST_Type_Spec_Kind::POINTER: {
-            name_resolve_ts(ts->base); 
+            name_resolve_ts(ts->base);
             break;
         }
     }
