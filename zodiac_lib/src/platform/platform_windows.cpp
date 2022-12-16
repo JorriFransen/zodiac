@@ -1,4 +1,4 @@
-#include "platform.h"
+#include "platform.h" // IWYU pragma: keep
 
 #ifdef ZPLATFORM_WINDOWS
 

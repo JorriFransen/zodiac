@@ -6,6 +6,7 @@
 
 namespace Zodiac
 {
+struct Allocator;
 
 struct File_Handle
 {

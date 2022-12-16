@@ -1,5 +1,9 @@
 #include "allocator.h"
 
+#include <stdlib.h>
+
+#include "asserts.h"
+#include "common.h"
 #include "zmemory.h"
 
 namespace Zodiac

@@ -1,6 +1,11 @@
 #include "zstring.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "asserts.h"
+#include "defines.h"
+#include "memory/allocator.h"
 #include "memory/zmemory.h"
 
 #ifdef _WIN32

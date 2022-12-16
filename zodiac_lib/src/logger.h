@@ -2,10 +2,12 @@
 
 #include <defines.h>
 
-#include "platform/filesystem.h"
+#include "asserts.h"
+#include "zstring.h"
 
 namespace Zodiac
 {
+struct File_Handle;
 
 enum class Log_Level
 {

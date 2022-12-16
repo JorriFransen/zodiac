@@ -1,11 +1,17 @@
 #include "lexer.h"
 
+#include <cctype>
+#include <cmath>
+#include <errno.h>
+#include <float.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "asserts.h"
 #include "logger.h"
 #include "memory/zmemory.h"
 #include "zodiac_context.h"
-
-#include <cmath>
-#include <float.h>
 
 namespace Zodiac
 {

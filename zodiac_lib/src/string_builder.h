@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdarg.h>
+
 #include "defines.h"
 #include "memory/allocator.h"
 #include "zstring.h"

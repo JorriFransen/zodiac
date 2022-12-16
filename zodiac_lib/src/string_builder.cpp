@@ -1,5 +1,8 @@
 #include "string_builder.h"
 
+#include "asserts.h"
+#include "common.h"
+#include "memory/linear_allocator.h"
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 

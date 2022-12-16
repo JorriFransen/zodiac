@@ -1,6 +1,12 @@
 #include "ast.h"
 
+#include <stdio.h>
+
+#include "asserts.h"
+#include "memory/allocator.h"
+#include "string_builder.h"
 #include "zodiac_context.h"
+#include "zstring.h"
 
 namespace Zodiac
 {

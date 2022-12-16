@@ -1,6 +1,14 @@
 #include "parser.h"
 
+#include <stdio.h>
+
+#include "asserts.h"
+#include "containers/dynamic_array.h"
+#include "defines.h"
+#include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
+#include "platform/platform.h"
+#include "zodiac_context.h"
 
 namespace Zodiac
 {

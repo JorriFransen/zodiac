@@ -2,6 +2,7 @@
 
 #include "asserts.h"
 #include "logger.h"
+#include "memory/allocator.h"
 #include "zmemory.h"
 
 namespace Zodiac

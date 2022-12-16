@@ -1,12 +1,12 @@
 #pragma once
 
-#include <defines.h>
-
 #include "asserts.h"
-#include "memory/allocator.h"
+#include "defines.h"
 
 namespace Zodiac
 {
+
+struct Allocator;
 
 #define ATOM_TABLE_INITIAL_CAPACITY 64
 #define ATOM_TABLE_INITIAL_BLOCK_SIZE 1024

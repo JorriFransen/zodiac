@@ -1,18 +1,18 @@
 #pragma once
 
-#include <defines.h>
+#include <stdarg.h>
+#include <string>
+#include <string.h>
 
 #include "asserts.h"
 #include "atom.h"
 #include "common.h"
-#include "memory/allocator.h"
-
-// We need both of these because we are using c++ std::strings, and strlen for c style strings
-#include <string>
-#include <string.h>
+#include "defines.h"
 
 namespace Zodiac
 {
+
+struct Allocator;
 
 #define ZSTRING_FORMAT_STACK_BUFFER_SIZE 32000
 

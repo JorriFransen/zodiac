@@ -1,14 +1,18 @@
 #pragma once
 
 #include <defines.h>
+#include <stdarg.h>
 
 #include "ast.h"
+#include "atom.h"
 #include "containers/queue.h"
 #include "lexer.h"
-#include "zodiac_context.h"
+#include "zstring.h"
 
 namespace Zodiac
 {
+
+struct Zodiac_Context;
 
 struct Parser
 {

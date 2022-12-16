@@ -1,6 +1,12 @@
 #include "atom.h"
 
+#include <string.h>
+
+#include "common.h"
+#include "defines.h"
+#include "memory/allocator.h"
 #include "memory/zmemory.h"
+#include "zstring.h"
 
 namespace Zodiac
 {

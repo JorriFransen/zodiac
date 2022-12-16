@@ -1,5 +1,8 @@
 #pragma once
 
+#include "atom.h"
+#include "common.h"
+#include "defines.h"
 #include "zstring.h"
 
 namespace Zodiac

@@ -1,5 +1,9 @@
 #include "zmemory.h"
 
+#include "defines.h"
+#include "memory/allocator.h"
+#include "memory/dynamic_allocator.h"
+
 namespace Zodiac
 {
 

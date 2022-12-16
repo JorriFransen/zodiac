@@ -1,7 +1,10 @@
 #include "logger.h"
 
-#include "platform/platform.h"
+#include <stdarg.h>
 
+#include "defines.h"
+#include "platform/filesystem.h"
+#include "platform/platform.h"
 
 namespace Zodiac
 {

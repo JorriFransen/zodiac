@@ -1,7 +1,9 @@
 #include "stack_allocator.h"
 
 #include "asserts.h"
+#include "common.h"
 #include "logger.h"
+#include "memory/allocator.h"
 #include "zmemory.h"
 
 namespace Zodiac

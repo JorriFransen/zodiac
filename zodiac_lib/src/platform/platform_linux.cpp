@@ -1,5 +1,14 @@
 #include "platform.h"
 
+#include <stdlib.h>
+#include <string.h>
+
+#include "asserts.h"
+#include "common.h"
+#include "defines.h"
+#include "platform/filesystem.h"
+#include "zstring.h"
+
 #ifdef ZPLATFORM_LINUX
 
 namespace Zodiac

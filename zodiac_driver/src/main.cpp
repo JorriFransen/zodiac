@@ -1,10 +1,21 @@
 
+#include <stdarg.h>
+#include <stdio.h>
+
+#include "asserts.h"
 #include "ast.h"
+#include "atom.h"
+#include "containers/dynamic_array.h"
+#include "defines.h"
 #include "lexer.h"
 #include "logger.h"
+#include "memory/allocator.h"
+#include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 #include "parser.h"
+#include "platform/filesystem.h"
 #include "zodiac_context.h"
+#include "zstring.h"
 
 using namespace Zodiac;
 
