@@ -1,0 +1,9 @@
+.cache
+.nvim_build.sh
+.nvim_clean.sh
+bin
+obj
+compile_commands.json
+console.log
+.vs
+.vimspector.json
