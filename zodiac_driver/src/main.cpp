@@ -513,7 +513,11 @@ bool name_resolve_stmt_(AST_Statement *stmt)
             break;
         }
 
-        case AST_Statement_Kind::CALL: assert(false);
+        case AST_Statement_Kind::CALL: {
+            name_resolve_expr(stmt->call.call);
+            break;
+        }
+
         case AST_Statement_Kind::IF: assert(false);
         case AST_Statement_Kind::WHILE: assert(false);
 

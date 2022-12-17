@@ -39,6 +39,8 @@ main :: () -> s64 {
         print(str);
     }
 
+    add_fn(1, 2); // This is a call statement
+
     //return x(42, 2);
     return add_fn(40, 2);
 }
