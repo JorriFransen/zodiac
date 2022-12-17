@@ -35,6 +35,7 @@ main :: () -> s64 {
     //foo : x; // Should generate "Not a type 'x'" error
     {
         str : String = "This is a string literal";
+        str = "This is another string literal";
         print(str);
     }
 

@@ -154,6 +154,8 @@ bool name_resolve_ts_(AST_Type_Spec *ts);
     }                            \
 }
 
+bool is_lvalue(AST_Expression *expr);
+
 void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args);
 void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, ...);
 void resolve_error_(AST_Declaration *decl, bool fatal, const String_Ref fmt, ...);
@@ -300,8 +302,8 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
 
-        case AST_Declaration_Kind::VARIABLE:          kind = Symbol_Kind::CONST; break;
-        case AST_Declaration_Kind::CONSTANT_VARIABLE: kind = Symbol_Kind::VAR; break;
+        case AST_Declaration_Kind::VARIABLE:          kind = Symbol_Kind::VAR; break;
+        case AST_Declaration_Kind::CONSTANT_VARIABLE: kind = Symbol_Kind::CONST; break;
 
         case AST_Declaration_Kind::FUNCTION: {
             kind = Symbol_Kind::FUNC;
@@ -499,7 +501,18 @@ bool name_resolve_stmt_(AST_Statement *stmt)
             break;
         }
 
-        case AST_Statement_Kind::ASSIGN: assert(false);
+        case AST_Statement_Kind::ASSIGN: {
+            name_resolve_expr(stmt->assign.dest);
+
+            if (!is_lvalue(stmt->assign.dest)) {
+                fatal_resolve_error(stmt->assign.dest, "Left side of assignment must be an lvalue.");
+                return false;
+            }
+
+            name_resolve_expr(stmt->assign.value);
+            break;
+        }
+
         case AST_Statement_Kind::CALL: assert(false);
         case AST_Statement_Kind::IF: assert(false);
         case AST_Statement_Kind::WHILE: assert(false);
@@ -657,6 +670,32 @@ bool name_resolve_ts_(AST_Type_Spec *ts)
 
 exit:
     return result;
+}
+
+bool is_lvalue(AST_Expression *expr)
+{
+    switch(expr->kind) {
+        case AST_Expression_Kind::INVALID: assert(false);
+        case AST_Expression_Kind::INTEGER_LITERAL: assert(false);
+        case AST_Expression_Kind::STRING_LITERAL: assert(false);
+
+        case AST_Expression_Kind::IDENTIFIER: {
+            Symbol *sym = get_symbol(expr->identifier);
+            assert(sym);
+
+            return sym->kind == Symbol_Kind::VAR || sym->kind == Symbol_Kind::PARAM;
+            break;
+        }
+
+        case AST_Expression_Kind::MEMBER: assert(false);
+        case AST_Expression_Kind::INDEX: assert(false);
+        case AST_Expression_Kind::CALL: assert(false);
+        case AST_Expression_Kind::UNARY: assert(false);
+        case AST_Expression_Kind::BINARY: assert(false);
+    }
+
+    assert(false);
+    return false;
 }
 
 void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args)
