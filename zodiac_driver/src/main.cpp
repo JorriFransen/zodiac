@@ -114,6 +114,7 @@ bool fatal_resolve_error = false;
 
 bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl);
 bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl);
+bool add_symbol_(Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl);
 bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global);
 
 Symbol *get_symbol(const AST_Identifier &ident);
@@ -257,30 +258,18 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
 
 bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl)
 {
-    assert(kind != Symbol_Kind::INVALID);
-    assert(decl);
-
-    auto ex_sym = get_symbol(ident);
-    if (ex_sym) {
-        report_redecl(ex_sym, ident);
-        return false;
-    }
-
-    Symbol sym = {
-        kind,
-        Symbol_State::UNRESOLVED,
-        flags,
-        ident,
-        decl,
-    };
-
-    dynamic_array_append(&symbols, sym);
-    return true;
+    return add_symbol_(kind, Symbol_State::UNRESOLVED, flags, ident, decl);
 }
 
 bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl)
 {
+    return add_symbol_(kind, Symbol_State::RESOLVED, flags, ident, decl);
+}
+
+bool add_symbol_(Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl)
+{
     assert(kind != Symbol_Kind::INVALID);
+    assert(state != Symbol_State::RESOLVING);
     assert(decl || (flags & SYM_FLAG_BUILTIN));
 
     auto ex_sym = get_symbol(ident);
@@ -291,7 +280,7 @@ bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier id
 
     Symbol sym = {
         kind,
-        Symbol_State::RESOLVED,
+        state,
         flags,
         ident,
         decl,
@@ -377,8 +366,9 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
         assert_msg(decl_sym, "Global symbol should have been registered already");
     } else if (!decl_sym) {
         // First time local symbol is encountered
-        bool add_res = add_unresolved_decl_symbol(decl, global);
-        assert(add_res);
+        if (!add_unresolved_decl_symbol(decl, global)) {
+            return false;
+        }
         decl_sym = get_symbol(decl->identifier);
     }
     assert(decl_sym && decl_sym->decl == decl);
