@@ -67,6 +67,7 @@ enum class Symbol_Kind : u16
     FUNC,
 
     VAR,
+    CONST,
     PARAM,
 
     TYPE,
@@ -299,7 +300,7 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
 
-        case AST_Declaration_Kind::VARIABLE:
+        case AST_Declaration_Kind::VARIABLE:          kind = Symbol_Kind::CONST; break;
         case AST_Declaration_Kind::CONSTANT_VARIABLE: kind = Symbol_Kind::VAR; break;
 
         case AST_Declaration_Kind::FUNCTION: {
@@ -553,6 +554,7 @@ bool name_resolve_expr_(AST_Expression *expr)
                     }
 
                     case Symbol_Kind::VAR:
+                    case Symbol_Kind::CONST:
                     case Symbol_Kind::PARAM: {
                         assert(global);
                         assert(sym->decl);
