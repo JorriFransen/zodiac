@@ -97,6 +97,7 @@ enum class AST_Expression_Kind
 
     INTEGER_LITERAL,
     STRING_LITERAL,
+    NULL_LITERAL,
 
     IDENTIFIER,
 
@@ -304,6 +305,7 @@ ZAPI void ast_identifier_create(Atom name, Source_Pos pos, AST_Identifier *out_i
 
 ZAPI void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_expr);
 ZAPI void ast_string_literal_expr_create(Atom atom, AST_Expression *out_expr);
+ZAPI void ast_null_literal_expr_create(AST_Expression *out_expr);
 ZAPI void ast_identifier_expr_create(AST_Identifier ident, AST_Expression *out_expr);
 ZAPI void ast_member_expr_create(AST_Expression *base, Atom atom, AST_Expression *out_expr);
 ZAPI void ast_call_expr_create(AST_Expression *base, Dynamic_Array<AST_Expression *> args, AST_Expression *out_expr);
@@ -336,6 +338,7 @@ ZAPI void ast_file_create(Dynamic_Array<AST_Declaration *> decls, AST_File *out_
 
 ZAPI AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Source_Pos pos, Integer_Value value);
 ZAPI AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Source_Pos pos, Atom atom);
+ZAPI AST_Expression *ast_null_literal_expr_new(Zodiac_Context *ctx, Source_Pos pos);
 ZAPI AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Source_Pos pos, Atom atom);
 ZAPI AST_Expression *ast_member_expr_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *base, Atom atom);
 ZAPI AST_Expression *ast_index_expr_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *base, AST_Expression *index);

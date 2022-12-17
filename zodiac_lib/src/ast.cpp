@@ -37,6 +37,13 @@ void ast_string_literal_expr_create(Atom atom, AST_Expression *out_expr)
     out_expr->string_literal.atom = atom;
 }
 
+void ast_null_literal_expr_create(AST_Expression *out_expr)
+{
+    assert(out_expr);
+
+    ast_expression_create(AST_Expression_Kind::NULL_LITERAL, out_expr);
+}
+
 void ast_identifier_expr_create(AST_Identifier ident, AST_Expression *out_expr)
 {
     assert(&out_expr);
@@ -290,6 +297,15 @@ AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Source_Pos pos,
 
     auto expr = ast_expression_new(ctx, pos);
     ast_string_literal_expr_create(atom, expr);
+    return expr;
+}
+
+AST_Expression *ast_null_literal_expr_new(Zodiac_Context *ctx, Source_Pos pos)
+{
+    assert(ctx);
+
+    auto expr = ast_expression_new(ctx, pos);
+    ast_null_literal_expr_create(expr);
     return expr;
 }
 
@@ -551,6 +567,11 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
         case AST_Expression_Kind::STRING_LITERAL: {
             auto atom = expr->string_literal.atom;
             string_builder_append(sb, "\"%.*s\"", (int)atom.length, atom.data);
+            break;
+        }
+
+        case AST_Expression_Kind::NULL_LITERAL: {
+            string_builder_append(sb, "null");
             break;
         }
 

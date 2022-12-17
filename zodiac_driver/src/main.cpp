@@ -154,7 +154,8 @@ bool name_resolve_ts_(AST_Type_Spec *ts);
     }                            \
 }
 
-bool is_lvalue(AST_Expression *expr);
+bool is_lvalue_expr(AST_Expression *expr);
+bool is_const_expr(AST_Expression *expr);
 
 void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args);
 void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, ...);
@@ -184,15 +185,12 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
 {
     assert(ctx);
 
-    auto at = &ctx->atoms;
-
     dynamic_array_create(&dynamic_allocator, &symbols);
     dynamic_array_create(&dynamic_allocator, &resolve_errors);
 
     add_builtin_symbol(Symbol_Kind::TYPE, atom_s64);
     add_builtin_symbol(Symbol_Kind::TYPE, atom_r32);
     add_builtin_symbol(Symbol_Kind::TYPE, atom_String);
-    add_builtin_symbol(Symbol_Kind::TYPE, atom_get(at, "null"));
 
     auto decls_to_resolve = dynamic_array_copy(&file->declarations, &dynamic_allocator);
 
@@ -395,6 +393,26 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
             if (ts) name_resolve_ts(ts);
             if (expr) name_resolve_expr(expr);
 
+            if (decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE) {
+
+                if (!expr) {
+                    fatal_resolve_error(decl, "Expected value for constant variable declaration");
+                    return false;
+                }
+
+                if (!is_const_expr(expr)) {
+                    fatal_resolve_error(expr, "Value for constant variable declaration is not constant");
+                    return false;
+                }
+
+            } else if (decl->kind == AST_Declaration_Kind::VARIABLE) {
+
+                if (global && !is_const_expr(expr)) {
+                    fatal_resolve_error(expr, "Value for global variable declaration must be constant");
+                    return false;
+                }
+            }
+
             break;
         }
 
@@ -504,7 +522,7 @@ bool name_resolve_stmt_(AST_Statement *stmt)
         case AST_Statement_Kind::ASSIGN: {
             name_resolve_expr(stmt->assign.dest);
 
-            if (!is_lvalue(stmt->assign.dest)) {
+            if (!is_lvalue_expr(stmt->assign.dest)) {
                 fatal_resolve_error(stmt->assign.dest, "Left side of assignment must be an lvalue.");
                 return false;
             }
@@ -547,7 +565,8 @@ bool name_resolve_expr_(AST_Expression *expr)
         case AST_Expression_Kind::INVALID: assert(false);
 
         case AST_Expression_Kind::INTEGER_LITERAL:
-        case AST_Expression_Kind::STRING_LITERAL: return true;
+        case AST_Expression_Kind::STRING_LITERAL:
+        case AST_Expression_Kind::NULL_LITERAL: return true;
 
         case AST_Expression_Kind::IDENTIFIER: {
             Symbol *sym = get_symbol(expr->identifier.name);
@@ -567,7 +586,8 @@ bool name_resolve_expr_(AST_Expression *expr)
 
                 bool global = sym->flags & SYM_FLAG_GLOBAL;
                 switch (sym->kind) {
-                    case Symbol_Kind::INVALID:
+                    case Symbol_Kind::INVALID: assert(false);
+
                     case Symbol_Kind::FUNC:
                     case Symbol_Kind::TYPE:
                     case Symbol_Kind::MEMBER: {
@@ -676,19 +696,56 @@ exit:
     return result;
 }
 
-bool is_lvalue(AST_Expression *expr)
+bool is_lvalue_expr(AST_Expression *expr)
 {
+    assert(expr);
+
     switch(expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false);
-        case AST_Expression_Kind::INTEGER_LITERAL: assert(false);
-        case AST_Expression_Kind::STRING_LITERAL: assert(false);
+
+        case AST_Expression_Kind::INTEGER_LITERAL:
+        case AST_Expression_Kind::STRING_LITERAL:
+        case AST_Expression_Kind::NULL_LITERAL: return false;
 
         case AST_Expression_Kind::IDENTIFIER: {
             Symbol *sym = get_symbol(expr->identifier);
             assert(sym);
 
+            assert_msg(!(sym->flags & SYM_FLAG_BUILTIN), "Maybe handle this?");
+
             return sym->kind == Symbol_Kind::VAR || sym->kind == Symbol_Kind::PARAM;
             break;
+        }
+
+        case AST_Expression_Kind::MEMBER: assert(false);
+        case AST_Expression_Kind::INDEX: assert(false);
+        case AST_Expression_Kind::CALL: assert(false);
+        case AST_Expression_Kind::UNARY: assert(false);
+        case AST_Expression_Kind::BINARY: assert(false);
+    }
+
+    assert(false);
+    return false;
+}
+
+bool is_const_expr(AST_Expression *expr)
+{
+    assert(expr);
+
+    switch (expr->kind) {
+        case AST_Expression_Kind::INVALID: assert(false);
+
+        case AST_Expression_Kind::INTEGER_LITERAL:
+        case AST_Expression_Kind::STRING_LITERAL:
+        case AST_Expression_Kind::NULL_LITERAL: return true;
+
+        case AST_Expression_Kind::IDENTIFIER: {
+            Symbol *sym = get_symbol(expr->identifier);
+            assert(sym);
+
+            assert_msg(!(sym->flags & SYM_FLAG_BUILTIN), "Maybe handle this?");
+
+            return sym->kind == Symbol_Kind::CONST;
         }
 
         case AST_Expression_Kind::MEMBER: assert(false);

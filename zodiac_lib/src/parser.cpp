@@ -116,6 +116,13 @@ AST_Expression *parse_expr_operand(Parser *parser)
 
         Atom content_atom = atom_get(&parser->context->atoms, token_atom.data + 1, token_atom.length - 2);
         return ast_string_literal_expr_new(parser->context, start_pos, content_atom);
+
+    } else if (is_token(parser, TOK_KEYWORD)) {
+
+        if (match_keyword(parser, keyword_null)) {
+            return ast_null_literal_expr_new(parser->context, start_pos);
+        }
+
     } else {
 
         if (match_token(parser, '(')) {
@@ -125,7 +132,7 @@ AST_Expression *parse_expr_operand(Parser *parser)
         }
     }
 
-    fatal_syntax_error(parser, "Expected INT, NAME or '(' when parsing expression, got: '%s'", cur_tok(parser).atom.data);
+    fatal_syntax_error(parser, "Expected INT, NAME ,'(' or 'null' when parsing expression, got: '%s'", cur_tok(parser).atom.data);
     return nullptr;
 }
 
