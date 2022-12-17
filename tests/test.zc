@@ -33,8 +33,10 @@ c_var :: 5;
 main :: () -> s64 {
 
     //foo : x; // Should generate "Not a type 'x'" error
-    str : String = "This is a string literal";
-    print(str);
+    {
+        str : String = "This is a string literal";
+        print(str);
+    }
 
     //return x(42, 2);
     return add_fn(40, 2);

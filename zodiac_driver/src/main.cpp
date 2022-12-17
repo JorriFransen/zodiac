@@ -486,7 +486,13 @@ bool name_resolve_stmt_(AST_Statement *stmt)
 
     switch (stmt->kind) {
         case AST_Statement_Kind::INVALID: assert(false);
-        case AST_Statement_Kind::BLOCK: assert(false);
+
+        case AST_Statement_Kind::BLOCK: {
+            for (u64 i = 0; i < stmt->block.statements.count; i++) {
+                name_resolve_stmt(stmt->block.statements[i]);
+            }
+            break;
+        }
 
         case AST_Statement_Kind::DECLARATION: {
             name_resolve_decl(stmt->decl.decl, false);
