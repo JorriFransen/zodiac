@@ -12,7 +12,6 @@ namespace Zodiac
 Scope *scope_new(Allocator *allocator, Scope_Kind kind, Scope *parent)
 {
     assert(allocator);
-    assert(kind != Scope_Kind::INVALID);
 
     if (kind == Scope_Kind::GLOBAL) {
         assert_msg(!parent, "Global scope cannot have a parent scope");
@@ -33,8 +32,8 @@ Scope *scope_new(Allocator *allocator, Scope_Kind kind, Scope *parent)
 Symbol *scope_get_symbol(Scope *scope, const Atom &name)
 {
     for (u64 i = 0; i < scope->symbols.count; i++) {
-        if (scope->symbols[i]->name == name) {
-            return scope->symbols[i];
+        if (scope->symbols[i].name == name) {
+            return &scope->symbols[i];
         }
     }
 
@@ -42,8 +41,8 @@ Symbol *scope_get_symbol(Scope *scope, const Atom &name)
         scope = scope->parent;
 
         for (u64 i = 0; i < scope->symbols.count; i++) {
-            if (scope->symbols[i]->name == name) {
-                return scope->symbols[i];
+            if (scope->symbols[i].name == name) {
+                return &scope->symbols[i];
             }
         }
     }
@@ -57,5 +56,29 @@ Symbol *scope_get_symbol(Scope *scope, const AST_Identifier &ident)
 
     return scope_get_symbol(scope, ident.name);
 }
+
+Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl)
+{
+    assert(scope);
+    assert(state != Symbol_State::RESOLVING);
+    assert(decl || (flags & SYM_FLAG_BUILTIN));
+
+    auto ex_sym = scope_get_symbol(scope, name);
+    if (ex_sym) {
+        assert(decl);
+        assert(decl->identifier.name == name);
+        // report_redecl(ex_sym, decl->identifier);
+        assert_msg(false, "redecl");
+        return nullptr;
+    }
+
+    Symbol sym = { kind, state, flags, name, decl };
+
+    dynamic_array_append(&scope->symbols, sym);
+
+    return &scope->symbols[scope->symbols.count];
+}
+
+#undef report_redecl
 
 }
