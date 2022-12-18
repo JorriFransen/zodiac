@@ -236,7 +236,7 @@ struct AST_Function_Declaration
     Dynamic_Array<AST_Field_Declaration> params;
     AST_Type_Spec *return_ts;
 
-    Dynamic_Array<AST_Statement *> body; 
+    Dynamic_Array<AST_Statement *> body;
 };
 
 struct AST_Aggregate_Declaration

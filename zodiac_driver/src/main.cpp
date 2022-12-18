@@ -69,7 +69,7 @@ bool fatal_resolve_error = false;
 
 bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl);
 bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl);
-bool add_symbol_(Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl);
+bool add_symbol_(Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl);
 bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global);
 
 Symbol *get_symbol(const AST_Identifier &ident);
@@ -127,7 +127,8 @@ void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ...);
 
 #define report_redecl(old_sym, new_ident) {                                                       \
     fatal_resolve_error((new_ident).pos, "Redeclaration of symbol: '%s'", (new_ident).name.data); \
-    fatal_resolve_error((old_sym)->identifier.pos, "<---- Previous declaration was here");        \
+    assert((old_sym)->decl);                                                                      \
+    fatal_resolve_error((old_sym)->decl->pos, "<---- Previous declaration was here");             \
 }
 
 #define add_builtin_symbol(kind, atom) {                                                         \
@@ -213,23 +214,25 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
 
 bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl)
 {
-    return add_symbol_(kind, Symbol_State::UNRESOLVED, flags, ident, decl);
+    return add_symbol_(kind, Symbol_State::UNRESOLVED, flags, ident.name, decl);
 }
 
 bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl)
 {
-    return add_symbol_(kind, Symbol_State::RESOLVED, flags, ident, decl);
+    return add_symbol_(kind, Symbol_State::RESOLVED, flags, ident.name, decl);
 }
 
-bool add_symbol_(Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl)
+bool add_symbol_(Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
     assert(kind != Symbol_Kind::INVALID);
     assert(state != Symbol_State::RESOLVING);
     assert(decl || (flags & SYM_FLAG_BUILTIN));
 
-    auto ex_sym = get_symbol(ident);
+    auto ex_sym = get_symbol(name);
     if (ex_sym) {
-        report_redecl(ex_sym, ident);
+        assert(decl);
+        assert(decl->identifier.name == name);
+        report_redecl(ex_sym, decl->identifier);
         return false;
     }
 
@@ -237,7 +240,7 @@ bool add_symbol_(Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, AST_I
         kind,
         state,
         flags,
-        ident,
+        name,
         decl,
     };
 
@@ -299,7 +302,7 @@ Symbol *get_symbol(const AST_Identifier &ident)
 Symbol *get_symbol(const Atom &name)
 {
     for (u64 i = 0; i < symbols.count; i++) {
-        if (symbols[i].identifier.name == name) {
+        if (symbols[i].name == name) {
             return &symbols[i];
         }
     }

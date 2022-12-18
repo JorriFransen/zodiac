@@ -33,7 +33,7 @@ Scope *scope_new(Allocator *allocator, Scope_Kind kind, Scope *parent)
 Symbol *scope_get_symbol(Scope *scope, const Atom &name)
 {
     for (u64 i = 0; i < scope->symbols.count; i++) {
-        if (scope->symbols[i]->identifier.name == name) {
+        if (scope->symbols[i]->name == name) {
             return scope->symbols[i];
         }
     }
@@ -42,7 +42,7 @@ Symbol *scope_get_symbol(Scope *scope, const Atom &name)
         scope = scope->parent;
 
         for (u64 i = 0; i < scope->symbols.count; i++) {
-            if (scope->symbols[i]->identifier.name == name) {
+            if (scope->symbols[i]->name == name) {
                 return scope->symbols[i];
             }
         }

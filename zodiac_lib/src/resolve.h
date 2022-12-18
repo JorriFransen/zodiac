@@ -41,7 +41,7 @@ struct Symbol
     Symbol_State state;
     Symbol_Flags flags;
 
-    AST_Identifier identifier;
+    Atom name;
     AST_Declaration *decl;
 };
 
