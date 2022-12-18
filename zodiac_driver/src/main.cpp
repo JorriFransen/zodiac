@@ -29,6 +29,8 @@ int main() {
 
     Zodiac_Context c;
     zodiac_context_create(&c);
+
+    // TODO: CLEANUP: Used in the resolver
     ctx = &c;
 
     Lexer lexer;
@@ -59,9 +61,9 @@ int main() {
     return 0;
 }
 
-bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
-bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
-bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global);
+Symbol *add_unresolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
+Symbol *add_resolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
+Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool global);
 
 bool name_resolve_decl_(AST_Declaration *decl, bool global);
 bool name_resolve_stmt_(AST_Statement *stmt);
@@ -99,8 +101,8 @@ bool name_resolve_ts_(AST_Type_Spec *ts);
 bool is_lvalue_expr(AST_Expression *expr);
 bool is_const_expr(AST_Expression *expr);
 
-#define add_builtin_symbol(kind, atom) {                                                \
-    add_resolved_symbol((kind), (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), (atom), nullptr); \
+#define add_builtin_symbol(kind, atom) {                                                              \
+    add_resolved_symbol(global_scope, (kind), (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), (atom), nullptr); \
 }
 
 void resolve_test(Zodiac_Context *ctx, AST_File *file)
@@ -119,7 +121,7 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
     // Add global symbols
     for (u64 i = 0; i < decls_to_resolve.count; i++) {
         auto decl = decls_to_resolve[i];
-        add_unresolved_decl_symbol(decl, true);
+        add_unresolved_decl_symbol(global_scope, decl, true);
     }
 
     bool progress = true;
@@ -179,19 +181,21 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
     }
 }
 
-bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
+Symbol *add_unresolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
-    return scope_add_symbol(global_scope, kind, Symbol_State::UNRESOLVED, flags, name, decl);
+    assert(scope);
+    return scope_add_symbol(scope, kind, Symbol_State::UNRESOLVED, flags, name, decl);
 }
 
-bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
+Symbol *add_resolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
-    return scope_add_symbol(global_scope, kind, Symbol_State::RESOLVED, flags, name, decl);
+    assert(scope);
+    return scope_add_symbol(scope, kind, Symbol_State::RESOLVED, flags, name, decl);
 }
 
-bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
+Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool global)
 {
-    assert(decl);
+    assert(scope && decl);
 
     Symbol_Kind kind = Symbol_Kind::INVALID;
 
@@ -206,8 +210,10 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
 
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
-                if (!add_unresolved_symbol(Symbol_Kind::PARAM, SYM_FLAG_NONE, param.identifier.name, decl)) {
-                    return false;
+
+                auto param_sym = add_unresolved_symbol(global_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param.identifier.name, decl);
+                if (!param_sym) {
+                    return nullptr;
                 }
             }
             break;
@@ -219,8 +225,9 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
 
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
-                if (!add_unresolved_symbol(Symbol_Kind::MEMBER, SYM_FLAG_NONE, field.identifier.name, decl)) {
-                    return false;
+                auto mem_sym = add_unresolved_symbol(global_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field.identifier.name, decl);
+                if (!mem_sym) {
+                    return nullptr;
                 }
             }
             break;
@@ -232,7 +239,7 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
     Symbol_Flags flags = SYM_FLAG_NONE;
     if (global) flags |= SYM_FLAG_GLOBAL;
 
-    return add_unresolved_symbol(kind, flags, decl->identifier.name, decl);
+    return add_unresolved_symbol(scope, kind, flags, decl->identifier.name, decl);
 }
 
 bool name_resolve_decl_(AST_Declaration *decl, bool global)
@@ -250,7 +257,7 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
         assert_msg(decl_sym, "Global symbol should have been registered already");
     } else if (!decl_sym) {
         // First time local symbol is encountered
-        if (!add_unresolved_decl_symbol(decl, global)) {
+        if (!add_unresolved_decl_symbol(global_scope, decl, global)) {
             return false;
         }
         decl_sym = scope_get_symbol(global_scope, decl->identifier);
