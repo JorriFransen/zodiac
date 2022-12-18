@@ -1,5 +1,4 @@
 
-#include <stdarg.h>
 #include <stdio.h>
 
 #include "asserts.h"
@@ -21,8 +20,6 @@
 using namespace Zodiac;
 
 void resolve_test(Zodiac_Context *ctx, AST_File *file);
-
-Zodiac_Context *ctx;
 
 int main() {
 
@@ -60,12 +57,6 @@ int main() {
 
     return 0;
 }
-
-
-Dynamic_Array<Symbol> symbols;
-u64 name_resolved_count = 0;
-Dynamic_Array<Resolve_Error> resolve_errors;
-bool fatal_resolve_error = false;
 
 bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
 bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
@@ -110,26 +101,6 @@ bool name_resolve_ts_(AST_Type_Spec *ts);
 
 bool is_lvalue_expr(AST_Expression *expr);
 bool is_const_expr(AST_Expression *expr);
-
-void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args);
-void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, ...);
-void resolve_error_(AST_Declaration *decl, bool fatal, const String_Ref fmt, ...);
-void resolve_error_(AST_Statement *stmt, bool fatal, const String_Ref fmt, ...);
-void resolve_error_(AST_Expression *expr, bool fatal, const String_Ref fmt, ...);
-void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ...);
-
-#define resolve_error(node, fmt, ...) resolve_error_((node), false, fmt, ##__VA_ARGS__);
-
-#define fatal_resolve_error(node, fmt, ...) {           \
-    fatal_resolve_error = true;                         \
-    resolve_error_((node), true, (fmt), ##__VA_ARGS__); \
-}
-
-#define report_redecl(old_sym, new_ident) {                                                       \
-    fatal_resolve_error((new_ident).pos, "Redeclaration of symbol: '%s'", (new_ident).name.data); \
-    assert((old_sym)->decl);                                                                      \
-    fatal_resolve_error((old_sym)->decl->pos, "<---- Previous declaration was here");             \
-}
 
 #define add_builtin_symbol(kind, atom) {                                                \
     add_resolved_symbol((kind), (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), (atom), nullptr); \
@@ -231,7 +202,8 @@ bool add_symbol_(Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom 
     if (ex_sym) {
         assert(decl);
         assert(decl->identifier.name == name);
-        report_redecl(ex_sym, decl->identifier);
+        // report_redecl(ex_sym, decl->identifier);
+        assert(false);
         return false;
     }
 
@@ -315,7 +287,8 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
 
     auto decl_sym = get_symbol(decl->identifier.name);
     if (decl_sym && decl_sym->decl != decl) {
-        report_redecl(decl_sym, decl->identifier);
+        // report_redecl(decl_sym, decl->identifier);
+        assert(false);
         return false;
     }
 
@@ -715,53 +688,3 @@ bool is_const_expr(AST_Expression *expr)
     return false;
 }
 
-void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args)
-{
-    Resolve_Error err;
-
-    err.message = string_format(&ctx->resolve_error_allocator, fmt, args);
-    err.pos = pos;
-    err.fatal = fatal;
-
-    dynamic_array_append(&resolve_errors, err);
-}
-
-void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    resolve_error_(pos, fatal, fmt, args);
-    va_end(args);
-}
-
-void resolve_error_(AST_Declaration *decl, bool fatal, const String_Ref fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    resolve_error_(decl->pos, fatal, fmt, args);
-    va_end(args);
-}
-
-void resolve_error_(AST_Statement *stmt, bool fatal, const String_Ref fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    resolve_error_(stmt->pos, fatal, fmt, args);
-    va_end(args);
-}
-
-void resolve_error_(AST_Expression *expr, bool fatal, const String_Ref fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    resolve_error_(expr->pos, fatal, fmt, args);
-    va_end(args);
-}
-
-void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    resolve_error_(ts->pos, fatal, fmt, args);
-    va_end(args);
-}

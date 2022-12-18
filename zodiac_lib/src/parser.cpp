@@ -464,7 +464,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
     }
 
     assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
-    
+
     expect_token(parser, '{');
 
     auto temp_fields = temp_array_create<AST_Field_Declaration>(parser);
@@ -574,7 +574,7 @@ AST_Type_Spec *parse_type_spec(Parser *parser)
 
             AST_Identifier ident;
             ast_identifier_create(t.atom, t.start, &ident);
-        
+
             return ast_name_ts_new(parser->context, t.start, ident);
         }
 

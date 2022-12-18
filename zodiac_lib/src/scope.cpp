@@ -67,8 +67,7 @@ Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Sym
     if (ex_sym) {
         assert(decl);
         assert(decl->identifier.name == name);
-        // report_redecl(ex_sym, decl->identifier);
-        assert_msg(false, "redecl");
+        report_redecl(ex_sym, decl->identifier);
         return nullptr;
     }
 
