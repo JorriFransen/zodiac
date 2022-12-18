@@ -67,8 +67,8 @@ u64 name_resolved_count = 0;
 Dynamic_Array<Resolve_Error> resolve_errors;
 bool fatal_resolve_error = false;
 
-bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl);
-bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl);
+bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
+bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
 bool add_symbol_(Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl);
 bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global);
 
@@ -131,9 +131,8 @@ void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ...);
     fatal_resolve_error((old_sym)->decl->pos, "<---- Previous declaration was here");             \
 }
 
-#define add_builtin_symbol(kind, atom) {                                                         \
-    Source_Pos pos = { "<builtin>", 0, 0 };                                                      \
-    add_resolved_symbol((kind), (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), { (atom), pos }, nullptr); \
+#define add_builtin_symbol(kind, atom) {                                                \
+    add_resolved_symbol((kind), (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), (atom), nullptr); \
 }
 
 void resolve_test(Zodiac_Context *ctx, AST_File *file)
@@ -212,14 +211,14 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
     }
 }
 
-bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl)
+bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
-    return add_symbol_(kind, Symbol_State::UNRESOLVED, flags, ident.name, decl);
+    return add_symbol_(kind, Symbol_State::UNRESOLVED, flags, name, decl);
 }
 
-bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, AST_Identifier ident, AST_Declaration *decl)
+bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
-    return add_symbol_(kind, Symbol_State::RESOLVED, flags, ident.name, decl);
+    return add_symbol_(kind, Symbol_State::RESOLVED, flags, name, decl);
 }
 
 bool add_symbol_(Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl)
@@ -265,7 +264,7 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
 
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
-                if (!add_unresolved_symbol(Symbol_Kind::PARAM, SYM_FLAG_NONE, param.identifier, decl)) {
+                if (!add_unresolved_symbol(Symbol_Kind::PARAM, SYM_FLAG_NONE, param.identifier.name, decl)) {
                     return false;
                 }
             }
@@ -278,7 +277,7 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
 
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
-                if (!add_unresolved_symbol(Symbol_Kind::MEMBER, SYM_FLAG_NONE, field.identifier, decl)) {
+                if (!add_unresolved_symbol(Symbol_Kind::MEMBER, SYM_FLAG_NONE, field.identifier.name, decl)) {
                     return false;
                 }
             }
@@ -291,7 +290,7 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
     Symbol_Flags flags = SYM_FLAG_NONE;
     if (global) flags |= SYM_FLAG_GLOBAL;
 
-    return add_unresolved_symbol(kind, flags, decl->identifier, decl);
+    return add_unresolved_symbol(kind, flags, decl->identifier.name, decl);
 }
 
 Symbol *get_symbol(const AST_Identifier &ident)
