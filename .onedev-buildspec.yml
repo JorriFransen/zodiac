@@ -5,7 +5,7 @@ jobs:
   - !PushRepository
     name: sync
     remoteUrl: https://github.com/JorriFransen/zodiac.git
-    userName: jorri@jorrifransen.nl
+    userName: jorri
     passwordSecret: ghsynctoken
     withLfs: false
     force: false
