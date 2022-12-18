@@ -1,6 +1,23 @@
 version: 18
 jobs:
 - name: GH sync
+  steps:
+  - !PullRepository
+    name: gh pull
+    remoteUrl: https://github.com/JorriFransen/zodiac.git
+    syncToChildProject: false
+    refs: refs/heads/* refs/tags/*
+    withLfs: false
+    force: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  - !PushRepository
+    name: gh push
+    remoteUrl: https://github.com/JorriFransen/zodiac.git
+    userName: jorri
+    passwordSecret: ghsynctoken
+    withLfs: false
+    force: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   triggers:
   - !ScheduleTrigger
     cronExpression: 0 0 */1 ? * * *
