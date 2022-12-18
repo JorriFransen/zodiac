@@ -14,6 +14,7 @@
 #include "parser.h"
 #include "platform/filesystem.h"
 #include "resolve.h"
+#include "scope.h"
 #include "zodiac_context.h"
 #include "zstring.h"
 
@@ -60,11 +61,7 @@ int main() {
 
 bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
 bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
-bool add_symbol_(Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl);
 bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global);
-
-Symbol *get_symbol(const AST_Identifier &ident);
-Symbol *get_symbol(const Atom &name);
 
 bool name_resolve_decl_(AST_Declaration *decl, bool global);
 bool name_resolve_stmt_(AST_Statement *stmt);
@@ -110,7 +107,7 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
 {
     assert(ctx);
 
-    dynamic_array_create(&dynamic_allocator, &symbols);
+    global_scope = scope_new(&dynamic_allocator, Scope_Kind::GLOBAL, nullptr);
     dynamic_array_create(&dynamic_allocator, &resolve_errors);
 
     add_builtin_symbol(Symbol_Kind::TYPE, atom_s64);
@@ -171,9 +168,9 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
     }
 
     if (resolve_errors.count == 0) {
-        for (u64 i = 0; i < symbols.count; i++) {
+        for (u64 i = 0; i < global_scope->symbols.count; i++) {
 
-            auto sym = symbols[i];
+            auto sym = global_scope->symbols[i];
             if (sym.state == Symbol_State::RESOLVED && sym.decl && (sym.flags & SYM_FLAG_GLOBAL)) {
                 ast_print_declaration(sym.decl);
                 printf("\n\n");
@@ -184,39 +181,12 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
 
 bool add_unresolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
-    return add_symbol_(kind, Symbol_State::UNRESOLVED, flags, name, decl);
+    return scope_add_symbol(global_scope, kind, Symbol_State::UNRESOLVED, flags, name, decl);
 }
 
 bool add_resolved_symbol(Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
-    return add_symbol_(kind, Symbol_State::RESOLVED, flags, name, decl);
-}
-
-bool add_symbol_(Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl)
-{
-    assert(kind != Symbol_Kind::INVALID);
-    assert(state != Symbol_State::RESOLVING);
-    assert(decl || (flags & SYM_FLAG_BUILTIN));
-
-    auto ex_sym = get_symbol(name);
-    if (ex_sym) {
-        assert(decl);
-        assert(decl->identifier.name == name);
-        // report_redecl(ex_sym, decl->identifier);
-        assert(false);
-        return false;
-    }
-
-    Symbol sym = {
-        kind,
-        state,
-        flags,
-        name,
-        decl,
-    };
-
-    dynamic_array_append(&symbols, sym);
-    return true;
+    return scope_add_symbol(global_scope, kind, Symbol_State::RESOLVED, flags, name, decl);
 }
 
 bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
@@ -265,27 +235,11 @@ bool add_unresolved_decl_symbol(AST_Declaration *decl, bool global)
     return add_unresolved_symbol(kind, flags, decl->identifier.name, decl);
 }
 
-Symbol *get_symbol(const AST_Identifier &ident)
-{
-    return get_symbol(ident.name);
-}
-
-Symbol *get_symbol(const Atom &name)
-{
-    for (u64 i = 0; i < symbols.count; i++) {
-        if (symbols[i].name == name) {
-            return &symbols[i];
-        }
-    }
-
-    return nullptr;
-}
-
 bool name_resolve_decl_(AST_Declaration *decl, bool global)
 {
     assert(decl);
 
-    auto decl_sym = get_symbol(decl->identifier.name);
+    auto decl_sym = scope_get_symbol(global_scope, decl->identifier.name);
     if (decl_sym && decl_sym->decl != decl) {
         // report_redecl(decl_sym, decl->identifier);
         assert(false);
@@ -299,7 +253,7 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
         if (!add_unresolved_decl_symbol(decl, global)) {
             return false;
         }
-        decl_sym = get_symbol(decl->identifier);
+        decl_sym = scope_get_symbol(global_scope, decl->identifier);
     }
     assert(decl_sym && decl_sym->decl == decl);
 
@@ -348,7 +302,7 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
         case AST_Declaration_Kind::FUNCTION: {
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
-                auto param_sym = get_symbol(param.identifier);
+                auto param_sym = scope_get_symbol(global_scope, param.identifier);
                 assert(param_sym);
                 assert(param_sym->kind == Symbol_Kind::PARAM);
 
@@ -360,7 +314,7 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
 
                 name_resolve_ts(param.type_spec);
 
-                param_sym = get_symbol(param.identifier);
+                param_sym = scope_get_symbol(global_scope, param.identifier);
                 param_sym->state = Symbol_State::RESOLVED;
             }
 
@@ -380,7 +334,7 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
         case AST_Declaration_Kind::UNION: {
             for (u64 i = 0 ; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
-                auto field_sym = get_symbol(field.identifier);
+                auto field_sym = scope_get_symbol(global_scope, field.identifier);
                 assert(field_sym);
                 assert(field_sym->kind == Symbol_Kind::MEMBER);
 
@@ -392,7 +346,7 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
 
                 name_resolve_ts(field.type_spec);
 
-                field_sym = get_symbol(field.identifier);
+                field_sym = scope_get_symbol(global_scope, field.identifier);
                 field_sym->state = Symbol_State::RESOLVED;
             }
             break;
@@ -404,17 +358,17 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
 exit:
     if (decl->kind == AST_Declaration_Kind::STRUCT || decl->kind == AST_Declaration_Kind::UNION) {
         for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
-            auto field_sym = get_symbol(decl->aggregate.fields[i].identifier);
+            auto field_sym = scope_get_symbol(global_scope, decl->aggregate.fields[i].identifier);
             if (field_sym->state == Symbol_State::RESOLVING) field_sym->state = Symbol_State::UNRESOLVED;
         }
     } else if (decl->kind == AST_Declaration_Kind::FUNCTION) {
         for (u64 i = 0; i < decl->function.params.count; i++) {
-            auto param_sym = get_symbol(decl->function.params[i].identifier);
+            auto param_sym = scope_get_symbol(global_scope, decl->function.params[i].identifier);
             if (param_sym->state == Symbol_State::RESOLVING) param_sym->state = Symbol_State::UNRESOLVED;
         }
     }
 
-    decl_sym = get_symbol(decl->identifier.name);
+    decl_sym = scope_get_symbol(global_scope, decl->identifier.name);
     assert(decl_sym->state == Symbol_State::RESOLVING);
 
     if (result) {
@@ -498,7 +452,7 @@ bool name_resolve_expr_(AST_Expression *expr)
         case AST_Expression_Kind::NULL_LITERAL: return true;
 
         case AST_Expression_Kind::IDENTIFIER: {
-            Symbol *sym = get_symbol(expr->identifier.name);
+            Symbol *sym = scope_get_symbol(global_scope, expr->identifier.name);
 
             if (!sym) {
                 resolve_error(expr, "Undefined symbol: '%s'", expr->identifier.name.data);
@@ -552,7 +506,7 @@ bool name_resolve_expr_(AST_Expression *expr)
 
             // TODO: Support more complex base expressions
             assert(base->kind == AST_Expression_Kind::IDENTIFIER);
-            auto base_sym = get_symbol(base->identifier);
+            auto base_sym = scope_get_symbol(global_scope, base->identifier);
             assert(base_sym);
 
             if (base_sym->kind != Symbol_Kind::FUNC) {
@@ -593,7 +547,7 @@ bool name_resolve_ts_(AST_Type_Spec *ts)
         case AST_Type_Spec_Kind::INVALID: assert(false);
 
         case AST_Type_Spec_Kind::NAME: {
-            auto sym = get_symbol(ts->identifier);
+            auto sym = scope_get_symbol(global_scope, ts->identifier);
             if (!sym) {
                 resolve_error(ts, "Undeclared symbol: '%s'", ts->identifier.name.data);
                 return false;
@@ -637,7 +591,7 @@ bool is_lvalue_expr(AST_Expression *expr)
         case AST_Expression_Kind::NULL_LITERAL: return false;
 
         case AST_Expression_Kind::IDENTIFIER: {
-            Symbol *sym = get_symbol(expr->identifier);
+            Symbol *sym = scope_get_symbol(global_scope, expr->identifier);
             assert(sym);
 
             assert_msg(!(sym->flags & SYM_FLAG_BUILTIN), "Maybe handle this?");
@@ -669,7 +623,7 @@ bool is_const_expr(AST_Expression *expr)
         case AST_Expression_Kind::NULL_LITERAL: return true;
 
         case AST_Expression_Kind::IDENTIFIER: {
-            Symbol *sym = get_symbol(expr->identifier);
+            Symbol *sym = scope_get_symbol(global_scope, expr->identifier);
             assert(sym);
 
             assert_msg(!(sym->flags & SYM_FLAG_BUILTIN), "Maybe handle this?");

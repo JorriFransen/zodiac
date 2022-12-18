@@ -75,7 +75,7 @@ Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Sym
 
     dynamic_array_append(&scope->symbols, sym);
 
-    return &scope->symbols[scope->symbols.count];
+    return &scope->symbols[scope->symbols.count - 1];
 }
 
 #undef report_redecl

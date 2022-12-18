@@ -13,6 +13,7 @@ namespace Zodiac
 {
 
 struct Zodiac_Context;
+struct Scope;
 struct AST_Declaration;
 struct AST_Expression;
 struct AST_Statement;
@@ -65,7 +66,7 @@ struct Resolve_Error
     bool fatal;
 };
 
-ZAPI extern Dynamic_Array<Symbol> symbols;
+ZAPI extern Scope *global_scope;
 ZAPI extern u64 name_resolved_count;
 
 ZAPI extern Dynamic_Array<Resolve_Error> resolve_errors;

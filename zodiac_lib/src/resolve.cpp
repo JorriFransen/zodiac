@@ -6,7 +6,7 @@
 namespace Zodiac
 {
 
-Dynamic_Array<Symbol> symbols;
+Scope *global_scope;
 u64 name_resolved_count = 0;
 
 Dynamic_Array<Resolve_Error> resolve_errors;
