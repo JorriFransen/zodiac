@@ -1,13 +1,1 @@
 version: 18
-jobs:
-- name: Github sync
-  triggers:
-  - !ScheduleTrigger
-    cronExpression: '* * */1 * * ?'
-    projects: zodiac
-  retryCondition: never
-  maxRetries: 3
-  retryDelay: 30
-  cpuRequirement: 250
-  memoryRequirement: 256
-  timeout: 3600
