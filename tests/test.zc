@@ -41,6 +41,10 @@ main :: () -> s64 {
 
     add_fn(1, 2); // This is a call statement
 
+    {
+        a := 44;
+    }
+
     a := 4;
 
     //return x(42, 2);

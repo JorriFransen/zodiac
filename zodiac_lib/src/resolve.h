@@ -80,8 +80,16 @@ struct Resolve_Error
     bool fatal;
 };
 
+struct Statement_Scope
+{
+    AST_Statement *stmt;
+    Scope *scope;
+};
+
 ZAPI extern Scope *global_scope;
 ZAPI extern Scope *current_scope;
+
+ZAPI extern Dynamic_Array<Statement_Scope> statement_scopes;
 
 ZAPI extern u64 name_resolved_count;
 
@@ -89,6 +97,9 @@ ZAPI extern Dynamic_Array<Resolve_Error> resolve_errors;
 ZAPI extern bool fatal_resolve_error;
 
 ZAPI extern Zodiac_Context *ctx;
+
+ZAPI Scope *get_statement_scope(AST_Statement *stmt);
+ZAPI void add_statement_scope(AST_Statement *stmt, Scope *scope);
 
 ZAPI void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args);
 ZAPI void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, ...);

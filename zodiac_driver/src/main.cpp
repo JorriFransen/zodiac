@@ -110,6 +110,7 @@ void resolve_test(Zodiac_Context *ctx, AST_File *file)
     assert(ctx);
 
     global_scope = scope_new(&dynamic_allocator, Scope_Kind::GLOBAL, nullptr);
+    dynamic_array_create(&dynamic_allocator, &statement_scopes);
     dynamic_array_create(&dynamic_allocator, &resolve_errors);
 
     add_builtin_symbol(Symbol_Kind::TYPE, atom_s64);
@@ -493,9 +494,23 @@ bool name_resolve_stmt_(AST_Statement *stmt)
         case AST_Statement_Kind::INVALID: assert(false);
 
         case AST_Statement_Kind::BLOCK: {
+
+            Scope *block_scope = get_statement_scope(stmt);;
+            if (!block_scope) {
+                block_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, current_scope);
+                add_statement_scope(stmt, block_scope);
+            }
+
+            assert(block_scope);
+
+            Scope *old_scope = current_scope;
+            current_scope = block_scope;
+
             for (u64 i = 0; i < stmt->block.statements.count; i++) {
                 name_resolve_stmt(stmt->block.statements[i]);
             }
+
+            current_scope = old_scope;
             break;
         }
 
