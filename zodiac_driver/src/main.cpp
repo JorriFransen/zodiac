@@ -199,6 +199,10 @@ Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool glo
 
     Symbol_Kind kind = Symbol_Kind::INVALID;
 
+    Scope *parameter_scope = nullptr;
+    Scope *local_scope = nullptr;
+    Scope *aggregate_scope = nullptr;
+
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
 
@@ -208,10 +212,13 @@ Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool glo
         case AST_Declaration_Kind::FUNCTION: {
             kind = Symbol_Kind::FUNC;
 
+            parameter_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_PARAMETER, scope);
+            local_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, parameter_scope);
+
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
 
-                auto param_sym = add_unresolved_symbol(global_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param.identifier.name, decl);
+                auto param_sym = add_unresolved_symbol(scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param.identifier.name, decl);
                 if (!param_sym) {
                     return nullptr;
                 }
@@ -223,9 +230,11 @@ Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool glo
         case AST_Declaration_Kind::UNION: {
             kind = Symbol_Kind::TYPE;
 
+            aggregate_scope = scope_new(&dynamic_allocator, Scope_Kind::AGGREGATE, scope);
+
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
-                auto mem_sym = add_unresolved_symbol(global_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field.identifier.name, decl);
+                auto mem_sym = add_unresolved_symbol(aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field.identifier.name, decl);
                 if (!mem_sym) {
                     return nullptr;
                 }
@@ -239,7 +248,40 @@ Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool glo
     Symbol_Flags flags = SYM_FLAG_NONE;
     if (global) flags |= SYM_FLAG_GLOBAL;
 
-    return add_unresolved_symbol(scope, kind, flags, decl->identifier.name, decl);
+    Symbol *result = add_unresolved_symbol(scope, kind, flags, decl->identifier.name, decl);
+
+    switch (result->kind) {
+        case Symbol_Kind::INVALID: assert(false);
+
+        case Symbol_Kind::VAR:
+        case Symbol_Kind::CONST:
+        case Symbol_Kind::PARAM:
+        case Symbol_Kind::MEMBER: {
+            assert(!parameter_scope&& !local_scope && !aggregate_scope);
+            break;
+        }
+
+        case Symbol_Kind::FUNC: {
+            assert(parameter_scope && local_scope);
+            assert(local_scope->parent == parameter_scope);
+            assert(parameter_scope->parent == scope);
+
+            result->func.parameter_scope = parameter_scope;
+            result->func.local_scope = local_scope;
+            break;
+        }
+
+        case Symbol_Kind::TYPE: {
+            assert(aggregate_scope);
+            assert(aggregate_scope->parent == scope);
+
+            result->aggregate.scope = aggregate_scope;
+            break;
+        }
+
+    }
+
+    return result;
 }
 
 bool name_resolve_decl_(AST_Declaration *decl, bool global)
@@ -248,8 +290,7 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
 
     auto decl_sym = scope_get_symbol(global_scope, decl->identifier.name);
     if (decl_sym && decl_sym->decl != decl) {
-        // report_redecl(decl_sym, decl->identifier);
-        assert(false);
+        report_redecl(decl_sym, decl_sym->name, decl->identifier.pos);
         return false;
     }
 
@@ -268,6 +309,29 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
         case Symbol_State::UNRESOLVED: decl_sym->state = Symbol_State::RESOLVING; break;
         case Symbol_State::RESOLVING: assert(false); // circ dep
         case Symbol_State::RESOLVED: return true;
+    }
+
+    Scope *aggregate_scope = nullptr;
+    Scope *parameter_scope = nullptr;
+    Scope *local_scope = nullptr;
+
+    switch (decl_sym->kind) {
+
+        default: break;
+
+        case Symbol_Kind::FUNC: {
+            assert(decl_sym->func.parameter_scope && decl_sym->func.local_scope);
+            parameter_scope = decl_sym->func.parameter_scope;
+            local_scope = decl_sym->func.local_scope;
+            break;
+        }
+
+        case Symbol_Kind::TYPE: {
+            assert(decl_sym->aggregate.scope);
+            aggregate_scope = decl_sym->aggregate.scope;
+            break;
+        }
+
     }
 
     bool result = true;
@@ -307,10 +371,19 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
         }
 
         case AST_Declaration_Kind::FUNCTION: {
+            assert(parameter_scope);
+            assert(local_scope);
+
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
-                auto param_sym = scope_get_symbol(global_scope, param.identifier);
-                assert(param_sym);
+                auto param_sym = scope_get_symbol(parameter_scope, param.identifier);
+
+                if (!param_sym) {
+                    resolve_error(param.identifier.pos, "Undeclared symbol: '%s'", param.identifier.name.data);
+                    result = false;
+                    break;
+                }
+
                 assert(param_sym->kind == Symbol_Kind::PARAM);
 
                 switch (param_sym->state) {
@@ -321,7 +394,7 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
 
                 name_resolve_ts(param.type_spec);
 
-                param_sym = scope_get_symbol(global_scope, param.identifier);
+                param_sym = scope_get_symbol(parameter_scope, param.identifier);
                 param_sym->state = Symbol_State::RESOLVED;
             }
 
@@ -339,10 +412,19 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
 
         case AST_Declaration_Kind::STRUCT:
         case AST_Declaration_Kind::UNION: {
+            assert(aggregate_scope);
+
             for (u64 i = 0 ; i < decl->aggregate.fields.count; i++) {
+
                 auto field = decl->aggregate.fields[i];
-                auto field_sym = scope_get_symbol(global_scope, field.identifier);
-                assert(field_sym);
+                auto field_sym = scope_get_symbol(aggregate_scope, field.identifier);
+
+                if (!field_sym) {
+                    resolve_error(field.identifier.pos, "Undeclared symbol: '%s'", field.identifier.name.data);
+                    result = false;
+                    break;
+                }
+
                 assert(field_sym->kind == Symbol_Kind::MEMBER);
 
                 switch (field_sym->state) {
@@ -353,7 +435,7 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
 
                 name_resolve_ts(field.type_spec);
 
-                field_sym = scope_get_symbol(global_scope, field.identifier);
+                field_sym = scope_get_symbol(aggregate_scope, field.identifier);
                 field_sym->state = Symbol_State::RESOLVED;
             }
             break;
@@ -364,13 +446,17 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
 
 exit:
     if (decl->kind == AST_Declaration_Kind::STRUCT || decl->kind == AST_Declaration_Kind::UNION) {
+        assert(aggregate_scope)
         for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
-            auto field_sym = scope_get_symbol(global_scope, decl->aggregate.fields[i].identifier);
+            auto field_sym = scope_get_symbol(aggregate_scope, decl->aggregate.fields[i].identifier);
+            assert(field_sym);
             if (field_sym->state == Symbol_State::RESOLVING) field_sym->state = Symbol_State::UNRESOLVED;
         }
     } else if (decl->kind == AST_Declaration_Kind::FUNCTION) {
+        assert(parameter_scope);
         for (u64 i = 0; i < decl->function.params.count; i++) {
-            auto param_sym = scope_get_symbol(global_scope, decl->function.params[i].identifier);
+            auto param_sym = scope_get_symbol(parameter_scope, decl->function.params[i].identifier);
+            assert(param_sym);
             if (param_sym->state == Symbol_State::RESOLVING) param_sym->state = Symbol_State::UNRESOLVED;
         }
     }

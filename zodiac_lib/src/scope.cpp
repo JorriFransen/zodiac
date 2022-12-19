@@ -66,8 +66,7 @@ Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Sym
     auto ex_sym = scope_get_symbol(scope, name);
     if (ex_sym) {
         assert(decl);
-        assert(decl->identifier.name == name);
-        report_redecl(ex_sym, decl->identifier);
+        report_redecl(ex_sym, name, decl->pos);
         return nullptr;
     }
 
@@ -77,7 +76,5 @@ Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Sym
 
     return &scope->symbols[scope->symbols.count - 1];
 }
-
-#undef report_redecl
 
 }

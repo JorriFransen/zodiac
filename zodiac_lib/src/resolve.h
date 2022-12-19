@@ -57,6 +57,20 @@ struct Symbol
 
     Atom name;
     AST_Declaration *decl;
+
+    union
+    {
+        struct
+        {
+            Scope *parameter_scope;
+            Scope *local_scope;
+        } func;
+
+        struct
+        {
+            Scope *scope;
+        } aggregate;
+    };
 };
 
 struct Resolve_Error
@@ -88,10 +102,10 @@ ZAPI void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ..
     resolve_error_((node), true, (fmt), ##__VA_ARGS__); \
 }
 
-#define report_redecl(old_sym, new_ident) {                                                       \
-    fatal_resolve_error((new_ident).pos, "Redeclaration of symbol: '%s'", (new_ident).name.data); \
-    assert((old_sym)->decl);                                                                      \
-    fatal_resolve_error((old_sym)->decl->pos, "<---- Previous declaration was here");             \
+#define report_redecl(old_sym, name, npos) {                                           \
+    resolve_error_((npos), true, "Redeclaration of symbol: '%s'", (name).data); \
+    assert((old_sym)->decl);                                                          \
+    fatal_resolve_error((old_sym)->decl->pos, "<---- Previous declaration was here"); \
 }
 
 }
