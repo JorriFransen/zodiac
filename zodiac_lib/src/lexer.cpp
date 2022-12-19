@@ -317,7 +317,7 @@ String_Ref tmp_token_kind_str(Token_Kind kind)
     i32 length = 0;
 
     if (isprint((char)kind)) {
-        length = string_format(buffer, "%c", (char)kind); 
+        length = string_format(buffer, "%c", (char)kind);
     } else {
         return token_kind_to_string[kind];
     }

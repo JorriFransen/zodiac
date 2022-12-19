@@ -1,7 +1,7 @@
 
 COMMON_FLAGS := --no-print-directory
 
-all: zodiac_lib zodiac_driver zodiac_tests iwyu
+all: zodiac_lib zodiac_driver zodiac_tests
 
 .PHONY: zodiac_lib
 zodiac_lib:

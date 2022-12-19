@@ -3,75 +3,21 @@
 #include <stdarg.h>
 
 #include "asserts.h"
-#include "atom.h"
 #include "containers/dynamic_array.h"
 #include "defines.h"
 #include "lexer.h"
 #include "zstring.h"
+#include "scope.h"
 
 namespace Zodiac
 {
 
-struct Zodiac_Context;
-struct Scope;
 struct AST_Declaration;
 struct AST_Expression;
+struct AST_File;
 struct AST_Statement;
 struct AST_Type_Spec;
-
-enum class Symbol_Kind : u16
-{
-    INVALID,
-
-    FUNC,
-
-    VAR,
-    CONST,
-    PARAM,
-
-    TYPE,
-    MEMBER,
-};
-
-enum class Symbol_State : u16
-{
-    UNRESOLVED,
-    RESOLVING,
-    RESOLVED,
-};
-
-typedef u32 Symbol_Flags;
-
-enum Symbol_Flag : Symbol_Flags
-{
-    SYM_FLAG_NONE    = 0x00,
-    SYM_FLAG_BUILTIN = 0x01,
-    SYM_FLAG_GLOBAL  = 0x02,
-};
-
-struct Symbol
-{
-    Symbol_Kind kind;
-    Symbol_State state;
-    Symbol_Flags flags;
-
-    Atom name;
-    AST_Declaration *decl;
-
-    union
-    {
-        struct
-        {
-            Scope *parameter_scope;
-            Scope *local_scope;
-        } func;
-
-        struct
-        {
-            Scope *scope;
-        } aggregate;
-    };
-};
+struct Zodiac_Context;
 
 struct Resolve_Error
 {
@@ -98,8 +44,44 @@ ZAPI extern bool fatal_resolve_error;
 
 ZAPI extern Zodiac_Context *ctx;
 
-ZAPI Scope *get_statement_scope(AST_Statement *stmt);
-ZAPI void add_statement_scope(AST_Statement *stmt, Scope *scope);
+ZAPI void resolve_test(Zodiac_Context *ctx, AST_File *file);
+
+ZAPI bool name_resolve_decl_(AST_Declaration *decl, bool global);
+ZAPI bool name_resolve_stmt_(AST_Statement *stmt);
+ZAPI bool name_resolve_expr_(AST_Expression *expr);
+ZAPI bool name_resolve_ts_(AST_Type_Spec *ts);
+
+#define name_resolve_decl(decl, glob) {        \
+    if (!name_resolve_decl_((decl), (glob))) { \
+        result = false;                        \
+        goto exit;                             \
+    }                                          \
+}
+
+#define name_resolve_stmt(stmt) {    \
+    if (!name_resolve_stmt_(stmt)) { \
+        result = false;              \
+        goto exit;                   \
+    }                                \
+}
+
+#define name_resolve_expr(expr) {    \
+    if (!name_resolve_expr_(expr)) { \
+        result = false;              \
+        goto exit;                   \
+    }                                \
+}
+
+#define name_resolve_ts(ts) {    \
+    if (!name_resolve_ts_(ts)) { \
+        result = false;          \
+        goto exit;               \
+    }                            \
+}
+
+ZAPI bool is_lvalue_expr(AST_Expression *expr);
+ZAPI bool is_const_expr(AST_Expression *expr);
+
 
 ZAPI void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args);
 ZAPI void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, ...);
