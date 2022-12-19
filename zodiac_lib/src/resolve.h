@@ -81,6 +81,8 @@ struct Resolve_Error
 };
 
 ZAPI extern Scope *global_scope;
+ZAPI extern Scope *current_scope;
+
 ZAPI extern u64 name_resolved_count;
 
 ZAPI extern Dynamic_Array<Resolve_Error> resolve_errors;

@@ -7,6 +7,8 @@ namespace Zodiac
 {
 
 Scope *global_scope;
+Scope *current_scope;
+
 u64 name_resolved_count = 0;
 
 Dynamic_Array<Resolve_Error> resolve_errors;
