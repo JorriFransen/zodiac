@@ -216,8 +216,8 @@ void ast_constant_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, 
     ast_declaration_create(AST_Declaration_Kind::CONSTANT_VARIABLE, out_decl);
 
     out_decl->identifier = ident;
-    out_decl->constant_variable.type_spec = ts;
-    out_decl->constant_variable.value = value;
+    out_decl->variable.type_spec = ts;
+    out_decl->variable.value = value;
 }
 
 void ast_function_decl_create(AST_Identifier ident, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl)

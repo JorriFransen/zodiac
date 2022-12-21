@@ -72,8 +72,6 @@ struct Flat_Node
         AST_Expression *expr;
         AST_Type_Spec *ts;
     };
-
-
 };
 
 struct Flat_Root_Node
@@ -120,11 +118,11 @@ void flatten_declaration(AST_Declaration *decl, Dynamic_Array<Flat_Node> *dest)
 
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
-        case AST_Declaration_Kind::VARIABLE: assert(false);
 
+        case AST_Declaration_Kind::VARIABLE:
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
-            auto ts = decl->constant_variable.type_spec;
-            auto val = decl->constant_variable.value;
+            auto ts = decl->variable.type_spec;
+            auto val = decl->variable.value;
 
             if (ts) flatten_type_spec(ts, dest);
             if (val) flatten_expression(val, dest);

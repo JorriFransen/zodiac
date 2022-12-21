@@ -213,13 +213,8 @@ struct AST_Statement
     };
 };
 
+// Also used for constant variables
 struct AST_Variable_Declaration
-{
-    AST_Type_Spec *type_spec;
-    AST_Expression *value;
-};
-
-struct AST_Constant_Variable_Declaration
 {
     AST_Type_Spec *type_spec;
     AST_Expression *value;
@@ -268,8 +263,7 @@ struct AST_Declaration
 
     union
     {
-        AST_Variable_Declaration variable;
-        AST_Constant_Variable_Declaration constant_variable;
+        AST_Variable_Declaration variable; // Also used for constant variables
         AST_Function_Declaration function;
         AST_Aggregate_Declaration aggregate;
     };

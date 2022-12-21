@@ -164,8 +164,8 @@ bool name_resolve_decl_(AST_Declaration *decl, bool global)
 
         case AST_Declaration_Kind::VARIABLE:
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
-            auto ts = decl->constant_variable.type_spec;
-            auto expr = decl->constant_variable.value;
+            auto ts = decl->variable.type_spec;
+            auto expr = decl->variable.value;
 
             if (ts) name_resolve_ts(ts);
             if (expr) name_resolve_expr(expr);
