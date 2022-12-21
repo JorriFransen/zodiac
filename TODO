@@ -3,7 +3,6 @@
   - Hash table
   - Bucket array
 
-- Local symbol tables
 - Flatten global declarations
 
 - decls_to_resolve should be a bucket array
