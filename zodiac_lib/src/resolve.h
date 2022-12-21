@@ -3,11 +3,12 @@
 #include <stdarg.h>
 
 #include "asserts.h"
+#include "atom.h" // IWYU pragma: keep
 #include "containers/dynamic_array.h"
 #include "defines.h"
 #include "lexer.h"
-#include "zstring.h"
 #include "scope.h"
+#include "zstring.h"
 
 namespace Zodiac
 {

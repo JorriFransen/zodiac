@@ -24,7 +24,7 @@ bool fatal_resolve_error;
 Zodiac_Context *ctx;
 
 
-#define add_builtin_symbol(kind, atom) {                                                              \
+ #define add_builtin_symbol(kind, atom) {                                                              \
     add_resolved_symbol(global_scope, (kind), (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), (atom), nullptr); \
 }
 
