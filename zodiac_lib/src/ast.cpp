@@ -211,6 +211,7 @@ void ast_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expre
 void ast_constant_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl)
 {
     assert(out_decl);
+    assert_msg(value, "Constant variable declaration must have a value");
 
     ast_declaration_create(AST_Declaration_Kind::CONSTANT_VARIABLE, out_decl);
 
@@ -466,7 +467,7 @@ AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_
 
 AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value)
 {
-    assert(ctx);
+    assert(ctx && value);
 
     auto decl = ast_declaration_new(ctx, pos);
     ast_constant_variable_decl_create(ident, ts, value, decl);
