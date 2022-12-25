@@ -485,7 +485,7 @@ AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_
 
 AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields)
 {
-    assert(ctx); 
+    assert(ctx);
     assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
 
     auto decl = ast_declaration_new(ctx, pos);

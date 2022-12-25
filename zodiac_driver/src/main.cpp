@@ -1,6 +1,6 @@
-
 #include "asserts.h"
 #include "ast.h"
+#include "atom.h"
 #include "containers/dynamic_array.h"
 #include "defines.h"
 #include "lexer.h"
@@ -9,7 +9,6 @@
 #include "memory/zmemory.h"
 #include "parser.h"
 #include "platform/filesystem.h"
-// #include "resolve.h"
 #include "scope.h"
 #include "zodiac_context.h"
 #include "zstring.h"
@@ -92,11 +91,11 @@ Scope *global_scope;
 
 Dynamic_Array<Flat_Root_Node> nodes_to_name_resolve;
 
-void name_resolve_node(Flat_Node *node);
-void name_resolve_decl(AST_Declaration *decl);
-void name_resolve_stmt(AST_Statement *stmt);
-void name_resolve_expr(AST_Expression *expr, Scope *scope);
-void name_resolve_ts(AST_Type_Spec *ts);
+bool name_resolve_node(Flat_Node *node);
+bool name_resolve_decl(AST_Declaration *decl, Scope *scope);
+bool name_resolve_stmt(AST_Statement *stmt, Scope *scope);
+bool name_resolve_expr(AST_Expression *expr, Scope *scope);
+bool name_resolve_ts(AST_Type_Spec *ts, Scope *scope);
 
 void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 void flatten_statement(AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest);
@@ -132,8 +131,8 @@ void flat_resolve_test(AST_File *file)
 
         AST_Declaration *decl = file->declarations[i];
 
-        flatten_declaration(decl, global_scope, &node.nodes);
         add_unresolved_decl_symbol(global_scope, decl, true);
+        flatten_declaration(decl, global_scope, &node.nodes);
 
         dynamic_array_append(&nodes_to_name_resolve, node);
     }
@@ -151,43 +150,108 @@ void flat_resolve_test(AST_File *file)
     assert(file);
 }
 
-void name_resolve_node(Flat_Node *node)
+bool name_resolve_node(Flat_Node *node)
 {
     assert(node);
 
     switch (node->kind) {
-        case Flat_Node_Kind::DECL: assert(false);
+        case Flat_Node_Kind::DECL: {
+            return name_resolve_decl(node->decl, node->scope);
+            break;
+        }
+
         case Flat_Node_Kind::STMT: assert(false);
 
         case Flat_Node_Kind::EXPR: {
-            name_resolve_expr(node->expr, node->scope);
+            return name_resolve_expr(node->expr, node->scope);
             break;
         }
 
         case Flat_Node_Kind::TS: assert(false);
         case Flat_Node_Kind::PARAM_DECL: assert(false);
     }
+
+    assert(false);
+    return false;
 }
 
-void name_resolve_decl(AST_Declaration *decl)
+bool name_resolve_decl(AST_Declaration *decl, Scope *scope)
+{
+    assert(decl && scope);
+
+    assert(decl->identifier.name.data);
+    auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
+
+    if (!decl_sym) {
+        assert_msg(scope->kind != Scope_Kind::GLOBAL, "Global declaration should have been defined");
+
+        assert_msg(false, "TODO: local declaration symbol");
+    }
+
+    assert(decl_sym);
+
+    switch (decl_sym->state) {
+
+        case Symbol_State::UNRESOLVED: {
+            decl_sym->state = Symbol_State::RESOLVING;
+            break;
+        }
+
+        case Symbol_State::RESOLVING: assert_msg(false, "Circular dependency");
+
+        case Symbol_State::RESOLVED: {
+            return true;
+        }
+    }
+
+    bool result = true;
+
+    switch (decl->kind) {
+        case AST_Declaration_Kind::INVALID: assert(false);
+        case AST_Declaration_Kind::VARIABLE: assert(false);
+
+        case AST_Declaration_Kind::CONSTANT_VARIABLE: {
+            // Leaf
+            break;
+        }
+
+        case AST_Declaration_Kind::FUNCTION: assert(false);
+        case AST_Declaration_Kind::STRUCT: assert(false);
+        case AST_Declaration_Kind::UNION: assert(false);
+    }
+
+
+    decl_sym = scope_get_symbol(scope, decl->identifier.name);
+    assert(decl_sym);
+    if (result) {
+        decl_sym->state = Symbol_State::RESOLVED;
+    } else {
+        decl_sym->state = Symbol_State::UNRESOLVED;
+    }
+    return result;
+}
+
+bool name_resolve_stmt(AST_Statement *stmt, Scope *scope)
 {
     assert (false);
+    return false;
 }
 
-void name_resolve_stmt(AST_Statement *stmt)
-{
-    assert (false);
-}
-
-void name_resolve_expr(AST_Expression *expr, Scope *scope)
+bool name_resolve_expr(AST_Expression *expr, Scope *scope)
 {
     assert(expr && scope);
 
+    bool result = true;
+
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false);
-        case AST_Expression_Kind::INTEGER_LITERAL: assert(false);
-        case AST_Expression_Kind::STRING_LITERAL: assert(false);
-        case AST_Expression_Kind::NULL_LITERAL: assert(false);
+
+        case AST_Expression_Kind::INTEGER_LITERAL:
+        case AST_Expression_Kind::STRING_LITERAL:
+        case AST_Expression_Kind::NULL_LITERAL: {
+            // Leaf
+            break;
+        }
 
         case AST_Expression_Kind::IDENTIFIER: {
             Symbol *sym = scope_get_symbol(scope, expr->identifier.name);
@@ -195,14 +259,16 @@ void name_resolve_expr(AST_Expression *expr, Scope *scope)
             if (!sym) {
                 // resolve_error(expr, "Undefined symbol: '%s'", expr->identifier.name.data);
                 assert_msg(false, "Undefined symbol");
-                return;
+                result = false;
+                break;
             }
 
             if (sym->state == Symbol_State::RESOLVING) {
 
                 // fatal_resolve_error(expr, "Circular dependency detected");
                 assert_msg(false, "Circular dependency");
-                return;
+                result = false;
+                break;
 
             } else if (sym->state == Symbol_State::UNRESOLVED) {
 
@@ -212,19 +278,14 @@ void name_resolve_expr(AST_Expression *expr, Scope *scope)
 
                     case Symbol_Kind::FUNC:
                     case Symbol_Kind::TYPE:
-                    case Symbol_Kind::MEMBER: {
-                        assert(global);
-                        // resolve_error(expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
-                        assert_msg(false, "Unresolved symbol");
-                        return;
-                    }
-
+                    case Symbol_Kind::MEMBER:
                     case Symbol_Kind::VAR:
                     case Symbol_Kind::CONST:
                     case Symbol_Kind::PARAM: {
                         assert(global);
-                        assert(sym->decl);
-                        name_resolve_decl(sym->decl);
+                        // resolve_error(expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
+                        assert_msg(false, "Unresolved symbol");
+                        result = false;
                         break;
                     }
                 }
@@ -240,16 +301,63 @@ void name_resolve_expr(AST_Expression *expr, Scope *scope)
         case AST_Expression_Kind::UNARY: assert(false);
         case AST_Expression_Kind::BINARY: assert(false);
     }
+
+    return result;
 }
 
-void name_resolve_ts(AST_Type_Spec *ts)
+bool name_resolve_ts(AST_Type_Spec *ts, Scope *scope)
 {
     assert (false);
+    return false;
 }
 
 void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest)
 {
     assert(decl && scope && dest);
+
+    assert(decl->identifier.name.data);
+    auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
+    if (decl_sym && decl_sym->decl != decl) {
+        assert(false); // Redecl?
+        return;
+    }
+
+    if (scope->kind == Scope_Kind::GLOBAL && !decl_sym) {
+        assert_msg(decl_sym, "Global symbol should have been registered already");
+    } else if (!decl_sym) {
+        // First time local symbol is encountered
+        assert(false);
+        if (!add_unresolved_decl_symbol(scope, decl, false)) {
+            return;
+        }
+        decl_sym = scope_get_symbol(scope, decl->identifier);
+    }
+    assert(decl_sym && decl_sym->decl == decl);
+
+    Scope *aggregate_scope = nullptr;
+    Scope *parameter_scope = nullptr;
+    Scope *local_scope = nullptr;
+
+    switch (decl_sym->kind) {
+
+        default: break;
+
+        case Symbol_Kind::FUNC: {
+            assert(decl_sym->func.parameter_scope && decl_sym->func.local_scope);
+            parameter_scope = decl_sym->func.parameter_scope;
+            local_scope = decl_sym->func.local_scope;
+            break;
+        }
+
+        case Symbol_Kind::TYPE: {
+            assert(decl_sym->aggregate.scope);
+            aggregate_scope = decl_sym->aggregate.scope;
+            break;
+        }
+
+    }
+
+    assert(decl_sym->state == Symbol_State::UNRESOLVED);
 
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
@@ -267,12 +375,13 @@ void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat
 
         case AST_Declaration_Kind::FUNCTION: {
 
-            Scope *param_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_PARAMETER, scope);
+            assert(parameter_scope);
+            assert(local_scope);
 
             for (u64 i = 0; i < decl->function.params.count; i++) {
 
                 flatten_type_spec(decl->function.params[i].type_spec, scope, dest);
-                Flat_Node param_node = to_flat_node(decl->function.params[i], param_scope);
+                Flat_Node param_node = to_flat_node(decl->function.params[i], parameter_scope);
                 dynamic_array_append(dest, param_node);
             }
 
@@ -282,17 +391,20 @@ void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat
 
             // At this point we should emit some kind of function header/prototype node
 
-            Scope *body_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, param_scope);
-
             for (u64 i = 0; i < decl->function.body.count; i++) {
-                flatten_statement(decl->function.body[i], body_scope, dest);
+                flatten_statement(decl->function.body[i], local_scope, dest);
             }
 
             break;
         }
 
-        case AST_Declaration_Kind::STRUCT: assert(false);
-        case AST_Declaration_Kind::UNION: assert(false);
+        case AST_Declaration_Kind::STRUCT:
+        case AST_Declaration_Kind::UNION:
+        {
+            assert(aggregate_scope);
+            assert(false);
+            break;
+        }
     }
 
     Flat_Node flat_decl = to_flat_node(decl, scope);

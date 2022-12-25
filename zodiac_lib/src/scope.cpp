@@ -5,7 +5,6 @@
 #include "atom.h"
 #include "memory/allocator.h"
 #include "memory/zmemory.h"
-#include "resolve.h"
 
 namespace Zodiac
 {
@@ -67,7 +66,8 @@ Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Sym
     auto ex_sym = scope_get_symbol(scope, name);
     if (ex_sym) {
         assert(decl);
-        report_redecl(ex_sym, name, decl->pos);
+        // report_redecl(ex_sym, name, decl->pos);
+        assert_msg(false, "Redeclaration");
         return nullptr;
     }
 
