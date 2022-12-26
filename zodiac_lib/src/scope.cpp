@@ -6,6 +6,8 @@
 #include "memory/allocator.h"
 #include "memory/zmemory.h"
 
+#include "resolve_error.h"
+
 namespace Zodiac
 {
 
@@ -66,8 +68,7 @@ Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Sym
     auto ex_sym = scope_get_symbol(scope, name);
     if (ex_sym) {
         assert(decl);
-        // report_redecl(ex_sym, name, decl->pos);
-        assert_msg(false, "Redeclaration");
+        report_redecl(ex_sym, name, decl->pos);
         return nullptr;
     }
 
@@ -146,6 +147,7 @@ Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool glo
     if (global) flags |= SYM_FLAG_GLOBAL;
 
     Symbol *result = add_unresolved_symbol(scope, kind, flags, decl->identifier.name, decl);
+    if (!result) return nullptr;
 
     switch (result->kind) {
         case Symbol_Kind::INVALID: assert(false);

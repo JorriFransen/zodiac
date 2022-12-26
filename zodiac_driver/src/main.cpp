@@ -10,16 +10,14 @@
 #include "memory/zmemory.h"
 #include "parser.h"
 #include "platform/filesystem.h"
+#include "resolve_error.h"
 #include "scope.h"
 #include "zodiac_context.h"
 #include "zstring.h"
 
-#include <stdarg.h>
 #include <stdio.h>
 
 using namespace Zodiac;
-
-file_local Zodiac_Context *ctx = nullptr;
 
 void flat_resolve_test(AST_File *file);
 
@@ -31,7 +29,7 @@ int main() {
     Zodiac_Context c;
     zodiac_context_create(&c);
 
-    // TODO: CLEANUP: Used in the resolver
+    // TODO: CLEANUP: Used in the resolver / resolve_error.h
     ctx = &c;
 
     Lexer lexer;
@@ -94,33 +92,6 @@ struct Flat_Root_Node
     u64 current_index = 0;
 };
 
-struct Resolve_Error
-{
-    String message;
-    Source_Pos pos;
-    bool fatal;
-};
-
-void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args);
-void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, ...);
-void resolve_error_(AST_Declaration *decl, bool fatal, const String_Ref fmt, ...);
-void resolve_error_(AST_Statement *stmt, bool fatal, const String_Ref fmt, ...);
-void resolve_error_(AST_Expression *expr, bool fatal, const String_Ref fmt, ...);
-void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ...);
-
-#define resolve_error(node, fmt, ...) resolve_error_((node), false, fmt, ##__VA_ARGS__);
-
-#define fatal_resolve_error(node, fmt, ...) {           \
-    fatal_resolve_error = true;                         \
-    resolve_error_((node), true, (fmt), ##__VA_ARGS__); \
-}
-
-#define report_redecl(old_sym, name, npos) {                                           \
-    resolve_error_((npos), true, "Redeclaration of symbol: '%s'", (name).data); \
-    assert((old_sym)->decl);                                                          \
-    fatal_resolve_error((old_sym)->decl->pos, "<---- Previous declaration was here"); \
-}
-
 bool name_resolve_node(Flat_Node *node);
 bool name_resolve_decl(AST_Declaration *decl, Scope *scope);
 bool name_resolve_stmt(AST_Statement *stmt, Scope *scope);
@@ -147,9 +118,6 @@ Scope *global_scope;
 
 Dynamic_Array<Flat_Root_Node> nodes_to_name_resolve;
 
-Dynamic_Array<Resolve_Error> resolve_errors;
-bool fatal_resolve_error;
-
 void flat_resolve_test(AST_File *file)
 {
     global_scope = scope_new(&dynamic_allocator, Scope_Kind::GLOBAL, nullptr);
@@ -171,7 +139,11 @@ void flat_resolve_test(AST_File *file)
 
         AST_Declaration *decl = file->declarations[i];
 
-        add_unresolved_decl_symbol(global_scope, decl, true);
+        if (!add_unresolved_decl_symbol(global_scope, decl, true)) {
+            assert(fatal_resolve_error);
+            break;
+        }
+
         flatten_declaration(decl, global_scope, &node.nodes);
 
         dynamic_array_append(&nodes_to_name_resolve, node);
@@ -180,7 +152,7 @@ void flat_resolve_test(AST_File *file)
     bool progress = true;
     bool done = false;
 
-    while (progress && !done) {
+    while (progress && !done && !fatal_resolve_error) {
         progress = false;
         done = true;
         for (u64 root_index = 0; root_index < nodes_to_name_resolve.count; root_index++) {
@@ -263,6 +235,11 @@ bool name_resolve_decl(AST_Declaration *decl, Scope *scope)
         assert_msg(false, "TODO: local declaration symbol");
     }
 
+    if (decl_sym->decl != decl) {
+        assert_msg(false, "Redeclaration?");
+        return false;
+    }
+
     assert(decl_sym);
 
     switch (decl_sym->state) {
@@ -332,16 +309,14 @@ bool name_resolve_expr(AST_Expression *expr, Scope *scope)
             Symbol *sym = scope_get_symbol(scope, expr->identifier.name);
 
             if (!sym) {
-                // resolve_error(expr, "Undefined symbol: '%s'", expr->identifier.name.data);
-                assert_msg(false, "Undefined symbol");
+                resolve_error(expr, "Undefined symbol: '%s'", expr->identifier.name.data);
                 result = false;
                 break;
             }
 
             if (sym->state == Symbol_State::RESOLVING) {
 
-                // fatal_resolve_error(expr, "Circular dependency detected");
-                assert_msg(false, "Circular dependency");
+                fatal_resolve_error(expr, "Circular dependency detected");
                 result = false;
                 break;
 
@@ -653,53 +628,3 @@ Flat_Node to_flat_node(const AST_Field_Declaration param, Scope *scope)
     return result;
 }
 
-void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args)
-{
-    Resolve_Error err;
-
-    err.message = string_format(&ctx->resolve_error_allocator, fmt, args);
-    err.pos = pos;
-    err.fatal = fatal;
-
-    dynamic_array_append(&resolve_errors, err);
-}
-
-void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    resolve_error_(pos, fatal, fmt, args);
-    va_end(args);
-}
-
-void resolve_error_(AST_Declaration *decl, bool fatal, const String_Ref fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    resolve_error_(decl->pos, fatal, fmt, args);
-    va_end(args);
-}
-
-void resolve_error_(AST_Statement *stmt, bool fatal, const String_Ref fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    resolve_error_(stmt->pos, fatal, fmt, args);
-    va_end(args);
-}
-
-void resolve_error_(AST_Expression *expr, bool fatal, const String_Ref fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    resolve_error_(expr->pos, fatal, fmt, args);
-    va_end(args);
-}
-
-void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-    resolve_error_(ts->pos, fatal, fmt, args);
-    va_end(args);
-}
