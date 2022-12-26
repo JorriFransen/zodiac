@@ -204,17 +204,18 @@ bool name_resolve_node(Flat_Node *node)
     switch (node->kind) {
         case Flat_Node_Kind::DECL: {
             return name_resolve_decl(node->decl, node->scope);
-            break;
         }
 
         case Flat_Node_Kind::STMT: assert(false);
 
         case Flat_Node_Kind::EXPR: {
             return name_resolve_expr(node->expr, node->scope);
-            break;
         }
 
-        case Flat_Node_Kind::TS: assert(false);
+        case Flat_Node_Kind::TS: {
+            return name_resolve_ts(node->ts, node->scope);
+        }
+
         case Flat_Node_Kind::PARAM_DECL: assert(false);
     }
 
@@ -260,8 +261,8 @@ bool name_resolve_decl(AST_Declaration *decl, Scope *scope)
 
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
-        case AST_Declaration_Kind::VARIABLE: assert(false);
 
+        case AST_Declaration_Kind::VARIABLE:
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
             // Leaf
             break;
@@ -356,8 +357,49 @@ bool name_resolve_expr(AST_Expression *expr, Scope *scope)
 
 bool name_resolve_ts(AST_Type_Spec *ts, Scope *scope)
 {
-    assert (false);
-    return false;
+    assert(ts && scope);
+
+    bool result = true;
+
+    switch (ts->kind) {
+        case AST_Type_Spec_Kind::INVALID: assert(false);
+
+        case AST_Type_Spec_Kind::NAME: {
+            Symbol *sym = scope_get_symbol(scope, ts->identifier.name);
+
+            if (!sym) {
+                resolve_error(ts, "Undefined symbol: '%s'", ts->identifier.name.data);
+                result = false;
+                break;
+            }
+
+            if (sym->state == Symbol_State::RESOLVING) {
+
+                fatal_resolve_error(ts, "Circular dependency detected");
+                result = false;
+                break;
+
+            } else if (sym->state == Symbol_State::UNRESOLVED) {
+
+                resolve_error(ts, "Unresolved symbol: '%s'", ts->identifier.name.data);
+                result = false;
+                break;
+
+            } else {
+                assert(sym->state == Symbol_State::RESOLVED);
+            }
+
+            break;
+        }
+
+        case AST_Type_Spec_Kind::POINTER: {
+            // Leaf, the base should have been resolved before..
+            break;
+        }
+
+    }
+
+    return result;
 }
 
 void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest)

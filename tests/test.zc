@@ -22,13 +22,18 @@ zz :: 11;
 //}
 
 
-//ptr : *s64 = null;
-//var := 42;
+ptr : *s64 = null;
+var := 42;
 
 //var2 : u16 = 8;
 //var3 : s8;
-//c_var :: 5;
+c_var :: 5;
 //c_var2 : u32 : 2;
+
+test_fn :: () -> s64
+{
+    return 42;
+}
 
 // main :: () -> s64 {
 //
