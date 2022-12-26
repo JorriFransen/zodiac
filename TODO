@@ -3,6 +3,7 @@
   - Hash table
   - Bucket array
 
+- Use a actual declaration ast nodes for function paramters. (Instead of the field declaration, which complicates things like redelcarations etc.)
 - Report circular dependency chains (Right now we just emit error for all the unresolved symbols in the chain)
 
 - decls_to_resolve should be a bucket array

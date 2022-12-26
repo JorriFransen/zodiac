@@ -62,17 +62,32 @@ Symbol *scope_get_symbol(Scope *scope, const AST_Identifier &ident)
 Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
     assert(scope);
+
+    Source_Pos pos = {};
+
+    if (decl) {
+        pos = decl->pos;
+    } else {
+        pos = { .name = "<builtin>", .line = 0, .index_in_line = 0, };
+    }
+
+    return scope_add_symbol(scope, kind, state, flags, name, decl, pos);
+}
+
+Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Pos pos)
+{
+    assert(scope);
     assert(state != Symbol_State::RESOLVING);
     assert(decl || (flags & SYM_FLAG_BUILTIN));
 
     auto ex_sym = scope_get_symbol(scope, name);
     if (ex_sym) {
         assert(decl);
-        report_redecl(ex_sym, name, decl->pos);
+        report_redecl(ex_sym->pos, name, pos);
         return nullptr;
     }
 
-    Symbol sym = { kind, state, flags, name, decl };
+    Symbol sym = { kind, state, flags, name, decl, pos };
 
     dynamic_array_append(&scope->symbols, sym);
 
@@ -81,8 +96,13 @@ Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Sym
 
 Symbol *add_unresolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
-    assert(scope);
-    return scope_add_symbol(scope, kind, Symbol_State::UNRESOLVED, flags, name, decl);
+    return add_unresolved_symbol(scope, kind, flags, name, decl, decl->pos);
+}
+
+Symbol *add_unresolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Pos pos)
+{
+    assert(scope && decl);
+    return scope_add_symbol(scope, kind, Symbol_State::UNRESOLVED, flags, name, decl, pos);
 }
 
 Symbol *add_resolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
@@ -116,7 +136,7 @@ Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool glo
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
 
-                auto param_sym = add_unresolved_symbol(parameter_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param.identifier.name, decl);
+                auto param_sym = add_unresolved_symbol(parameter_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param.identifier.name, decl, param.identifier.pos);
                 if (!param_sym) {
                     return nullptr;
                 }

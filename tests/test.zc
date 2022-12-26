@@ -1,6 +1,6 @@
 
-xx :: yy;
-yy :: zz;
+xx :: zz;
+//yy :: zz;
 zz :: 11;
 
 // Should report circular dependency
@@ -30,9 +30,10 @@ var := 42;
 c_var :: 5;
 //c_var2 : u32 : 2;
 
-test_fn :: () -> s64
+test_fn :: (x: s64) -> s64
 {
-    return 42;
+    //x := 1;
+    return x;
 }
 
 // main :: () -> s64 {

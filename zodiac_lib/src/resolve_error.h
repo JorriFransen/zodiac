@@ -32,10 +32,9 @@ ZAPI void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ..
     resolve_error_((node), true, (fmt), ##__VA_ARGS__); \
 }
 
-#define report_redecl(old_sym, name, npos) {                                           \
-    resolve_error_((npos), true, "Redeclaration of symbol: '%s'", (name).data); \
-    assert((old_sym)->decl);                                                          \
-    fatal_resolve_error((old_sym)->decl->pos, "<---- Previous declaration was here"); \
+#define report_redecl(old_pos, name, new_pos) {                                    \
+    resolve_error_((new_pos), true, "Redeclaration of symbol: '%s'", (name).data); \
+    fatal_resolve_error((old_pos), "<---- Previous declaration was here");         \
 }
 
 }

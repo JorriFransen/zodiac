@@ -206,7 +206,9 @@ bool name_resolve_node(Flat_Node *node)
             return name_resolve_decl(node->decl, node->scope);
         }
 
-        case Flat_Node_Kind::STMT: assert(false);
+        case Flat_Node_Kind::STMT: {
+            return name_resolve_stmt(node->stmt, node->scope);
+        }
 
         case Flat_Node_Kind::EXPR: {
             return name_resolve_expr(node->expr, node->scope);
@@ -216,7 +218,15 @@ bool name_resolve_node(Flat_Node *node)
             return name_resolve_ts(node->ts, node->scope);
         }
 
-        case Flat_Node_Kind::PARAM_DECL: assert(false);
+        case Flat_Node_Kind::PARAM_DECL: {
+            Symbol *param_sym = scope_get_symbol(node->scope, node->param.identifier);
+            assert(param_sym);
+            assert(param_sym->decl->kind == AST_Declaration_Kind::FUNCTION);
+
+            assert(param_sym->state == Symbol_State::UNRESOLVED);
+            param_sym->state = Symbol_State::RESOLVED;
+            return true;
+        }
     }
 
     assert(false);
@@ -263,12 +273,12 @@ bool name_resolve_decl(AST_Declaration *decl, Scope *scope)
         case AST_Declaration_Kind::INVALID: assert(false);
 
         case AST_Declaration_Kind::VARIABLE:
-        case AST_Declaration_Kind::CONSTANT_VARIABLE: {
+        case AST_Declaration_Kind::CONSTANT_VARIABLE:
+        case AST_Declaration_Kind::FUNCTION: {
             // Leaf
             break;
         }
 
-        case AST_Declaration_Kind::FUNCTION: assert(false);
         case AST_Declaration_Kind::STRUCT: assert(false);
         case AST_Declaration_Kind::UNION: assert(false);
     }
@@ -286,8 +296,28 @@ bool name_resolve_decl(AST_Declaration *decl, Scope *scope)
 
 bool name_resolve_stmt(AST_Statement *stmt, Scope *scope)
 {
-    assert (false);
-    return false;
+    assert(stmt && scope);
+
+    bool result = true;
+
+    switch (stmt->kind) {
+        case AST_Statement_Kind::INVALID: assert(false);
+        case AST_Statement_Kind::BLOCK: assert(false);
+        case AST_Statement_Kind::DECLARATION: assert(false);
+        case AST_Statement_Kind::ASSIGN: assert(false);
+        case AST_Statement_Kind::CALL: assert(false);
+        case AST_Statement_Kind::IF: assert(false);
+        case AST_Statement_Kind::WHILE: assert(false);
+
+        case AST_Statement_Kind::RETURN: {
+            // Leaf, optional value should have been resolved already
+            break;
+        }
+
+        case AST_Statement_Kind::PRINT: assert(false);
+    }
+
+    return result;
 }
 
 bool name_resolve_expr(AST_Expression *expr, Scope *scope)
@@ -323,22 +353,10 @@ bool name_resolve_expr(AST_Expression *expr, Scope *scope)
 
             } else if (sym->state == Symbol_State::UNRESOLVED) {
 
-                bool global = sym->flags & SYM_FLAG_GLOBAL;
-                switch (sym->kind) {
-                    case Symbol_Kind::INVALID: assert(false);
+                resolve_error(expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
+                result = false;
+                break;
 
-                    case Symbol_Kind::FUNC:
-                    case Symbol_Kind::TYPE:
-                    case Symbol_Kind::MEMBER:
-                    case Symbol_Kind::VAR:
-                    case Symbol_Kind::CONST:
-                    case Symbol_Kind::PARAM: {
-                        assert(global);
-                        resolve_error(expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
-                        result = false;
-                        break;
-                    }
-                }
             } else {
                 assert(sym->state == Symbol_State::RESOLVED);
             }
@@ -409,7 +427,7 @@ void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat
     assert(decl->identifier.name.data);
     auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
     if (decl_sym && decl_sym->decl != decl) {
-        assert(false); // Redecl?
+        report_redecl(decl_sym->pos, decl->identifier.name, decl->identifier.pos);
         return;
     }
 
@@ -664,7 +682,7 @@ Flat_Node to_flat_node(const AST_Field_Declaration param, Scope *scope)
     assert(scope);
 
     Flat_Node result = {};
-    result.kind = Flat_Node_Kind::TS;
+    result.kind = Flat_Node_Kind::PARAM_DECL;
     result.scope = scope;
     result.param = param;
     return result;
