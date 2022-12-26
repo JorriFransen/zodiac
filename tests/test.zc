@@ -1,7 +1,7 @@
 
-xx :: 11;
-yy :: xx;
-//zz :: 11;
+xx :: yy;
+yy :: zz;
+zz :: 11;
 
 // Should report circular dependency
 //aa :: bb;

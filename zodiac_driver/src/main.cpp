@@ -6,6 +6,7 @@
 #include "lexer.h"
 #include "logger.h"
 #include "memory/allocator.h"
+#include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 #include "parser.h"
 #include "platform/filesystem.h"
@@ -13,7 +14,12 @@
 #include "zodiac_context.h"
 #include "zstring.h"
 
+#include <stdarg.h>
+#include <stdio.h>
+
 using namespace Zodiac;
+
+file_local Zodiac_Context *ctx = nullptr;
 
 void flat_resolve_test(AST_File *file);
 
@@ -26,7 +32,7 @@ int main() {
     zodiac_context_create(&c);
 
     // TODO: CLEANUP: Used in the resolver
-    // ctx = &c;
+    ctx = &c;
 
     Lexer lexer;
     lexer_create(&c, &lexer);
@@ -85,11 +91,35 @@ struct Flat_Root_Node
 {
     Flat_Node root;
     Dynamic_Array<Flat_Node> nodes;
+    u64 current_index = 0;
 };
 
-Scope *global_scope;
+struct Resolve_Error
+{
+    String message;
+    Source_Pos pos;
+    bool fatal;
+};
 
-Dynamic_Array<Flat_Root_Node> nodes_to_name_resolve;
+void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args);
+void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, ...);
+void resolve_error_(AST_Declaration *decl, bool fatal, const String_Ref fmt, ...);
+void resolve_error_(AST_Statement *stmt, bool fatal, const String_Ref fmt, ...);
+void resolve_error_(AST_Expression *expr, bool fatal, const String_Ref fmt, ...);
+void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ...);
+
+#define resolve_error(node, fmt, ...) resolve_error_((node), false, fmt, ##__VA_ARGS__);
+
+#define fatal_resolve_error(node, fmt, ...) {           \
+    fatal_resolve_error = true;                         \
+    resolve_error_((node), true, (fmt), ##__VA_ARGS__); \
+}
+
+#define report_redecl(old_sym, name, npos) {                                           \
+    resolve_error_((npos), true, "Redeclaration of symbol: '%s'", (name).data); \
+    assert((old_sym)->decl);                                                          \
+    fatal_resolve_error((old_sym)->decl->pos, "<---- Previous declaration was here"); \
+}
 
 bool name_resolve_node(Flat_Node *node);
 bool name_resolve_decl(AST_Declaration *decl, Scope *scope);
@@ -112,10 +142,19 @@ Flat_Node to_flat_node(const AST_Field_Declaration param, Scope *scope);
     add_resolved_symbol(global_scope, (kind), (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), (atom), nullptr); \
 }
 
+
+Scope *global_scope;
+
+Dynamic_Array<Flat_Root_Node> nodes_to_name_resolve;
+
+Dynamic_Array<Resolve_Error> resolve_errors;
+bool fatal_resolve_error;
+
 void flat_resolve_test(AST_File *file)
 {
     global_scope = scope_new(&dynamic_allocator, Scope_Kind::GLOBAL, nullptr);
     dynamic_array_create(&dynamic_allocator, &nodes_to_name_resolve);
+    dynamic_array_create(&dynamic_allocator, &resolve_errors); // TODO: CLEANUP: Use the resolve_error_allocator for this?
 
     add_builtin_symbol(Symbol_Kind::TYPE, atom_s64);
     add_builtin_symbol(Symbol_Kind::TYPE, atom_r32);
@@ -126,6 +165,7 @@ void flat_resolve_test(AST_File *file)
         Flat_Root_Node node = {};
         node.root.kind = Flat_Node_Kind::DECL;
         node.root.decl = file->declarations[i];
+        node.current_index  = 0;
 
         dynamic_array_create(&dynamic_allocator, &node.nodes);
 
@@ -137,13 +177,48 @@ void flat_resolve_test(AST_File *file)
         dynamic_array_append(&nodes_to_name_resolve, node);
     }
 
-    for (u64 root_index = 0; root_index < nodes_to_name_resolve.count; root_index++) {
+    bool progress = true;
+    bool done = false;
 
-        Flat_Root_Node *node = &nodes_to_name_resolve[root_index];
+    while (progress && !done) {
+        progress = false;
+        done = true;
+        for (u64 root_index = 0; root_index < nodes_to_name_resolve.count; root_index++) {
 
-        for (u64 i = 0; i < node->nodes.count; i++) {
+            Flat_Root_Node *node = &nodes_to_name_resolve[root_index];
 
-            name_resolve_node(&node->nodes[i]);
+            for (u64 i = node->current_index; i < node->nodes.count; i++) {
+
+                node->current_index = i;
+                bool result = name_resolve_node(&node->nodes[i]);
+
+                if (!result) {
+                    done = false;
+                    break;
+                } else {
+                    node->current_index += 1;
+                    progress = true;
+                }
+            }
+        }
+
+        if (progress && resolve_errors.count) {
+            assert(!done);
+            resolve_errors.count = 0;
+            temporary_allocator_reset(&ctx->resolve_error_allocator_state);
+        }
+    }
+
+    for (u64 i = 0; i < resolve_errors.count; i++) {
+
+        auto err = resolve_errors[i];
+
+        if (!fatal_resolve_error) assert(err.fatal == false);
+
+        bool print = fatal_resolve_error == err.fatal;
+
+        if (print) {
+            printf("%s:%llu:%llu: error: %s\n", err.pos.name.data, err.pos.line, err.pos.index_in_line, err.message.data);
         }
     }
 
@@ -283,8 +358,7 @@ bool name_resolve_expr(AST_Expression *expr, Scope *scope)
                     case Symbol_Kind::CONST:
                     case Symbol_Kind::PARAM: {
                         assert(global);
-                        // resolve_error(expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
-                        assert_msg(false, "Unresolved symbol");
+                        resolve_error(expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
                         result = false;
                         break;
                     }
@@ -577,4 +651,55 @@ Flat_Node to_flat_node(const AST_Field_Declaration param, Scope *scope)
     result.scope = scope;
     result.param = param;
     return result;
+}
+
+void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args)
+{
+    Resolve_Error err;
+
+    err.message = string_format(&ctx->resolve_error_allocator, fmt, args);
+    err.pos = pos;
+    err.fatal = fatal;
+
+    dynamic_array_append(&resolve_errors, err);
+}
+
+void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    resolve_error_(pos, fatal, fmt, args);
+    va_end(args);
+}
+
+void resolve_error_(AST_Declaration *decl, bool fatal, const String_Ref fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    resolve_error_(decl->pos, fatal, fmt, args);
+    va_end(args);
+}
+
+void resolve_error_(AST_Statement *stmt, bool fatal, const String_Ref fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    resolve_error_(stmt->pos, fatal, fmt, args);
+    va_end(args);
+}
+
+void resolve_error_(AST_Expression *expr, bool fatal, const String_Ref fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    resolve_error_(expr->pos, fatal, fmt, args);
+    va_end(args);
+}
+
+void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    resolve_error_(ts->pos, fatal, fmt, args);
+    va_end(args);
 }
