@@ -185,7 +185,7 @@ void flat_resolve_test(AST_File *file)
 
         auto err = resolve_errors[i];
 
-        if (!fatal_resolve_error) assert(err.fatal == false);
+        if (!fatal_resolve_error) assert(!err.fatal);
 
         bool print = fatal_resolve_error == err.fatal;
 
@@ -291,6 +291,7 @@ bool name_resolve_decl(AST_Declaration *decl, Scope *scope)
     } else {
         decl_sym->state = Symbol_State::UNRESOLVED;
     }
+
     return result;
 }
 
@@ -302,10 +303,28 @@ bool name_resolve_stmt(AST_Statement *stmt, Scope *scope)
 
     switch (stmt->kind) {
         case AST_Statement_Kind::INVALID: assert(false);
-        case AST_Statement_Kind::BLOCK: assert(false);
-        case AST_Statement_Kind::DECLARATION: assert(false);
-        case AST_Statement_Kind::ASSIGN: assert(false);
-        case AST_Statement_Kind::CALL: assert(false);
+
+
+        case AST_Statement_Kind::BLOCK: {
+            // Leaf, statements are added during flattening, should have been resolved already
+            break;
+        }
+
+        case AST_Statement_Kind::DECLARATION: {
+            // Leaf, Symbol is added during flattening, value should have been resolved already
+            break;
+        }
+
+        case AST_Statement_Kind::ASSIGN: {
+            // Leaf, decl sym and value should have been resolved already
+            break;
+        }
+
+        case AST_Statement_Kind::CALL: {
+            // Leaf, base expr and args should have been resolved already
+            break;
+        }
+
         case AST_Statement_Kind::IF: assert(false);
         case AST_Statement_Kind::WHILE: assert(false);
 
@@ -314,7 +333,10 @@ bool name_resolve_stmt(AST_Statement *stmt, Scope *scope)
             break;
         }
 
-        case AST_Statement_Kind::PRINT: assert(false);
+        case AST_Statement_Kind::PRINT: {
+            // Leaf, value should have ben resolved already
+            break;
+        }
     }
 
     return result;
@@ -332,6 +354,8 @@ bool name_resolve_expr(AST_Expression *expr, Scope *scope)
         case AST_Expression_Kind::INTEGER_LITERAL:
         case AST_Expression_Kind::STRING_LITERAL:
         case AST_Expression_Kind::NULL_LITERAL: {
+        case AST_Expression_Kind::BINARY:
+        case AST_Expression_Kind::CALL:
             // Leaf
             break;
         }
@@ -365,9 +389,7 @@ bool name_resolve_expr(AST_Expression *expr, Scope *scope)
 
         case AST_Expression_Kind::MEMBER: assert(false);
         case AST_Expression_Kind::INDEX: assert(false);
-        case AST_Expression_Kind::CALL: assert(false);
         case AST_Expression_Kind::UNARY: assert(false);
-        case AST_Expression_Kind::BINARY: assert(false);
     }
 
     return result;
@@ -387,6 +409,12 @@ bool name_resolve_ts(AST_Type_Spec *ts, Scope *scope)
 
             if (!sym) {
                 resolve_error(ts, "Undefined symbol: '%s'", ts->identifier.name.data);
+                result = false;
+                break;
+            }
+
+            if (sym->kind != Symbol_Kind::TYPE) {
+                resolve_error(ts, "Not a type: '%s'", ts->identifier.name.data);
                 result = false;
                 break;
             }
@@ -435,7 +463,6 @@ void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat
         assert_msg(decl_sym, "Global symbol should have been registered already");
     } else if (!decl_sym) {
         // First time local symbol is encountered
-        assert(false);
         if (!add_unresolved_decl_symbol(scope, decl, false)) {
             return;
         }
@@ -529,8 +556,10 @@ void flatten_statement(AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Nod
 
         case AST_Statement_Kind::BLOCK: {
 
+            Scope *block_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+
             for (u64 i = 0; i < stmt->block.statements.count; i++) {
-                flatten_statement(stmt->block.statements[i], scope, dest);
+                flatten_statement(stmt->block.statements[i], block_scope, dest);
             }
             break;
         }
