@@ -54,6 +54,9 @@ ZAPI AST_Declaration *parse_declaration(Parser *parser);
 
 #define ZODIAC_BUILTIN_TYPES         \
     ZODIAC_NUMERIC_TYPE_DEF(s, 64)   \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 8)    \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 32)   \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 16)   \
     ZODIAC_NUMERIC_TYPE_DEF(r, 32)   \
     ZODIAC_NAME_TYPE_DEF(String)     \
 

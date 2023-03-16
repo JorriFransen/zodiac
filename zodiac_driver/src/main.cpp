@@ -125,6 +125,9 @@ void flat_resolve_test(AST_File *file)
     dynamic_array_create(&dynamic_allocator, &resolve_errors); // TODO: CLEANUP: Use the resolve_error_allocator for this?
 
     add_builtin_symbol(Symbol_Kind::TYPE, atom_s64);
+    add_builtin_symbol(Symbol_Kind::TYPE, atom_s8);
+    add_builtin_symbol(Symbol_Kind::TYPE, atom_u16);
+    add_builtin_symbol(Symbol_Kind::TYPE, atom_u32);
     add_builtin_symbol(Symbol_Kind::TYPE, atom_r32);
     add_builtin_symbol(Symbol_Kind::TYPE, atom_String);
 
@@ -355,8 +358,27 @@ bool name_resolve_expr(AST_Expression *expr, Scope *scope)
         case AST_Expression_Kind::STRING_LITERAL:
         case AST_Expression_Kind::NULL_LITERAL: {
         case AST_Expression_Kind::BINARY:
-        case AST_Expression_Kind::CALL:
             // Leaf
+            break;
+        }
+
+        case AST_Expression_Kind::CALL: {
+            AST_Expression *base = expr->call.base;
+
+            // TODO: Support arbitrary expressions here
+            assert(base->kind == AST_Expression_Kind::IDENTIFIER);
+
+            Symbol *sym = scope_get_symbol(scope, base->identifier);
+            assert(sym);
+            if (sym->kind != Symbol_Kind::FUNC) {
+                resolve_error(base, "Not a function '%s'", sym->name.data);
+                result = false;
+                break;
+            }
+
+            assert(sym->kind == Symbol_Kind::FUNC);
+            AST_Declaration *decl = sym->decl;
+            assert(decl);
             break;
         }
 

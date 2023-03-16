@@ -4,18 +4,18 @@ yy :: zz;
 zz :: 11;
 
 // Should report circular dependency
-//aa :: bb;
-//bb :: aa;
+// aa :: bb;
+// bb :: aa;
 
-//AABB :: struct {
+// AABB :: struct {
 //    top_left, dim: Vec2;
-//}
-//
-//Vec2 :: struct {
+// }
+
+// Vec2 :: struct {
 //    x: r32;
 //    y: r32;
-//}
-//
+// }
+
 //Value :: union {
 //    int_value: s64;
 //    float_value: r32;
@@ -25,14 +25,14 @@ zz :: 11;
 ptr : *s64 = null;
 var := 42;
 
-//var2 : u16 = 8;
-//var3 : s8;
+var2 : u16 = 8;
+var3 : s8;
 c_var :: 5;
-//c_var2 : u32 : 2;
+c_var2 : u32 : 2;
 
 main :: () -> s64 {
 
-    //x := 32;
+    x := 32;
     //foo : x; // Should generate "Not a type 'x'" error
     {
         str : String = "This is a string literal";
@@ -48,7 +48,7 @@ main :: () -> s64 {
 
     a := 4;
 
-    //return x(42, 2);
+    // return x(42, 2);
     return add_fn(40, 2);
 }
 
