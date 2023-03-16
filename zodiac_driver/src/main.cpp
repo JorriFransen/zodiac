@@ -67,6 +67,7 @@ enum class Flat_Node_Kind
     TS,
 
     PARAM_DECL,
+    FIELD_DECL,
 };
 
 struct Flat_Node
@@ -81,7 +82,7 @@ struct Flat_Node
         AST_Expression *expr;
         AST_Type_Spec *ts;
 
-        AST_Field_Declaration param;
+        AST_Field_Declaration param, field;
     };
 };
 
@@ -230,6 +231,17 @@ bool name_resolve_node(Flat_Node *node)
             param_sym->state = Symbol_State::RESOLVED;
             return true;
         }
+
+        case Flat_Node_Kind::FIELD_DECL: {
+            Symbol *field_sym = scope_get_symbol(node->scope, node->field.identifier);
+            assert(field_sym);
+            assert(field_sym->decl->kind == AST_Declaration_Kind::STRUCT ||
+                   field_sym->decl->kind == AST_Declaration_Kind::UNION);
+
+            assert(field_sym->state == Symbol_State::UNRESOLVED);
+            field_sym->state = Symbol_State::RESOLVED;
+            return true;
+        }
     }
 
     assert(false);
@@ -277,13 +289,13 @@ bool name_resolve_decl(AST_Declaration *decl, Scope *scope)
 
         case AST_Declaration_Kind::VARIABLE:
         case AST_Declaration_Kind::CONSTANT_VARIABLE:
-        case AST_Declaration_Kind::FUNCTION: {
+        case AST_Declaration_Kind::FUNCTION:
+        case AST_Declaration_Kind::STRUCT:
+        case AST_Declaration_Kind::UNION: {
             // Leaf
             break;
         }
 
-        case AST_Declaration_Kind::STRUCT: assert(false);
-        case AST_Declaration_Kind::UNION: assert(false);
     }
 
 
@@ -538,8 +550,10 @@ void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat
 
             for (u64 i = 0; i < decl->function.params.count; i++) {
 
-                flatten_type_spec(decl->function.params[i].type_spec, scope, dest);
-                Flat_Node param_node = to_flat_node(decl->function.params[i], parameter_scope);
+                auto field = decl->function.params[i];
+
+                flatten_type_spec(field.type_spec, scope, dest);
+                Flat_Node param_node = to_flat_node(field, parameter_scope);
                 dynamic_array_append(dest, param_node);
             }
 
@@ -557,10 +571,16 @@ void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat
         }
 
         case AST_Declaration_Kind::STRUCT:
-        case AST_Declaration_Kind::UNION:
-        {
+        case AST_Declaration_Kind::UNION: {
             assert(aggregate_scope);
-            assert(false);
+            for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
+                auto field = decl->aggregate.fields[i];
+
+                flatten_type_spec(field.type_spec, scope, dest);
+                Flat_Node member_node = to_flat_node(field, aggregate_scope);
+                dynamic_array_append(dest, member_node);
+            }
+
             break;
         }
     }
@@ -731,9 +751,15 @@ Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope)
 Flat_Node to_flat_node(const AST_Field_Declaration param, Scope *scope)
 {
     assert(scope);
+    assert(scope->kind == Scope_Kind::FUNCTION_PARAMETER ||
+           scope->kind == Scope_Kind::AGGREGATE);
 
     Flat_Node result = {};
-    result.kind = Flat_Node_Kind::PARAM_DECL;
+    if (scope->kind == Scope_Kind::FUNCTION_PARAMETER) {
+        result.kind = Flat_Node_Kind::PARAM_DECL;
+    } else {
+        result.kind = Flat_Node_Kind::FIELD_DECL;
+    }
     result.scope = scope;
     result.param = param;
     return result;

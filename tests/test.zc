@@ -11,10 +11,10 @@ zz :: 11;
 //    top_left, dim: Vec2;
 // }
 
-// Vec2 :: struct {
-//    x: r32;
-//    y: r32;
-// }
+Vec2 :: struct {
+   x: r32;
+   y: r32;
+}
 
 //Value :: union {
 //    int_value: s64;

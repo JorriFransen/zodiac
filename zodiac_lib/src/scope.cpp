@@ -152,7 +152,7 @@ Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool glo
 
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
-                auto mem_sym = add_unresolved_symbol(aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field.identifier.name, decl);
+                auto mem_sym = add_unresolved_symbol(aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field.identifier.name, decl, field.identifier.pos);
                 if (!mem_sym) {
                     return nullptr;
                 }
