@@ -7,19 +7,19 @@ zz :: 11;
 // aa :: bb;
 // bb :: aa;
 
-// AABB :: struct {
-//    top_left, dim: Vec2;
-// }
+AABB :: struct {
+   top_left, dim: Vec2;
+}
 
 Vec2 :: struct {
    x: r32;
    y: r32;
 }
 
-//Value :: union {
-//    int_value: s64;
-//    float_value: r32;
-//}
+Value :: union {
+   int_value: s64;
+   float_value: r32;
+}
 
 
 ptr : *s64 = null;
