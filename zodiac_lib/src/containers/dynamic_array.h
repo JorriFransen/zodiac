@@ -101,4 +101,14 @@ Dynamic_Array<Element_Type> dynamic_array_copy(Dynamic_Array<Element_Type> *sour
     return result;
 }
 
+template <typename Element_Type>
+void dynamic_array_remove_unordered(Dynamic_Array<Element_Type> *array, u64 index)
+{
+    assert(array);
+    assert(array->count > index);
+
+    array->data[index] = array->data[array->count - 1];
+    array->count -= 1;
+}
+
 }
