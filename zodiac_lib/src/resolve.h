@@ -1,109 +1,77 @@
-// #pragma once
+#pragma once
 
-// #include <stdarg.h>
+#include "ast.h"
+#include "containers/dynamic_array.h"
+#include "defines.h"
 
-// #include "asserts.h"
-// #include "atom.h" // IWYU pragma: keep
-// #include "containers/dynamic_array.h"
-// #include "defines.h"
-// #include "lexer.h"
-// #include "scope.h"
-// #include "zstring.h"
+namespace Zodiac
+{
 
-// namespace Zodiac
-// {
+struct Scope;
+struct Zodiac_Context;
 
-// struct AST_Declaration;
-// struct AST_Expression;
-// struct AST_File;
-// struct AST_Statement;
-// struct AST_Type_Spec;
-// struct Zodiac_Context;
+enum class Flat_Node_Kind
+{
+    DECL,
+    STMT,
+    EXPR,
+    TS,
 
-// struct Resolve_Error
-// {
-//     String message;
-//     Source_Pos pos;
-//     bool fatal;
-// };
+    PARAM_DECL,
+    FIELD_DECL,
+};
 
-// struct Statement_Scope
-// {
-//     AST_Statement *stmt;
-//     Scope *scope;
-// };
+struct Flat_Node
+{
+    Flat_Node_Kind kind;
+    Scope *scope;
 
-// ZAPI extern Scope *global_scope;
-// ZAPI extern Scope *current_scope;
+    union
+    {
+        AST_Declaration *decl;
+        AST_Statement *stmt;
+        AST_Expression *expr;
+        AST_Type_Spec *ts;
 
-// ZAPI extern Dynamic_Array<Statement_Scope> statement_scopes;
+        AST_Field_Declaration param, field;
+    };
+};
 
-// ZAPI extern u64 name_resolved_count;
+struct Flat_Root_Node
+{
+    Flat_Node root;
+    Dynamic_Array<Flat_Node> nodes;
+    u64 current_index = 0;
+};
 
-// ZAPI extern Dynamic_Array<Resolve_Error> resolve_errors;
-// ZAPI extern bool fatal_resolve_error;
+struct Resolver
+{
+    Zodiac_Context *ctx;
+    Scope *global_scope;
+Dynamic_Array<Flat_Root_Node> nodes_to_name_resolve;
+    Dynamic_Array<Flat_Root_Node> nodes_to_type_resolve;
+};
 
-// ZAPI extern Zodiac_Context *ctx;
+ZAPI void resolver_create(Resolver *resolver, Zodiac_Context *ctx, Scope *global_scope);
+ZAPI void resolver_add_declaration(Resolver *resolver, AST_Declaration *decl);
+ZAPI void resolve_names(Resolver *resolver);
+ZAPI void resolve_types(Resolver *resolver);
 
-// ZAPI void resolve_test(Zodiac_Context *ctx, AST_File *file);
+ZAPI void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest);
+ZAPI void flatten_statement(AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest);
+ZAPI void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest);
+ZAPI void flatten_type_spec(AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 
-// ZAPI Scope *get_statement_scope(AST_Statement *stmt);
-// ZAPI void add_statement_scope(AST_Statement *stmt, Scope *scope);
+ZAPI Flat_Node to_flat_node(AST_Declaration *decl, Scope *scope);
+ZAPI Flat_Node to_flat_node(AST_Statement *stmt, Scope *scope);
+ZAPI Flat_Node to_flat_node(AST_Expression *expr, Scope *scope);
+ZAPI Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope);
+ZAPI Flat_Node to_flat_node(const AST_Field_Declaration param, Scope *scope);
 
-// ZAPI bool name_resolve_decl_(AST_Declaration *decl, bool global);
-// ZAPI bool name_resolve_stmt_(AST_Statement *stmt);
-// ZAPI bool name_resolve_expr_(AST_Expression *expr);
-// ZAPI bool name_resolve_ts_(AST_Type_Spec *ts);
+ZAPI bool name_resolve_node(Flat_Node *node);
+ZAPI bool name_resolve_decl(AST_Declaration *decl, Scope *scope);
+ZAPI bool name_resolve_stmt(AST_Statement *stmt, Scope *scope);
+ZAPI bool name_resolve_expr(AST_Expression *expr, Scope *scope);
+ZAPI bool name_resolve_ts(AST_Type_Spec *ts, Scope *scope);
 
-// #define name_resolve_decl(decl, glob) {        \
-//     if (!name_resolve_decl_((decl), (glob))) { \
-//         result = false;                        \
-//         goto exit;                             \
-//     }                                          \
-// }
-
-// #define name_resolve_stmt(stmt) {    \
-//     if (!name_resolve_stmt_(stmt)) { \
-//         result = false;              \
-//         goto exit;                   \
-//     }                                \
-// }
-
-// #define name_resolve_expr(expr) {    \
-//     if (!name_resolve_expr_(expr)) { \
-//         result = false;              \
-//         goto exit;                   \
-//     }                                \
-// }
-
-// #define name_resolve_ts(ts) {    \
-//     if (!name_resolve_ts_(ts)) { \
-//         result = false;          \
-//         goto exit;               \
-//     }                            \
-// }
-
-// ZAPI bool is_lvalue_expr(AST_Expression *expr);
-// ZAPI bool is_const_expr(AST_Expression *expr);
-
-// ZAPI void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list args);
-// ZAPI void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, ...);
-// ZAPI void resolve_error_(AST_Declaration *decl, bool fatal, const String_Ref fmt, ...);
-// ZAPI void resolve_error_(AST_Statement *stmt, bool fatal, const String_Ref fmt, ...);
-// ZAPI void resolve_error_(AST_Expression *expr, bool fatal, const String_Ref fmt, ...);
-// ZAPI void resolve_error_(AST_Type_Spec *ts, bool fatal, const String_Ref fmt, ...);
-
-// #define resolve_error(node, fmt, ...) resolve_error_((node), false, fmt, ##__VA_ARGS__);
-
-// #define fatal_resolve_error(node, fmt, ...) {           \
-//     fatal_resolve_error = true;                         \
-//     resolve_error_((node), true, (fmt), ##__VA_ARGS__); \
-// }
-
-// #define report_redecl(old_sym, name, npos) {                                           \
-//     resolve_error_((npos), true, "Redeclaration of symbol: '%s'", (name).data); \
-//     assert((old_sym)->decl);                                                          \
-//     fatal_resolve_error((old_sym)->decl->pos, "<---- Previous declaration was here"); \
-// }
-
-// }
+}

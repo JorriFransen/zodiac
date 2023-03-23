@@ -1,5 +1,9 @@
 #pragma once
 
+#include "asserts.h"
+#include "defines.h"
+#include "memory/allocator.h"
+
 namespace Zodiac
 {
 
@@ -100,6 +104,19 @@ Element_Type queue_peek(Queue<Element_Type> *queue, u64 offset = 0)
 
     u64 index = (queue->front + offset) % (queue->capacity - 1);
     return queue->data[index];
+}
+
+template <typename Element_Type>
+Element_Type *queue_peek_ptr(Queue<Element_Type> *queue, u64 offset = 0)
+{
+    if (queue->front == -1) {
+        assert_msg(false, "Cannot peek empty queue");
+    }
+
+    assert(offset < queue_used(queue));
+
+    u64 index = (queue->front + offset) % (queue->capacity - 1);
+    return &queue->data[index];
 }
 
 }
