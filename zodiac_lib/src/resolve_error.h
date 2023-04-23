@@ -1,11 +1,21 @@
 #pragma once
 
-#include "ast.h"
+#include "containers/dynamic_array.h"
+#include "defines.h"
 #include "lexer.h"
 #include "zstring.h"
 
+#include <stdarg.h>
+
 namespace Zodiac
 {
+
+struct AST_Declaration;
+struct AST_Expression;
+struct AST_Statement;
+struct AST_Type_Spec;
+struct Zodiac_Context;
+
 
 struct Resolve_Error
 {

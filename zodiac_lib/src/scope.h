@@ -12,6 +12,7 @@ struct Allocator;
 struct AST_Identifier;
 struct AST_Declaration;
 struct Scope;
+struct Type;
 
 enum class Symbol_Kind : u16
 {
@@ -65,6 +66,8 @@ struct Symbol
         {
             Scope *scope;
         } aggregate;
+
+        Type* builtin_type;
     };
 };
 

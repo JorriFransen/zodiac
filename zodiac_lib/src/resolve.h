@@ -74,4 +74,7 @@ ZAPI bool name_resolve_stmt(AST_Statement *stmt, Scope *scope);
 ZAPI bool name_resolve_expr(AST_Expression *expr, Scope *scope);
 ZAPI bool name_resolve_ts(AST_Type_Spec *ts, Scope *scope);
 
+ZAPI bool type_resolve_node(Flat_Node *node);
+ZAPI bool type_resolve_ts(AST_Type_Spec *ts, Scope *scope);
+
 }

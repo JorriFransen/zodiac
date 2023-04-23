@@ -13,6 +13,7 @@
 #include "zodiac_context.h"
 #include "zstring.h"
 #include "resolve.h"
+#include "type.h"
 
 #include <stdio.h>
 
@@ -61,8 +62,6 @@ int main() {
     add_resolved_symbol(global_scope, (kind), (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), (atom), nullptr); \
 }
 
-
-
 void flat_resolve_test(AST_File *file)
 {
     assert(file);
@@ -73,7 +72,12 @@ void flat_resolve_test(AST_File *file)
     Resolver resolver;
     resolver_create(&resolver, ctx, global_scope);
 
-    add_builtin_symbol(Symbol_Kind::TYPE, atom_s64);
+    Type type_s64;
+    create_integer_type(&type_s64, 64, true);
+    auto sym = add_resolved_symbol(global_scope, Symbol_Kind::TYPE, (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), atom_s64, nullptr);
+    sym->builtin_type = &type_s64;
+
+    // add_builtin_symbol(Symbol_Kind::TYPE, atom_s64);
     add_builtin_symbol(Symbol_Kind::TYPE, atom_s8);
     add_builtin_symbol(Symbol_Kind::TYPE, atom_u16);
     add_builtin_symbol(Symbol_Kind::TYPE, atom_u32);
@@ -85,7 +89,7 @@ void flat_resolve_test(AST_File *file)
     }
 
     resolve_names(&resolver);
-    // resolve_types(&resolver);
+    resolve_types(&resolver);
 
     for (u64 i = 0; i < resolve_errors.count; i++) {
 

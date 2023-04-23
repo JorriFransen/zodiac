@@ -78,6 +78,12 @@ void resolve_names(Resolver *resolver)
             if (node->current_index >= node->nodes.count) {
                 // Done name resolving, move to type resolving
                 node->current_index = 0;
+
+                // Because we remove unordered, reuse the current index
+                dynamic_array_remove_unordered(&resolver->nodes_to_name_resolve, flat_index);
+                flat_index--;
+
+                dynamic_array_append(&resolver->nodes_to_type_resolve, *node);
             }
 
         }
@@ -100,10 +106,41 @@ void resolve_types(Resolver *resolver)
         done = true;
 
         for (u64 flat_index = 0; flat_index < resolver->nodes_to_type_resolve.count; flat_index++) {
-            assert(false);
+
+            Flat_Root_Node *node = &resolver->nodes_to_type_resolve[flat_index];
+
+            for (u64 i = node->current_index; i < node->nodes.count; i++) {
+
+                node->current_index = i;
+                bool result = type_resolve_node(&node->nodes[i]);
+
+                if (!result) {
+                    done = false;
+                    break;
+                } else {
+                    node->current_index += 1;
+                    progress = true;
+                }
+            }
+
+            if (node->current_index >= node->nodes.count) {
+                assert(false);
+//                 // Done name resolving, move to type resolving
+//                 node->current_index = 0;
+//
+//                 // Because we remove unordered, reuse the current index
+//                 dynamic_array_remove_unordered(&resolver->nodes_to_type_resolve, flat_index);
+//                 flat_index--;
+//
+//                 dynamic_array_append(&resolver->nodes_to_type_resolve, *node);
+            }
         }
 
-        assert(false);
+        if (progress && resolve_errors.count) {
+            assert(!done);
+            resolve_errors.count = 0;
+            temporary_allocator_reset(&resolver->ctx->resolve_error_allocator_state);
+        }
     }
 }
 
@@ -557,8 +594,8 @@ bool name_resolve_expr(AST_Expression *expr, Scope *scope)
 
         case AST_Expression_Kind::INTEGER_LITERAL:
         case AST_Expression_Kind::STRING_LITERAL:
-        case AST_Expression_Kind::NULL_LITERAL: {
-        case AST_Expression_Kind::BINARY:
+        case AST_Expression_Kind::NULL_LITERAL:
+        case AST_Expression_Kind::BINARY: {
             // Leaf
             break;
         }
@@ -669,6 +706,57 @@ bool name_resolve_ts(AST_Type_Spec *ts, Scope *scope)
     }
 
     return result;
+}
+
+bool type_resolve_node(Flat_Node *node)
+{
+    assert(node);
+
+    switch (node->kind) {
+
+        case Flat_Node_Kind::DECL: assert(false);
+        case Flat_Node_Kind::STMT: assert(false);
+        case Flat_Node_Kind::EXPR: assert(false);
+
+        case Flat_Node_Kind::TS: {
+            return type_resolve_ts(node->ts, node->scope);
+        }
+
+        case Flat_Node_Kind::PARAM_DECL: assert(false);
+        case Flat_Node_Kind::FIELD_DECL: assert(false);
+
+    }
+
+    assert(false);
+    return false;
+}
+
+ZAPI bool type_resolve_ts(AST_Type_Spec *ts, Scope *scope)
+{
+    assert(ts && scope);
+    assert(!ts->resolved_type);
+
+    switch (ts->kind) {
+
+        case AST_Type_Spec_Kind::INVALID: assert(false);
+
+        case AST_Type_Spec_Kind::NAME: {
+            auto sym = scope_get_symbol(scope, ts->identifier.name);
+            if (sym->decl) {
+                assert(false);
+            } else {
+                assert((sym->flags & SYM_FLAG_BUILTIN) == SYM_FLAG_BUILTIN)
+                assert(sym->builtin_type);
+                ts->resolved_type = sym->builtin_type;
+                return true;
+            }
+        }
+
+        case AST_Type_Spec_Kind::POINTER: assert(false);
+    }
+
+    assert(false);
+    return false;
 }
 
 }

@@ -1,5 +1,6 @@
 #include "resolve_error.h"
 
+#include "ast.h"
 #include "zodiac_context.h"
 
 namespace Zodiac

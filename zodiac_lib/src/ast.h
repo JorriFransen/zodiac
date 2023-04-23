@@ -15,6 +15,7 @@ struct AST_Declaration;
 struct AST_Type_Spec;
 struct String_Builder;
 struct Zodiac_Context;
+struct Type;
 
 struct AST_Identifier
 {
@@ -282,6 +283,8 @@ struct AST_Type_Spec
     AST_Type_Spec_Kind kind;
 
     Source_Pos pos;
+
+    Type *resolved_type;
 
     union
     {
