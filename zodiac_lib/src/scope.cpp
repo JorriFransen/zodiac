@@ -26,6 +26,7 @@ Scope *scope_new(Allocator *allocator, Scope_Kind kind, Scope *parent)
 
     result->kind = kind;
     result->parent = parent;
+    result->func_decl = nullptr;
     dynamic_array_create(allocator, &result->symbols);
 
     return result;
@@ -141,6 +142,8 @@ Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool glo
                     return nullptr;
                 }
             }
+
+            parameter_scope->func_decl = decl;
             break;
         }
 
@@ -201,6 +204,24 @@ Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool glo
     }
 
     return result;
+}
+
+AST_Declaration *enclosing_function(Scope *scope)
+{
+    assert(scope);
+    assert(scope->kind != Scope_Kind::GLOBAL)
+
+    Scope *current = scope;
+    while (true) {
+        if (current->kind == Scope_Kind::FUNCTION_PARAMETER) {
+            auto decl = current->func_decl;
+            assert(decl);
+            assert(decl->kind == AST_Declaration_Kind::FUNCTION);
+            return decl;
+        }
+
+        current = current->parent;
+    }
 }
 
 }

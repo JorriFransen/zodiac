@@ -770,6 +770,7 @@ bool type_resolve_node(Flat_Node *node)
             }
 
             // TODO: At this point we can create a function type
+            assert(false);
             return true;
         }
 
@@ -828,13 +829,20 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
         case AST_Statement_Kind::WHILE: assert(false);
 
         case AST_Statement_Kind::RETURN: {
+            //TODO: Use the function proto here
+            assert(false);
+            AST_Declaration *fn_decl = enclosing_function(scope);
+            assert(fn_decl && fn_decl->kind == AST_Declaration_Kind::FUNCTION);
+
             if (stmt->return_stmt.value) {
                 assert(stmt->return_stmt.value->resolved_type);
+                assert(fn_decl->function.return_ts)
+                assert(stmt->return_stmt.value->resolved_type == fn_decl->function.return_ts->resolved_type);
+            } else {
+                assert(false) // return void;
             }
 
-            // find/get the enclosing function!!
-            assert(false);
-            break;
+            return true;
         }
 
         case AST_Statement_Kind::PRINT: assert(false);

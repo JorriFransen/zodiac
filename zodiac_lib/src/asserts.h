@@ -8,7 +8,7 @@
 
 #ifdef ZASSERTS_ENABLED
 
-#define ZODIAC_ABORT() raise(SIGABRT)
+#define ZODIAC_ABORT() __debugbreak()
 
 #if _MSC_VER
 

@@ -84,6 +84,8 @@ struct Scope
     Scope_Kind kind;
     Scope *parent;
     Dynamic_Array<Symbol> symbols;
+
+    AST_Declaration *func_decl; // Only set in FUNTION_PARAMETER scopes
 };
 
 ZAPI Scope *scope_new(Allocator *allocator, Scope_Kind kind, Scope *parent);
@@ -99,5 +101,7 @@ ZAPI Symbol *add_unresolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags 
 
 ZAPI Symbol *add_resolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
 ZAPI Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool global);
+
+ZAPI AST_Declaration *enclosing_function(Scope *scope);
 
 }

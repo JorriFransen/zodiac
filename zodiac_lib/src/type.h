@@ -28,7 +28,7 @@ struct Type
     };
 };
 
-extern Type UNSIZED_INTEGER_TYPE;
+ZAPI extern Type UNSIZED_INTEGER_TYPE;
 
 ZAPI void create_type(Type *type, Type_Kind kind, u64 bit_size);
 ZAPI void create_integer_type(Type *type, u64 bit_size, bool sign);
