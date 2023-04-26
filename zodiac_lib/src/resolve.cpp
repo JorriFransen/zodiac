@@ -757,10 +757,15 @@ bool type_resolve_node(Flat_Node *node)
         case Flat_Node_Kind::FUNCTION_PROTO: {
             AST_Declaration *func_decl = node->decl;
             assert(func_decl->kind == AST_Declaration_Kind::FUNCTION);
+            assert(func_decl->function.type == nullptr);
 
             if (func_decl->function.return_ts) {
                 assert(func_decl->function.return_ts->resolved_type);
             }
+
+            Dynamic_Array<Type *> param_types;
+            dynamic_array_create(&ctx->temp_allocator, &param_types, func_decl->function.params.count);
+            auto mark = temporary_allocator_get_mark(&ctx->temp_allocator_state);
 
             for (u64 i = 0; i < func_decl->function.params.count; i++) {
                 AST_Field_Declaration *param_field = &func_decl->function.params[i];
@@ -770,7 +775,9 @@ bool type_resolve_node(Flat_Node *node)
             }
 
             // TODO: At this point we can create a function type
-            assert(false);
+            func_decl->function.type = get_function_type(func_decl->function.return_ts->resolved_type, param_types, &ctx->ast_allocator);
+
+            temporary_allocator_reset(&ctx->temp_allocator_state, mark);
             return true;
         }
 
@@ -829,10 +836,11 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
         case AST_Statement_Kind::WHILE: assert(false);
 
         case AST_Statement_Kind::RETURN: {
-            //TODO: Use the function proto here
-            assert(false);
             AST_Declaration *fn_decl = enclosing_function(scope);
             assert(fn_decl && fn_decl->kind == AST_Declaration_Kind::FUNCTION);
+
+            //TODO: Use the function proto here
+            assert(false);
 
             if (stmt->return_stmt.value) {
                 assert(stmt->return_stmt.value->resolved_type);

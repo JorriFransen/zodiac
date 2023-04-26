@@ -25,6 +25,7 @@ int main() {
 
     if (!Zodiac::logging_system_initialize()) return 1;
     if (!Zodiac::memory_system_initialize()) return 1;
+    if (!Zodiac::type_system_initialize()) return 1;
 
     Zodiac_Context c;
     zodiac_context_create(&c);

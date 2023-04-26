@@ -233,6 +233,7 @@ void ast_function_decl_create(AST_Identifier ident, Dynamic_Array<AST_Field_Decl
     out_decl->function.params = args;
     out_decl->function.return_ts = return_ts;
     out_decl->function.body = body;
+    out_decl->function.type = nullptr;
 }
 
 void ast_aggregate_decl_create(AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields, AST_Declaration *out_decl)
