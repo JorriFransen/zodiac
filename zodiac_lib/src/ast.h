@@ -116,6 +116,8 @@ struct AST_Expression
 
     Source_Pos pos;
 
+    Type *resolved_type;
+
     union
     {
         AST_Integer_Literal_Expression integer_literal;
@@ -219,6 +221,8 @@ struct AST_Variable_Declaration
 {
     AST_Type_Spec *type_spec;
     AST_Expression *value;
+
+    Type *resolved_type;
 };
 
 struct AST_Field_Declaration

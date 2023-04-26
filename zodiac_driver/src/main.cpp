@@ -72,6 +72,8 @@ void flat_resolve_test(AST_File *file)
     Resolver resolver;
     resolver_create(&resolver, ctx, global_scope);
 
+    create_type(&UNSIZED_INTEGER_TYPE, Type_Kind::UNSIZED_INTEGER, 0);
+
     Type type_s64;
     create_integer_type(&type_s64, 64, true);
     auto sym = add_resolved_symbol(global_scope, Symbol_Kind::TYPE, (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), atom_s64, nullptr);

@@ -19,6 +19,8 @@ enum class Flat_Node_Kind
 
     PARAM_DECL,
     FIELD_DECL,
+
+    FUNCTION_PROTO,
 };
 
 struct Flat_Node
@@ -68,6 +70,8 @@ ZAPI Flat_Node to_flat_node(AST_Expression *expr, Scope *scope);
 ZAPI Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope);
 ZAPI Flat_Node to_flat_node(const AST_Field_Declaration param, Scope *scope);
 
+ZAPI Flat_Node to_flat_proto(AST_Declaration *decl);
+
 ZAPI bool name_resolve_node(Flat_Node *node);
 ZAPI bool name_resolve_decl(AST_Declaration *decl, Scope *scope);
 ZAPI bool name_resolve_stmt(AST_Statement *stmt, Scope *scope);
@@ -75,6 +79,9 @@ ZAPI bool name_resolve_expr(AST_Expression *expr, Scope *scope);
 ZAPI bool name_resolve_ts(AST_Type_Spec *ts, Scope *scope);
 
 ZAPI bool type_resolve_node(Flat_Node *node);
+ZAPI bool type_resolve_declaration(AST_Declaration *decl, Scope *scope);
+ZAPI bool type_resolve_statement(AST_Statement *stmt, Scope *scope);
+ZAPI bool type_resolve_expression(AST_Expression *expr, Scope *scope);
 ZAPI bool type_resolve_ts(AST_Type_Spec *ts, Scope *scope);
 
 }

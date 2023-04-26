@@ -110,7 +110,9 @@ void ast_expression_create(AST_Expression_Kind kind, AST_Expression *out_expr)
 {
     assert(out_expr);
 
+
     out_expr->kind = kind;
+    out_expr->resolved_type = nullptr;
 }
 
 void ast_block_stmt_create(Dynamic_Array<AST_Statement *> statements, AST_Statement *out_stmt)
@@ -218,6 +220,7 @@ void ast_constant_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, 
     out_decl->identifier = ident;
     out_decl->variable.type_spec = ts;
     out_decl->variable.value = value;
+    out_decl->variable.resolved_type = nullptr;
 }
 
 void ast_function_decl_create(AST_Identifier ident, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl)

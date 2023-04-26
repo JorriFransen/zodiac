@@ -6,6 +6,7 @@
 #include "memory/zmemory.h"
 #include "resolve_error.h"
 #include "scope.h"
+#include "type.h"
 #include "zodiac_context.h"
 
 namespace Zodiac
@@ -124,15 +125,14 @@ void resolve_types(Resolver *resolver)
             }
 
             if (node->current_index >= node->nodes.count) {
-                assert(false);
-//                 // Done name resolving, move to type resolving
-//                 node->current_index = 0;
-//
-//                 // Because we remove unordered, reuse the current index
-//                 dynamic_array_remove_unordered(&resolver->nodes_to_type_resolve, flat_index);
-//                 flat_index--;
-//
-//                 dynamic_array_append(&resolver->nodes_to_type_resolve, *node);
+                // Done name resolving, move to type resolving
+                node->current_index = 0;
+
+                // Because we remove unordered, reuse the current index
+                dynamic_array_remove_unordered(&resolver->nodes_to_type_resolve, flat_index);
+                flat_index--;
+
+                // dynamic_array_append(&resolver->nodes_to_type_resolve, *node);
             }
         }
 
@@ -223,7 +223,8 @@ void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat
                 flatten_type_spec(decl->function.return_ts, scope, dest);
             }
 
-            // At this point we should emit some kind of function header/prototype node
+            Flat_Node proto_node = to_flat_proto(decl);
+            dynamic_array_append(dest, proto_node);
 
             for (u64 i = 0; i < decl->function.body.count; i++) {
                 flatten_statement(decl->function.body[i], local_scope, dest);
@@ -427,6 +428,18 @@ Flat_Node to_flat_node(const AST_Field_Declaration param, Scope *scope)
     return result;
 }
 
+Flat_Node to_flat_proto(AST_Declaration *decl)
+{
+    assert(decl);
+    assert(decl->kind == AST_Declaration_Kind::FUNCTION);
+
+    Flat_Node result = {};
+    result.kind = Flat_Node_Kind::FUNCTION_PROTO;
+    result.decl = decl;
+
+    return result;
+}
+
 bool name_resolve_node(Flat_Node *node)
 {
     assert(node);
@@ -466,6 +479,11 @@ bool name_resolve_node(Flat_Node *node)
 
             assert(field_sym->state == Symbol_State::UNRESOLVED);
             field_sym->state = Symbol_State::RESOLVED;
+            return true;
+        }
+
+        case Flat_Node_Kind::FUNCTION_PROTO: {
+            // The types and function name have been handled before
             return true;
         }
     }
@@ -714,9 +732,20 @@ bool type_resolve_node(Flat_Node *node)
 
     switch (node->kind) {
 
-        case Flat_Node_Kind::DECL: assert(false);
-        case Flat_Node_Kind::STMT: assert(false);
-        case Flat_Node_Kind::EXPR: assert(false);
+        case Flat_Node_Kind::DECL: {
+            return type_resolve_declaration(node->decl, node->scope);
+            break;
+        }
+
+        case Flat_Node_Kind::STMT: {
+            return type_resolve_statement(node->stmt, node->scope);
+            break;
+        }
+
+        case Flat_Node_Kind::EXPR: {
+            return type_resolve_expression(node->expr, node->scope);
+            break;
+        }
 
         case Flat_Node_Kind::TS: {
             return type_resolve_ts(node->ts, node->scope);
@@ -725,13 +754,133 @@ bool type_resolve_node(Flat_Node *node)
         case Flat_Node_Kind::PARAM_DECL: assert(false);
         case Flat_Node_Kind::FIELD_DECL: assert(false);
 
+        case Flat_Node_Kind::FUNCTION_PROTO: {
+            AST_Declaration *func_decl = node->decl;
+            assert(func_decl->kind == AST_Declaration_Kind::FUNCTION);
+
+            if (func_decl->function.return_ts) {
+                assert(func_decl->function.return_ts->resolved_type);
+            }
+
+            for (u64 i = 0; i < func_decl->function.params.count; i++) {
+                AST_Field_Declaration *param_field = &func_decl->function.params[i];
+
+                assert(param_field->type_spec);
+                assert(param_field->type_spec->resolved_type);
+            }
+
+            // TODO: At this point we can create a function type
+            return true;
+        }
+
     }
 
     assert(false);
     return false;
 }
 
-ZAPI bool type_resolve_ts(AST_Type_Spec *ts, Scope *scope)
+bool type_resolve_declaration(AST_Declaration *decl, Scope *scope)
+{
+    assert(decl);
+    assert(scope);
+
+    switch (decl->kind) {
+        case AST_Declaration_Kind::INVALID: assert(false);
+        case AST_Declaration_Kind::VARIABLE: assert(false);
+
+        case AST_Declaration_Kind::CONSTANT_VARIABLE: {
+            assert(decl->variable.resolved_type == nullptr);
+            assert(decl->variable.value);
+
+            if (decl->variable.type_spec) {
+                assert(valid_static_type_conversion(decl->variable.value->resolved_type,
+                                                    decl->variable.type_spec->resolved_type));
+                decl->variable.resolved_type = decl->variable.type_spec->resolved_type;
+            } else {
+                decl->variable.resolved_type = decl->variable.value->resolved_type;
+            }
+
+            assert(decl->variable.resolved_type);
+            return true;
+        }
+
+        case AST_Declaration_Kind::FUNCTION: assert(false);
+        case AST_Declaration_Kind::STRUCT: assert(false);
+        case AST_Declaration_Kind::UNION: assert(false);
+    }
+
+    assert(false);
+    return false;
+}
+
+bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
+{
+    assert(stmt);
+    assert(scope);
+
+    switch (stmt->kind) {
+        case AST_Statement_Kind::INVALID: assert(false);
+        case AST_Statement_Kind::BLOCK: assert(false);
+        case AST_Statement_Kind::DECLARATION: assert(false);
+        case AST_Statement_Kind::ASSIGN: assert(false);
+        case AST_Statement_Kind::CALL: assert(false);
+        case AST_Statement_Kind::IF: assert(false);
+        case AST_Statement_Kind::WHILE: assert(false);
+
+        case AST_Statement_Kind::RETURN: {
+            if (stmt->return_stmt.value) {
+                assert(stmt->return_stmt.value->resolved_type);
+            }
+
+            // find/get the enclosing function!!
+            assert(false);
+            break;
+        }
+
+        case AST_Statement_Kind::PRINT: assert(false);
+    }
+
+    assert(false);
+    return false;
+}
+
+bool type_resolve_expression(AST_Expression *expr, Scope *scope)
+{
+    assert(expr);
+    assert(expr->resolved_type == nullptr);
+    assert(scope);
+
+    switch (expr->kind) {
+        case AST_Expression_Kind::INVALID: assert(false);
+
+        case AST_Expression_Kind::INTEGER_LITERAL: {
+            expr->resolved_type = &UNSIZED_INTEGER_TYPE;
+            break;
+        }
+
+        case AST_Expression_Kind::STRING_LITERAL: assert(false);
+        case AST_Expression_Kind::NULL_LITERAL: assert(false);
+
+        case AST_Expression_Kind::IDENTIFIER: {
+            auto sym = scope_get_symbol(scope, expr->identifier.name);
+            assert(sym->state == Symbol_State::RESOLVED);
+            assert(sym->decl);
+            expr->resolved_type = decl_type(sym->decl);
+            break;
+        }
+
+        case AST_Expression_Kind::MEMBER: assert(false);
+        case AST_Expression_Kind::INDEX: assert(false);
+        case AST_Expression_Kind::CALL: assert(false);
+        case AST_Expression_Kind::UNARY: assert(false);
+        case AST_Expression_Kind::BINARY: assert(false);
+    }
+
+    assert(expr->resolved_type);
+    return true;
+}
+
+bool type_resolve_ts(AST_Type_Spec *ts, Scope *scope)
 {
     assert(ts && scope);
     assert(!ts->resolved_type);
