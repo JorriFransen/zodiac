@@ -1,3 +1,4 @@
+//test
 main :: () -> s64 {
     return 1 + x + z;
 }
