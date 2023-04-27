@@ -11,18 +11,29 @@ struct AST_Declaration;
 
 enum class Type_Kind
 {
+    INVALID,
+
+    VOID,
+
     UNSIZED_INTEGER,
     INTEGER,
     FLOAT,
+    BOOLEAN,
 
+    POINTER,
+
+    STRUCTURE,
+    STATIC_ARRAY,
     FUNCTION,
 };
 
 typedef u32 Type_Flags;
 enum Type_Flag : Type_Flags
 {
-    TYPE_FLAG_NONE = 0x00,
-    TYPE_FLAG_INT  = 0x01,
+    TYPE_FLAG_NONE      = 0x00,
+    TYPE_FLAG_INT       = 0x01,
+    TYPE_FLAG_AGGREGATE = 0x02,
+    TYPE_FLAG_ARRAY     = 0x04,
 };
 
 struct Type
@@ -41,12 +52,16 @@ struct Type
         struct {
             Type *return_type;
             Dynamic_Array<Type*> parameter_types;
+            bool is_vararg;
         } function;
 
     };
 };
 
-ZAPI extern Type UNSIZED_INTEGER_TYPE;
+ZAPI extern Type builtin_type_unsized_integer;
+ZAPI extern Type builtin_type_boolean;
+ZAPI extern Type builtin_type_s64;
+
 ZAPI extern Dynamic_Array<Type *> function_types;
 
 ZAPI bool type_system_initialize();

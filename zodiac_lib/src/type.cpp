@@ -8,12 +8,20 @@
 namespace Zodiac
 {
 
-Type UNSIZED_INTEGER_TYPE;
+Type builtin_type_unsized_integer;
+Type builtin_type_boolean;
+Type builtin_type_s64;
+
 Dynamic_Array<Type *> function_types;
 
 bool type_system_initialize()
 {
     dynamic_array_create(&dynamic_allocator, &function_types);
+
+    create_type(&builtin_type_unsized_integer, Type_Kind::UNSIZED_INTEGER, 0, TYPE_FLAG_INT);
+    create_type(&builtin_type_boolean, Type_Kind::BOOLEAN, 8);
+
+    create_integer_type(&builtin_type_s64, 64, true);
 
     return true;
 }
@@ -53,6 +61,7 @@ void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> p
 
     type->function.return_type = return_type;
     type->function.parameter_types = param_types;
+    type->function.is_vararg = false;
 }
 
 Type *get_function_type(Type *return_type, Dynamic_Array<Type *> parameter_types, Allocator *allocator)
@@ -117,6 +126,9 @@ bool valid_static_type_conversion(Type *from, Type *to)
 
     switch (from->kind) {
 
+        case Type_Kind::INVALID: assert(false);
+        case Type_Kind::VOID: assert(false);
+
         case Type_Kind::UNSIZED_INTEGER: {
             // TODO: Pass in the size of the literal, and take it into account
             if (to->kind == Type_Kind::INTEGER) return true;
@@ -126,6 +138,10 @@ bool valid_static_type_conversion(Type *from, Type *to)
 
         case Type_Kind::INTEGER: assert(false);
         case Type_Kind::FLOAT: assert(false);
+        case Type_Kind::BOOLEAN: assert(false);
+        case Type_Kind::POINTER: assert(false);
+        case Type_Kind::STRUCTURE: assert(false);
+        case Type_Kind::STATIC_ARRAY: assert(false);
         case Type_Kind::FUNCTION: assert(false);
     }
 

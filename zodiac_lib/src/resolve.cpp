@@ -897,7 +897,7 @@ bool type_resolve_expression(AST_Expression *expr, Scope *scope)
         case AST_Expression_Kind::INVALID: assert(false);
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
-            expr->resolved_type = &UNSIZED_INTEGER_TYPE;
+            expr->resolved_type = &builtin_type_unsized_integer;
             break;
         }
 

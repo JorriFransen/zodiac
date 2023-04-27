@@ -27,6 +27,23 @@ struct Dynamic_Array
 };
 
 template <typename Element_Type>
+struct Array_Ref
+{
+    Element_Type *data;
+    u64 count;
+
+    Array_Ref() {
+        data = nullptr;
+        count = 0;
+    }
+
+    Array_Ref(const Dynamic_Array<Element_Type> &dyn_arr) {
+        data = dyn_arr.data;
+        count = dyn_arr.count;
+    }
+};
+
+template <typename Element_Type>
 void dynamic_array_create(Allocator *backing_allocator, Dynamic_Array<Element_Type> *out_array, u64 capacity = ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY)
 {
     assert(backing_allocator && out_array);
