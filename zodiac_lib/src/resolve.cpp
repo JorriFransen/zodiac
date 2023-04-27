@@ -80,11 +80,14 @@ void resolve_names(Resolver *resolver)
                 // Done name resolving, move to type resolving
                 node->current_index = 0;
 
+                auto node_copy = *node;
+
                 // Because we remove unordered, reuse the current index
                 dynamic_array_remove_unordered(&resolver->nodes_to_name_resolve, flat_index);
                 flat_index--;
 
-                dynamic_array_append(&resolver->nodes_to_type_resolve, *node);
+
+                dynamic_array_append(&resolver->nodes_to_type_resolve, node_copy);
             }
 
         }
@@ -524,6 +527,8 @@ bool name_resolve_decl(AST_Declaration *decl, Scope *scope)
         case Symbol_State::RESOLVED: {
             return true;
         }
+
+        case Symbol_State::TYPED: assert(false);
     }
 
     bool result = true;
@@ -809,6 +814,10 @@ bool type_resolve_declaration(AST_Declaration *decl, Scope *scope)
             }
 
             assert(decl->variable.resolved_type);
+
+            auto sym = scope_get_symbol(scope, decl->identifier.name);
+            assert(sym && sym->state == Symbol_State::RESOLVED);
+            sym->state = Symbol_State::TYPED;
             return true;
         }
 
@@ -850,9 +859,20 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
             assert(fn_decl->function.type->kind == Type_Kind::FUNCTION);
 
             if (stmt->return_stmt.value) {
-                assert(stmt->return_stmt.value->resolved_type);
-                assert(fn_decl->function.return_ts)
-                assert(stmt->return_stmt.value->resolved_type == fn_decl->function.return_ts->resolved_type);
+
+                auto actual_type = stmt->return_stmt.value->resolved_type;
+                auto expected_type = fn_decl->function.return_ts->resolved_type;
+
+                assert(actual_type && expected_type);
+
+                if (actual_type == expected_type) return true;
+
+                bool valid_conversion = valid_static_type_conversion(actual_type, expected_type);
+                if (!valid_conversion) {
+                    assert(false); // report error
+                    return false;
+                }
+
             } else {
                 assert(false) // return void;
             }
@@ -886,9 +906,14 @@ bool type_resolve_expression(AST_Expression *expr, Scope *scope)
 
         case AST_Expression_Kind::IDENTIFIER: {
             auto sym = scope_get_symbol(scope, expr->identifier.name);
-            assert(sym->state == Symbol_State::RESOLVED);
-            assert(sym->decl);
+            assert(sym);
+            if (sym->state != Symbol_State::TYPED) {
+                resolve_error(expr, "Waiting for declaration to be resolved");
+                return false;
+            }
+
             expr->resolved_type = decl_type(sym->decl);
+
             break;
         }
 
@@ -915,7 +940,16 @@ bool type_resolve_expression(AST_Expression *expr, Scope *scope)
                     if (valid_static_type_conversion(rhs->resolved_type, lhs->resolved_type)) {
                         expr->resolved_type = lhs->resolved_type;
                     } else {
-                        assert(false);
+                        assert(false); // Report error
+                    }
+
+                } else if (lhs->resolved_type->kind == Type_Kind::UNSIZED_INTEGER &&
+                           rhs->resolved_type->kind == Type_Kind::INTEGER) {
+
+                    if (valid_static_type_conversion(lhs->resolved_type, rhs->resolved_type)) {
+                        expr->resolved_type= rhs->resolved_type;
+                    } else {
+                        assert(false); // Report error
                     }
 
                 } else {
@@ -937,7 +971,8 @@ bool type_resolve_expression(AST_Expression *expr, Scope *scope)
 bool type_resolve_ts(AST_Type_Spec *ts, Scope *scope)
 {
     assert(ts && scope);
-    assert(!ts->resolved_type);
+
+    if (ts->resolved_type) return true;
 
     switch (ts->kind) {
 

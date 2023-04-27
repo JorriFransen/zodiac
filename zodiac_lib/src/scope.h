@@ -33,6 +33,8 @@ enum class Symbol_State : u16
     UNRESOLVED,
     RESOLVING,
     RESOLVED,
+
+    TYPED,
 };
 
 typedef u32 Symbol_Flags;
