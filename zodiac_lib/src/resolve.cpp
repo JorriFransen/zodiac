@@ -812,7 +812,12 @@ bool type_resolve_declaration(AST_Declaration *decl, Scope *scope)
             return true;
         }
 
-        case AST_Declaration_Kind::FUNCTION: assert(false);
+        case AST_Declaration_Kind::FUNCTION: {
+            assert(decl->function.type);
+            assert(decl->function.type->kind == Type_Kind::FUNCTION);
+            return true;
+        }
+
         case AST_Declaration_Kind::STRUCT: assert(false);
         case AST_Declaration_Kind::UNION: assert(false);
     }
@@ -840,7 +845,9 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
             assert(fn_decl && fn_decl->kind == AST_Declaration_Kind::FUNCTION);
 
             //TODO: Use the function proto here
-            assert(false);
+            // This should be set when the function proto is resolved/typed
+            assert(fn_decl->function.type);
+            assert(fn_decl->function.type->kind == Type_Kind::FUNCTION);
 
             if (stmt->return_stmt.value) {
                 assert(stmt->return_stmt.value->resolved_type);
@@ -889,7 +896,38 @@ bool type_resolve_expression(AST_Expression *expr, Scope *scope)
         case AST_Expression_Kind::INDEX: assert(false);
         case AST_Expression_Kind::CALL: assert(false);
         case AST_Expression_Kind::UNARY: assert(false);
-        case AST_Expression_Kind::BINARY: assert(false);
+
+        case AST_Expression_Kind::BINARY: {
+            auto lhs = expr->binary.lhs;
+            auto rhs = expr->binary.rhs;
+            auto op = expr->binary.op;
+
+            assert(lhs->resolved_type);
+            assert(rhs->resolved_type);
+
+            if (is_binary_arithmetic_op(op)) {
+                assert(lhs->resolved_type->flags & TYPE_FLAG_INT);
+                assert(rhs->resolved_type->flags & TYPE_FLAG_INT);
+
+                if (lhs->resolved_type->kind == Type_Kind::INTEGER &&
+                    rhs->resolved_type->kind == Type_Kind::UNSIZED_INTEGER) {
+
+                    if (valid_static_type_conversion(rhs->resolved_type, lhs->resolved_type)) {
+                        expr->resolved_type = lhs->resolved_type;
+                    } else {
+                        assert(false);
+                    }
+
+                } else {
+                    assert(false);
+                }
+            } else {
+                assert(false);
+            }
+
+            break;
+        }
+
     }
 
     assert(expr->resolved_type);

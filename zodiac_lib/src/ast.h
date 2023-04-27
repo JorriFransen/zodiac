@@ -70,17 +70,23 @@ enum class AST_Binary_Operator
 {
     INVALID = 0,
 
-    ADD,
+    FIRST_BINOP,
+
+    FIRST_ARITHMETIC_OP = FIRST_BINOP,
+    ADD = FIRST_BINOP,
     SUB,
     MUL,
     DIV,
+    LAST_ARITHMETIC_OP = DIV,
 
     EQ,
+    FIRST_CMP_OP = EQ,
     NEQ,
     LT,
     GT,
     LTEQ,
     GTEQ,
+    LAST_CMP_OP = GTEQ,
 
     LAST_BINOP = GTEQ,
 };
@@ -382,5 +388,7 @@ ZAPI void ast_print_type_spec(String_Builder *sb, AST_Type_Spec *ts, int indent 
 
 ZAPI void ast_print_file(String_Builder *sb, AST_File *file);
 ZAPI void ast_print_file(AST_File *file);
+
+ZAPI bool is_binary_arithmetic_op(AST_Binary_Operator op);
 
 }

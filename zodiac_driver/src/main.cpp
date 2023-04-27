@@ -73,7 +73,7 @@ void flat_resolve_test(AST_File *file)
     Resolver resolver;
     resolver_create(&resolver, ctx, global_scope);
 
-    create_type(&UNSIZED_INTEGER_TYPE, Type_Kind::UNSIZED_INTEGER, 0);
+    create_type(&UNSIZED_INTEGER_TYPE, Type_Kind::UNSIZED_INTEGER, 0, TYPE_FLAG_INT);
 
     Type type_s64;
     create_integer_type(&type_s64, 64, true);

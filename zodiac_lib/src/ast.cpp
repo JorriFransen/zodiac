@@ -909,4 +909,9 @@ void ast_print_file(AST_File *file)
     string_builder_destroy(&sb);
 }
 
+bool is_binary_arithmetic_op(AST_Binary_Operator op)
+{
+    return op >= AST_Binary_Operator::FIRST_ARITHMETIC_OP && op <= AST_Binary_Operator::LAST_ARITHMETIC_OP;
+}
+
 }

@@ -16,13 +16,14 @@ bool type_system_initialize()
     return true;
 }
 
-void create_type(Type *type, Type_Kind kind, u64 bit_size)
+void create_type(Type *type, Type_Kind kind, u64 bit_size, Type_Flags flags/*=TYPE_FLAG_NONE*/)
 {
     assert(type);
     assert(bit_size % 8 == 0);
 
     type->kind = kind;
     type->bit_size = bit_size;
+    type->flags = flags;
 }
 
 void create_integer_type(Type *type, u64 bit_size, bool sign)
@@ -30,7 +31,7 @@ void create_integer_type(Type *type, u64 bit_size, bool sign)
     assert(type);
     assert(bit_size % 8 == 0);
 
-    create_type(type, Type_Kind::INTEGER, bit_size);
+    create_type(type, Type_Kind::INTEGER, bit_size, TYPE_FLAG_INT);
     type->integer.sign = sign;
 }
 
@@ -115,6 +116,7 @@ bool valid_static_type_conversion(Type *from, Type *to)
     switch (from->kind) {
 
         case Type_Kind::UNSIZED_INTEGER: {
+            // TODO: Pass in the size of the literal, and take it into account
             if (to->kind == Type_Kind::INTEGER) return true;
             assert(false);
             break;

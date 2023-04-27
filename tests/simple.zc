@@ -1,5 +1,5 @@
 main :: () -> s64 {
-    return x;
+    return x + 1;
 }
-// z :: 3;
+//z :: 3;
 x : s64 : 4;
