@@ -3,10 +3,10 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-#include "asserts.h"
 #include "defines.h"
-#include "logger.h"
 #include "memory/allocator.h"
+#include "util/asserts.h"
+#include "util/logger.h"
 
 namespace Zodiac
 {

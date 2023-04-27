@@ -2,7 +2,7 @@
 
 #include <defines.h>
 
-#include "zstring.h"
+#include "util/zstring.h"
 
 namespace Zodiac
 {

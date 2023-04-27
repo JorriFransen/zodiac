@@ -6,6 +6,7 @@
 namespace Zodiac
 {
 
+struct Allocator;
 struct AST_Declaration;
 
 enum class Type_Kind

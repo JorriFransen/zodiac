@@ -3,9 +3,9 @@
 #include <defines.h>
 
 #include "allocator.h"
-#include "asserts.h"
 #include "dynamic_allocator.h"
 #include "platform/platform.h"
+#include "util/asserts.h"
 
 namespace Zodiac
 {

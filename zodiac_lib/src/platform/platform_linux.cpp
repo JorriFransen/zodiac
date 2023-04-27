@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "asserts.h"
 #include "common.h"
 #include "defines.h"
 #include "platform/filesystem.h"
-#include "zstring.h"
+#include "util/asserts.h"
+#include "util/zstring.h"
 
 #ifdef ZPLATFORM_LINUX
 

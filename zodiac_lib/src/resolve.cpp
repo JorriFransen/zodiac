@@ -1,12 +1,12 @@
 #include "resolve.h"
 
-#include "asserts.h"
 #include "atom.h"
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 #include "resolve_error.h"
 #include "scope.h"
 #include "type.h"
+#include "util/asserts.h"
 #include "zodiac_context.h"
 
 namespace Zodiac

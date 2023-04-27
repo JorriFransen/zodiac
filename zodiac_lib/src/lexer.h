@@ -3,7 +3,7 @@
 #include "atom.h"
 #include "common.h"
 #include "defines.h"
-#include "zstring.h"
+#include "util/zstring.h"
 
 namespace Zodiac
 {

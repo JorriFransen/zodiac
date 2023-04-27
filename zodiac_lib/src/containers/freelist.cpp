@@ -1,8 +1,8 @@
 #include "freelist.h"
 
-#include "asserts.h"
-#include "logger.h"
 #include "memory/zmemory.h"
+#include "util/asserts.h"
+#include "util/logger.h"
 
 namespace Zodiac
 {

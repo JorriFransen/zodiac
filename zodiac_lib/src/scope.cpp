@@ -1,12 +1,11 @@
 #include "scope.h"
 
-#include "asserts.h"
 #include "ast.h"
 #include "atom.h"
 #include "memory/allocator.h"
 #include "memory/zmemory.h"
-
 #include "resolve_error.h"
+#include "util/asserts.h"
 
 namespace Zodiac
 {

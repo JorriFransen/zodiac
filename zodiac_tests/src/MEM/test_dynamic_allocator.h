@@ -1,8 +1,8 @@
 #pragma once
 
-#include "logger.h"
 #include "memory/dynamic_allocator.h"
 #include "test_common.h"
+#include "util/logger.h"
 
 #include <munit/munit.h>
 

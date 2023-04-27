@@ -1,8 +1,8 @@
 #pragma once
 
-#include "asserts.h"
 #include "defines.h"
 #include "memory/allocator.h"
+#include "util/asserts.h"
 
 namespace Zodiac
 {

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "containers/freelist.h"
-#include "logger.h"
 #include "memory/zmemory.h"
 #include "test_common.h"
+#include "util/logger.h"
 
 #include <munit/munit.h>
 

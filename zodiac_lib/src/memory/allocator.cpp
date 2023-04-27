@@ -2,8 +2,8 @@
 
 #include <stdlib.h>
 
-#include "asserts.h"
 #include "common.h"
+#include "util/asserts.h"
 #include "zmemory.h"
 
 namespace Zodiac

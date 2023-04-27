@@ -6,7 +6,7 @@
 #include "defines.h"
 #include "memory/allocator.h"
 #include "memory/zmemory.h"
-#include "zstring.h"
+#include "util/zstring.h"
 
 namespace Zodiac
 {

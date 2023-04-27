@@ -7,7 +7,7 @@
 #include "atom.h"
 #include "containers/queue.h"
 #include "lexer.h"
-#include "zstring.h"
+#include "util/zstring.h"
 
 namespace Zodiac
 {

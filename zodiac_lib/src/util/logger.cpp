@@ -5,6 +5,8 @@
 #include "defines.h"
 #include "platform/filesystem.h"
 #include "platform/platform.h"
+#include "util/asserts.h"
+#include "util/zstring.h"
 
 namespace Zodiac
 {

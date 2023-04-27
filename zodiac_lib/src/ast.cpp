@@ -2,11 +2,11 @@
 
 #include <stdio.h>
 
-#include "asserts.h"
 #include "memory/allocator.h"
-#include "string_builder.h"
+#include "util/asserts.h"
+#include "util/string_builder.h"
+#include "util/zstring.h"
 #include "zodiac_context.h"
-#include "zstring.h"
 
 namespace Zodiac
 {

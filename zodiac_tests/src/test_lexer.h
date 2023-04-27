@@ -1,9 +1,9 @@
 #pragma once
 
 #include "lexer.h"
-#include "logger.h"
 #include "memory/zmemory.h"
 #include "test_common.h"
+#include "util/logger.h"
 #include "zodiac_context.h"
 
 #include <munit/munit.h>

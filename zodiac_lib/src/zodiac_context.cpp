@@ -1,7 +1,7 @@
 #include "zodiac_context.h"
 
-#include "asserts.h"
 #include "lexer.h"
+#include "util/asserts.h"
 
 namespace Zodiac
 {

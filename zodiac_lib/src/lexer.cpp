@@ -8,9 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "asserts.h"
-#include "logger.h"
 #include "memory/zmemory.h"
+#include "util/asserts.h"
+#include "util/logger.h"
 #include "zodiac_context.h"
 
 namespace Zodiac

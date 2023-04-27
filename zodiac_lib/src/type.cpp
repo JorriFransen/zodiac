@@ -1,7 +1,9 @@
 #include "type.h"
 
-#include "asserts.h"
 #include "ast.h"
+#include "memory/allocator.h"
+#include "memory/zmemory.h"
+#include "util/asserts.h"
 
 namespace Zodiac
 {

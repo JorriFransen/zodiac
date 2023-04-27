@@ -5,6 +5,7 @@
 #include "memory/linear_allocator.h"
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
+#include "util/zstring.h"
 
 namespace Zodiac
 {

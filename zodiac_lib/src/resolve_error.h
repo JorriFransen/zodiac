@@ -3,7 +3,7 @@
 #include "containers/dynamic_array.h"
 #include "defines.h"
 #include "lexer.h"
-#include "zstring.h"
+#include "util/zstring.h"
 
 #include <stdarg.h>
 
