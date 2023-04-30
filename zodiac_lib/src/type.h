@@ -59,7 +59,10 @@ struct Type
     };
 };
 
+ZAPI extern bool type_system_initialized;
+
 ZAPI extern Type builtin_type_unsized_integer;
+ZAPI extern Type builtin_type_void;
 ZAPI extern Type builtin_type_boolean;
 ZAPI extern Type builtin_type_s64;
 

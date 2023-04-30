@@ -1,11 +1,13 @@
 
 #include <munit/munit.h>
 
-#include "CTR/test_containers.h"
 #include "memory/zmemory.h"
-#include "MEM/test_memory.h"
 #include "platform/filesystem.h"
 #include "util/logger.h"
+
+#include "BC/test_bytecode.h"
+#include "CTR/test_containers.h"
+#include "MEM/test_memory.h"
 
 #include "test_atoms.h"
 #include "test_lexer.h"
@@ -48,6 +50,14 @@ static MunitSuite lexer_suite = {
     MUNIT_SUITE_OPTION_NONE,
 };
 
+static MunitSuite bytecode_suite = {
+    (char *)"BC/",
+    Bytecode_Tests::bytecode_tests,
+    nullptr,
+    1,
+    MUNIT_SUITE_OPTION_NONE,
+};
+
 static MunitSuite main_child_suites[] = {
     string_suite,
     atom_suite,
@@ -55,7 +65,7 @@ static MunitSuite main_child_suites[] = {
     containers_suite,
     memory_suite,
     lexer_suite,
-    //bytecode_suite,
+    bytecode_suite,
     {},
 };
 

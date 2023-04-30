@@ -4,11 +4,15 @@
 #include "memory/allocator.h"
 #include "memory/zmemory.h"
 #include "util/asserts.h"
+#include "util/string_builder.h"
 
 namespace Zodiac
 {
 
+bool type_system_initialized = false;
+
 Type builtin_type_unsized_integer;
+Type builtin_type_void;
 Type builtin_type_boolean;
 Type builtin_type_s64;
 
@@ -16,13 +20,17 @@ Dynamic_Array<Type *> function_types;
 
 bool type_system_initialize()
 {
+    assert(!type_system_initialized);
+
     dynamic_array_create(&dynamic_allocator, &function_types);
 
     create_type(&builtin_type_unsized_integer, Type_Kind::UNSIZED_INTEGER, 0, TYPE_FLAG_INT);
+    create_type(&builtin_type_void, Type_Kind::VOID, 0);
     create_type(&builtin_type_boolean, Type_Kind::BOOLEAN, 8);
 
     create_integer_type(&builtin_type_s64, 64, true);
 
+    type_system_initialized = true;
     return true;
 }
 
@@ -151,7 +159,26 @@ bool valid_static_type_conversion(Type *from, Type *to)
 
 void type_to_string(Type *type, String_Builder *sb)
 {
-    assert(false);
+    switch (type->kind) {
+        case Type_Kind::INVALID: assert(false); break;
+
+        case Type_Kind::VOID: string_builder_append(sb, "void"); break;
+
+        case Type_Kind::UNSIZED_INTEGER: assert(false); break;
+
+        case Type_Kind::INTEGER: {
+            char sign_char = type->integer.sign ? 's' : 'u';
+            string_builder_append(sb, "%c%d", sign_char, type->bit_size);
+            break;
+        }
+
+        case Type_Kind::FLOAT: assert(false); break;
+        case Type_Kind::BOOLEAN: assert(false); break;
+        case Type_Kind::POINTER: assert(false); break;
+        case Type_Kind::STRUCTURE: assert(false); break;
+        case Type_Kind::STATIC_ARRAY: assert(false); break;
+        case Type_Kind::FUNCTION: assert(false); break;
+    }
 }
 
 }

@@ -2,6 +2,7 @@
 
 #include "lexer.h"
 #include "util/asserts.h"
+#include "type.h"
 
 namespace Zodiac
 {
@@ -9,6 +10,11 @@ namespace Zodiac
 void zodiac_context_create(Zodiac_Context *out_context)
 {
     assert(out_context);
+
+    if (!type_system_initialized) {
+        bool result = type_system_initialize();
+        assert(result);
+    }
 
     atom_table_init(&out_context->atoms);
 
