@@ -149,4 +149,9 @@ bool valid_static_type_conversion(Type *from, Type *to)
     return false;
 }
 
+void type_to_string(Type *type, String_Builder *sb)
+{
+    assert(false);
+}
+
 }

@@ -8,6 +8,7 @@ namespace Zodiac
 
 struct Allocator;
 struct AST_Declaration;
+struct String_Builder;
 
 enum class Type_Kind
 {
@@ -76,5 +77,7 @@ ZAPI Type *get_function_type(Type *return_type, Dynamic_Array<Type *> param_type
 ZAPI Type *decl_type(AST_Declaration *decl);
 
 ZAPI bool valid_static_type_conversion(Type *from, Type *to);
+
+ZAPI void type_to_string(Type *type, String_Builder *sb);
 
 }
