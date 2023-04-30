@@ -181,4 +181,17 @@ void type_to_string(Type *type, String_Builder *sb)
     }
 }
 
+String type_to_string(Allocator *allocator, Type *type)
+{
+    String_Builder sb;
+    string_builder_create(&sb, allocator);
+
+    type_to_string(type, &sb);
+    String result = string_builder_to_string(&sb);
+
+    string_builder_destroy(&sb);
+    
+    return result;
+}
+
 }

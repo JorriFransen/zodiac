@@ -6,6 +6,7 @@ namespace Zodiac
 {
 
 struct Allocator;
+
 ZAPI Allocator *c_allocator();
 ZAPI Allocator *err_allocator();
 
