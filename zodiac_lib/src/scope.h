@@ -87,7 +87,7 @@ struct Scope
     Scope *parent;
     Dynamic_Array<Symbol> symbols;
 
-    AST_Declaration *func_decl; // Only set in FUNTION_PARAMETER scopes
+    AST_Declaration *func_decl; // Only set in FUNCTION_PARAMETER scopes
 };
 
 ZAPI Scope *scope_new(Allocator *allocator, Scope_Kind kind, Scope *parent);
