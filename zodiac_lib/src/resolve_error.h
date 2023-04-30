@@ -2,7 +2,7 @@
 
 #include "containers/dynamic_array.h"
 #include "defines.h"
-#include "lexer.h"
+#include "source_pos.h"
 #include "util/zstring.h"
 
 #include <stdarg.h>

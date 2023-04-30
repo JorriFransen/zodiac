@@ -41,6 +41,16 @@ struct Array_Ref
         data = dyn_arr.data;
         count = dyn_arr.count;
     }
+
+    Element_Type& operator[](u64 index) {
+        assert(index >= 0 && index < count);
+        return data[index];
+    }
+
+    const Element_Type& operator[](u64 index) const {
+        assert(index >= 0 && index < count);
+        return data[index];
+    }
 };
 
 template <typename Element_Type>

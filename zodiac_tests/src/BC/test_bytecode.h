@@ -6,7 +6,12 @@
 #include "bytecode/bytecode.h"
 #include "type.h"
 #include "zodiac_context.h"
+
+#define PRINT_BYTECODE_IN_TESTS 1
+
+#if PRINT_BYTECODE_IN_TESTS
 #include "bytecode/printer.h"
+#endif
 
 namespace Zodiac { namespace Bytecode_Tests {
 
@@ -48,7 +53,9 @@ static MunitResult Building_1(const MunitParameter params[], void* user_data_or_
     munit_assert_int64(add_instr.b.index, ==, b.index);
     munit_assert_int64(add_instr.dest.index, ==, add_instr.dest.index);
 
-    // bytecode_print(&bb, c_allocator());
+#if PRINT_BYTECODE_IN_TESTS
+    bytecode_print(&bb, c_allocator());
+#endif
 
     bytecode_builder_free(&bb);
     zodiac_context_destroy(&zc);

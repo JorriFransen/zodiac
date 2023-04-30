@@ -3,6 +3,7 @@
 #include "atom.h"
 #include "common.h"
 #include "defines.h"
+#include "source_pos.h"
 #include "util/zstring.h"
 
 namespace Zodiac
@@ -30,13 +31,6 @@ enum Token_Kind
 
     TOK_EOF,
     TOK_LAST = TOK_EOF,
-};
-
-struct Source_Pos
-{
-    String_Ref name;
-    u64 line;
-    u64 index_in_line;
 };
 
 struct Token

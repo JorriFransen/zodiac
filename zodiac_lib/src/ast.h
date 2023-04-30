@@ -4,7 +4,7 @@
 #include "common.h"
 #include "containers/dynamic_array.h"
 #include "defines.h"
-#include "lexer.h"
+#include "source_pos.h"
 
 namespace Zodiac
 {

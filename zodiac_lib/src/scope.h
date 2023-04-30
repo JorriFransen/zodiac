@@ -3,7 +3,7 @@
 #include "atom.h"
 #include "containers/dynamic_array.h"
 #include "defines.h"
-#include "lexer.h" // for Source_Pos
+#include "source_pos.h"
 
 namespace Zodiac
 {

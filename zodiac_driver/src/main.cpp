@@ -9,6 +9,7 @@
 #include "resolve_error.h"
 #include "resolve.h"
 #include "scope.h"
+#include "source_pos.h"
 #include "type.h"
 #include "util/asserts.h"
 #include "util/logger.h"
