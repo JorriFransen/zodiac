@@ -7,6 +7,8 @@
 namespace Zodiac
 {
 
+ZAPI Allocator *temp_allocator();
+
 struct Temporary_Allocator
 {
     Linear_Allocator linear_allocator;

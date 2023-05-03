@@ -746,7 +746,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
 
             auto expected_return_type = visitor->current_function->type->function.return_type;
             if (expected_return_type != instruction->a.type) {
-                auto ert_str = ast_type_to_string(temp_allocator(), expected_return_type);
+                auto ert_str = type_to_string(temp_allocator(), expected_return_type);
                 bytecode_validator_report_error(validator, "The type of the 'a' register for 'RETURN' does not match the return type of the function it's in ('%.*s').",
                                                 (int)ert_str.length, ert_str.data);
                 return false;
@@ -792,10 +792,11 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            if (instruction->dest.type->pointer.base != instruction->a.type) {
-                bytecode_validator_report_error(validator, "The type of the 'dest' register for 'ADDROF_ALLOC' must be a pointer to the 'a' registers type");
-                return false;
-            }
+            assert(false);
+            // if (instruction->dest.type->pointer.base != instruction->a.type) {
+            //     bytecode_validator_report_error(validator, "The type of the 'dest' register for 'ADDROF_ALLOC' must be a pointer to the 'a' registers type");
+            //     return false;
+            // }
 
             return true;
             break;
@@ -818,11 +819,12 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            if (!(instruction->dest.type->kind == Type_Kind::POINTER &&
-                  instruction->dest.type->pointer.base->kind == Type_Kind::FUNCTION)) {
-                bytecode_validator_report_error(validator, "The 'dest' register for 'ADDROF_FUNC' must be of function pointer type");
-                return false;
-            }
+            assert(false);
+            // if (!(instruction->dest.type->kind == Type_Kind::POINTER &&
+            //       instruction->dest.type->pointer.base->kind == Type_Kind::FUNCTION)) {
+            //     bytecode_validator_report_error(validator, "The 'dest' register for 'ADDROF_FUNC' must be of function pointer type");
+            //     return false;
+            // }
 
             return true;
             break;
@@ -926,10 +928,11 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            if (instruction->a.type != instruction->b.type->pointer.base) {
-                bytecode_validator_report_error(validator, "The type of the 'a' register for 'STORE_PTR' does not match the pointer-base type of the 'b' register");
-                return false;
-            }
+            assert(false);
+            // if (instruction->a.type != instruction->b.type->pointer.base) {
+            //     bytecode_validator_report_error(validator, "The type of the 'a' register for 'STORE_PTR' does not match the pointer-base type of the 'b' register");
+            //     return false;
+            // }
 
             return true;
             break;
@@ -951,10 +954,11 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            if (instruction->dest.type != instruction->a.type->pointer.base) {
-                bytecode_validator_report_error(validator, "The type of the 'dest' register for 'LOAD_PTR' does not match the base type of the pointer type in the 'a' register");
-                return false;
-            }
+            assert(false);
+            // if (instruction->dest.type != instruction->a.type->pointer.base) {
+            //     bytecode_validator_report_error(validator, "The type of the 'dest' register for 'LOAD_PTR' does not match the base type of the pointer type in the 'a' register");
+            //     return false;
+            // }
 
             return true;
             break;
