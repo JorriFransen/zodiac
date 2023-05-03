@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
 
     if (!Zodiac::logging_system_initialize()) return 1;
 
-    // Log nothting to stdout, this will mess up the test output.
+    // Log nothing to stdout, this will mess up the test output.
     // Munit will display stderr when a test fails.
     Zodiac::File_Handle *err_file = Zodiac::filesystem_stderr_file();
     Zodiac::logging_system_set_stdout_file(err_file);
