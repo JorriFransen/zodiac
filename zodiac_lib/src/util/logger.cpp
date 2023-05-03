@@ -88,6 +88,11 @@ void log_message(Log_Level log_level, const String_Ref fmt, ...)
 
     out_length = string_format(out_message, "%s%s\n", level_strings[level_index], out_message);
 
+    if (out_length + 1 > ZSTRING_FORMAT_STACK_BUFFER_SIZE) {
+        assert(false && "Formatted log message does not fit in stack buffer");
+        return;
+    }
+
     if (log_level <= Log_Level::ERROR) {
         platform_file_write(logging_system_state.err_file, out_message, level_colors[level_index]);
     } else {
