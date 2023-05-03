@@ -11,17 +11,19 @@ namespace Zodiac
 file_local void *temporary_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, u64 alignment, void *old_ptr);
 
 file_local bool temp_allocator_initialized = false;
-file_local Temporary_Allocator temp_allocator_data = {};
-file_local Allocator temp_allocator_allocator = { .alloc_func = temporary_alloc_func, .user_data = &temp_allocator_data };
+file_local Temporary_Allocator temp_allocator_data;
+file_local Allocator temp_allocator_allocator;
 
 Allocator *temp_allocator()
 {
     if (!temp_allocator_initialized) {
         auto c_alloc = c_allocator();
-        const auto size = KIBIBYTE(1);
+        const auto size = MEBIBYTE(1);
         void *mem = alloc(c_alloc, size);
 
         temporary_allocator_create(size, mem, &temp_allocator_data);
+        temp_allocator_allocator = temporary_allocator_allocator(&temp_allocator_data);
+
         temp_allocator_initialized = true;
     }
 

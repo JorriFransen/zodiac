@@ -35,7 +35,9 @@ void *alloc_aligned(Allocator *allocator, u64 size, u64 alignment)
 void free(Allocator *allocator, void *memory)
 {
     assert(allocator && memory);
-    allocator->alloc_func(allocator, Allocation_Mode::FREE, 0, 0, memory);
+    if (!(allocator->flags & ALLOCATOR_FLAG_CANT_FREE)) {
+        allocator->alloc_func(allocator, Allocation_Mode::FREE, 0, 0, memory);
+    }
 }
 
 void free_all(Allocator *allocator)

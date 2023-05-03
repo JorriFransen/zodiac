@@ -56,7 +56,7 @@ static MunitResult Building_1(const MunitParameter params[], void* user_data_or_
     munit_assert_int64(add_instr.dest.index, ==, add_instr.dest.index);
 
 #if PRINT_BYTECODE_IN_TESTS
-    bytecode_print(&bb, c_allocator());
+    bytecode_print(&bb, temp_allocator());
 #endif
 
     bytecode_builder_free(&bb);
@@ -86,7 +86,6 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
     zodiac_context_create(&zc);
 
     Bytecode_Builder bb = bytecode_builder_create(c_allocator(), &zc);
-    // Type *main_fn_type = get_function_type(&builtin_type_void, {}, &zc.ast_allocator);
     Type *main_fn_type = get_function_type(&builtin_type_void, {}, &zc.ast_allocator);
 
     Bytecode_Function_Handle fn_handle = bytecode_function_create(&bb, "main_fn", main_fn_type);
@@ -106,7 +105,9 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
     bytecode_emit_return(&bb);
 
 
-    // bytecode_print(&bb);
+#if PRINT_BYTECODE_IN_TESTS
+    bytecode_print(&bb, temp_allocator());
+#endif
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
