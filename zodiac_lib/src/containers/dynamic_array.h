@@ -102,15 +102,19 @@ void dynamic_array_grow(Dynamic_Array<Element_Type> *array)
 }
 
 template <typename Element_Type>
-void dynamic_array_append(Dynamic_Array<Element_Type> *array, Element_Type element)
+Element_Type *dynamic_array_append(Dynamic_Array<Element_Type> *array, Element_Type element)
 {
     if (array->count >= array->capacity) {
         dynamic_array_grow(array);
         assert(array->capacity > array->count);
     }
 
-    array->data[array->count] = element;
+    auto index = array->count;
+
+    array->data[index] = element;
     array->count += 1;
+
+    return &array->data[index];
 }
 
 template <typename Element_Type>
