@@ -5,7 +5,7 @@
 
 namespace Zodiac { namespace Bytecode {
 
-void bytecode_print(Bytecode_Builder *builder, Allocator *allocator)
+void bytecode_print(const Bytecode_Builder *builder, Allocator *allocator)
 {
     String_Builder sb;
     string_builder_create(&sb, allocator);
@@ -19,7 +19,7 @@ void bytecode_print(Bytecode_Builder *builder, Allocator *allocator)
     string_builder_destroy(&sb);
 }
 
-void bytecode_print(Bytecode_Builder *builder, String_Builder *sb)
+void bytecode_print(const Bytecode_Builder *builder, String_Builder *sb)
 {
     // TODO: Non builtin types
     // auto &tt = builder->zodiac_context->type_table;
@@ -50,7 +50,7 @@ void bytecode_print(Bytecode_Builder *builder, String_Builder *sb)
     }
 }
 
-void bytecode_print_global(Bytecode_Builder *builder, Bytecode_Function *fn, Bytecode_Global *glob, String_Builder *sb)
+void bytecode_print_global(const Bytecode_Builder *builder, Bytecode_Function *fn, const Bytecode_Global *glob, String_Builder *sb)
 {
     string_builder_append(sb, "%.*s : ", (int)glob->atom.length, glob->atom.data);
 
@@ -70,7 +70,7 @@ void bytecode_print_global(Bytecode_Builder *builder, Bytecode_Function *fn, Byt
     string_builder_append(sb, ";");
 }
 
-void bytecode_print_function(Bytecode_Builder *builder, Bytecode_Function *function, String_Builder *sb)
+void bytecode_print_function(const Bytecode_Builder *builder, const Bytecode_Function *function, String_Builder *sb)
 {
     string_builder_append(sb, "%.*s(", (int)function->name.length, function->name.data);
 
@@ -102,7 +102,7 @@ void bytecode_print_function(Bytecode_Builder *builder, Bytecode_Function *funct
     }
 }
 
-void bytecode_print_block(Bytecode_Builder *builder, Bytecode_Function *fn, Bytecode_Block *block, String_Builder *sb,
+void bytecode_print_block(const Bytecode_Builder *builder, const Bytecode_Function *fn, const Bytecode_Block *block, String_Builder *sb,
                           int indent/*= 0*/)
 {
     assert(fn);
@@ -115,7 +115,7 @@ void bytecode_print_block(Bytecode_Builder *builder, Bytecode_Function *fn, Byte
     }
 }
 
-void bytecode_print_instruction(Bytecode_Builder *builder, Bytecode_Function *fn, Bytecode_Instruction *instruction,
+void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_Function *fn, const Bytecode_Instruction *instruction,
                                 String_Builder *sb, int indent/*= 0*/)
 {
     assert(fn);
@@ -288,7 +288,7 @@ void bytecode_print_instruction(Bytecode_Builder *builder, Bytecode_Function *fn
             assert(instruction->a.kind == Bytecode_Register_Kind::BLOCK);
             Bytecode_Block_Handle block_handle = instruction->a.block_handle;
             assert(block_handle >= 0 && block_handle < fn->blocks.count);
-            Bytecode_Block *block = &fn->blocks[block_handle];
+            const Bytecode_Block *block = &fn->blocks[block_handle];
             string_builder_append(sb, "JMP %.*s", (int)block->name.length, block->name.data);
             print_a = false;
             print_b = false;
@@ -348,7 +348,7 @@ void bytecode_print_instruction(Bytecode_Builder *builder, Bytecode_Function *fn
     }
 }
 
-void bytecode_print_register(Bytecode_Builder *builder, Bytecode_Function *fn, const Bytecode_Register &reg, String_Builder *sb)
+void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Function *fn, const Bytecode_Register &reg, String_Builder *sb)
 {
     switch (reg.kind) {
         case Bytecode_Register_Kind::INVALID: assert(false); break;

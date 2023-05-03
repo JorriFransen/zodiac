@@ -19,6 +19,17 @@ namespace Zodiac { namespace Bytecode_Tests {
 
 using namespace Bytecode;
 
+file_local void print_bytecode(const Bytecode_Builder &bb)
+{
+#if PRINT_BYTECODE_IN_TESTS
+
+    printf("\n\n");
+
+    // Assume this uses printf
+    bytecode_print(&bb, temp_allocator());
+#endif
+}
+
 static MunitResult Building_1(const MunitParameter params[], void* user_data_or_fixture)
 {
     Zodiac_Context zc;
@@ -55,9 +66,7 @@ static MunitResult Building_1(const MunitParameter params[], void* user_data_or_
     munit_assert_int64(add_instr.b.index, ==, b.index);
     munit_assert_int64(add_instr.dest.index, ==, add_instr.dest.index);
 
-#if PRINT_BYTECODE_IN_TESTS
-    bytecode_print(&bb, temp_allocator());
-#endif
+    print_bytecode(bb);
 
     bytecode_builder_free(&bb);
     zodiac_context_destroy(&zc);
@@ -104,10 +113,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
     bytecode_emit_print(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 42));
     bytecode_emit_return(&bb);
 
-
-#if PRINT_BYTECODE_IN_TESTS
-    bytecode_print(&bb, temp_allocator());
-#endif
+    print_bytecode(bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
