@@ -4,6 +4,8 @@
 #include "test_common.h"
 
 #include "bytecode/bytecode.h"
+#include "bytecode/interpreter.h"
+#include "bytecode/validator.h"
 #include "type.h"
 #include "zodiac_context.h"
 
@@ -64,80 +66,82 @@ static MunitResult Building_1(const MunitParameter params[], void* user_data_or_
 }
 
 #define assert_zodiac_stream(stream, expected_string) { \
-    file_flush(stream); \
-    int64_t length = file_length(stream); \
-    file_seek(stream, 0); \
-    const size_t _buf_size = 1024; \
+    filesystem_flush(stream); \
+    u64 length; \
+    filesystem_size(stream, &length); \
+    const auto _buf_size = 1024; \
     munit_assert((int64_t)_buf_size > length); \
     char _buf[_buf_size]; \
-    size_t read_size = fread(_buf, length, 1, (stream)->handle); \
-    assert_int((int)read_size, ==, 1); \
+    u64 read_length; \
+    bool read_res = filesystem_read(stream, length, (u8 *)_buf, &read_length); \
+    munit_assert_int((int)read_length, ==, length); \
     _buf[length] = '\0'; \
-    assert_int((int)strlen(_buf), ==, (int)strlen(expected_string)); \
-    assert_string_equal(_buf, expected_string); \
+    munit_assert_int((int)strlen(_buf), ==, (int)strlen(expected_string)); \
+    munit_assert_string_equal(_buf, expected_string); \
 }
 
-// MunitResult Simple_Function_Call(const MunitParameter params[], void* user_data_or_fixture)
-// {
-//     Zodiac_Context zc;
-//     zodiac_context_create(&zc);
+static MunitResult Simple_Function_Call(const MunitParameter params[], void* user_data_or_fixture)
+{
+    Zodiac_Context zc;
+    zodiac_context_create(&zc);
 
-//     Bytecode_Builder bb = bytecode_builder_create(c_allocator(), &zc);
-//     // Type *main_fn_type = get_function_type(&builtin_type_void, {}, &zc.ast_allocator);
-//     Type *main_fn_type = get_function_type(&builtin_type_void, {}, &zc.ast_allocator);
+    Bytecode_Builder bb = bytecode_builder_create(c_allocator(), &zc);
+    // Type *main_fn_type = get_function_type(&builtin_type_void, {}, &zc.ast_allocator);
+    Type *main_fn_type = get_function_type(&builtin_type_void, {}, &zc.ast_allocator);
 
-//     Bytecode_Function_Handle fn_handle = bytecode_function_create(&bb, "main_fn", main_fn_type);
-//     Bytecode_Block_Handle block_handle = bytecode_append_block(&bb, fn_handle, "entry");
+    Bytecode_Function_Handle fn_handle = bytecode_function_create(&bb, "main_fn", main_fn_type);
+    Bytecode_Block_Handle block_handle = bytecode_append_block(&bb, fn_handle, "entry");
 
-//     auto print_fn_type = get_function_type(&builtin_type_void, {}, &zc.ast_allocator);
-//     auto print_fn_handle = bytecode_function_create(&bb, "print_42", print_fn_type);
-//     auto print_entry_handle = bytecode_append_block(&bb, print_fn_handle, "entry");
+    auto print_fn_type = get_function_type(&builtin_type_void, {}, &zc.ast_allocator);
+    auto print_fn_handle = bytecode_function_create(&bb, "print_42", print_fn_type);
+    auto print_entry_handle = bytecode_append_block(&bb, print_fn_handle, "entry");
 
-//     bytecode_set_insert_point(&bb, fn_handle, block_handle);
+    bytecode_set_insert_point(&bb, fn_handle, block_handle);
 
-//     bytecode_emit_call(&bb, print_fn_handle, 0);
-//     bytecode_emit_return(&bb);
+    bytecode_emit_call(&bb, print_fn_handle, 0);
+    bytecode_emit_return(&bb);
 
-//     bytecode_set_insert_point(&bb, print_fn_handle, print_entry_handle);
-//     bytecode_emit_print(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 42));
-//     bytecode_emit_return(&bb);
+    bytecode_set_insert_point(&bb, print_fn_handle, print_entry_handle);
+    bytecode_emit_print(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 42));
+    bytecode_emit_return(&bb);
 
 
-//     // bytecode_print(&bb);
+    // bytecode_print(&bb);
 
-//     Bytecode_Validator validator = {};
-//     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-//     bool bytecode_valid = validate_bytecode(&validator);
+    Bytecode_Validator validator = {};
+    bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    bool bytecode_valid = validate_bytecode(&validator);
 
-//     MunitResult result = MUNIT_OK;
+    MunitResult result = MUNIT_OK;
 
-//     if (!bytecode_valid) {
-//         bytecode_validator_print_errors(&validator);
-//         result = MUNIT_FAIL;
+    if (!bytecode_valid) {
+        bytecode_validator_print_errors(&validator);
+        result = MUNIT_FAIL;
 
-//     } else {
+    } else {
 
-//         Interpreter interp = interpreter_create(c_allocator(), &zc);
-//         interp.std_out = create_temp_file();
+        Interpreter interp = interpreter_create(c_allocator(), &zc);
+        auto out_file = platform_temp_file();
+        interp.std_out = &out_file;
 
-//         auto program = bytecode_get_program(&bb);
-//         program.entry_handle = fn_handle;
-//         interpreter_start(&interp, program);
+        auto program = bytecode_get_program(&bb);
+        program.entry_handle = fn_handle;
+        interpreter_start(&interp, program);
 
-//         assert_zodiac_stream(&interp.std_out, "42\n");
+        assert_zodiac_stream(interp.std_out, "42\n");
 
-//         munit_assert(file_close(&interp.std_out) == 0);
+        // munit_assert(file_close(&interp.std_out) == 0);
 
-//         interpreter_free(&interp);
+        interpreter_free(&interp);
 
-//     }
+    }
 
-//     bytecode_validator_free(&validator);
-//     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+    bytecode_validator_free(&validator);
+    bytecode_builder_free(&bb);
+    zodiac_context_destroy(&zc);
 
-//     return result;
-// }
+    return result;
+}
 
 // MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* user_data_or_fixture)
 // {
@@ -1869,7 +1873,7 @@ static MunitResult Building_1(const MunitParameter params[], void* user_data_or_
 
 START_TESTS(bytecode_tests)
     DEFINE_TEST(Building_1),
-    // DEFINE_TEST(Simple_Function_Call),
+    DEFINE_TEST(Simple_Function_Call),
     // DEFINE_TEST(Arguments_And_Return_Values),
     // DEFINE_TEST(Recursion_And_Jumps),
     // DEFINE_TEST(Insert_And_Extract_Value),

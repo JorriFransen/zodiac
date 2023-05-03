@@ -38,8 +38,13 @@ struct Array_Ref
     }
 
     Array_Ref(const Dynamic_Array<Element_Type> &dyn_arr) {
-        data = dyn_arr.data;
-        count = dyn_arr.count;
+        this->data = dyn_arr.data;
+        this->count = dyn_arr.count;
+    }
+
+    Array_Ref(Element_Type *ptr, u64 count) {
+        this->data = ptr;
+        this->count = count;
     }
 
     Element_Type& operator[](u64 index) {

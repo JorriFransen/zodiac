@@ -82,6 +82,13 @@ bool filesystem_size(File_Handle *handle, u64 *out_size)
     return true;
 }
 
+void filesystem_flush(File_Handle *handle)
+{
+    assert(handle && handle->valid && handle->handle);
+
+    fflush((FILE *)handle->handle);
+}
+
 bool filesystem_read(File_Handle *handle, u64 size, u8 *out_bytes, u64 *out_size)
 {
     assert(handle && handle->valid && handle->handle);

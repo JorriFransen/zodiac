@@ -14,7 +14,6 @@ ZAPI void *platform_zero_mem(void *memory, u64 num);
 ZAPI void *platform_memcpy(void *dest, const void *src, u64 num);
 ZAPI i64 platform_memcmp(const void *a, const void *b, u64 num);
 
-
 enum class Platform_Console_Color
 {
     Blue,
@@ -25,6 +24,7 @@ enum class Platform_Console_Color
     Grey,
 };
 
+ZAPI File_Handle platform_temp_file();
 
 ZAPI void platform_file_write(File_Handle *file, const String_Ref message);
 ZAPI void platform_file_write(File_Handle *file, const String_Ref message, Platform_Console_Color color);

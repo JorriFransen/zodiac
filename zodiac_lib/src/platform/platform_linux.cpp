@@ -70,6 +70,26 @@ i64 platform_memcmp(const void *a, const void *b, u64 num)
     return memcmp(a, b, num);
 }
 
+File_Handle platform_temp_file()
+{
+    char name_template[] = "/tmp/ztmp-XXXXXX";
+    int fd = mkstemp(name_template);
+    if (fd == -1) {
+        assert(false && !"mkstemp failed in create_temp_file!...");
+        return {};
+    }
+
+    FILE *result = fdopen(fd, "w+b");
+    if (result == nullptr) {
+        assert(false && !"fdopen failed in create_temp_file!...");
+        return {};
+    }
+
+    assert(unlink(name_template) == 0);
+
+    return { result, true };
+}
+
 void platform_file_write(File_Handle *file, const String_Ref message)
 {
     assert(file->valid && file->handle);
