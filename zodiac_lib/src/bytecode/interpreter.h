@@ -58,27 +58,27 @@ struct Interpreter
     // FFI_Context ffi = {};
 };
 
-Interpreter interpreter_create(Allocator *allocator, Zodiac_Context *context);
-void interpreter_free(Interpreter *interp);
+ZAPI Interpreter interpreter_create(Allocator *allocator, Zodiac_Context *context);
+ZAPI void interpreter_free(Interpreter *interp);
 
-Interpreter_Register interpreter_start(Interpreter *interp, Bytecode_Program program);
-Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytecode_Function> functions, Array_Ref<Bytecode_Function_Handle> foreign_functions, Array_Ref<Bytecode_Global> globals, int64_t global_size, Bytecode_Function_Handle fn_handle);
+ZAPI Interpreter_Register interpreter_start(Interpreter *interp, Bytecode_Program program);
+ZAPI Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytecode_Function> functions, Array_Ref<Bytecode_Function_Handle> foreign_functions, Array_Ref<Bytecode_Global> globals, int64_t global_size, Bytecode_Function_Handle fn_handle);
 
-Bytecode_Instruction interpreter_fetch_instruction(Interpreter *interp);
-void interpreter_execute_instruction(Interpreter *interp, Bytecode_Instruction instruction);
+ZAPI Bytecode_Instruction interpreter_fetch_instruction(Interpreter *interp);
+ZAPI void interpreter_execute_instruction(Interpreter *interp, Bytecode_Instruction instruction);
 
-void interpreter_call_foreign_function(Interpreter *interp, Bytecode_Function_Handle fn_handle, int64_t arg_count, int64_t dest_index);
-void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_ptr_reg, int64_t arg_count, int64_t dest_index);
-// void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, int64_t arg_count, int64_t dest_index, Type *return_type);
-Interpreter_Register *interpreter_handle_ffi_callback(Interpreter *interp, Bytecode_Function_Handle fn_handle);
+ZAPI void interpreter_call_foreign_function(Interpreter *interp, Bytecode_Function_Handle fn_handle, int64_t arg_count, int64_t dest_index);
+ZAPI void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_ptr_reg, int64_t arg_count, int64_t dest_index);
+// ZAPI void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, int64_t arg_count, int64_t dest_index, Type *return_type);
+ZAPI Interpreter_Register *interpreter_handle_ffi_callback(Interpreter *interp, Bytecode_Function_Handle fn_handle);
 
-Interpreter_Register interpreter_load_register(Interpreter *interp, Bytecode_Register bc_reg);
-Interpreter_Register interpreter_load_pointer(Interpreter *interp, uint8_t *source, Type *type);
-void interpreter_store_register(Interpreter *interp, Interpreter_Register source, Bytecode_Register dest);
-void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source, uint8_t *dest);
+ZAPI Interpreter_Register interpreter_load_register(Interpreter *interp, Bytecode_Register bc_reg);
+ZAPI Interpreter_Register interpreter_load_pointer(Interpreter *interp, uint8_t *source, Type *type);
+ZAPI void interpreter_store_register(Interpreter *interp, Interpreter_Register source, Bytecode_Register dest);
+ZAPI void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source, uint8_t *dest);
 
-void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle fn_handle,
+ZAPI void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle fn_handle,
                                   int64_t arg_count, int64_t result_index);
-Interpreter_Stack_Frame interpreter_pop_stack_frame(Interpreter *interp);
+ZAPI Interpreter_Stack_Frame interpreter_pop_stack_frame(Interpreter *interp);
 
 }}

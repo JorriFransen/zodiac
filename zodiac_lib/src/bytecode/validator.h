@@ -29,23 +29,23 @@ struct Bytecode_Validator
     Dynamic_Array<Validation_Error> errors = {};
 };
 
-void bytecode_validator_init(Zodiac_Context *context, Allocator *allocator, Bytecode_Validator *validator, Array_Ref<Bytecode_Function> functions, Dynamic_Array<Inst_Loc__> *instruction_locations);
+ZAPI void bytecode_validator_init(Zodiac_Context *context, Allocator *allocator, Bytecode_Validator *validator, Array_Ref<Bytecode_Function> functions, Dynamic_Array<Inst_Loc__> *instruction_locations);
 
-void bytecode_validator_free(Bytecode_Validator *validator);
+ZAPI void bytecode_validator_free(Bytecode_Validator *validator);
 
-void bytecode_validator_print_errors(Bytecode_Validator *validator);
+ZAPI void bytecode_validator_print_errors(Bytecode_Validator *validator);
 
-void bytecode_validator_report_error(Bytecode_Validator *validator, const char *fmt, ...);
-void bytecode_validator_report_error(Bytecode_Validator *validator, Bytecode_Instruction_Handle location, const char *fmt, ...);
+ZAPI void bytecode_validator_report_error(Bytecode_Validator *validator, const char *fmt, ...);
+ZAPI void bytecode_validator_report_error(Bytecode_Validator *validator, Bytecode_Instruction_Handle location, const char *fmt, ...);
 
-bool validate_bytecode(Bytecode_Validator *validator);
+ZAPI bool validate_bytecode(Bytecode_Validator *validator);
 
-bool validate_function(Bytecode_Visitor *visitor, Bytecode_Function_Handle fn_handle);
-bool validate_function(Bytecode_Validator *validator, Bytecode_Function_Handle fn_handle);
+ZAPI bool validate_function(Bytecode_Visitor *visitor, Bytecode_Function_Handle fn_handle);
+ZAPI bool validate_function(Bytecode_Validator *validator, Bytecode_Function_Handle fn_handle);
 
-bool validate_instruction(Bytecode_Visitor *visitor, Bytecode_Instruction *instruction);
-bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *instruction);
+ZAPI bool validate_instruction(Bytecode_Visitor *visitor, Bytecode_Instruction *instruction);
+ZAPI bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *instruction);
 
-Array_Ref<Graph_Node> validator_build_block_graph(Bytecode_Function *func);
-String block_graph_to_dot(Array_Ref<Graph_Node> nodes, Bytecode_Function *func, Allocator *allocator);
+ZAPI Array_Ref<Graph_Node> validator_build_block_graph(Bytecode_Function *func);
+ZAPI String block_graph_to_dot(Array_Ref<Graph_Node> nodes, Bytecode_Function *func, Allocator *allocator);
 }}
