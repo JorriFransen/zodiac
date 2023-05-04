@@ -1,10 +1,18 @@
 #pragma once
 
 #include "bytecode/bytecode.h"
+#include "containers/dynamic_array.h"
 #include "containers/stack.h"
-#include "type.h"
+#include "defines.h"
+#include "platform/filesystem.h"
 
-namespace Zodiac { namespace Bytecode {
+namespace Zodiac {
+
+struct Allocator;
+struct Type;
+struct Zodiac_Context;
+
+namespace Bytecode {
 
 struct Interpreter_Register
 {
@@ -13,21 +21,21 @@ struct Interpreter_Register
     union
     {
         Bytecode_Register_Value value = {};
-        uint8_t *pointer;
+        u8 *pointer;
     };
 };
 
 struct Interpreter_Stack_Frame
 {
-    int64_t ip = 0;
-    int64_t bp = 0;
+    s64 ip = 0;
+    s64 bp = 0;
     Bytecode_Function_Handle fn_handle = -1;
 
     Array_Ref<Interpreter_Register> registers = {};
-    Array_Ref<uint8_t> stack_mem = {};
-    uint8_t *sp = nullptr;
+    Array_Ref<u8> stack_mem = {};
+    u8 *sp = nullptr;
 
-    int64_t dest_index = -1;
+    s64 dest_index = -1;
 };
 
 struct Interpreter
@@ -45,13 +53,13 @@ struct Interpreter
     Stack<Interpreter_Register> arg_stack = {};
 
     Dynamic_Array<Interpreter_Register> globals = {};
-    uint8_t *global_mem = nullptr;
+    u8 *global_mem = nullptr;
 
     Array_Ref<Interpreter_Register> registers = {};
-    int64_t used_register_count = 0;
+    s64 used_register_count = 0;
 
-    Array_Ref<uint8_t> stack_mem = {};
-    int64_t stack_mem_used = 0;
+    Array_Ref<u8> stack_mem = {};
+    s64 stack_mem_used = 0;
 
     File_Handle std_out;
 
@@ -62,23 +70,23 @@ ZAPI Interpreter interpreter_create(Allocator *allocator, Zodiac_Context *contex
 ZAPI void interpreter_free(Interpreter *interp);
 
 ZAPI Interpreter_Register interpreter_start(Interpreter *interp, Bytecode_Program program);
-ZAPI Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytecode_Function> functions, Array_Ref<Bytecode_Function_Handle> foreign_functions, Array_Ref<Bytecode_Global> globals, int64_t global_size, Bytecode_Function_Handle fn_handle);
+ZAPI Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytecode_Function> functions, Array_Ref<Bytecode_Function_Handle> foreign_functions, Array_Ref<Bytecode_Global> globals, s64 global_size, Bytecode_Function_Handle fn_handle);
 
 ZAPI Bytecode_Instruction interpreter_fetch_instruction(Interpreter *interp);
 ZAPI void interpreter_execute_instruction(Interpreter *interp, Bytecode_Instruction instruction);
 
-ZAPI void interpreter_call_foreign_function(Interpreter *interp, Bytecode_Function_Handle fn_handle, int64_t arg_count, int64_t dest_index);
-ZAPI void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_ptr_reg, int64_t arg_count, int64_t dest_index);
-// ZAPI void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, int64_t arg_count, int64_t dest_index, Type *return_type);
+ZAPI void interpreter_call_foreign_function(Interpreter *interp, Bytecode_Function_Handle fn_handle, s64 arg_count, s64 dest_index);
+ZAPI void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_ptr_reg, s64 arg_count, s64 dest_index);
+// ZAPI void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_count, s64 dest_index, Type *return_type);
 ZAPI Interpreter_Register *interpreter_handle_ffi_callback(Interpreter *interp, Bytecode_Function_Handle fn_handle);
 
 ZAPI Interpreter_Register interpreter_load_register(Interpreter *interp, Bytecode_Register bc_reg);
-ZAPI Interpreter_Register interpreter_load_pointer(Interpreter *interp, uint8_t *source, Type *type);
+ZAPI Interpreter_Register interpreter_load_pointer(Interpreter *interp, u8 *source, Type *type);
 ZAPI void interpreter_store_register(Interpreter *interp, Interpreter_Register source, Bytecode_Register dest);
-ZAPI void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source, uint8_t *dest);
+ZAPI void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source, u8 *dest);
 
 ZAPI void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle fn_handle,
-                                  int64_t arg_count, int64_t result_index);
+                                  s64 arg_count, s64 result_index);
 ZAPI Interpreter_Stack_Frame interpreter_pop_stack_frame(Interpreter *interp);
 
 }}

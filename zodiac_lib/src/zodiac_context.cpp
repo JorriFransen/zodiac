@@ -4,6 +4,8 @@
 #include "util/asserts.h"
 #include "type.h"
 
+#include "error.h" // IWYU pragma: keep
+
 namespace Zodiac
 {
 
@@ -26,6 +28,8 @@ void zodiac_context_create(Zodiac_Context *out_context)
 
     temporary_allocator_create(KIBIBYTE(8), nullptr, &out_context->error_allocator_state);
     out_context->error_allocator = temporary_allocator_allocator(&out_context->error_allocator_state);
+
+    dynamic_array_create(c_allocator(), &out_context->errors);
 
     zodiac_register_keywords(&out_context->atoms);
 }

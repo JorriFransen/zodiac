@@ -1,7 +1,11 @@
 #include "bytecode/visitor.h"
 
+#include <stdio.h>
+
 #include "common.h"
+#include "defines.h"
 #include "type.h"
+#include "util/asserts.h"
 
 namespace Zodiac { namespace Bytecode {
 

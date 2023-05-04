@@ -1,9 +1,16 @@
 #include "bytecode/validator.h"
 
+#include <stdarg.h>
+#include <stdio.h>
+
+#include "atom.h"
+#include "common.h"
+#include "containers/stack.h"
 #include "memory/temporary_allocator.h"
+#include "source_pos.h"
 #include "type.h"
+#include "util/asserts.h"
 #include "util/string_builder.h"
-#include "zodiac_context.h"
 
 namespace Zodiac { namespace Bytecode {
 
@@ -27,7 +34,7 @@ void bytecode_validator_free(Bytecode_Validator *validator)
 
 void bytecode_validator_print_errors(Bytecode_Validator *validator)
 {
-    for (int64_t i = 0; i < validator->errors.count; i++) {
+    for (s64 i = 0; i < validator->errors.count; i++) {
 
         if (i != 0) fprintf(stderr, "\n");
 
@@ -66,7 +73,8 @@ void bytecode_validator_report_error(Bytecode_Validator *validator, Bytecode_Ins
     va_list args;
     va_start(args, fmt);
 
-    Source_Pos sp = {};
+    Source_Pos begin = {};
+    Source_Pos end = {};
     if (validator->visitor.instruction_locations) {
         assert(false);
         // bool found = hash_table_find(validator->visitor.instruction_locations, location, &sp);
@@ -77,19 +85,19 @@ void bytecode_validator_report_error(Bytecode_Validator *validator, Bytecode_Ins
             .line = 0,
             .index_in_line = 0,
         };
-        sp = dummy;
+        begin = dummy;
+        end = dummy;
     }
 
 
-    assert(false);
-    // auto err_handle = zodiac_report_error(validator->context, Zodiac_Error_Kind::ZODIAC_BC_VALIDATION_ERROR, sr.begin, sr.end, fmt, args);
+    auto err_handle = zodiac_report_error(validator->context, Zodiac_Error_Kind::ZODIAC_BC_VALIDATION_ERROR, begin, end, fmt, args);
 
-    // Validation_Error ve {
-    //     .instruction_handle = location,
-    //     .error_handle = err_handle,
-    // };
+    Validation_Error ve {
+        .instruction_handle = location,
+        .error_handle = err_handle,
+    };
 
-    // dynamic_array_append(&validator->errors, ve);
+    dynamic_array_append(&validator->errors, ve);
 
     va_end(args);
 }
@@ -139,7 +147,7 @@ bool validate_function(Bytecode_Validator *validator, Bytecode_Function_Handle f
     assert(nodes.count == function->blocks.count + 1);
 
     if (!noreturn) {
-        for (int32_t i = function->blocks.count - 1; i >= 0; i--) {
+        for (s32 i = function->blocks.count - 1; i >= 0; i--) {
             if (!nodes[i].returns) {
                 assert(nodes[i].block);
                 Bytecode_Instruction_Handle location = {
@@ -613,7 +621,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             }
 
             bool arg_match = true;
-            for (int64_t i = 0; i < fn_arg_count; i++) {
+            for (s64 i = 0; i < fn_arg_count; i++) {
                 auto arg_reg = stack_peek_ptr(&visitor->arg_stack, (fn_arg_count - 1) - i);
                 if (arg_reg->type != params[i]) {
                     bytecode_validator_report_error(validator, "Mismatching type for argument %d", i);
@@ -679,7 +687,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             // }
 
             // bool arg_match = true;
-            // for (int64_t i = 0; i < fn_arg_count; i++) {
+            // for (s64 i = 0; i < fn_arg_count; i++) {
             //     auto arg_reg = stack_peek_ptr(&visitor->arg_stack, (fn_arg_count - 1) - i);
             //     if (arg_reg->type != args[i]) {
             //         bytecode_validator_report_error(validator, "Mismatching type for argument %" PRId64, i);
@@ -1477,7 +1485,7 @@ Array_Ref<Graph_Node> validator_build_block_graph(Bytecode_Function *func)
     Dynamic_Array<Graph_Node> nodes;
     dynamic_array_create<Graph_Node>(temp_allocator(), &nodes, func->blocks.count + 1);
 
-    for (int64_t i = 0; i < func->blocks.count; i++) {
+    for (s64 i = 0; i < func->blocks.count; i++) {
         auto node = Graph_Node { .a = nullptr, .b = nullptr, .block = &func->blocks[i] };
         dynamic_array_append(&nodes, node);
     }
@@ -1486,7 +1494,7 @@ Array_Ref<Graph_Node> validator_build_block_graph(Bytecode_Function *func)
     auto exit_node = dynamic_array_append(&nodes, exit_node_);
     exit_node->returns = true;
 
-    for (int64_t i = 0; i < func->blocks.count; i++) {
+    for (s64 i = 0; i < func->blocks.count; i++) {
 
         auto current_node = &nodes[i];
 
@@ -1522,7 +1530,7 @@ Array_Ref<Graph_Node> validator_build_block_graph(Bytecode_Function *func)
     while (changed) {
         changed = false;
 
-        for (int64_t i = nodes.count -1; i >= 0; i--) {
+        for (s64 i = nodes.count -1; i >= 0; i--) {
             auto node = &nodes[i];
             if (node->returns) continue;
             if ((node->a && node->a->returns) ||
@@ -1546,7 +1554,7 @@ String block_graph_to_dot(Array_Ref<Graph_Node> nodes, Bytecode_Function *func, 
     string_builder_append(&sb, "    labelloc = \"t\";\n");
     string_builder_append(&sb, "    node [style=filled];\n");
 
-    for (int64_t i = 0; i < nodes.count; i++) {
+    for (s64 i = 0; i < nodes.count; i++) {
         auto node = nodes[i];
         if (node.block) {
 

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "atom.h"
-#include "containers/dynamic_array.h"
 #include "defines.h"
+#include "containers/dynamic_array.h"
 #include "memory/allocator.h"
 #include "memory/linear_allocator.h"
 #include "memory/temporary_allocator.h"

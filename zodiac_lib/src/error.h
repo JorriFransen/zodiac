@@ -1,6 +1,10 @@
 #pragma once
 
+#include <stdarg.h>
+
+#include "defines.h"
 #include "source_pos.h"
+#include "util/zstring.h"
 
 namespace Zodiac {
 
@@ -11,6 +15,7 @@ enum Zodiac_Error_Kind
     ZODIAC_ERROR_INVALID,
     ZODIAC_LEX_ERROR,
     ZODIAC_PARSE_ERROR,
+    ZODIAC_BC_VALIDATION_ERROR,
 
 };
 

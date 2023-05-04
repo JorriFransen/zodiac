@@ -1,9 +1,20 @@
 #pragma once
 
-#include "bytecode/bytecode.h"
-#include "util/string_builder.h"
+#include "defines.h"
 
-namespace Zodiac { namespace Bytecode {
+namespace Zodiac {
+
+struct Allocator;
+struct String_Builder;
+
+namespace Bytecode {
+
+struct Bytecode_Block;
+struct Bytecode_Builder;
+struct Bytecode_Function;
+struct Bytecode_Global;
+struct Bytecode_Instruction;
+struct Bytecode_Register;
 
 ZAPI void bytecode_print(const Bytecode_Builder *builder, Allocator *allocator);
 ZAPI void bytecode_print(const Bytecode_Builder *builder, String_Builder *sb);

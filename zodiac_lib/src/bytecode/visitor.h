@@ -2,9 +2,14 @@
 
 #include "bytecode/bytecode.h"
 #include "containers/stack.h"
+#include "containers/dynamic_array.h"
 #include "source_pos.h"
 
-namespace Zodiac { namespace Bytecode {
+namespace Zodiac {
+
+struct Allocator;
+
+namespace Bytecode {
 
 struct Bytecode_Visitor;
 

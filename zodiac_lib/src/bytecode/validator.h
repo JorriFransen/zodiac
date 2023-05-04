@@ -2,13 +2,22 @@
 
 #include "bytecode/bytecode.h"
 #include "bytecode/visitor.h"
+#include "containers/dynamic_array.h"
+#include "defines.h"
+#include "error.h"
+#include "util/zstring.h"
 
-namespace Zodiac { namespace Bytecode {
+namespace Zodiac {
+
+struct Allocator;
+struct Zodiac_Context;
+
+namespace Bytecode {
 
 struct Validation_Error
 {
     Bytecode_Instruction_Handle instruction_handle = {};
-    // Zodiac_Error_Handle error_handle = -1;
+    Error_Handle error_handle = -1;
 };
 
 struct Graph_Node

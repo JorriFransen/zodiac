@@ -1,7 +1,16 @@
 #include "bytecode/printer.h"
 
-#include "zodiac_context.h"
+#include <stdio.h>
+
+#include "atom.h"
+#include "bytecode/bytecode.h"
+#include "common.h"
+#include "containers/dynamic_array.h"
+#include "memory/allocator.h"
 #include "type.h"
+#include "util/asserts.h"
+#include "util/string_builder.h"
+#include "util/zstring.h"
 
 namespace Zodiac { namespace Bytecode {
 
@@ -24,7 +33,7 @@ void bytecode_print(const Bytecode_Builder *builder, String_Builder *sb)
     // TODO: Non builtin types
     // auto &tt = builder->zodiac_context->type_table;
 
-    // for (int64_t i = 0; i < tt.count; i++) {
+    // for (s64 i = 0; i < tt.count; i++) {
     //     auto type = tt[i];
     //     if (type->kind == Type_Kind::STRUCTURE) {
     //         assert(type->atom.length);
@@ -35,7 +44,7 @@ void bytecode_print(const Bytecode_Builder *builder, String_Builder *sb)
     // }
     // if (tt.count) string_builder_append(sb, "\n");
 
-    for (int64_t i = 0; i < builder->globals.count; i++ ) {
+    for (s64 i = 0; i < builder->globals.count; i++ ) {
         auto glob = &builder->globals[i];
         bytecode_print_global(builder, nullptr, glob, sb);
         string_builder_append(sb, "\n");
@@ -43,7 +52,7 @@ void bytecode_print(const Bytecode_Builder *builder, String_Builder *sb)
 
     if (builder->globals.count) string_builder_append(sb, "\n");
 
-    for (int64_t i = 0; i < builder->functions.count; i++) {
+    for (s64 i = 0; i < builder->functions.count; i++) {
         auto fn = &builder->functions[i];
         bytecode_print_function(builder, fn, sb);
         string_builder_append(sb, "\n");
@@ -97,7 +106,7 @@ void bytecode_print_function(const Bytecode_Builder *builder, const Bytecode_Fun
 
     string_builder_append(sb, "\n");
 
-    for (int64_t i = 0; i < function->blocks.count; i++) {
+    for (s64 i = 0; i < function->blocks.count; i++) {
         bytecode_print_block(builder, function, &function->blocks[i], sb, 2);
     }
 }
@@ -109,7 +118,7 @@ void bytecode_print_block(const Bytecode_Builder *builder, const Bytecode_Functi
 
     bytecode_print_indent(indent, sb);
     string_builder_append(sb, "%.*s:\n", (int)block->name.length, block->name.data);
-    for (int64_t i = 0; i < block->instructions.count; i++) {
+    for (s64 i = 0; i < block->instructions.count; i++) {
         bytecode_print_instruction(builder, fn, &block->instructions[i], sb, indent + 2);
         string_builder_append(sb, "\n");
     }

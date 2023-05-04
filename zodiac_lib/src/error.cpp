@@ -1,5 +1,7 @@
 #include "error.h"
 
+#include "containers/dynamic_array.h"
+#include "util/asserts.h"
 #include "zodiac_context.h"
 
 namespace Zodiac
