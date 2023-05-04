@@ -66,8 +66,7 @@ i64 platform_memcmp(const void *a, const void *b, u64 num)
 
 double platform_sqrt(double x)
 {
-    assert(false);
-    return 0;
+    return sqrt(x);
 }
 
 File_Handle platform_temp_file()
