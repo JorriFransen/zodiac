@@ -78,7 +78,8 @@ void bytecode_print_function(const Bytecode_Builder *builder, const Bytecode_Fun
 
     for (s64 i = 0; i < fn_type->function.parameter_types.count; i++) {
         if (i > 0) string_builder_append(sb, ", ");
-        string_builder_append(sb, "%%%ll", i);
+        string_builder_append(sb, "%%%lld.", i);
+        type_to_string(fn_type->function.parameter_types[i], sb);
     }
 
     string_builder_append(sb, ") -> ");
