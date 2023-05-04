@@ -86,8 +86,7 @@ void bytecode_print_function(const Bytecode_Builder *builder, const Bytecode_Fun
     auto return_type = fn_type->function.return_type;
     if (return_type->flags & TYPE_FLAG_AGGREGATE) {
         assert(return_type->kind == Type_Kind::STRUCTURE);
-        assert(false);
-        // string_builder_append(sb, "%.*s", (int)return_type->atom.length, return_type->atom.data);
+        type_to_string(return_type, sb);
     } else {
         type_to_string(return_type, sb);
     }
@@ -145,7 +144,6 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
 
 #define PRINT_OP_TYPED_(op, type) \
     string_builder_append(sb, #op "."); \
-    assert(type->kind != Type_Kind::STRUCTURE); \
     type_to_string(type, sb);
 
 #define PRINT_OP_(op) PRINT_OP_TYPED_(op, (instruction->dest.type ?  instruction->dest.type : instruction->a.type))
@@ -209,13 +207,7 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
             auto callee_fn = &builder->functions[callee_fn_reg.value.function_handle];
             auto return_type = callee_fn->type->function.return_type;
 
-            if (return_type->flags & TYPE_FLAG_AGGREGATE) {
-                assert(false);
-                // assert(return_type->atom.length);
-                // string_builder_append(sb, "%.*s", (int)return_type->atom.length, return_type->atom.data);
-            } else {
-                type_to_string(return_type, sb);
-            }
+            type_to_string(return_type, sb);
 
             string_builder_append(sb, " @%.*s", (int)callee_fn->name.length, callee_fn->name.data);
             break;

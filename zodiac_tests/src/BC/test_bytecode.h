@@ -9,7 +9,7 @@
 #include "type.h"
 #include "zodiac_context.h"
 
-#define PRINT_BYTECODE_IN_TESTS 0
+#define PRINT_BYTECODE_IN_TESTS 1
 
 #if PRINT_BYTECODE_IN_TESTS
 #include "bytecode/printer.h"
@@ -449,6 +449,7 @@ MunitResult Extract_Struct_Value(const MunitParameter params[], void *user_data_
         bytecode_emit_return(&bb, sum);
     }
 
+    print_bytecode(bb);
 
     Interpreter interp = interpreter_create(c_alloc, &zc);
     interp.std_out = platform_temp_file();
@@ -467,253 +468,253 @@ MunitResult Extract_Struct_Value(const MunitParameter params[], void *user_data_
     return MUNIT_OK;
 }
 
-// MunitResult Return_Struct(const MunitParameter params[], void *user_data_or_fixture)
-// {
-//     auto c_alloc = c_allocator();
+MunitResult Return_Struct(const MunitParameter params[], void *user_data_or_fixture)
+{
+    auto c_alloc = c_allocator();
 
-//     Zodiac_Context zc;
-//     zodiac_context_create(&zc);
-//     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    Zodiac_Context zc;
+    zodiac_context_create(&zc);
+    Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
-//     Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
-//     Type *vec2_type = ast_struct_type_new(&zc, vec2_mem_types, "vec2");
+    Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
+    Type *vec2_type = get_struct_type(&zc, vec2_mem_types, "vec2", &zc.ast_allocator);
 
-//     auto make_vec2_fn_type = get_function_type(vec2_type, { }, &zc.ast_allocator);
-//     auto make_vec2_fn = bytecode_function_create(&bb, "make_vec2", make_vec2_fn_type);
-//     auto entry_block = bytecode_append_block(&bb, make_vec2_fn, "entry");
+    auto make_vec2_fn_type = get_function_type(vec2_type, { }, &zc.ast_allocator);
+    auto make_vec2_fn = bytecode_function_create(&bb, "make_vec2", make_vec2_fn_type);
+    auto entry_block = bytecode_append_block(&bb, make_vec2_fn, "entry");
 
-//     bytecode_set_insert_point(&bb, make_vec2_fn, entry_block);
+    bytecode_set_insert_point(&bb, make_vec2_fn, entry_block);
 
-//     auto lit_42 = bytecode_integer_literal(&bb, &builtin_type_s64, 42);
-//     auto new_struct_val = bytecode_emit_insert_value(&bb, {}, lit_42, vec2_type, 0);
+    auto lit_42 = bytecode_integer_literal(&bb, &builtin_type_s64, 42);
+    auto new_struct_val = bytecode_emit_insert_value(&bb, {}, lit_42, vec2_type, 0);
 
-//     auto lit_24 = bytecode_integer_literal(&bb, &builtin_type_s64, 24);
-//     new_struct_val = bytecode_emit_insert_value(&bb, new_struct_val, lit_24, vec2_type, 1);
+    auto lit_24 = bytecode_integer_literal(&bb, &builtin_type_s64, 24);
+    new_struct_val = bytecode_emit_insert_value(&bb, new_struct_val, lit_24, vec2_type, 1);
 
-//     bytecode_emit_return(&bb, new_struct_val);
+    bytecode_emit_return(&bb, new_struct_val);
 
-//     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
-//     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
-//     auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
-//     bytecode_set_insert_point(&bb, main_fn, main_entry_block);
-//     {
-//         auto result = bytecode_emit_call(&bb, make_vec2_fn, 0);
-//         auto x = bytecode_emit_extract_value(&bb, result, 0);
-//         auto y = bytecode_emit_extract_value(&bb, result, 1);
-//         bytecode_emit_print(&bb, x);
-//         bytecode_emit_print(&bb, y);
-//         auto sum = bytecode_emit_add(&bb, x, y);
-//         bytecode_emit_return(&bb, sum);
-//     }
+    auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
+    auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
+    auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
+    bytecode_set_insert_point(&bb, main_fn, main_entry_block);
+    {
+        auto result = bytecode_emit_call(&bb, make_vec2_fn, 0);
+        auto x = bytecode_emit_extract_value(&bb, result, 0);
+        auto y = bytecode_emit_extract_value(&bb, result, 1);
+        bytecode_emit_print(&bb, x);
+        bytecode_emit_print(&bb, y);
+        auto sum = bytecode_emit_add(&bb, x, y);
+        bytecode_emit_return(&bb, sum);
+    }
 
-//     //bytecode_print(&bb);
+    print_bytecode(bb);
 
-//     Bytecode_Validator validator = {};
-//     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-//     bool bytecode_valid = validate_bytecode(&validator);
+    Bytecode_Validator validator = {};
+    bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    bool bytecode_valid = validate_bytecode(&validator);
 
-//     MunitResult result = MUNIT_OK;
+    MunitResult result = MUNIT_OK;
 
-//     if (!bytecode_valid) {
-//         bytecode_validator_print_errors(&validator);
-//         result = MUNIT_FAIL;
+    if (!bytecode_valid) {
+        bytecode_validator_print_errors(&validator);
+        result = MUNIT_FAIL;
 
-//     } else {
+    } else {
 
-//         Interpreter interp = interpreter_create(c_alloc, &zc);
-//         interp.std_out = create_temp_file();
+        Interpreter interp = interpreter_create(c_alloc, &zc);
+        interp.std_out = platform_temp_file();
 
-//         auto program = bytecode_get_program(&bb);
-//         program.entry_handle = main_fn;
-//         Interpreter_Register result_register = interpreter_start(&interp, program);
+        auto program = bytecode_get_program(&bb);
+        program.entry_handle = main_fn;
+        Interpreter_Register result_register = interpreter_start(&interp, program);
 
-//         munit_assert(result_register.type == &builtin_type_s64);
-//         assert_int64(result_register.value.integer.s64, ==, 66);
+        munit_assert(result_register.type == &builtin_type_s64);
+        munit_assert_int64(result_register.value.integer.s64, ==, 66);
 
-//         assert_zodiac_stream(&interp.std_out, "42\n24\n");
+        assert_zodiac_stream(interp.std_out, "42\n24\n");
 
-//         munit_assert(file_close(&interp.std_out) == 0);
+        munit_assert(filesystem_close(&interp.std_out));
 
-//         interpreter_free(&interp);
-//     }
+        interpreter_free(&interp);
+    }
 
-//     bytecode_validator_free(&validator);
-//     bytecode_builder_free(&bb);
-//     zodiac_context_destroy(&zc);
+    bytecode_validator_free(&validator);
+    bytecode_builder_free(&bb);
+    zodiac_context_destroy(&zc);
 
-//     return result;
-// }
+    return result;
+}
 
-// MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_fixture)
-// {
-//     auto c_alloc = c_allocator();
+MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_fixture)
+{
+    auto c_alloc = c_allocator();
 
-//     Zodiac_Context zc;
-//     zodiac_context_create(&zc);
-//     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    Zodiac_Context zc;
+    zodiac_context_create(&zc);
+    Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
-//     Type *vec2_mem_types[] = { Type::r32, Type::r32 };
-//     Type *vec2_type = ast_struct_type_new(&zc, vec2_mem_types, "vec2");
+    Type *vec2_mem_types[] = { &builtin_type_r32, &builtin_type_r32 };
+    Type *vec2_type = get_struct_type(&zc, vec2_mem_types, "vec2", &zc.ast_allocator);
 
-//     auto make_vec2_fn_type = get_function_type(vec2_type, { }, &zc.ast_allocator);
-//     auto make_vec2_fn = bytecode_function_create(&bb, "make_vec2", make_vec2_fn_type);
-//     auto entry_block = bytecode_append_block(&bb, make_vec2_fn, "entry");
+    auto make_vec2_fn_type = get_function_type(vec2_type, { }, &zc.ast_allocator);
+    auto make_vec2_fn = bytecode_function_create(&bb, "make_vec2", make_vec2_fn_type);
+    auto entry_block = bytecode_append_block(&bb, make_vec2_fn, "entry");
 
-//     bytecode_set_insert_point(&bb, make_vec2_fn, entry_block);
-//     {
-//         auto lit_1 = bytecode_real_literal(&bb, Type::r32, 3, 3.f);
-//         auto lit_2 = bytecode_real_literal(&bb, Type::r32, 4, 4.f);
-//         auto p1 = bytecode_emit_insert_value(&bb, {}, lit_1, vec2_type, 0);
-//         p1 = bytecode_emit_insert_value(&bb, p1, lit_2, vec2_type, 1);
+    bytecode_set_insert_point(&bb, make_vec2_fn, entry_block);
+    {
+        auto lit_1 = bytecode_real_literal(&bb, &builtin_type_r32, 3, 3.f);
+        auto lit_2 = bytecode_real_literal(&bb, &builtin_type_r32, 4, 4.f);
+        auto p1 = bytecode_emit_insert_value(&bb, {}, lit_1, vec2_type, 0);
+        p1 = bytecode_emit_insert_value(&bb, p1, lit_2, vec2_type, 1);
 
-//         bytecode_emit_return(&bb, p1);
-//     }
+        bytecode_emit_return(&bb, p1);
+    }
+
+    Type *vec2_len_fn_arg_types[] = { vec2_type };
+    auto vec2_len_fn_type = get_function_type(&builtin_type_r32, vec2_len_fn_arg_types, &zc.ast_allocator);
+    auto vec2_len_fn = bytecode_function_create(&bb, "vec2_len", vec2_len_fn_type);
+    auto vec2_len_entry_block = bytecode_append_block(&bb, vec2_len_fn, "entry");
+    bytecode_set_insert_point(&bb, vec2_len_fn, vec2_len_entry_block);
+    {
+        auto vec = bytecode_load_argument(&bb, 0);
+        auto x = bytecode_emit_extract_value(&bb, vec, 0);
+        auto y = bytecode_emit_extract_value(&bb, vec, 1);
+        x = bytecode_emit_mul(&bb, x, x);
+        y = bytecode_emit_mul(&bb, y, y);
+        auto sum = bytecode_emit_add(&bb, x, y);
+        auto result = bytecode_emit_sqrt(&bb, sum);
+
+        // We are changing this value to verify the struct in the calling function doesn't change
+        bytecode_emit_insert_value(&bb, vec, sum, vec.type,  0);
+
+        bytecode_emit_return(&bb, result);
+    }
+
+    auto print_vec2_fn_type = get_function_type(&builtin_type_void, vec2_len_fn_arg_types, &zc.ast_allocator);
+    auto print_vec2_fn = bytecode_function_create(&bb, "vec2_print", print_vec2_fn_type);
+    auto print_vec2_entry_block = bytecode_append_block(&bb, print_vec2_fn, "entry");
+    bytecode_set_insert_point(&bb, print_vec2_fn, print_vec2_entry_block);
+    {
+        auto vec = bytecode_load_argument(&bb, 0);
+        auto x = bytecode_emit_extract_value(&bb, vec, 0);
+        auto y = bytecode_emit_extract_value(&bb, vec, 1);
+        bytecode_emit_print(&bb, x);
+        bytecode_emit_print(&bb, y);
+        bytecode_emit_return(&bb);
+    }
+
+    auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
+    auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
+    auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
+    bytecode_set_insert_point(&bb, main_fn, main_entry_block);
+    {
+        auto v = bytecode_emit_call(&bb, make_vec2_fn, 0);
+        bytecode_emit_push_arg(&bb, v);
+        bytecode_emit_call(&bb, print_vec2_fn, 1);
+        bytecode_emit_push_arg(&bb, v);
+        auto v_len = bytecode_emit_call(&bb, vec2_len_fn, 1);
+        bytecode_emit_print(&bb, v_len);
+        bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 42));
+    }
 
 
-//     Type *vec2_len_fn_arg_types[] = { vec2_type };
-//     auto vec2_len_fn_type = get_function_type(Type::r32, vec2_len_fn_arg_types, &zc.ast_allocator);
-//     auto vec2_len_fn = bytecode_function_create(&bb, "vec2_len", vec2_len_fn_type);
-//     auto vec2_len_entry_block = bytecode_append_block(&bb, vec2_len_fn, "entry");
-//     bytecode_set_insert_point(&bb, vec2_len_fn, vec2_len_entry_block);
-//     {
-//         auto vec = bytecode_load_argument(&bb, 0);
-//         auto x = bytecode_emit_extract_value(&bb, vec, 0);
-//         auto y = bytecode_emit_extract_value(&bb, vec, 1);
-//         x = bytecode_emit_mul(&bb, x, x);
-//         y = bytecode_emit_mul(&bb, y, y);
-//         auto sum = bytecode_emit_add(&bb, x, y);
-//         auto result = bytecode_emit_sqrt(&bb, sum);
+    print_bytecode(bb);
 
-//         // We are changing this value to verify the struct in the calling function doesn't change
-//         bytecode_emit_insert_value(&bb, vec, sum, vec.type,  0);
+    Bytecode_Validator validator = {};
+    bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    bool bytecode_valid = validate_bytecode(&validator);
 
-//         bytecode_emit_return(&bb, result);
-//     }
+    MunitResult result = MUNIT_OK;
 
-//     auto print_vec2_fn_type = get_function_type(&builtin_type_void, vec2_len_fn_arg_types, &zc.ast_allocator);
-//     auto print_vec2_fn = bytecode_function_create(&bb, "vec2_print", print_vec2_fn_type);
-//     auto print_vec2_entry_block = bytecode_append_block(&bb, print_vec2_fn, "entry");
-//     bytecode_set_insert_point(&bb, print_vec2_fn, print_vec2_entry_block);
-//     {
-//         auto vec = bytecode_load_argument(&bb, 0);
-//         auto x = bytecode_emit_extract_value(&bb, vec, 0);
-//         auto y = bytecode_emit_extract_value(&bb, vec, 1);
-//         bytecode_emit_print(&bb, x);
-//         bytecode_emit_print(&bb, y);
-//         bytecode_emit_return(&bb);
-//     }
+    if (!bytecode_valid) {
+        bytecode_validator_print_errors(&validator);
+        result = MUNIT_FAIL;
 
-//     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
-//     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
-//     auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
-//     bytecode_set_insert_point(&bb, main_fn, main_entry_block);
-//     {
-//         auto v = bytecode_emit_call(&bb, make_vec2_fn, 0);
-//         bytecode_emit_push_arg(&bb, v);
-//         bytecode_emit_call(&bb, print_vec2_fn, 1);
-//         bytecode_emit_push_arg(&bb, v);
-//         auto v_len = bytecode_emit_call(&bb, vec2_len_fn, 1);
-//         bytecode_emit_print(&bb, v_len);
-//         bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 42));
-//     }
+    } else {
 
-//     //bytecode_print(&bb);
+        Interpreter interp = interpreter_create(c_alloc, &zc);
+        interp.std_out = platform_temp_file();
+        auto program = bytecode_get_program(&bb);
+        program.entry_handle = main_fn;
+        Interpreter_Register result_register = interpreter_start(&interp, program);
+        munit_assert(result_register.type == &builtin_type_s64);
+        munit_assert_int64(result_register.value.integer.s64, ==, 42);
 
-//     Bytecode_Validator validator = {};
-//     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-//     bool bytecode_valid = validate_bytecode(&validator);
+        assert_zodiac_stream(interp.std_out, "3.000000\n4.000000\n5.000000\n");
 
-//     MunitResult result = MUNIT_OK;
+        munit_assert(filesystem_close(&interp.std_out));
 
-//     if (!bytecode_valid) {
-//         bytecode_validator_print_errors(&validator);
-//         result = MUNIT_FAIL;
+        interpreter_free(&interp);
+    }
 
-//     } else {
+    bytecode_validator_free(&validator);
+    bytecode_builder_free(&bb);
+    zodiac_context_destroy(&zc);
 
-//         Interpreter interp = interpreter_create(c_alloc, &zc);
-//         interp.std_out = create_temp_file();
-//         auto program = bytecode_get_program(&bb);
-//         program.entry_handle = main_fn;
-//         Interpreter_Register result_register = interpreter_start(&interp, program);
-//         munit_assert(result_register.type == &builtin_type_s64);
-//         assert_int64(result_register.value.integer.s64, ==, 42);
+    return result;
+}
 
-//         assert_zodiac_stream(&interp.std_out, "3.000000\n4.000000\n5.000000\n");
+MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fixture)
+{
+    auto c_alloc = c_allocator();
 
-//         munit_assert(file_close(&interp.std_out) == 0);
+    Zodiac_Context zc;
+    zodiac_context_create(&zc);
+    Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
-//         interpreter_free(&interp);
-//     }
+    auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
+    auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
+    auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
+    bytecode_set_insert_point(&bb, main_fn, main_entry_block);
+    {
+        auto int_alloc = bytecode_emit_alloc(&bb, &builtin_type_s64, "x");
+        bytecode_emit_store_alloc(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 42), int_alloc);
 
-//     bytecode_validator_free(&validator);
-//     bytecode_builder_free(&bb);
-//     zodiac_context_destroy(&zc);
+        auto int_alloc_addr = bytecode_emit_address_of_alloc(&bb, int_alloc);
+        auto int_value = bytecode_emit_load_pointer(&bb, int_alloc_addr);
+        bytecode_emit_print(&bb, int_value);
 
-//     return result;
-// }
+        int_value = bytecode_emit_add(&bb, int_value, bytecode_integer_literal(&bb, &builtin_type_s64, 1));
+        bytecode_emit_store_pointer(&bb, int_value, int_alloc_addr);
 
-// MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fixture)
-// {
-//     auto c_alloc = c_allocator();
+        bytecode_emit_return(&bb, bytecode_emit_load_alloc(&bb, int_alloc));
+    }
 
-//     Zodiac_Context zc;
-//     zodiac_context_create(&zc);
-//     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    print_bytecode(bb);
 
-//     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
-//     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
-//     auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
-//     bytecode_set_insert_point(&bb, main_fn, main_entry_block);
-//     {
-//         auto int_alloc = bytecode_emit_alloc(&bb, &builtin_type_s64, "x");
-//         bytecode_emit_store_alloc(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 42), int_alloc);
+    Bytecode_Validator validator = {};
+    bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    bool bytecode_valid = validate_bytecode(&validator);
 
-//         auto int_alloc_addr = bytecode_emit_address_of_alloc(&bb, int_alloc);
-//         auto int_value = bytecode_emit_load_pointer(&bb, int_alloc_addr);
-//         bytecode_emit_print(&bb, int_value);
+    MunitResult result = MUNIT_OK;
 
-//         int_value = bytecode_emit_add(&bb, int_value, bytecode_integer_literal(&bb, &builtin_type_s64, 1));
-//         bytecode_emit_store_pointer(&bb, int_value, int_alloc_addr);
+    if (!bytecode_valid) {
+        bytecode_validator_print_errors(&validator);
+        result = MUNIT_FAIL;
 
-//         bytecode_emit_return(&bb, bytecode_emit_load_alloc(&bb, int_alloc));
-//     }
+    } else {
 
-//     //bytecode_print(&bb);
+        Interpreter interp = interpreter_create(c_alloc, &zc);
+        interp.std_out = platform_temp_file();
+        auto program = bytecode_get_program(&bb);
+        program.entry_handle = main_fn;
+        Interpreter_Register result_register = interpreter_start(&interp, program);
+        munit_assert(result_register.type == &builtin_type_s64);
+        munit_assert_int64(result_register.value.integer.s64, ==, 43);
 
-//     Bytecode_Validator validator = {};
-//     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-//     bool bytecode_valid = validate_bytecode(&validator);
+        assert_zodiac_stream(interp.std_out, "42\n");
 
-//     MunitResult result = MUNIT_OK;
+        munit_assert(filesystem_close(&interp.std_out));
 
-//     if (!bytecode_valid) {
-//         bytecode_validator_print_errors(&validator);
-//         result = MUNIT_FAIL;
+        interpreter_free(&interp);
+    }
 
-//     } else {
+    bytecode_validator_free(&validator);
+    bytecode_builder_free(&bb);
+    zodiac_context_destroy(&zc);
 
-//         Interpreter interp = interpreter_create(c_alloc, &zc);
-//         interp.std_out = create_temp_file();
-//         auto program = bytecode_get_program(&bb);
-//         program.entry_handle = main_fn;
-//         Interpreter_Register result_register = interpreter_start(&interp, program);
-//         munit_assert(result_register.type == &builtin_type_s64);
-//         assert_int64(result_register.value.integer.s64, ==, 43);
-
-//         assert_zodiac_stream(&interp.std_out, "42\n");
-
-//         munit_assert(file_close(&interp.std_out) == 0);
-
-//         interpreter_free(&interp);
-//     }
-
-//     bytecode_validator_free(&validator);
-//     bytecode_builder_free(&bb);
-//     zodiac_context_destroy(&zc);
-
-//     return result;
-// }
+    return result;
+}
 
 // MunitResult Struct_Pointers(const MunitParameter params[], void *user_data_or_fixture)
 // {
@@ -1885,9 +1886,9 @@ START_TESTS(bytecode_tests)
     DEFINE_TEST(Recursion_And_Jumps),
     DEFINE_TEST(Insert_And_Extract_Value),
     DEFINE_TEST(Extract_Struct_Value),
-    // DEFINE_TEST(Return_Struct),
-    // DEFINE_TEST(Struct_Arguments),
-    // DEFINE_TEST(Basic_Pointers),
+    DEFINE_TEST(Return_Struct),
+    DEFINE_TEST(Struct_Arguments),
+    DEFINE_TEST(Basic_Pointers),
     // DEFINE_TEST(Struct_Pointers),
     // DEFINE_TEST(Invalid_Extract_Element),
     // DEFINE_TEST(Simple_AGG_OFFSET_PTR),

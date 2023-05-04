@@ -793,11 +793,10 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            assert(false);
-            // if (instruction->dest.type->pointer.base != instruction->a.type) {
-            //     bytecode_validator_report_error(validator, "The type of the 'dest' register for 'ADDROF_ALLOC' must be a pointer to the 'a' registers type");
-            //     return false;
-            // }
+            if (instruction->dest.type->pointer.base != instruction->a.type) {
+                bytecode_validator_report_error(validator, "The type of the 'dest' register for 'ADDROF_ALLOC' must be a pointer to the 'a' registers type");
+                return false;
+            }
 
             return true;
             break;
@@ -929,11 +928,10 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            assert(false);
-            // if (instruction->a.type != instruction->b.type->pointer.base) {
-            //     bytecode_validator_report_error(validator, "The type of the 'a' register for 'STORE_PTR' does not match the pointer-base type of the 'b' register");
-            //     return false;
-            // }
+            if (instruction->a.type != instruction->b.type->pointer.base) {
+                bytecode_validator_report_error(validator, "The type of the 'a' register for 'STORE_PTR' does not match the pointer-base type of the 'b' register");
+                return false;
+            }
 
             return true;
             break;
@@ -955,11 +953,10 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            assert(false);
-            // if (instruction->dest.type != instruction->a.type->pointer.base) {
-            //     bytecode_validator_report_error(validator, "The type of the 'dest' register for 'LOAD_PTR' does not match the base type of the pointer type in the 'a' register");
-            //     return false;
-            // }
+            if (instruction->dest.type != instruction->a.type->pointer.base) {
+                bytecode_validator_report_error(validator, "The type of the 'dest' register for 'LOAD_PTR' does not match the base type of the pointer type in the 'a' register");
+                return false;
+            }
 
             return true;
             break;

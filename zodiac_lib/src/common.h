@@ -7,7 +7,7 @@ namespace Zodiac
 
 template <typename T>
 T sqrt(T x) {
-    return sqrt(x);
+    return ::sqrt(x);
 }
 
 template <typename T>

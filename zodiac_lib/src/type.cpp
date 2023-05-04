@@ -17,6 +17,7 @@ Type builtin_type_void;
 Type builtin_type_boolean;
 Type builtin_type_s64;
 Type builtin_type_s32;
+Type builtin_type_r32;
 
 Dynamic_Array<Type *> function_types;
 
@@ -32,6 +33,8 @@ bool type_system_initialize()
 
     create_integer_type(&builtin_type_s64, 64, true);
     create_integer_type(&builtin_type_s32, 32, true);
+
+    create_float_type(&builtin_type_r32, 32);
 
     type_system_initialized = true;
     return true;
@@ -64,6 +67,19 @@ void create_float_type(Type *type, u64 bit_size)
     create_type(type, Type_Kind::FLOAT, bit_size);
 }
 
+void create_pointer_type(Type *type, Type *base_type)
+{
+    assert(type);
+    assert(base_type);
+    assert(!base_type->pointer_to);
+
+    create_type(type, Type_Kind::POINTER, 64);
+
+    type->pointer.base = base_type;
+
+    base_type->pointer_to = type;
+}
+
 void create_struct_type(Type *type, Dynamic_Array<Type *> member_types, Atom name)
 {
     assert(type);
@@ -91,6 +107,19 @@ void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> p
     type->function.return_type = return_type;
     type->function.parameter_types = param_types;
     type->function.is_vararg = false;
+}
+
+Type *get_pointer_type(Type *base, Allocator *allocator)
+{
+    assert(base);
+    assert(allocator);
+
+    if (base->pointer_to) return base->pointer_to;
+
+    auto result = alloc<Type>(allocator);
+    create_pointer_type(result, base);
+
+    return result;
 }
 
 Type *get_struct_type(Zodiac_Context *zc, Array_Ref<Type *> member_types, const char *cstr_name, Allocator *allocator)
@@ -215,12 +244,16 @@ void type_to_string(Type *type, String_Builder *sb)
             break;
         }
 
-        case Type_Kind::FLOAT: assert(false); break;
+        case Type_Kind::FLOAT: {
+            string_builder_append(sb, "r%d", type->bit_size);
+            break;
+        }
 
         case Type_Kind::BOOLEAN: string_builder_append(sb, "bool"); break;
 
-        case Type_Kind::POINTER: assert(false); break;
-        case Type_Kind::STRUCTURE: assert(false); break;
+        case Type_Kind::POINTER: string_builder_append(sb, "*"); type_to_string(type->pointer.base, sb); break;
+
+        case Type_Kind::STRUCTURE: string_builder_append(sb, "%.*s", (int)type->structure.name.length, type->structure.name.data); break;
         case Type_Kind::STATIC_ARRAY: assert(false); break;
         case Type_Kind::FUNCTION: assert(false); break;
     }

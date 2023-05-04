@@ -629,15 +629,14 @@ switch (operand.type->bit_size) { \
         }
 
         case Bytecode_Opcode::STORE_PTR: {
-                                             assert(false);
-            // Interpreter_Register new_value = interpreter_load_register(interp, instruction.a);
-            // Interpreter_Register ptr_value = interpreter_load_register(interp, instruction.b);
+            Interpreter_Register new_value = interpreter_load_register(interp, instruction.a);
+            Interpreter_Register ptr_value = interpreter_load_register(interp, instruction.b);
 
-            // assert(ptr_value.type->kind == Type_Kind::POINTER);
-            // assert(new_value.type == ptr_value.type->pointer.base);
+            assert(ptr_value.type->kind == Type_Kind::POINTER);
+            assert(new_value.type == ptr_value.type->pointer.base);
 
-            // interpreter_store_pointer(interp, new_value, ptr_value.value.pointer);
-            // break;
+            interpreter_store_pointer(interp, new_value, ptr_value.value.pointer);
+            break;
         }
 
         case Bytecode_Opcode::LOAD_PTR: {

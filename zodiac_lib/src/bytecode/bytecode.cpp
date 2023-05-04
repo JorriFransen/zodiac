@@ -663,20 +663,17 @@ Bytecode_Register bytecode_emit_alloc(Bytecode_Builder *builder, Type *type, con
 
 Bytecode_Register bytecode_emit_address_of_alloc(Bytecode_Builder *builder, Bytecode_Register alloc)
 {
-    assert(false);
-    return {};
+    if (!alloc.type->pointer_to) {
+        get_pointer_type(alloc.type, &builder->zodiac_context->ast_allocator);
+    }
 
-    // if (!alloc.type->pointer_to) {
-    //     ast_pointer_type_get_or_new(builder->zodiac_context, alloc.type);
-    // }
+    assert(alloc.type->pointer_to);
 
-    // assert(alloc.type->pointer_to);
+    Bytecode_Register result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, alloc.type->pointer_to);
 
-    // Bytecode_Register result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, alloc.type->pointer_to);
+    bytecode_emit_instruction(builder, Bytecode_Opcode::ADDROF_ALLOC, alloc, {}, result);
 
-    // bytecode_emit_instruction(builder, Bytecode_Opcode::ADDROF_ALLOC, alloc, {}, result);
-
-    // return result;
+    return result;
 }
 
 Bytecode_Register bytecode_emit_address_of_function(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle)
@@ -769,27 +766,22 @@ Bytecode_Register bytecode_emit_load_alloc(Bytecode_Builder *builder, Bytecode_R
 
 void bytecode_emit_store_pointer(Bytecode_Builder *builder, Bytecode_Register source, Bytecode_Register dest)
 {
-    assert(false);
+    assert(source.kind == Bytecode_Register_Kind::TEMPORARY);
+    assert(dest.kind == Bytecode_Register_Kind::TEMPORARY);
+    assert(dest.type->kind == Type_Kind::POINTER);
+    assert(dest.type->pointer.base == source.type);
 
-    // assert(source.kind == Bytecode_Register_Kind::TEMPORARY);
-    // assert(dest.kind == Bytecode_Register_Kind::TEMPORARY);
-    // assert(dest.type->kind == Type_Kind::POINTER);
-    // assert(dest.type->pointer.base == source.type);
-
-    // bytecode_emit_instruction(builder, Bytecode_Opcode::STORE_PTR, source, dest, {});
+    bytecode_emit_instruction(builder, Bytecode_Opcode::STORE_PTR, source, dest, {});
 }
 
 Bytecode_Register bytecode_emit_load_pointer(Bytecode_Builder *builder, Bytecode_Register source)
 {
-    assert(false);
-    return {};
+    assert(source.type->kind == Type_Kind::POINTER);
+    Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, source.type->pointer.base, BC_REGISTER_FLAG_NONE);
 
-    // assert(source.type->kind == Type_Kind::POINTER);
-    // Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, source.type->pointer.base, BC_REGISTER_FLAG_NONE);
+    bytecode_emit_instruction(builder, Bytecode_Opcode::LOAD_PTR, source, {}, result_register);
 
-    // bytecode_emit_instruction(builder, Bytecode_Opcode::LOAD_PTR, source, {}, result_register);
-
-    // return result_register;
+    return result_register;
 }
 
 Bytecode_Register bytecode_emit_insert_value(Bytecode_Builder *builder, Bytecode_Register aggregate, Bytecode_Register new_elem_val, Type *struct_type, s64 index)

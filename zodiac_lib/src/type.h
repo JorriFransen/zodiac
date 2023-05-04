@@ -45,11 +45,17 @@ struct Type
 
     Type_Flags flags;
 
+    Type *pointer_to;
+
     union {
 
         struct {
             bool sign;
         } integer;
+
+        struct {
+            Type *base;
+        } pointer;
 
         struct {
             Atom name;
@@ -72,6 +78,7 @@ ZAPI extern Type builtin_type_void;
 ZAPI extern Type builtin_type_boolean;
 ZAPI extern Type builtin_type_s64;
 ZAPI extern Type builtin_type_s32;
+ZAPI extern Type builtin_type_r32;
 
 ZAPI extern Dynamic_Array<Type *> function_types;
 
@@ -80,9 +87,11 @@ ZAPI bool type_system_initialize();
 ZAPI void create_type(Type *type, Type_Kind kind, u64 bit_size, Type_Flags flags = TYPE_FLAG_NONE);
 ZAPI void create_integer_type(Type *type, u64 bit_size, bool sign);
 ZAPI void create_float_type(Type *type, u64 bit_size);
+ZAPI void create_pointer_type(Type *type, Type *base_type);
 ZAPI void create_struct_type(Type *type, Dynamic_Array<Type *> member_types, Atom name);
 ZAPI void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types);
 
+ZAPI Type *get_pointer_type(Type *base, Allocator *allocator);
 ZAPI Type *get_struct_type(Zodiac_Context *zc, Array_Ref<Type *> member_types, const char *cstr_name, Allocator *allocator);
 ZAPI Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allocator);
 ZAPI Type *get_function_type(Type *return_type, Array_Ref<Type *> param_types, Allocator *allocator);
