@@ -1,5 +1,7 @@
 #include "platform.h"
 
+#ifdef ZPLATFORM_LINUX
+
 #include <cmath>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,7 +14,6 @@
 #include "util/asserts.h"
 #include "util/zstring.h"
 
-#ifdef ZPLATFORM_LINUX
 
 namespace Zodiac
 {
