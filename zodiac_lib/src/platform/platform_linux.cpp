@@ -121,28 +121,36 @@ void platform_console_write(const String_Ref message)
 {
     assert(message.data);
 
-    platform_file_write(filesystem_stdout_file(), message);
+    File_Handle zstdout;
+    filesystem_stdout_file(&zstdout);
+    platform_file_write(&zstdout, message);
 }
 
 void platform_console_write(const String_Ref message, Platform_Console_Color color)
 {
     assert(message.data);
 
-    platform_file_write(filesystem_stdout_file(), message, color);
+    File_Handle zstdout;
+    filesystem_stdout_file(&zstdout);
+    platform_file_write(&zstdout, message, color);
 }
 
 void platform_console_write_error(const String_Ref message)
 {
     assert(message.data);
 
-    platform_file_write(filesystem_stderr_file(), message);
+    File_Handle zstderr;
+    filesystem_stderr_file(&zstderr);
+    platform_file_write(&zstderr, message);
 }
 
 void platform_console_write_error(const String_Ref message, Platform_Console_Color color)
 {
     assert(message.data);
 
-    platform_file_write(filesystem_stderr_file(), message, color);
+    File_Handle zstderr;
+    filesystem_stderr_file(&zstderr);
+    platform_file_write(&zstderr, message, color);
 }
 
 void platform_exit(int exit_code)
