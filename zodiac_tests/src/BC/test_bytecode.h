@@ -391,7 +391,7 @@ file_local MunitResult Insert_And_Extract_Value(const MunitParameter params[], v
     return result;
 }
 
-MunitResult Extract_Struct_Value(const MunitParameter params[], void *user_data_or_fixture)
+file_local MunitResult Extract_Struct_Value(const MunitParameter params[], void *user_data_or_fixture)
 {
     auto c_alloc = c_allocator();
 
@@ -468,7 +468,7 @@ MunitResult Extract_Struct_Value(const MunitParameter params[], void *user_data_
     return MUNIT_OK;
 }
 
-MunitResult Return_Struct(const MunitParameter params[], void *user_data_or_fixture)
+file_local MunitResult Return_Struct(const MunitParameter params[], void *user_data_or_fixture)
 {
     auto c_alloc = c_allocator();
 
@@ -545,7 +545,7 @@ MunitResult Return_Struct(const MunitParameter params[], void *user_data_or_fixt
     return result;
 }
 
-MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_fixture)
+file_local MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_fixture)
 {
     auto c_alloc = c_allocator();
 
@@ -654,7 +654,7 @@ MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_f
     return result;
 }
 
-MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fixture)
+file_local MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fixture)
 {
     auto c_alloc = c_allocator();
 
@@ -716,7 +716,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
     return result;
 }
 
-// MunitResult Struct_Pointers(const MunitParameter params[], void *user_data_or_fixture)
+// file_local MunitResult Struct_Pointers(const MunitParameter params[], void *user_data_or_fixture)
 // {
 //     auto c_alloc = c_allocator();
 
@@ -832,7 +832,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
 //      return MUNIT_OK;
 //  }
 
-// MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture)
+// file_local MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture)
 // {
 //     auto c_alloc = c_allocator();
 
@@ -914,7 +914,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
 //     return result;
 // }
 
-// MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture)
+// file_local MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture)
 // {
 //     auto c_alloc = c_allocator();
 
@@ -1004,7 +1004,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
 //     return result;
 // }
 
-// MunitResult Insert_And_Extract_Element(const MunitParameter params[], void *user_data_or_fixture)
+// file_local MunitResult Insert_And_Extract_Element(const MunitParameter params[], void *user_data_or_fixture)
 // {
 //     auto c_alloc = c_allocator();
 
@@ -1080,7 +1080,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
 //     return result;
 // }
 
-// MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture)
+// file_local MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture)
 // {
 //     auto c_alloc = c_allocator();
 
@@ -1166,7 +1166,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
 //     return result;
 // }
 
-// MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_data_or_fixture)
+// file_local MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_data_or_fixture)
 // {
 //     auto c_alloc = c_allocator();
 
@@ -1291,7 +1291,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
 // }
 
 
-// MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[], void *user_data_or_fixture)
+// file_local MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[], void *user_data_or_fixture)
 // {
 //     auto c_alloc = c_allocator();
 
@@ -1419,7 +1419,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
 //     return result;
 // }
 
-// MunitResult BC_Callback_From_C(const MunitParameter params[], void *user_data_or_fixture)
+// file_local MunitResult BC_Callback_From_C(const MunitParameter params[], void *user_data_or_fixture)
 // {
 //     auto c_alloc = c_allocator();
 
@@ -1528,7 +1528,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
 //     return result;
 // }
 
-// MunitResult Non_Return_Error_Simple(const MunitParameter params[], void *user_data_or_fixture)
+// file_local MunitResult Non_Return_Error_Simple(const MunitParameter params[], void *user_data_or_fixture)
 // {
 //     auto c_alloc = c_allocator();
 
@@ -1620,7 +1620,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
 //     return MUNIT_OK;
 // }
 
-// MunitResult Non_Return_Error_Indirect(const MunitParameter params[], void *user_data_or_fixture)
+// file_local MunitResult Non_Return_Error_Indirect(const MunitParameter params[], void *user_data_or_fixture)
 // {
 //     auto c_alloc = c_allocator();
 
@@ -1705,7 +1705,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
 //     return MUNIT_OK;
 // }
 
-// MunitResult Non_Return_Flag(const MunitParameter params[], void *user_data_or_fixture)
+// file_local MunitResult Non_Return_Flag(const MunitParameter params[], void *user_data_or_fixture)
 // {
 //     auto c_alloc = c_allocator();
 
@@ -1776,7 +1776,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
 //     return MUNIT_OK;
 // }
 
-// MunitResult Globals(const MunitParameter params[], void *user_data_or_fixture)
+// file_local MunitResult Globals(const MunitParameter params[], void *user_data_or_fixture)
 // {
 //     auto c_alloc = c_allocator();
 
@@ -1831,7 +1831,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
 // }
 
 
-// MunitResult Constants(const MunitParameter params[], void *user_data_or_fixture)
+// file_local MunitResult Constants(const MunitParameter params[], void *user_data_or_fixture)
 // {
 //     auto c_alloc = c_allocator();
 
