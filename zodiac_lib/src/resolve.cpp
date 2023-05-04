@@ -95,7 +95,7 @@ void resolve_names(Resolver *resolver)
         if (progress && resolve_errors.count) {
             assert(!done);
             resolve_errors.count = 0;
-            temporary_allocator_reset(&resolver->ctx->resolve_error_allocator_state);
+            temporary_allocator_reset(&resolver->ctx->error_allocator_state);
         }
     }
 }
@@ -142,7 +142,7 @@ void resolve_types(Resolver *resolver)
         if (progress && resolve_errors.count) {
             assert(!done);
             resolve_errors.count = 0;
-            temporary_allocator_reset(&resolver->ctx->resolve_error_allocator_state);
+            temporary_allocator_reset(&resolver->ctx->error_allocator_state);
         }
     }
 }

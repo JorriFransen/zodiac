@@ -14,7 +14,7 @@ void resolve_error_(Source_Pos pos, bool fatal, const String_Ref fmt, va_list ar
 {
     Resolve_Error err;
 
-    err.message = string_format(&ctx->resolve_error_allocator, fmt, args);
+    err.message = string_format(&ctx->error_allocator, fmt, args);
     err.pos = pos;
     err.fatal = fatal;
 

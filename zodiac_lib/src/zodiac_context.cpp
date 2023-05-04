@@ -24,8 +24,8 @@ void zodiac_context_create(Zodiac_Context *out_context)
     temporary_allocator_create(KIBIBYTE(64), nullptr, &out_context->temp_allocator_state);
     out_context->temp_allocator = temporary_allocator_allocator(&out_context->temp_allocator_state);
 
-    temporary_allocator_create(KIBIBYTE(8), nullptr, &out_context->resolve_error_allocator_state);
-    out_context->resolve_error_allocator = temporary_allocator_allocator(&out_context->resolve_error_allocator_state);
+    temporary_allocator_create(KIBIBYTE(8), nullptr, &out_context->error_allocator_state);
+    out_context->error_allocator = temporary_allocator_allocator(&out_context->error_allocator_state);
 
     zodiac_register_keywords(&out_context->atoms);
 }

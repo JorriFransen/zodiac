@@ -1,6 +1,7 @@
 #pragma once
 
 #include "atom.h"
+#include "containers/dynamic_array.h"
 #include "defines.h"
 #include "memory/allocator.h"
 #include "memory/linear_allocator.h"
@@ -8,6 +9,8 @@
 
 namespace Zodiac
 {
+
+struct Zodiac_Error;
 
 struct Zodiac_Context
 {
@@ -19,8 +22,10 @@ struct Zodiac_Context
     Temporary_Allocator temp_allocator_state;
     Allocator temp_allocator;
 
-    Temporary_Allocator resolve_error_allocator_state;
-    Allocator resolve_error_allocator;
+    Temporary_Allocator error_allocator_state;
+    Allocator error_allocator;
+
+    Dynamic_Array<Zodiac_Error> errors;
 };
 
 ZAPI void zodiac_context_create(Zodiac_Context *out_context);
