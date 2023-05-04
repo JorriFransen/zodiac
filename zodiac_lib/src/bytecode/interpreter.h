@@ -53,7 +53,7 @@ struct Interpreter
     Array_Ref<uint8_t> stack_mem = {};
     int64_t stack_mem_used = 0;
 
-    File_Handle *std_out;
+    File_Handle std_out;
 
     // FFI_Context ffi = {};
 };

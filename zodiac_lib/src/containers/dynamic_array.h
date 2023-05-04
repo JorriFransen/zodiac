@@ -29,23 +29,16 @@ struct Dynamic_Array
 template <typename Element_Type>
 struct Array_Ref
 {
-    Element_Type *data;
-    u64 count;
+    Element_Type *data = nullptr;
+    u64 count = 0;
 
-    Array_Ref() {
-        data = nullptr;
-        count = 0;
-    }
+    Array_Ref() = default;
 
-    Array_Ref(const Dynamic_Array<Element_Type> &dyn_arr) {
-        this->data = dyn_arr.data;
-        this->count = dyn_arr.count;
-    }
+    Array_Ref(const Dynamic_Array<Element_Type> &dyn_arr) : data(dyn_arr.data), count(dyn_arr.count) { }
+    Array_Ref(Element_Type *data, u64 count) : data(data), count(count) { }
 
-    Array_Ref(Element_Type *ptr, u64 count) {
-        this->data = ptr;
-        this->count = count;
-    }
+    template <size_t N>
+    constexpr Array_Ref(const Element_Type (&c_arr)[N]) : data((Element_Type *)c_arr), count(N) {}
 
     Element_Type& operator[](u64 index) {
         assert(index >= 0 && index < count);
@@ -123,18 +116,23 @@ Element_Type *dynamic_array_append(Dynamic_Array<Element_Type> *array, Element_T
 }
 
 template <typename Element_Type>
-Dynamic_Array<Element_Type> dynamic_array_copy(Dynamic_Array<Element_Type> *source, Allocator *allocator)
+Dynamic_Array<Element_Type> dynamic_array_copy(const Array_Ref<Element_Type> &source, Allocator *allocator)
 {
-    assert(source);
-    if (source->count == 0) return {};
+    if (source.count == 0) return {};
 
     Dynamic_Array<Element_Type> result;
-    dynamic_array_create(allocator, &result, source->count);
+    dynamic_array_create(allocator, &result, source.count);
 
-    zmemcpy(result.data, source->data, sizeof(Element_Type) * source->count);
-    result.count = source->count;
+    zmemcpy(result.data, source.data, sizeof(Element_Type) * source.count);
+    result.count = source.count;
 
     return result;
+}
+
+template <typename Element_Type>
+Dynamic_Array<Element_Type> dynamic_array_copy(Dynamic_Array<Element_Type> *source, Allocator *allocator)
+{
+    return dynamic_array_copy(Array_Ref<Element_Type>(*source), allocator);
 }
 
 template <typename Element_Type>

@@ -90,13 +90,6 @@ File_Handle platform_temp_file()
     return { result, true };
 }
 
-bool platform_file_close(File_Handle *file)
-{
-    assert(file && file->valid);
-
-    return fclose((FILE *)file->handle) == 0;
-}
-
 void platform_file_write(File_Handle *file, const String_Ref message)
 {
     assert(file->valid && file->handle);

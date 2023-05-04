@@ -76,7 +76,7 @@ ZAPI void create_integer_type(Type *type, u64 bit_size, bool sign);
 ZAPI void create_float_type(Type *type, u64 bit_size);
 ZAPI void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types);
 
-ZAPI Type *get_function_type(Type *return_type, Dynamic_Array<Type *> param_types, Allocator *allocator);
+ZAPI Type *get_function_type(Type *return_type, Array_Ref<Type *> param_types, Allocator *allocator);
 
 ZAPI Type *decl_type(AST_Declaration *decl);
 

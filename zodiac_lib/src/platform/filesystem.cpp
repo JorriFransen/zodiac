@@ -57,13 +57,15 @@ bool filesystem_open(const String_Ref path, File_Mode mode, File_Handle *out_han
     return true;
 }
 
-void filesystem_close(File_Handle *handle)
+bool filesystem_close(File_Handle *handle)
 {
     assert(handle && handle->valid && handle->handle);
 
-    fclose((FILE *)handle->handle);
+    auto res = fclose((FILE *)handle->handle);
     handle->handle = nullptr;
     handle->valid = false;
+
+    return res == 0;
 }
 
 bool filesystem_size(File_Handle *handle, u64 *out_size)
@@ -116,9 +118,6 @@ bool filesystem_write(File_Handle *handle, u64 data_size, const void *data, u64 
     return true;
 }
 
-file_local File_Handle zodiac_stdout = { nullptr, false };
-file_local File_Handle zodiac_stderr = { nullptr, false };
-
 bool filesystem_read_entire_file(Allocator *allocator, const String_Ref path, String *out_string)
 {
     assert(allocator && path.data && out_string);
@@ -150,28 +149,20 @@ bool filesystem_read_entire_file(Allocator *allocator, const String_Ref path, St
     return true;
 }
 
-File_Handle *filesystem_stdout_file()
+void filesystem_stdout_file(File_Handle *out_file)
 {
-    if (!zodiac_stdout.valid) {
-        assert(!zodiac_stdout.handle);
-        zodiac_stdout.handle = stdout;
-        zodiac_stdout.valid = true;
-    }
+    assert(out_file && !out_file->valid);
 
-    assert(zodiac_stdout.handle);
-    return &zodiac_stdout;
+    out_file->handle = stdout;
+    out_file->valid = true;
 }
 
-File_Handle *filesystem_stderr_file()
+void filesystem_stderr_file(File_Handle *out_file)
 {
-    if (!zodiac_stderr.valid) {
-        assert(!zodiac_stderr.handle);
-        zodiac_stderr.handle = stderr;
-        zodiac_stderr.valid = true;
-    }
+    assert(out_file && !out_file->valid);
 
-    assert(zodiac_stderr.handle);
-    return &zodiac_stderr;
+    out_file->handle = stderr;
+    out_file->valid = true;
 }
 
 }

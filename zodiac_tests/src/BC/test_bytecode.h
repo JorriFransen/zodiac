@@ -75,14 +75,14 @@ static MunitResult Building_1(const MunitParameter params[], void* user_data_or_
 }
 
 #define assert_zodiac_stream(stream, expected_string) { \
-    filesystem_flush(stream); \
+    filesystem_flush(&stream); \
     u64 length; \
-    filesystem_size(stream, &length); \
+    filesystem_size(&stream, &length); \
     const auto _buf_size = 1024; \
     munit_assert((int64_t)_buf_size > length); \
     char _buf[_buf_size]; \
     u64 read_length; \
-    bool read_res = filesystem_read(stream, length, (u8 *)_buf, &read_length); \
+    bool read_res = filesystem_read(&stream, length, (u8 *)_buf, &read_length); \
     munit_assert_int((int)read_length, ==, length); \
     _buf[length] = '\0'; \
     munit_assert_int((int)strlen(_buf), ==, (int)strlen(expected_string)); \
@@ -128,8 +128,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
     } else {
 
         Interpreter interp = interpreter_create(c_allocator(), &zc);
-        auto out_file = platform_temp_file();
-        interp.std_out = &out_file;
+        interp.std_out = platform_temp_file();
 
         auto program = bytecode_get_program(&bb);
         program.entry_handle = fn_handle;
@@ -137,7 +136,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
         assert_zodiac_stream(interp.std_out, "42\n");
 
-        munit_assert(platform_file_close(interp.std_out));
+        munit_assert(filesystem_close(&interp.std_out));
 
         interpreter_free(&interp);
 
@@ -150,89 +149,89 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
     return result;
 }
 
-// MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* user_data_or_fixture)
-// {
-//     auto c_alloc = c_allocator();
+MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* user_data_or_fixture)
+{
+    auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
-//     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    Zodiac_Context zc;
+    zodiac_context_create(&zc);
+    Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
-//     // ADD
-//     Type *add_args[] = { &builtin_type_s64, &builtin_type_s64 };
-//     auto add_fn_type = get_function_type(&builtin_type_s64, add_args, &zc.ast_allocator);
-//     auto add_fn_handle = bytecode_function_create(&bb, "add", add_fn_type);
-//     {
-//         auto add_fn_entry_handle = bytecode_append_block(&bb, add_fn_handle, "entry");
+    // ADD
+    Type *add_args[] = { &builtin_type_s64, &builtin_type_s64 };
+    auto add_fn_type = get_function_type(&builtin_type_s64, add_args, &zc.ast_allocator);
+    auto add_fn_handle = bytecode_function_create(&bb, "add", add_fn_type);
+    {
+        auto add_fn_entry_handle = bytecode_append_block(&bb, add_fn_handle, "entry");
 
-//         bytecode_set_insert_point(&bb, add_fn_handle, add_fn_entry_handle);
-//         auto a1 = bytecode_load_argument(&bb, 0);
-//         auto a2 = bytecode_load_argument(&bb, 1);
-//         auto add_result = bytecode_emit_add(&bb, a1, a2);
-//         bytecode_emit_print(&bb, add_result);
-//         bytecode_emit_return(&bb, add_result);
-//     }
+        bytecode_set_insert_point(&bb, add_fn_handle, add_fn_entry_handle);
+        auto a1 = bytecode_load_argument(&bb, 0);
+        auto a2 = bytecode_load_argument(&bb, 1);
+        auto add_result = bytecode_emit_add(&bb, a1, a2);
+        bytecode_emit_print(&bb, add_result);
+        bytecode_emit_return(&bb, add_result);
+    }
 
 
-//     // Main
-//     Bytecode_Function_Handle main_fn_handle = -1;
-//     {
-//         Type *main_fn_type = get_function_type(&builtin_type_void, Array_Ref<Type*>(), &zc.ast_allocator);
+    // Main
+    Bytecode_Function_Handle main_fn_handle = -1;
+    {
+        Type *main_fn_type = get_function_type(&builtin_type_void, Array_Ref<Type*>(), &zc.ast_allocator);
 
-//         main_fn_handle = bytecode_function_create(&bb, "main_fn", main_fn_type);
-//         Bytecode_Block_Handle entry_block_handle = bytecode_append_block(&bb, main_fn_handle, "entry");
+        main_fn_handle = bytecode_function_create(&bb, "main_fn", main_fn_type);
+        Bytecode_Block_Handle entry_block_handle = bytecode_append_block(&bb, main_fn_handle, "entry");
 
-//         bytecode_set_insert_point(&bb, main_fn_handle, entry_block_handle);
+        bytecode_set_insert_point(&bb, main_fn_handle, entry_block_handle);
 
-//         bytecode_emit_push_arg(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 2));
-//         bytecode_emit_push_arg(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 40));
+        bytecode_emit_push_arg(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 2));
+        bytecode_emit_push_arg(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 40));
 
-//         auto result = bytecode_emit_call(&bb, add_fn_handle, 2);
-//         bytecode_emit_print(&bb, result);
+        auto result = bytecode_emit_call(&bb, add_fn_handle, 2);
+        bytecode_emit_print(&bb, result);
 
-//         bytecode_emit_return(&bb);
-//     }
+        bytecode_emit_return(&bb);
+    }
 
-//      //bytecode_print(&bb);
+    print_bytecode(bb);
 
-//     Bytecode_Validator validator = {};
-//     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-//     bool bytecode_valid = validate_bytecode(&validator);
+    Bytecode_Validator validator = {};
+    bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    bool bytecode_valid = validate_bytecode(&validator);
 
-//     MunitResult result = MUNIT_OK;
+    MunitResult result = MUNIT_OK;
 
-//     if (!bytecode_valid) {
-//         bytecode_validator_print_errors(&validator);
-//         result = MUNIT_FAIL;
+    if (!bytecode_valid) {
+        bytecode_validator_print_errors(&validator);
+        result = MUNIT_FAIL;
 
-//     } else {
-//         Interpreter interp = interpreter_create(c_alloc, &zc);
+    } else {
+        Interpreter interp = interpreter_create(c_alloc, &zc);
 
-//         interp.std_out = create_temp_file();
-//         auto program = bytecode_get_program(&bb);
-//         program.entry_handle = main_fn_handle;
-//         interpreter_start(&interp, program);
+        interp.std_out = platform_temp_file();
+        auto program = bytecode_get_program(&bb);
+        program.entry_handle = main_fn_handle;
+        interpreter_start(&interp, program);
 
-//         assert_zodiac_stream(&interp.std_out, "42\n42\n");
+        assert_zodiac_stream(interp.std_out, "42\n42\n");
 
-//         munit_assert(file_close(&interp.std_out) == 0);
+        munit_assert(filesystem_close(&interp.std_out) == 0);
 
-//         interpreter_free(&interp);
-//     }
+        interpreter_free(&interp);
+    }
 
-//     bytecode_validator_free(&validator);
-//     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+    bytecode_validator_free(&validator);
+    bytecode_builder_free(&bb);
+    zodiac_context_destroy(&zc);
 
-//     return result;
-// }
+    return result;
+}
 
 // MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_or_fixture)
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     // recurse
@@ -312,7 +311,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return result;
 // }
@@ -321,8 +320,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     auto fn_type = get_function_type(&builtin_type_void, { }, &zc.ast_allocator);
@@ -386,7 +385,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return result;
 // }
@@ -395,8 +394,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
@@ -462,7 +461,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     interpreter_free(&interp);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return MUNIT_OK;
 // }
@@ -471,8 +470,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
@@ -539,7 +538,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return result;
 // }
@@ -548,8 +547,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     Type *vec2_mem_types[] = { Type::r32, Type::r32 };
@@ -648,7 +647,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return result;
 // }
@@ -657,8 +656,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
@@ -710,7 +709,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return result;
 // }
@@ -719,8 +718,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
@@ -770,7 +769,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return result;
 // }
@@ -779,8 +778,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 //  {
 //      auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//      Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //      Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //      Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
@@ -826,7 +825,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //      return MUNIT_OK;
 //  }
@@ -835,8 +834,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
@@ -908,7 +907,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return result;
 // }
@@ -917,8 +916,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
@@ -998,7 +997,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return result;
 // }
@@ -1007,8 +1006,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     auto array_type = ast_static_array_type_get_or_new(&zc, &builtin_type_s64, 5);
@@ -1074,7 +1073,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return result;
 // }
@@ -1083,8 +1082,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     auto array_type = ast_static_array_type_get_or_new(&zc, &builtin_type_s64, 5);
@@ -1160,7 +1159,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return result;
 // }
@@ -1169,8 +1168,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     Type *add_arg_types[] = { &builtin_type_s64, &builtin_type_s64 };
@@ -1284,7 +1283,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return result;
 // }
@@ -1294,8 +1293,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
@@ -1413,7 +1412,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return result;
 // }
@@ -1422,8 +1421,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     Interpreter interp = interpreter_create(c_alloc, &zc);
@@ -1522,7 +1521,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return result;
 // }
@@ -1531,8 +1530,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
@@ -1614,7 +1613,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return MUNIT_OK;
 // }
@@ -1623,8 +1622,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
@@ -1699,7 +1698,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return MUNIT_OK;
 // }
@@ -1708,8 +1707,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
@@ -1770,7 +1769,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
 //     bytecode_validator_free(&validator);
 //     bytecode_builder_free(&bb);
-//     zodiac_context_free(&zc);
+//     zodiac_context_destroy(&zc);
 
 //     return MUNIT_OK;
 // }
@@ -1779,8 +1778,8 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 // {
 //     auto c_alloc = c_allocator();
 
-//     Atom_Table at = {};
-//     Zodiac_Context zc = zodiac_context_create(c_alloc, &at);
+//     Zodiac_Context zc;
+//     zodiac_context_create(&zc);
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     auto global_var = bytecode_create_global(&bb, "global_var", &builtin_type_s64);

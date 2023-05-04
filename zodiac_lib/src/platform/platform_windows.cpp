@@ -105,13 +105,6 @@ File_Handle platform_temp_file()
     return f;
 }
 
-bool platform_file_close(File_Handle *file)
-{
-    assert(file && file->valid);
-
-    return fclose((FILE *)file->handle) == 0;
-}
-
 void platform_file_write(File_Handle *file, const String_Ref message)
 {
     assert(file->valid && file->handle);
@@ -141,22 +134,30 @@ void platform_file_write(File_Handle *file, const String_Ref message, Platform_C
 
 void platform_console_write(const String_Ref message)
 {
-    platform_file_write(filesystem_stdout_file(), message);
+    File_Handle zstdout;
+    filesystem_stdout_file(&zstdout);
+    platform_file_write(&zstdout, message);
 }
 
 void platform_console_write(const String_Ref message, Platform_Console_Color color)
 {
-    platform_file_write(filesystem_stdout_file(), message, color);
+    File_Handle zstdout;
+    filesystem_stdout_file(&zstdout);
+    platform_file_write(&zstdout, message, color);
 }
 
 void platform_console_write_error(const String_Ref message)
 {
-    platform_file_write(filesystem_stderr_file(), message);
+    File_Handle zstderr;
+    filesystem_stderr_file(&zstderr);
+    platform_file_write(&zstderr, message);
 }
 
 void platform_console_write_error(const String_Ref message, Platform_Console_Color color)
 {
-    platform_file_write(filesystem_stderr_file(), message, color);
+    File_Handle zstderr;
+    filesystem_stderr_file(&zstderr);
+    platform_file_write(&zstderr, message, color);
 }
 
 void platform_exit(int exit_code)

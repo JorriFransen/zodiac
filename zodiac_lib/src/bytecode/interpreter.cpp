@@ -30,7 +30,7 @@ Interpreter interpreter_create(Allocator *allocator, Zodiac_Context *context)
     result.stack_mem.count = stack_mem_size;
     result.stack_mem_used = 0;
 
-    result.std_out = filesystem_stdout_file();
+    filesystem_stdout_file(&result.std_out);
 
     // result.ffi = ffi_create(allocator, context, true, interpreter_handle_ffi_callback);
 
@@ -381,7 +381,7 @@ switch (operand.type->bit_size) { \
                    operand.type->kind == Type_Kind::BOOLEAN ||
                    operand.type->kind == Type_Kind::POINTER);
 
-            auto out_handle = (FILE *)interp->std_out->handle;
+            auto out_handle = (FILE *)interp->std_out.handle;
 
             switch (operand.type->kind) {
                 default: assert(false); break;

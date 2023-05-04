@@ -13,8 +13,8 @@ namespace Zodiac
 
 struct Logging_System_State
 {
-    File_Handle *out_file;
-    File_Handle *err_file;
+    File_Handle out_file;
+    File_Handle err_file;
     File_Handle log_file;
 };
 
@@ -27,8 +27,8 @@ bool logging_system_initialize()
 {
     if (logging_system_initialized) assert(false && !"Logging system already initialized");
 
-    logging_system_state.out_file = filesystem_stdout_file();
-    logging_system_state.err_file = filesystem_stderr_file();
+    filesystem_stdout_file(&logging_system_state.out_file);
+    filesystem_stderr_file(&logging_system_state.err_file);
 
     if (!filesystem_open("console.log", FILE_MODE_WRITE, &logging_system_state.log_file)) {
         platform_console_write_error("ERROR: Unable to open 'console.log' for writing!", Platform_Console_Color::Red);
@@ -40,16 +40,16 @@ bool logging_system_initialize()
     return true;
 }
 
-void logging_system_set_stdout_file(File_Handle *out_file)
+void logging_system_set_stdout_file(File_Handle out_file)
 {
-    assert(out_file->valid && out_file->handle);
+    assert(out_file.valid && out_file.handle);
 
     logging_system_state.out_file = out_file;
 }
 
-void logging_system_set_stderr_file(File_Handle *err_file)
+void logging_system_set_stderr_file(File_Handle err_file)
 {
-    assert(err_file->valid && err_file->handle);
+    assert(err_file.valid && err_file.handle);
 
     logging_system_state.err_file = err_file;
 }
@@ -94,9 +94,9 @@ void log_message(Log_Level log_level, const String_Ref fmt, ...)
     }
 
     if (log_level <= Log_Level::ERROR) {
-        platform_file_write(logging_system_state.err_file, out_message, level_colors[level_index]);
+        platform_file_write(&logging_system_state.err_file, out_message, level_colors[level_index]);
     } else {
-        platform_file_write(logging_system_state.out_file, out_message, level_colors[level_index]);
+        platform_file_write(&logging_system_state.out_file, out_message, level_colors[level_index]);
     }
 
     write_log_file(out_message);

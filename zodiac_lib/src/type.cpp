@@ -74,7 +74,7 @@ void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> p
     type->function.is_vararg = false;
 }
 
-Type *get_function_type(Type *return_type, Dynamic_Array<Type *> parameter_types, Allocator *allocator)
+Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Allocator *allocator)
 {
     assert(return_type);
     assert(allocator);
@@ -96,7 +96,7 @@ Type *get_function_type(Type *return_type, Dynamic_Array<Type *> parameter_types
         if (param_match) return ex_type;
     }
 
-    auto params_copy = dynamic_array_copy(&parameter_types, allocator);
+    auto params_copy = dynamic_array_copy(parameter_types, allocator);
 
     Type *result = alloc<Type>(allocator);
     create_function_type(result, return_type, params_copy);
@@ -192,7 +192,7 @@ String type_to_string(Allocator *allocator, Type *type)
     String result = string_builder_to_string(&sb);
 
     string_builder_destroy(&sb);
-    
+
     return result;
 }
 

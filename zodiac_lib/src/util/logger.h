@@ -20,8 +20,8 @@ enum class Log_Level
 };
 
 ZAPI bool logging_system_initialize();
-ZAPI void logging_system_set_stdout_file(File_Handle *out_file);
-ZAPI void logging_system_set_stderr_file(File_Handle *err_file);
+ZAPI void logging_system_set_stdout_file(File_Handle out_file);
+ZAPI void logging_system_set_stderr_file(File_Handle err_file);
 
 ZAPI void log_message(Log_Level log_level, const String_Ref fmt, ...);
 
