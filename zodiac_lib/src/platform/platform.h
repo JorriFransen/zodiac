@@ -26,6 +26,8 @@ enum class Platform_Console_Color
 
 ZAPI File_Handle platform_temp_file();
 
+ZAPI bool platform_file_close(File_Handle *file);
+
 ZAPI void platform_file_write(File_Handle *file, const String_Ref message);
 ZAPI void platform_file_write(File_Handle *file, const String_Ref message, Platform_Console_Color color);
 

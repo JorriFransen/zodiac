@@ -9,7 +9,7 @@
 #include "type.h"
 #include "zodiac_context.h"
 
-#define PRINT_BYTECODE_IN_TESTS 1
+#define PRINT_BYTECODE_IN_TESTS 0
 
 #if PRINT_BYTECODE_IN_TESTS
 #include "bytecode/printer.h"
@@ -137,7 +137,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
 
         assert_zodiac_stream(interp.std_out, "42\n");
 
-        // munit_assert(file_close(&interp.std_out) == 0);
+        munit_assert(platform_file_close(interp.std_out));
 
         interpreter_free(&interp);
 
