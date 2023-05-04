@@ -9,6 +9,7 @@ namespace Zodiac
 struct Allocator;
 struct AST_Declaration;
 struct String_Builder;
+struct Zodiac_Context;
 
 enum class Type_Kind
 {
@@ -51,8 +52,13 @@ struct Type
         } integer;
 
         struct {
+            Atom name;
+            Dynamic_Array<Type *> member_types;
+        } structure;
+
+        struct {
             Type *return_type;
-            Dynamic_Array<Type*> parameter_types;
+            Dynamic_Array<Type *> parameter_types;
             bool is_vararg;
         } function;
 
@@ -74,8 +80,11 @@ ZAPI bool type_system_initialize();
 ZAPI void create_type(Type *type, Type_Kind kind, u64 bit_size, Type_Flags flags = TYPE_FLAG_NONE);
 ZAPI void create_integer_type(Type *type, u64 bit_size, bool sign);
 ZAPI void create_float_type(Type *type, u64 bit_size);
+ZAPI void create_struct_type(Type *type, Dynamic_Array<Type *> member_types, Atom name);
 ZAPI void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types);
 
+ZAPI Type *get_struct_type(Zodiac_Context *zc, Array_Ref<Type *> member_types, const char *cstr_name, Allocator *allocator);
+ZAPI Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allocator);
 ZAPI Type *get_function_type(Type *return_type, Array_Ref<Type *> param_types, Allocator *allocator);
 
 ZAPI Type *decl_type(AST_Declaration *decl);

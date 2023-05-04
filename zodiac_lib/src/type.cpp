@@ -5,6 +5,7 @@
 #include "memory/zmemory.h"
 #include "util/asserts.h"
 #include "util/string_builder.h"
+#include "zodiac_context.h"
 
 namespace Zodiac
 {
@@ -63,6 +64,24 @@ void create_float_type(Type *type, u64 bit_size)
     create_type(type, Type_Kind::FLOAT, bit_size);
 }
 
+void create_struct_type(Type *type, Dynamic_Array<Type *> member_types, Atom name)
+{
+    assert(type);
+
+    u64 bit_size = 0;
+    for (u64 i = 0; i < member_types.count; i++) {
+        //TODO: Alignment
+        bit_size += member_types[i]->bit_size;
+    }
+
+    assert(bit_size % 8 == 0);
+
+    create_type(type, Type_Kind::STRUCTURE, bit_size, TYPE_FLAG_AGGREGATE);
+
+    type->structure.name = name;
+    type->structure.member_types = member_types;
+}
+
 void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types)
 {
     assert(type);
@@ -72,6 +91,28 @@ void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> p
     type->function.return_type = return_type;
     type->function.parameter_types = param_types;
     type->function.is_vararg = false;
+}
+
+Type *get_struct_type(Zodiac_Context *zc, Array_Ref<Type *> member_types, const char *cstr_name, Allocator *allocator)
+{
+    assert(zc);
+    assert(cstr_name);
+    assert(allocator);
+
+    Atom name_atom = atom_get(&zc->atoms, cstr_name);
+    return get_struct_type(member_types, name_atom, allocator);
+}
+
+Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allocator)
+{
+    assert(member_types.count);
+    assert(allocator);
+
+    auto result = alloc<Type>(allocator);
+    auto members_copy = dynamic_array_copy(member_types, allocator);
+
+    create_struct_type(result, members_copy, name);
+    return result;
 }
 
 Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Allocator *allocator)

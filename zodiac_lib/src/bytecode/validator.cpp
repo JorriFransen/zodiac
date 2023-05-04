@@ -967,133 +967,131 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
 
         case Bytecode_Opcode::INSERT_VALUE: {
 
-            assert(false);
-            // Type *aggregate_type = nullptr;
+            Type *aggregate_type = nullptr;
 
-            // if (instruction->a.kind != Bytecode_Register_Kind::INVALID) {
+            if (instruction->a.kind != Bytecode_Register_Kind::INVALID) {
 
-            //     if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY &&
-            //         instruction->a.kind != Bytecode_Register_Kind::UNDEF) {
-            //         bytecode_validator_report_error(validator, "The 'a' register of 'INSERT_VALUE' must be a temporary or <undef>");
+                if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY &&
+                    instruction->a.kind != Bytecode_Register_Kind::UNDEF) {
+                    bytecode_validator_report_error(validator, "The 'a' register of 'INSERT_VALUE' must be a temporary or <undef>");
 
-            //         return false;
-            //     }
+                    return false;
+                }
 
-            //     if (!(instruction->a.type->flags & TYPE_FLAG_AGGREGATE)) {
-            //         bytecode_validator_report_error(validator, "The 'a' register of 'INSERT_VALUE' must be an aggregate");
-            //         return false;
-            //     }
+                if (!(instruction->a.type->flags & TYPE_FLAG_AGGREGATE)) {
+                    bytecode_validator_report_error(validator, "The 'a' register of 'INSERT_VALUE' must be an aggregate");
+                    return false;
+                }
 
-            //     if (instruction->a.type->kind != Type_Kind::STRUCTURE) {
-            //         bytecode_validator_report_error(validator, "The 'a' register of 'INSERT_VALUE' must be of struct type");
-            //         return false;
-            //     }
+                if (instruction->a.type->kind != Type_Kind::STRUCTURE) {
+                    bytecode_validator_report_error(validator, "The 'a' register of 'INSERT_VALUE' must be of struct type");
+                    return false;
+                }
 
-            //     aggregate_type = instruction->a.type;
+                aggregate_type = instruction->a.type;
 
-            // }
+            }
 
-            // if (instruction->b.kind != Bytecode_Register_Kind::TEMPORARY) {
-            //     bytecode_validator_report_error(validator, "The 'b' register of 'INSERT_VALUE' must be a temporary");
-            //     return false;
-            // }
+            if (instruction->b.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'b' register of 'INSERT_VALUE' must be a temporary");
+                return false;
+            }
 
-            // if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
-            //     bytecode_validator_report_error(validator, "The 'dest' register of 'INSERT_VALUE' must be a temporary");
-            //     return false;
-            // }
+            if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'dest' register of 'INSERT_VALUE' must be a temporary");
+                return false;
+            }
 
-            // Type *dest_type = instruction->dest.type;
-            // if (!(dest_type->flags & TYPE_FLAG_AGGREGATE)) {
-            //     bytecode_validator_report_error(validator, "The 'dest' register of 'INSERT_VALUE' is not of aggregate type");
-            //     return 0;
-            // }
+            Type *dest_type = instruction->dest.type;
+            if (!(dest_type->flags & TYPE_FLAG_AGGREGATE)) {
+                bytecode_validator_report_error(validator, "The 'dest' register of 'INSERT_VALUE' is not of aggregate type");
+                return 0;
+            }
 
-            // if (dest_type->kind != Type_Kind::STRUCTURE) {
-            //     bytecode_validator_report_error(validator, "The 'dest' register of 'INSERT_VALUE' is not of struct type");
-            //     return false;
-            // }
+            if (dest_type->kind != Type_Kind::STRUCTURE) {
+                bytecode_validator_report_error(validator, "The 'dest' register of 'INSERT_VALUE' is not of struct type");
+                return false;
+            }
 
-            // if (aggregate_type && !(aggregate_type == dest_type)) {
-            //     bytecode_validator_report_error(validator, "The type of the 'dest' register  for 'INSERT_VALUE' does not match the type of the 'a' register");
-            //     return false;
-            // }
+            if (aggregate_type && !(aggregate_type == dest_type)) {
+                bytecode_validator_report_error(validator, "The type of the 'dest' register  for 'INSERT_VALUE' does not match the type of the 'a' register");
+                return false;
+            }
 
-            // assert(dest_type->kind == Type_Kind::STRUCTURE);
-            // auto member_count = dest_type->structure.member_types.count;
+            assert(dest_type->kind == Type_Kind::STRUCTURE);
+            auto member_count = dest_type->structure.member_types.count;
 
-            // if (instruction->additional_index < 0 || instruction->additional_index > member_count) {
-            //     bytecode_validator_report_error(validator, "Index for 'INSERT_VALUE' is not in range of the specified aggregate type");
-            //     return false;
-            // }
+            if (instruction->additional_index < 0 || instruction->additional_index > member_count) {
+                bytecode_validator_report_error(validator, "Index for 'INSERT_VALUE' is not in range of the specified aggregate type");
+                return false;
+            }
 
-            // assert(dest_type->kind == Type_Kind::STRUCTURE);
-            // auto dest_elem_type = dest_type->structure.member_types[instruction->additional_index];
+            assert(dest_type->kind == Type_Kind::STRUCTURE);
+            auto dest_elem_type = dest_type->structure.member_types[instruction->additional_index];
 
-            // if (dest_elem_type != instruction->b.type) {
-            //     bytecode_validator_report_error(validator, "The 'b' registers type does noet match the aggregate member type at the specified index ('INSERT_VALUE')");
-            //     return false;
-            // }
+            if (dest_elem_type != instruction->b.type) {
+                bytecode_validator_report_error(validator, "The 'b' registers type does noet match the aggregate member type at the specified index ('INSERT_VALUE')");
+                return false;
+            }
 
-            // return true;
-            // break;
+            return true;
+            break;
         }
 
         case Bytecode_Opcode::EXTRACT_VALUE: {
-            assert(false);
-            // if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
-            //     bytecode_validator_report_error(validator, "The 'a' register for 'EXTRACT_VALUE' must be a temporary");
-            //     return false;;
-            // }
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'a' register for 'EXTRACT_VALUE' must be a temporary");
+                return false;;
+            }
 
-            // if (!(instruction->a.type->flags & TYPE_FLAG_AGGREGATE)) {
-            //     bytecode_validator_report_error(validator, "The 'a' register for 'EXTRACT_VALUE' is not an aggregate");
-            //     return false;
-            // }
+            if (!(instruction->a.type->flags & TYPE_FLAG_AGGREGATE)) {
+                bytecode_validator_report_error(validator, "The 'a' register for 'EXTRACT_VALUE' is not an aggregate");
+                return false;
+            }
 
-            // if (instruction->a.type->kind != Type_Kind::STRUCTURE) {
-            //     bytecode_validator_report_error(validator, "The 'a' register for 'EXTRACT_VALUE' is not of struct type");
-            //     return false;
-            // }
+            if (instruction->a.type->kind != Type_Kind::STRUCTURE) {
+                bytecode_validator_report_error(validator, "The 'a' register for 'EXTRACT_VALUE' is not of struct type");
+                return false;
+            }
 
-            // Type *aggregate_type = instruction->a.type;
+            Type *aggregate_type = instruction->a.type;
 
-            // if (instruction->b.kind != Bytecode_Register_Kind::TEMPORARY) {
-            //     bytecode_validator_report_error(validator, "The 'b' register for 'EXTRACT_VALUE' must be a temporary");
-            // }
+            if (instruction->b.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'b' register for 'EXTRACT_VALUE' must be a temporary");
+            }
 
-            // if (instruction->b.type != &builtin_type_s32) {
-            //     bytecode_validator_report_error(validator, "The 'b' register for 'EXTRACT_VALUE' does not have the expected integer type (s32)");
-            //     return false;
-            // }
+            if (instruction->b.type != &builtin_type_s32) {
+                bytecode_validator_report_error(validator, "The 'b' register for 'EXTRACT_VALUE' does not have the expected integer type (s32)");
+                return false;
+            }
 
-            // if (!(instruction->b.flags & BC_REGISTER_FLAG_LITERAL)) {
-            //     bytecode_validator_report_error(validator, "The 'b' register for 'EXTRACT_VALUE' must be a literal");
-            //     return false;
-            // }
+            if (!(instruction->b.flags & BC_REGISTER_FLAG_LITERAL)) {
+                bytecode_validator_report_error(validator, "The 'b' register for 'EXTRACT_VALUE' must be a literal");
+                return false;
+            }
 
-            // auto index = instruction->b.value.integer.s32;
+            auto index = instruction->b.value.integer.s32;
 
-            // assert(aggregate_type->kind == Type_Kind::STRUCTURE);
-            // if (index < 0 || index > aggregate_type->structure.member_types.count) {
-            //     bytecode_validator_report_error(validator, "The index specified in the 'b' register for 'EXTRACT_ELEMENT' is out of range for the specified aggregate type");
-            //     return false;
-            // }
+            assert(aggregate_type->kind == Type_Kind::STRUCTURE);
+            if (index < 0 || index > aggregate_type->structure.member_types.count) {
+                bytecode_validator_report_error(validator, "The index specified in the 'b' register for 'EXTRACT_ELEMENT' is out of range for the specified aggregate type");
+                return false;
+            }
 
-            // Type *result_type = aggregate_type->structure.member_types[index];
+            Type *result_type = aggregate_type->structure.member_types[index];
 
-            // if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
-            //     bytecode_validator_report_error(validator, "The 'dest' register for 'EXTRACT_VALUE' must be a temporary");
-            //     return false;
-            // }
+            if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'EXTRACT_VALUE' must be a temporary");
+                return false;
+            }
 
-            // if (result_type != instruction->dest.type) {
-            //     bytecode_validator_report_error(validator, "The 'dest' register for 'EXTRACT_VALUE' does not match the expected aggregate member type");
-            //     return false;
-            // }
+            if (result_type != instruction->dest.type) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'EXTRACT_VALUE' does not match the expected aggregate member type");
+                return false;
+            }
 
-            // return true;
-            // break;
+            return true;
+            break;
         }
 
         case Bytecode_Opcode::INSERT_ELEMENT: {

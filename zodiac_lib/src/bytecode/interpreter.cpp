@@ -653,95 +653,92 @@ switch (operand.type->bit_size) { \
         }
 
         case Bytecode_Opcode::INSERT_VALUE: {
+            Type *struct_type = instruction.dest.type;
+            assert(struct_type->flags & TYPE_FLAG_AGGREGATE);
+            assert(struct_type->kind == Type_Kind::STRUCTURE);
 
-                                                assert(false);
-//             Type *struct_type = instruction.dest.type;
-//             assert(struct_type->flags & TYPE_FLAG_AGGREGATE);
-//             assert(struct_type->kind == Type_Kind::STRUCTURE);
+            auto &member_types = struct_type->structure.member_types;
+            assert(instruction.additional_index < member_types.count);
 
-//             auto &member_types = struct_type->structure.member_types;
-//             assert(instruction.additional_index < member_types.count);
+#ifndef NDEBUG
+            Type *member_type = member_types[instruction.additional_index];
+            assert(member_type == instruction.b.type);
+#endif
 
-// #ifndef NDEBUG
-//             Type *member_type = member_types[instruction.additional_index];
-//             assert(member_type == instruction.b.type);
-// #endif
+            // @Cleanup: @TODO: @FIXME: alignment?
+            assert(struct_type->bit_size % 8 == 0);
+            auto size = struct_type->bit_size / 8;
+            assert(frame->sp + size <= frame->stack_mem.data + frame->stack_mem.count);
 
-//             // @Cleanup: @TODO: @FIXME: alignment?
-//             assert(struct_type->bit_size % 8 == 0);
-//             auto size = struct_type->bit_size / 8;
-//             assert(frame->sp + size <= frame->stack_mem.data + frame->stack_mem.count);
+            uint8_t *ptr = frame->sp;
+            frame->sp += size;
 
-//             uint8_t *ptr = frame->sp;
-//             frame->sp += size;
+            Interpreter_Register result_value = {
+                .type = struct_type,
+                .pointer = ptr,
+            };
 
-//             Interpreter_Register result_value = {
-//                 .type = struct_type,
-//                 .pointer = ptr,
-//             };
+            if (instruction.a.kind == Bytecode_Register_Kind::UNDEF) {
+                memset(result_value.pointer, 0, size);
+            } else {
+                assert_msg(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY,
+                           "[Interpreter] a register of INSERT_VALUE must be a temporary register or <undef>");
 
-//             if (instruction.a.kind == Bytecode_Register_Kind::UNDEF) {
-//                 memset(result_value.pointer, 0, size);
-//             } else {
-//                 zodiac_assert_fatal(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY,
-//                                     "[Interpreter] a register of INSERT_VALUE must be a temporary register or <undef>");
+                // @TODO: @FIXME: When we do register allocation, we'll only have
+                //                  to copy the old value over when we don't use
+                //                  the same register...
+                Interpreter_Register old_value = interpreter_load_register(interp, instruction.a);
+                assert(old_value.type == struct_type);
+                interpreter_store_pointer(interp, old_value, result_value.pointer);
+            }
 
-//                 // @TODO: @FIXME: When we do register allocation, we'll only have
-//                 //                  to copy the old value over when we don't use
-//                 //                  the same register...
-//                 Interpreter_Register old_value = interpreter_load_register(interp, instruction.a);
-//                 assert(old_value.type == struct_type);
-//                 interpreter_store_pointer(interp, old_value, result_value.pointer);
-//             }
+            uint64_t member_offset = 0;
+            for (int64_t i = 0; i < instruction.additional_index; i++) {
+                // @Cleanup: @TODO: @FIXME: alignment?
+                auto mem_type = member_types[i];
+                assert(mem_type->bit_size % 8 == 0);
+                member_offset += (mem_type->bit_size / 8);
+            }
 
-//             uint64_t member_offset = 0;
-//             for (int64_t i = 0; i < instruction.additional_index; i++) {
-//                 // @Cleanup: @TODO: @FIXME: alignment?
-//                 auto mem_type = member_types[i];
-//                 assert(mem_type->bit_size % 8 == 0);
-//                 member_offset += (mem_type->bit_size / 8);
-//             }
+            uint8_t *elem_ptr = result_value.pointer + member_offset;
 
-//             uint8_t *elem_ptr = result_value.pointer + member_offset;
+            Interpreter_Register new_value = interpreter_load_register(interp, instruction.b);
+            interpreter_store_pointer(interp, new_value, elem_ptr);
 
-//             Interpreter_Register new_value = interpreter_load_register(interp, instruction.b);
-//             interpreter_store_pointer(interp, new_value, elem_ptr);
+            interpreter_store_register(interp, result_value, instruction.dest);
 
-//             interpreter_store_register(interp, result_value, instruction.dest);
-
-//             break;
+            break;
         }
 
         case Bytecode_Opcode::EXTRACT_VALUE: {
-                                                 assert(false);
-            // Interpreter_Register agg_val = interpreter_load_register(interp, instruction.a);
-            // Interpreter_Register index_val = interpreter_load_register(interp, instruction.b);
+            Interpreter_Register agg_val = interpreter_load_register(interp, instruction.a);
+            Interpreter_Register index_val = interpreter_load_register(interp, instruction.b);
 
-            // Type *agg_type = agg_val.type;
-            // assert(agg_type->flags & TYPE_FLAG_AGGREGATE);
-            // assert(agg_type->kind == Type_Kind::STRUCTURE);
+            Type *agg_type = agg_val.type;
+            assert(agg_type->flags & TYPE_FLAG_AGGREGATE);
+            assert(agg_type->kind == Type_Kind::STRUCTURE);
 
-            // assert(index_val.type == &builtin_type_s32);
-            // int32_t index = index_val.value.integer.s32;
+            assert(index_val.type == &builtin_type_s32);
+            int32_t index = index_val.value.integer.s32;
 
-            // auto &member_types = agg_type->structure.member_types;
-            // assert(index >= 0 && index < member_types.count);
+            auto &member_types = agg_type->structure.member_types;
+            assert(index >= 0 && index < member_types.count);
 
-            // assert(agg_val.pointer);
-            // uint8_t *ptr = agg_val.pointer;
-            // for (int64_t i = 0; i < index; i++) {
-            //     Type *member_type = member_types[i];
-            //     // @Cleanup: @TODO: @FIXME: alignment?
-            //     assert(member_type->bit_size % 8 == 0);
-            //     ptr += (member_type->bit_size / 8);
-            // }
+            assert(agg_val.pointer);
+            uint8_t *ptr = agg_val.pointer;
+            for (int64_t i = 0; i < index; i++) {
+                Type *member_type = member_types[i];
+                // @Cleanup: @TODO: @FIXME: alignment?
+                assert(member_type->bit_size % 8 == 0);
+                ptr += (member_type->bit_size / 8);
+            }
 
-            // Type *member_type = member_types[index];
-            // Interpreter_Register result = interpreter_load_pointer(interp, ptr, member_type);
+            Type *member_type = member_types[index];
+            Interpreter_Register result = interpreter_load_pointer(interp, ptr, member_type);
 
-            // interpreter_store_register(interp, result, instruction.dest);
+            interpreter_store_register(interp, result, instruction.dest);
 
-            // break;
+            break;
         }
 
         case Bytecode_Opcode::INSERT_ELEMENT: {

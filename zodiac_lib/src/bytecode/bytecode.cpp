@@ -794,60 +794,54 @@ Bytecode_Register bytecode_emit_load_pointer(Bytecode_Builder *builder, Bytecode
 
 Bytecode_Register bytecode_emit_insert_value(Bytecode_Builder *builder, Bytecode_Register aggregate, Bytecode_Register new_elem_val, Type *struct_type, s64 index)
 {
-    assert(false);
-    return {};
+    assert(struct_type);
+    assert(struct_type->flags & TYPE_FLAG_AGGREGATE);
+    assert(struct_type->kind == Type_Kind::STRUCTURE);
 
-//     assert(struct_type);
-//     assert(struct_type->flags & AST_TYPE_FLAG_AGGREGATE);
-//     assert(struct_type->kind == Type_Kind::STRUCTURE);
+    if (aggregate.kind == Bytecode_Register_Kind::INVALID) {
+        assert(aggregate.type == nullptr);
+        aggregate.kind = Bytecode_Register_Kind::UNDEF;
+        aggregate.type = struct_type;
+    }
 
-//     if (aggregate.kind == Bytecode_Register_Kind::INVALID) {
-//         assert(aggregate.type == nullptr);
-//         aggregate.kind = Bytecode_Register_Kind::UNDEF;
-//         aggregate.type = struct_type;
-//     }
+    auto members = struct_type->structure.member_types;
+    assert(members.count > index);
 
-//     auto members = struct_type->structure.member_types;
-//     assert(members.count > index);
+#ifndef NDEBUG
+    Type *mem_type = members[index];
+    assert(mem_type == new_elem_val.type);
+#endif
 
-// #ifndef NDEBUG
-//     Type *mem_type = members[index];
-//     assert(mem_type == new_elem_val.type);
-// #endif
+    Bytecode_Register result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, struct_type, BC_REGISTER_FLAG_NONE);
 
-//     Bytecode_Register result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, struct_type, BC_REGISTER_FLAG_NONE);
+    auto handle = bytecode_emit_instruction(builder, Bytecode_Opcode::INSERT_VALUE, aggregate, new_elem_val, result);
+    auto ip = bytecode_get_instruction(builder, handle);
+    ip->additional_index = index;
 
-//     auto handle = bytecode_emit_instruction(builder, Bytecode_Opcode::INSERT_VALUE, aggregate, new_elem_val, result);
-//     auto ip = bytecode_get_instruction(builder, handle);
-//     ip->additional_index = index;
-
-//     return result;
+    return result;
 }
 
 Bytecode_Register bytecode_emit_extract_value(Bytecode_Builder *builder, Bytecode_Register aggregate, s64 index)
 {
-    assert(false);
-    return {};
+    // @TODO: @CLEANUP: This should be checked in a validation pass
+    assert_msg(aggregate.kind == Bytecode_Register_Kind::TEMPORARY,
+               "[Bytecode] aggregate register passed to bytecode_emit_extract_value must be a temporary register");
 
-//     // @TODO: @CLEANUP: This should be checked in a validation pass
-//     zodiac_assert_fatal(aggregate.kind == Bytecode_Register_Kind::TEMPORARY,
-//                         "[Bytecode] aggregate register passed to bytecode_emit_extract_value must be a temporary register");
-//
-//     auto agg_type = aggregate.type;
-//     assert(agg_type->flags & AST_TYPE_FLAG_AGGREGATE);
-//     assert(agg_type->kind == Type_Kind::STRUCTURE);
-//
-//     auto member_types = agg_type->structure.member_types;
-//     assert(index < member_types.count);
-//
-//     auto member_type = member_types[index];
-//
-//     Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, member_type, BC_REGISTER_FLAG_NONE);
-//     Bytecode_Register index_value = bytecode_integer_literal(builder, Type::s32, index);
-//
-//     bytecode_emit_instruction(builder, Bytecode_Opcode::EXTRACT_VALUE, aggregate, index_value, result_register);
-//
-//     return result_register;
+    auto agg_type = aggregate.type;
+    assert(agg_type->flags & TYPE_FLAG_AGGREGATE);
+    assert(agg_type->kind == Type_Kind::STRUCTURE);
+
+    auto member_types = agg_type->structure.member_types;
+    assert(index < member_types.count);
+
+    auto member_type = member_types[index];
+
+    Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, member_type, BC_REGISTER_FLAG_NONE);
+    Bytecode_Register index_value = bytecode_integer_literal(builder, &builtin_type_s32, index);
+
+    bytecode_emit_instruction(builder, Bytecode_Opcode::EXTRACT_VALUE, aggregate, index_value, result_register);
+
+    return result_register;
 }
 
 Bytecode_Register bytecode_emit_insert_element(Bytecode_Builder *builder, Bytecode_Register array, Bytecode_Register new_elem_val, Type *array_type, s64 index)

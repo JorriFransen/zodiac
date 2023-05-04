@@ -9,7 +9,7 @@
 #include "type.h"
 #include "zodiac_context.h"
 
-#define PRINT_BYTECODE_IN_TESTS 1
+#define PRINT_BYTECODE_IN_TESTS 0
 
 #if PRINT_BYTECODE_IN_TESTS
 #include "bytecode/printer.h"
@@ -317,79 +317,79 @@ MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_o
     return result;
 }
 
-// MunitResult Insert_And_Extract_Value(const MunitParameter params[], void *user_data_or_fixture)
-// {
-//     auto c_alloc = c_allocator();
+MunitResult Insert_And_Extract_Value(const MunitParameter params[], void *user_data_or_fixture)
+{
+    auto c_alloc = c_allocator();
 
-//     Zodiac_Context zc;
-//     zodiac_context_create(&zc);
-//     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    Zodiac_Context zc;
+    zodiac_context_create(&zc);
+    Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
-//     auto fn_type = get_function_type(&builtin_type_void, { }, &zc.ast_allocator);
-//     auto fn = bytecode_function_create(&bb, "insert_and_extract_value", fn_type);
-//     auto entry_block = bytecode_append_block(&bb, fn, "entry");
+    auto fn_type = get_function_type(&builtin_type_void, { }, &zc.ast_allocator);
+    auto fn = bytecode_function_create(&bb, "insert_and_extract_value", fn_type);
+    auto entry_block = bytecode_append_block(&bb, fn, "entry");
 
-//     bytecode_set_insert_point(&bb, fn, entry_block);
+    bytecode_set_insert_point(&bb, fn, entry_block);
 
-//     Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
-//     Type *vec2_type = ast_struct_type_new(&zc, vec2_mem_types, "vec2");
-//     munit_assert(vec2_type != nullptr);
+    Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
+    Type *vec2_type = get_struct_type(&zc, vec2_mem_types, "Vec2", &zc.ast_allocator);
+    munit_assert(vec2_type != nullptr);
 
-//     auto alloc = bytecode_emit_alloc(&bb, vec2_type, "struct_alloc");
-//     munit_assert(alloc.type == vec2_type);
+    auto alloc = bytecode_emit_alloc(&bb, vec2_type, "struct_alloc");
+    munit_assert(alloc.type == vec2_type);
 
-//     auto lit_42 = bytecode_integer_literal(&bb, &builtin_type_s64, 42);
-//     auto new_struct_val = bytecode_emit_insert_value(&bb, {}, lit_42, vec2_type, 0);
-//     munit_assert(new_struct_val.type == vec2_type);
+    auto lit_42 = bytecode_integer_literal(&bb, &builtin_type_s64, 42);
+    auto new_struct_val = bytecode_emit_insert_value(&bb, {}, lit_42, vec2_type, 0);
+    munit_assert(new_struct_val.type == vec2_type);
 
-//     auto lit_24 = bytecode_integer_literal(&bb, &builtin_type_s64, 24);
-//     new_struct_val = bytecode_emit_insert_value(&bb, new_struct_val, lit_24, vec2_type, 1);
-//     munit_assert(new_struct_val.type == vec2_type);
+    auto lit_24 = bytecode_integer_literal(&bb, &builtin_type_s64, 24);
+    new_struct_val = bytecode_emit_insert_value(&bb, new_struct_val, lit_24, vec2_type, 1);
+    munit_assert(new_struct_val.type == vec2_type);
 
-//     bytecode_emit_store_alloc(&bb, new_struct_val, alloc);
+    bytecode_emit_store_alloc(&bb, new_struct_val, alloc);
 
-//     auto sv = bytecode_emit_load_alloc(&bb, alloc);
-//     auto x = bytecode_emit_extract_value(&bb, sv, 0);
-//     auto y = bytecode_emit_extract_value(&bb, sv, 1);
+    auto sv = bytecode_emit_load_alloc(&bb, alloc);
+    auto x = bytecode_emit_extract_value(&bb, sv, 0);
+    auto y = bytecode_emit_extract_value(&bb, sv, 1);
 
-//     bytecode_emit_print(&bb, x);
-//     bytecode_emit_print(&bb, y);
+    bytecode_emit_print(&bb, x);
+    bytecode_emit_print(&bb, y);
 
-//     bytecode_emit_return(&bb);
+    bytecode_emit_return(&bb);
 
-//     //bytecode_print(&bb);
+    print_bytecode(bb);
 
-//     Bytecode_Validator validator = {};
-//     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-//     bool bytecode_valid = validate_bytecode(&validator);
+    Bytecode_Validator validator = {};
+    bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    bool bytecode_valid = validate_bytecode(&validator);
 
-//     MunitResult result = MUNIT_OK;
+    MunitResult result = MUNIT_OK;
 
-//     if (!bytecode_valid) {
-//         bytecode_validator_print_errors(&validator);
-//         result = MUNIT_FAIL;
+    if (!bytecode_valid) {
+        bytecode_validator_print_errors(&validator);
+        result = MUNIT_FAIL;
 
-//     } else {
+    } else {
 
-//         Interpreter interp = interpreter_create(c_alloc, &zc);
-//         interp.std_out = create_temp_file();
-//         auto program = bytecode_get_program(&bb);
-//         program.entry_handle = fn;
-//         interpreter_start(&interp, program);
+        Interpreter interp = interpreter_create(c_alloc, &zc);
+        interp.std_out = platform_temp_file();
+        auto program = bytecode_get_program(&bb);
+        program.entry_handle = fn;
+        interpreter_start(&interp, program);
 
-//         assert_zodiac_stream(&interp.std_out, "42\n24\n");
+        assert_zodiac_stream(interp.std_out, "42\n24\n");
 
-//         munit_assert(file_close(&interp.std_out) == 0);
+        munit_assert(filesystem_close(&interp.std_out));
 
-//         interpreter_free(&interp);
-//     }
+        interpreter_free(&interp);
+    }
 
-//     bytecode_validator_free(&validator);
-//     bytecode_builder_free(&bb);
-//     zodiac_context_destroy(&zc);
+    bytecode_validator_free(&validator);
+    bytecode_builder_free(&bb);
+    zodiac_context_destroy(&zc);
 
-//     return result;
-// }
+    return result;
+}
 
 // MunitResult Extract_Struct_Value(const MunitParameter params[], void *user_data_or_fixture)
 // {
@@ -1883,7 +1883,7 @@ START_TESTS(bytecode_tests)
     DEFINE_TEST(Simple_Function_Call),
     DEFINE_TEST(Arguments_And_Return_Values),
     DEFINE_TEST(Recursion_And_Jumps),
-    // DEFINE_TEST(Insert_And_Extract_Value),
+    DEFINE_TEST(Insert_And_Extract_Value),
     // DEFINE_TEST(Extract_Struct_Value),
     // DEFINE_TEST(Return_Struct),
     // DEFINE_TEST(Struct_Arguments),
