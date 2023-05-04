@@ -1,7 +1,10 @@
 #include "platform.h"
 
+#include <cmath>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "common.h"
 #include "defines.h"
@@ -68,6 +71,11 @@ i64 platform_memcmp(const void *a, const void *b, u64 num)
 {
     assert(a && b);
     return memcmp(a, b, num);
+}
+
+double platform_sqrt(double x)
+{
+    return sqrt(x);
 }
 
 File_Handle platform_temp_file()

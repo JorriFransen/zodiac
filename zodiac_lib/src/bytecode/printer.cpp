@@ -247,7 +247,7 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
             string_builder_append(sb, " ");
             bytecode_print_register(builder, fn, instruction->b, sb);
 
-            string_builder_append(sb, " %ll", instruction->additional_index);
+            string_builder_append(sb, " %lld", instruction->additional_index);
             break;
         }
 
@@ -268,7 +268,7 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
             string_builder_append(sb, " ");
             bytecode_print_register(builder, fn, instruction->b, sb);
 
-            string_builder_append(sb, " %ll", instruction->additional_index);
+            string_builder_append(sb, " %lld", instruction->additional_index);
             break;
         }
 

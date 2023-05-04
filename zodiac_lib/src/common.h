@@ -6,11 +6,6 @@ namespace Zodiac
 {
 
 template <typename T>
-T sqrt(T x) {
-    return ::sqrt(x);
-}
-
-template <typename T>
 T min(T a, T b) {
     if (a < b) return a;
     return b;

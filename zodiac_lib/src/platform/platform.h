@@ -14,6 +14,8 @@ ZAPI void *platform_zero_mem(void *memory, u64 num);
 ZAPI void *platform_memcpy(void *dest, const void *src, u64 num);
 ZAPI i64 platform_memcmp(const void *a, const void *b, u64 num);
 
+ZAPI double platform_sqrt(double x);
+
 enum class Platform_Console_Color
 {
     Blue,

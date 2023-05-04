@@ -12,7 +12,7 @@ EXTENSION := .so
 
 COMPILER_FLAGS := -g -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC $(LLVM_CXX_FLAGS)
 INCLUDE_FLAGS := -I$(SRC_DIR)
-LINKER_FLAGS := -g -shared $(LLVM_LIBS) $(LLVM_LD_FLAGS)
+LINKER_FLAGS := -g -shared -lm $(LLVM_LIBS) $(LLVM_LD_FLAGS)
 DEFINES := -D_DEBUG -DZEXPORT
 
 

@@ -64,6 +64,12 @@ i64 platform_memcmp(const void *a, const void *b, u64 num)
     return memcmp(a, b, num);
 }
 
+double platform_sqrt(double x)
+{
+    assert(false);
+    return 0;
+}
+
 File_Handle platform_temp_file()
 {
     const auto temp_path_length_ = 2048;

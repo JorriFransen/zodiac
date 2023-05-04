@@ -309,10 +309,10 @@ break; \
                 if (operand.type->integer.sign) {
                     switch (operand.type->bit_size) {
                         default: assert(false && !"SQRT unhandled int bit width"); break;
-                        case 8: rv.integer.s8 = (uint8_t)sqrt(operand.value.integer.s8); break;
-                        case 16: rv.integer.s16 = (uint16_t)sqrt(operand.value.integer.s16); break;
-                        case 32: rv.integer.s32 = (uint32_t)sqrt(operand.value.integer.s32); break;
-                        case 64: rv.integer.s64 = (uint64_t)sqrt(operand.value.integer.s64); break;
+                        case 8: rv.integer.s8 = (u8)platform_sqrt(operand.value.integer.s8); break;
+                        case 16: rv.integer.s16 = (u16)platform_sqrt(operand.value.integer.s16); break;
+                        case 32: rv.integer.s32 = (u32)platform_sqrt(operand.value.integer.s32); break;
+                        case 64: rv.integer.s64 = (u64)platform_sqrt(operand.value.integer.s64); break;
                     }
                 }
 
@@ -320,8 +320,8 @@ break; \
 
                 switch (operand.type->bit_size) {
                     default: assert(false && !"SQRT unhandled float bit width"); break;
-                    case 32: rv.real.r32 = sqrt(operand.value.real.r32); break;
-                    case 64: rv.real.r64 = sqrt(operand.value.real.r64); break;
+                    case 32: rv.real.r32 = platform_sqrt(operand.value.real.r32); break;
+                    case 64: rv.real.r64 = platform_sqrt(operand.value.real.r64); break;
                 }
 
             } else {
