@@ -832,87 +832,87 @@ file_local MunitResult Invalid_Extract_Element(const MunitParameter params[], vo
     return MUNIT_OK;
 }
 
-// file_local MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture)
-// {
-//     auto c_alloc = c_allocator();
+file_local MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture)
+{
+    auto c_alloc = c_allocator();
 
-//     Zodiac_Context zc;
-//     zodiac_context_create(&zc);
-//     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    Zodiac_Context zc;
+    zodiac_context_create(&zc);
+    Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
-//     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
-//     Type *vec_type = ast_struct_type_new(&zc, vec_mem_types, "Vec2");
+    Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
+    Type *vec_type = get_struct_type(&zc, vec_mem_types, "Vec2", &zc.ast_allocator);
 
-//     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
-//     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
-//     auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
-//     bytecode_set_insert_point(&bb, main_fn, main_entry_block);
-//     {
-//         auto struct_alloc = bytecode_emit_alloc(&bb, vec_type, "v");
-//         auto lit_42 = bytecode_integer_literal(&bb, &builtin_type_s64, 42);
-//         auto lit_24 = bytecode_integer_literal(&bb, &builtin_type_s64, 24);
-//         auto struct_val = bytecode_emit_insert_value( &bb, {}, lit_42, vec_type, 0);
-//         struct_val = bytecode_emit_insert_value( &bb, struct_val, lit_24, vec_type, 1);
-//         bytecode_emit_store_alloc(&bb, struct_val, struct_alloc);
+    auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
+    auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
+    auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
+    bytecode_set_insert_point(&bb, main_fn, main_entry_block);
+    {
+        auto struct_alloc = bytecode_emit_alloc(&bb, vec_type, "v");
+        auto lit_42 = bytecode_integer_literal(&bb, &builtin_type_s64, 42);
+        auto lit_24 = bytecode_integer_literal(&bb, &builtin_type_s64, 24);
+        auto struct_val = bytecode_emit_insert_value( &bb, {}, lit_42, vec_type, 0);
+        struct_val = bytecode_emit_insert_value( &bb, struct_val, lit_24, vec_type, 1);
+        bytecode_emit_store_alloc(&bb, struct_val, struct_alloc);
 
-//         auto x_ptr = bytecode_emit_aggregate_offset_pointer(&bb, struct_alloc, 0);
-//         auto y_ptr = bytecode_emit_aggregate_offset_pointer(&bb, struct_alloc, 1);
+        auto x_ptr = bytecode_emit_aggregate_offset_pointer(&bb, struct_alloc, 0);
+        auto y_ptr = bytecode_emit_aggregate_offset_pointer(&bb, struct_alloc, 1);
 
-//         auto x = bytecode_emit_load_pointer(&bb, x_ptr);
-//         auto y = bytecode_emit_load_pointer(&bb, y_ptr);
+        auto x = bytecode_emit_load_pointer(&bb, x_ptr);
+        auto y = bytecode_emit_load_pointer(&bb, y_ptr);
 
-//         auto sum = bytecode_emit_add(&bb, x, y);
+        auto sum = bytecode_emit_add(&bb, x, y);
 
-//         bytecode_emit_print(&bb, sum);
+        bytecode_emit_print(&bb, sum);
 
-//         auto struct_ptr = bytecode_emit_address_of_alloc(&bb, struct_alloc);
-//         x_ptr = bytecode_emit_aggregate_offset_pointer(&bb, struct_ptr, 0);
-//         y_ptr = bytecode_emit_aggregate_offset_pointer(&bb, struct_ptr, 1);
+        auto struct_ptr = bytecode_emit_address_of_alloc(&bb, struct_alloc);
+        x_ptr = bytecode_emit_aggregate_offset_pointer(&bb, struct_ptr, 0);
+        y_ptr = bytecode_emit_aggregate_offset_pointer(&bb, struct_ptr, 1);
 
-//         x = bytecode_emit_load_pointer(&bb, x_ptr);
-//         y = bytecode_emit_load_pointer(&bb, y_ptr);
-//         auto sum2 = bytecode_emit_add(&bb, x, y);
-//         sum = bytecode_emit_add(&bb, sum, sum2);
-//         bytecode_emit_print(&bb, sum);
+        x = bytecode_emit_load_pointer(&bb, x_ptr);
+        y = bytecode_emit_load_pointer(&bb, y_ptr);
+        auto sum2 = bytecode_emit_add(&bb, x, y);
+        sum = bytecode_emit_add(&bb, sum, sum2);
+        bytecode_emit_print(&bb, sum);
 
-//         bytecode_emit_return(&bb, sum);
-//     }
+        bytecode_emit_return(&bb, sum);
+    }
 
-//     //bytecode_print(&bb);
+    print_bytecode(bb);
 
-//     Bytecode_Validator validator = {};
-//     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-//     bool bytecode_valid = validate_bytecode(&validator);
+    Bytecode_Validator validator = {};
+    bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    bool bytecode_valid = validate_bytecode(&validator);
 
-//     MunitResult result = MUNIT_OK;
+    MunitResult result = MUNIT_OK;
 
-//     if (!bytecode_valid) {
-//         bytecode_validator_print_errors(&validator);
-//         result = MUNIT_FAIL;
+    if (!bytecode_valid) {
+        bytecode_validator_print_errors(&validator);
+        result = MUNIT_FAIL;
 
-//     } else {
+    } else {
 
-//         Interpreter interp = interpreter_create(c_alloc, &zc);
-//         interp.std_out = create_temp_file();
-//         auto program = bytecode_get_program(&bb);
-//         program.entry_handle = main_fn;
-//         Interpreter_Register result_register = interpreter_start(&interp, program);
-//         munit_assert(result_register.type == &builtin_type_s64);
-//         assert_int64(result_register.value.integer.s64, ==, 132);
+        Interpreter interp = interpreter_create(c_alloc, &zc);
+        interp.std_out = platform_temp_file();
+        auto program = bytecode_get_program(&bb);
+        program.entry_handle = main_fn;
+        Interpreter_Register result_register = interpreter_start(&interp, program);
+        munit_assert(result_register.type == &builtin_type_s64);
+        munit_assert_int64(result_register.value.integer.s64, ==, 132);
 
-//         assert_zodiac_stream(&interp.std_out, "66\n132\n");
+        assert_zodiac_stream(interp.std_out, "66\n132\n");
 
-//         munit_assert(file_close(&interp.std_out) == 0);
+        munit_assert(filesystem_close(&interp.std_out));
 
-//         interpreter_free(&interp);
-//     }
+        interpreter_free(&interp);
+    }
 
-//     bytecode_validator_free(&validator);
-//     bytecode_builder_free(&bb);
-//     zodiac_context_destroy(&zc);
+    bytecode_validator_free(&validator);
+    bytecode_builder_free(&bb);
+    zodiac_context_destroy(&zc);
 
-//     return result;
-// }
+    return result;
+}
 
 // file_local MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture)
 // {
@@ -923,10 +923,10 @@ file_local MunitResult Invalid_Extract_Element(const MunitParameter params[], vo
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
-//     Type *vec_type = ast_struct_type_new(&zc, vec_mem_types, "Vec2");
+//     Type *vec_type = get_struct_type(&zc, vec_mem_types, "Vec2", &zc.ast_allocator);
 
 //     Type *aabb_mem_types[] = { vec_type, vec_type };
-//     Type *aabb_type = ast_struct_type_new(&zc, aabb_mem_types, "AABB");
+//     Type *aabb_type = get_struct_type(&zc, aabb_mem_types, "AABB", &zc.ast_allocator);
 
 //     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
 //     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -1300,7 +1300,7 @@ file_local MunitResult Invalid_Extract_Element(const MunitParameter params[], vo
 //     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
 //     Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
-//     Type *vec2_type = ast_struct_type_new(&zc, vec2_mem_types, "vec2");
+//     Type *vec2_type = get_struct_type(&zc, vec2_mem_types, "vec2", &zc.ast_allocator);
 //     Type *make_vec2_fn_type = get_function_type(vec2_type, vec2_mem_types, &zc.ast_allocator);
 //     auto make_vec2_fn = bytecode_function_create(&bb, "make_vec2", make_vec2_fn_type);
 //     auto make_vec2_entry_block = bytecode_append_block(&bb, make_vec2_fn, "entry");
@@ -1891,7 +1891,7 @@ START_TESTS(bytecode_tests)
     DEFINE_TEST(Basic_Pointers),
     DEFINE_TEST(Struct_Pointers),
     DEFINE_TEST(Invalid_Extract_Element),
-    // DEFINE_TEST(Simple_AGG_OFFSET_PTR),
+    DEFINE_TEST(Simple_AGG_OFFSET_PTR),
     // DEFINE_TEST(Nested_AGG_OFFSET_PTR),
     // DEFINE_TEST(Insert_And_Extract_Element),
     // DEFINE_TEST(Simple_ARR_OFFSET_PTR),

@@ -8,6 +8,7 @@
 #include "platform/platform.h"
 #include "type.h"
 #include "util/asserts.h"
+#include "zodiac_context.h"
 
 namespace Zodiac { namespace Bytecode {
 
@@ -828,56 +829,55 @@ assert(false);
         }
 
         case Bytecode_Opcode::AGG_OFFSET_POINTER: {
-                                                      assert(false);
-            // assert(instruction.a.kind == Bytecode_Register_Kind::ALLOC ||
-            //        instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
+            assert(instruction.a.kind == Bytecode_Register_Kind::ALLOC ||
+                   instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
 
-            // Interpreter_Register agg_register = interpreter_load_register(interp, instruction.a);
-            // Interpreter_Register index_register = interpreter_load_register(interp, instruction.b);
+            Interpreter_Register agg_register = interpreter_load_register(interp, instruction.a);
+            Interpreter_Register index_register = interpreter_load_register(interp, instruction.b);
 
-            // Type *agg_type = agg_register.type;
-            // if (instruction.a.kind == Bytecode_Register_Kind::TEMPORARY) {
-            //     assert(instruction.a.type->kind == Type_Kind::POINTER);
-            //     agg_type = agg_type->pointer.base;
-            // }
+            Type *agg_type = agg_register.type;
+            if (instruction.a.kind == Bytecode_Register_Kind::TEMPORARY) {
+                assert(instruction.a.type->kind == Type_Kind::POINTER);
+                agg_type = agg_type->pointer.base;
+            }
 
-            // assert(agg_type->flags & TYPE_FLAG_AGGREGATE);
-            // assert(agg_type->kind == Type_Kind::STRUCTURE);
+            assert(agg_type->flags & TYPE_FLAG_AGGREGATE);
+            assert(agg_type->kind == Type_Kind::STRUCTURE);
 
-            // assert(index_register.type == &builtin_type_s32);
-            // s32 index = index_register.value.integer.s32;
+            assert(index_register.type == &builtin_type_s32);
+            s32 index = index_register.value.integer.s32;
 
-            // auto &member_types = agg_type->structure.member_types;
-            // assert(index >= 0 && index < member_types.count);
+            auto &member_types = agg_type->structure.member_types;
+            assert(index >= 0 && index < member_types.count);
 
-            // u8 *ptr = nullptr;;
+            u8 *ptr = nullptr;;
 
-            // if (instruction.a.kind == Bytecode_Register_Kind::ALLOC) {
-            //     ptr = agg_register.pointer;
-            // } else {
-            //     assert(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
-            //     ptr = agg_register.value.pointer;
-            // }
-            // assert(ptr);
+            if (instruction.a.kind == Bytecode_Register_Kind::ALLOC) {
+                ptr = agg_register.pointer;
+            } else {
+                assert(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
+                ptr = agg_register.value.pointer;
+            }
+            assert(ptr);
 
-            // for (s64 i = 0; i < index; i++) {
-            //     Type *member_type = member_types[i];
-            //     // @Cleanup: @TODO: @FIXME: alignment?
-            //     assert(member_type->bit_size % 8 == 0);
-            //     ptr += (member_type->bit_size / 8);
-            // }
+            for (s64 i = 0; i < index; i++) {
+                Type *member_type = member_types[i];
+                // @Cleanup: @TODO: @FIXME: alignment?
+                assert(member_type->bit_size % 8 == 0);
+                ptr += (member_type->bit_size / 8);
+            }
 
-            // Type *member_type = member_types[index];
-            // Type *dest_type = ast_pointer_type_get_or_new(interp->context, member_type);
+            Type *member_type = member_types[index];
+            Type *dest_type = get_pointer_type(member_type, &interp->context->ast_allocator);
 
-            // Interpreter_Register result = {
-            //     .type = dest_type,
-            //     .value = { .pointer = ptr },
-            // };
+            Interpreter_Register result = {
+                .type = dest_type,
+                .value = { .pointer = ptr },
+            };
 
-            // interpreter_store_register(interp, result, instruction.dest);
+            interpreter_store_register(interp, result, instruction.dest);
 
-            // break;
+            break;
         }
 
         case Bytecode_Opcode::ARR_OFFSET_POINTER: {

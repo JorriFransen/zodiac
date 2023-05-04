@@ -889,38 +889,35 @@ Bytecode_Register bytecode_emit_extract_element(Bytecode_Builder *builder, Bytec
 
 Bytecode_Register bytecode_emit_aggregate_offset_pointer(Bytecode_Builder *builder, Bytecode_Register agg_register, s64 index)
 {
-    assert(false);
-    return {};
+    Type *agg_type = nullptr;
 
-    // Type *agg_type = nullptr;
+    if (agg_register.kind == Bytecode_Register_Kind::ALLOC) {
+        agg_type = agg_register.type;
 
-    // if (agg_register.kind == Bytecode_Register_Kind::ALLOC) {
-    //     agg_type = agg_register.type;
+    } else if (agg_register.kind == Bytecode_Register_Kind::TEMPORARY) {
+        assert(agg_register.type->kind == Type_Kind::POINTER);
+        agg_type = agg_register.type->pointer.base;
+    } else {
+        assert_msg(agg_type, "Aggregate register is not a TEMPORARY or ALLOC.");
+    }
 
-    // } else if (agg_register.kind == Bytecode_Register_Kind::TEMPORARY) {
-    //     assert(agg_register.type->kind == Type_Kind::POINTER);
-    //     agg_type = agg_register.type->pointer.base;
-    // } else {
-    //     zodiac_assert_fatal(agg_type, "Aggregate register is not a TEMPORARY or ALLOC.");
-    // }
+    assert(agg_type->flags & TYPE_FLAG_AGGREGATE);
+    assert(agg_type->kind == Type_Kind::STRUCTURE);
 
-    // assert(agg_type->flags & AST_TYPE_FLAG_AGGREGATE);
-    // assert(agg_type->kind == Type_Kind::STRUCTURE);
+    auto &member_types = agg_type->structure.member_types;
 
-    // auto &member_types = agg_type->structure.member_types;
+    assert(index >= 0);
+    assert(index < member_types.count);
 
-    // assert(index >= 0);
-    // assert(index < member_types.count);
+    auto index_register = bytecode_integer_literal(builder, &builtin_type_s32, index);
 
-    // auto index_register = bytecode_integer_literal(builder, Type::s32, index);
+    Type *member_type = member_types[index];
+    Type *result_type = get_pointer_type(member_type, &builder->zodiac_context->ast_allocator);
 
-    // Type *member_type = member_types[index];
-    // Type *result_type = ast_pointer_type_get_or_new(builder->zodiac_context, member_type);
+    Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, result_type, BC_REGISTER_FLAG_NONE);
+    bytecode_emit_instruction(builder, Bytecode_Opcode::AGG_OFFSET_POINTER, agg_register, index_register, result_register);
 
-    // Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, result_type, BC_REGISTER_FLAG_NONE);
-    // bytecode_emit_instruction(builder, Bytecode_Opcode::AGG_OFFSET_POINTER, agg_register, index_register, result_register);
-
-    // return result_register;
+    return result_register;
 }
 
 Bytecode_Register bytecode_emit_array_offset_pointer(Bytecode_Builder *builder, Bytecode_Register array_register, s64 index)

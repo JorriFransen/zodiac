@@ -1214,80 +1214,79 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
         }
 
         case Bytecode_Opcode::AGG_OFFSET_POINTER: {
-            assert(false);
-            // Type *aggregate_type = nullptr;
+            Type *aggregate_type = nullptr;
 
-            // if (instruction->a.kind == Bytecode_Register_Kind::ALLOC) {
-            //     aggregate_type = instruction->a.type;
+            if (instruction->a.kind == Bytecode_Register_Kind::ALLOC) {
+                aggregate_type = instruction->a.type;
 
-            // } else if (instruction->a.kind == Bytecode_Register_Kind::TEMPORARY) {
+            } else if (instruction->a.kind == Bytecode_Register_Kind::TEMPORARY) {
 
-            //     if (instruction->a.type->kind != Type_Kind::POINTER) {
-            //         bytecode_validator_report_error(validator, "The 'a' register of 'AGG_OFFSET_POINTER' must be of pointer type when it is a temporary");
-            //         return false;
-            //     }
+                if (instruction->a.type->kind != Type_Kind::POINTER) {
+                    bytecode_validator_report_error(validator, "The 'a' register of 'AGG_OFFSET_POINTER' must be of pointer type when it is a temporary");
+                    return false;
+                }
 
-            //     aggregate_type = instruction->a.type->pointer.base;
+                aggregate_type = instruction->a.type->pointer.base;
 
-            // } else {
-            //     bytecode_validator_report_error(validator, "The 'a' register of 'AGG_OFFSET_POINTER' must be a temporary or an alloc");
-            //     return false;
-            // }
+            } else {
+                bytecode_validator_report_error(validator, "The 'a' register of 'AGG_OFFSET_POINTER' must be a temporary or an alloc");
+                return false;
+            }
 
-            // assert(aggregate_type);
+            assert(aggregate_type);
 
-            // if (!(aggregate_type->flags & TYPE_FLAG_AGGREGATE)) {
-            //     bytecode_validator_report_error(validator, "The 'a' register of 'AGG_OFFSET_POINTER' does not contain an aggregate value");
-            //     return false;
-            // }
+            if (!(aggregate_type->flags & TYPE_FLAG_AGGREGATE)) {
+                bytecode_validator_report_error(validator, "The 'a' register of 'AGG_OFFSET_POINTER' does not contain an aggregate value");
+                return false;
+            }
 
-            // if (aggregate_type->kind != Type_Kind::STRUCTURE) {
-            //     bytecode_validator_report_error(validator, "The 'a' register of AGG_OFFSET_POINTER' must be a struct");
-            //     return false;
-            // }
+            if (aggregate_type->kind != Type_Kind::STRUCTURE) {
+                bytecode_validator_report_error(validator, "The 'a' register of AGG_OFFSET_POINTER' must be a struct");
+                return false;
+            }
 
-            // if (instruction->b.kind != Bytecode_Register_Kind::TEMPORARY) {
-            //     bytecode_validator_report_error(validator, "The 'b' register of 'AGG_OFFSET_POINTER' must be a temporary");
-            //     return false;
-            // }
+            if (instruction->b.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'b' register of 'AGG_OFFSET_POINTER' must be a temporary");
+                return false;
+            }
 
-            // if (instruction->b.type != &builtin_type_s32) {
-            //     bytecode_validator_report_error(validator, "The 'b' register of 'AGG_OFFSET_POINTER' does not have the right integer type (s32)");
-            //     return false;
-            // }
+            if (instruction->b.type != &builtin_type_s32) {
+                bytecode_validator_report_error(validator, "The 'b' register of 'AGG_OFFSET_POINTER' does not have the right integer type (s32)");
+                return false;
+            }
 
-            // if (!(instruction->b.flags & BC_REGISTER_FLAG_LITERAL)) {
-            //     bytecode_validator_report_error(validator, "The 'b' register of 'AGG_OFFSET_POINTER' must be a literal");
-            //     return false;
-            // }
+            if (!(instruction->b.flags & BC_REGISTER_FLAG_LITERAL)) {
+                bytecode_validator_report_error(validator, "The 'b' register of 'AGG_OFFSET_POINTER' must be a literal");
+                return false;
+            }
 
-            // auto index = instruction->b.value.integer.s32;
-            // assert(aggregate_type);
+            auto index = instruction->b.value.integer.s32;
+            assert(aggregate_type);
 
-            // assert(aggregate_type->kind == Type_Kind::STRUCTURE);
-            // if (index < 0 || index > aggregate_type->structure.member_types.count) {
-            //     bytecode_validator_report_error(validator, "The index for 'AGG_OFFSET_POINTER' (specified in the 'b' register) is out of bounds for the specified aggregate type");
-            //     return false;
-            // }
-            // Type *result_type = aggregate_type->structure.member_types[index];
+            assert(aggregate_type->kind == Type_Kind::STRUCTURE);
+            if (index < 0 || index > aggregate_type->structure.member_types.count) {
+                bytecode_validator_report_error(validator, "The index for 'AGG_OFFSET_POINTER' (specified in the 'b' register) is out of bounds for the specified aggregate type");
+                return false;
+            }
+            Type *result_type = aggregate_type->structure.member_types[index];
 
-            // if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
-            //     bytecode_validator_report_error(validator, "The 'dest' register for 'AGG_OFFSET_POINTER' must be a temporary");
-            //     return false;
-            // }
+            if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'AGG_OFFSET_POINTER' must be a temporary");
+                return false;
+            }
 
-            // if  (instruction->dest.type->kind != Type_Kind::POINTER) {
-            //     bytecode_validator_report_error(validator, "The 'dest' register for 'AGG_OFFSET_POINTER' must be of pointer type (pointer to the targeted aggregate member)");
-            //     return false;
-            // }
+            if  (instruction->dest.type->kind != Type_Kind::POINTER) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'AGG_OFFSET_POINTER' must be of pointer type (pointer to the targeted aggregate member)");
+                return false;
+            }
 
-            // if (instruction->dest.type->pointer.base != result_type) {
-            //     bytecode_validator_report_error(validator, "The type of the 'dest' register for 'AGG_OFFSET_POINTER' does not match the type extracted from the aggregate type");
-            //     return false;
-            // }
+            if (instruction->dest.type->pointer.base != result_type) {
+                bytecode_validator_report_error(validator, "The type of the 'dest' register for 'AGG_OFFSET_POINTER' does not match the type extracted from the aggregate type");
+                return false;
+            }
 
-            // return true;
-            // break;
+            return true;
+            break;
         }
 
         case Bytecode_Opcode::ARR_OFFSET_POINTER: {

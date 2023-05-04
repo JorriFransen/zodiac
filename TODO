@@ -1,5 +1,6 @@
 
 - Merge error systems (resolve errors, and the old system used in bytecode(/validator))
+- platform_temp_file should be in filesystem
 
 - Containers
   - Hash table
