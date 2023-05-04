@@ -31,6 +31,8 @@ ZAPI bool filesystem_write(File_Handle *handle, u64 data_size, const void *data,
 
 ZAPI bool filesystem_read_entire_file(Allocator *allocator, const String_Ref path, String *out_string);
 
+ZAPI void filesystem_temp_file(File_Handle *out_file);
+
 ZAPI void filesystem_stdout_file(File_Handle *out_file);
 ZAPI void filesystem_stderr_file(File_Handle *out_file);
 

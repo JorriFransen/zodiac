@@ -1,11 +1,12 @@
 #pragma once
 
-#include <defines.h>
-
-#include "filesystem.h"
+#include "defines.h"
+#include "util/zstring.h"
 
 namespace Zodiac
 {
+
+struct File_Handle;
 
 ZAPI void *platform_allocate(u64 size, u64 alignment = 1);
 ZAPI void platform_free(void *memory);
@@ -26,7 +27,7 @@ enum class Platform_Console_Color
     Grey,
 };
 
-ZAPI File_Handle platform_temp_file();
+ZAPI void platform_temp_file(File_Handle *out_file);
 
 ZAPI void platform_file_write(File_Handle *file, const String_Ref message);
 ZAPI void platform_file_write(File_Handle *file, const String_Ref message, Platform_Console_Color color);

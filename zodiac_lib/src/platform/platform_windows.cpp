@@ -5,6 +5,8 @@
 #include <windows.h>
 #include <io.h>
 
+#include "filesystem.h"
+
 namespace Zodiac
 {
 
@@ -69,7 +71,7 @@ double platform_sqrt(double x)
     return sqrt(x);
 }
 
-File_Handle platform_temp_file()
+void platform_temp_file(File_Handle *out_file)
 {
     const auto temp_path_length_ = 2048;
     TCHAR temp_path[temp_path_length_];
@@ -77,13 +79,11 @@ File_Handle platform_temp_file()
     DWORD temp_path_length = GetTempPath(temp_path_length_, temp_path);
     if (temp_path_length > MAX_PATH || temp_path_length <= 0) {
         assert(false && !"GetTempPath failed in create_temp_file!...");
-        return {};
     }
 
     TCHAR file_path[MAX_PATH];
     if (GetTempFileName(temp_path, TEXT("ZT"), 0, file_path) == 0) {
         assert(false && !"GetTempFileName failed in create_temp_file!...");
-        return {};
     }
 
     HANDLE file_handle = CreateFile(file_path, GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
@@ -91,23 +91,19 @@ File_Handle platform_temp_file()
     if (file_handle == INVALID_HANDLE_VALUE) {
         // GetLastError();
         assert(false && !"CreateFile failed in create_temp_file!...");
-        return {};
     }
 
     int file_descriptor = _open_osfhandle((intptr_t)file_handle, 0);
     if (file_descriptor == -1) {
         assert(false && !"_open_osfhandle failed in create_temp_file!...");
-        return {};
     }
 
     FILE* result = _fdopen(file_descriptor, "w+b");
     if (!result) {
         assert(false && !"_fdopen failed in create_temp_file!...");
-        return {};
     }
 
-    File_Handle f = { .handle = result, .valid = true };
-    return f;
+    *out_file = { .handle = result, .valid = true };
 }
 
 void platform_file_write(File_Handle *file, const String_Ref message)

@@ -129,7 +129,7 @@ file_local MunitResult Simple_Function_Call(const MunitParameter params[], void*
     } else {
 
         Interpreter interp = interpreter_create(c_allocator(), &zc);
-        interp.std_out = platform_temp_file();
+        filesystem_temp_file(&interp.std_out);
 
         auto program = bytecode_get_program(&bb);
         program.entry_handle = fn_handle;
@@ -208,7 +208,8 @@ file_local MunitResult Arguments_And_Return_Values(const MunitParameter params[]
     } else {
         Interpreter interp = interpreter_create(c_alloc, &zc);
 
-        interp.std_out = platform_temp_file();
+        filesystem_temp_file(&interp.std_out);
+
         auto program = bytecode_get_program(&bb);
         program.entry_handle = main_fn_handle;
         interpreter_start(&interp, program);
@@ -298,7 +299,7 @@ file_local MunitResult Recursion_And_Jumps(const MunitParameter params[], void* 
     } else {
         Interpreter interp = interpreter_create(c_alloc, &zc);
 
-        interp.std_out = platform_temp_file();
+        filesystem_temp_file(&interp.std_out);
 
         auto program = bytecode_get_program(&bb);
         program.entry_handle = main_fn_handle;
@@ -372,8 +373,8 @@ file_local MunitResult Insert_And_Extract_Value(const MunitParameter params[], v
 
     } else {
 
-        Interpreter interp = interpreter_create(c_alloc, &zc);
-        interp.std_out = platform_temp_file();
+        auto interp = interpreter_create(c_alloc, &zc);
+        filesystem_temp_file(&interp.std_out);
         auto program = bytecode_get_program(&bb);
         program.entry_handle = fn;
         interpreter_start(&interp, program);
@@ -453,7 +454,7 @@ file_local MunitResult Extract_Struct_Value(const MunitParameter params[], void 
     print_bytecode(bb);
 
     Interpreter interp = interpreter_create(c_alloc, &zc);
-    interp.std_out = platform_temp_file();
+    filesystem_temp_file(&interp.std_out);
     auto program = bytecode_get_program(&bb);
     program.entry_handle = main_fn;
     interpreter_start(&interp, program);
@@ -523,7 +524,7 @@ file_local MunitResult Return_Struct(const MunitParameter params[], void *user_d
     } else {
 
         Interpreter interp = interpreter_create(c_alloc, &zc);
-        interp.std_out = platform_temp_file();
+        filesystem_temp_file(&interp.std_out);
 
         auto program = bytecode_get_program(&bb);
         program.entry_handle = main_fn;
@@ -634,7 +635,7 @@ file_local MunitResult Struct_Arguments(const MunitParameter params[], void *use
     } else {
 
         Interpreter interp = interpreter_create(c_alloc, &zc);
-        interp.std_out = platform_temp_file();
+        filesystem_temp_file(&interp.std_out);
         auto program = bytecode_get_program(&bb);
         program.entry_handle = main_fn;
         Interpreter_Register result_register = interpreter_start(&interp, program);
@@ -696,7 +697,7 @@ file_local MunitResult Basic_Pointers(const MunitParameter params[], void *user_
     } else {
 
         Interpreter interp = interpreter_create(c_alloc, &zc);
-        interp.std_out = platform_temp_file();
+        filesystem_temp_file(&interp.std_out);
         auto program = bytecode_get_program(&bb);
         program.entry_handle = main_fn;
         Interpreter_Register result_register = interpreter_start(&interp, program);
@@ -893,7 +894,7 @@ file_local MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void
     } else {
 
         Interpreter interp = interpreter_create(c_alloc, &zc);
-        interp.std_out = platform_temp_file();
+        filesystem_temp_file(&interp.std_out);
         auto program = bytecode_get_program(&bb);
         program.entry_handle = main_fn;
         Interpreter_Register result_register = interpreter_start(&interp, program);
@@ -983,7 +984,7 @@ file_local MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void
     } else {
 
         Interpreter interp = interpreter_create(c_alloc, &zc);
-        interp.std_out = platform_temp_file();
+        filesystem_temp_file(&interp.std_out);
         auto program = bytecode_get_program(&bb);
         program.entry_handle = main_fn;
         Interpreter_Register result_register = interpreter_start(&interp, program);

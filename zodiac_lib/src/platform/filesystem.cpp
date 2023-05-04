@@ -5,6 +5,7 @@
 
 #include "defines.h"
 #include "memory/allocator.h"
+#include "platform.h"
 #include "util/asserts.h"
 #include "util/logger.h"
 
@@ -147,6 +148,11 @@ bool filesystem_read_entire_file(Allocator *allocator, const String_Ref path, St
     out_string->length = size;
 
     return true;
+}
+
+void filesystem_temp_file(File_Handle *out_file)
+{
+    platform_temp_file(out_file);
 }
 
 void filesystem_stdout_file(File_Handle *out_file)
