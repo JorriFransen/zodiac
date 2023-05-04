@@ -79,24 +79,22 @@ double platform_sqrt(double x)
     return sqrt(x);
 }
 
-File_Handle platform_temp_file()
+void platform_temp_file(File_Handle *out_file)
 {
     char name_template[] = "/tmp/ztmp-XXXXXX";
     int fd = mkstemp(name_template);
     if (fd == -1) {
         assert(false && !"mkstemp failed in create_temp_file!...");
-        return {};
     }
 
     FILE *result = fdopen(fd, "w+b");
     if (result == nullptr) {
         assert(false && !"fdopen failed in create_temp_file!...");
-        return {};
     }
 
     assert(unlink(name_template) == 0);
 
-    return { result, true };
+    *out_file = { result, true };
 }
 
 void platform_file_write(File_Handle *file, const String_Ref message)
