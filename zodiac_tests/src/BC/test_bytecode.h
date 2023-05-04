@@ -226,95 +226,96 @@ MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* use
     return result;
 }
 
-// MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_or_fixture)
-// {
-//     auto c_alloc = c_allocator();
+MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_or_fixture)
+{
+    auto c_alloc = c_allocator();
 
-//     Zodiac_Context zc;
-//     zodiac_context_create(&zc);
-//     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    Zodiac_Context zc;
+    zodiac_context_create(&zc);
+    Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
-//     // recurse
-//     auto recursive_fn_type = get_function_type(&builtin_type_s64, { &&builtin_type_s64, 1 }, &zc.ast_allocator);
-//     auto recursive_fn_handle = bytecode_function_create(&bb, "recurse", recursive_fn_type);
-//     {
-//         auto add_fn_entry_handle = bytecode_append_block(&bb, recursive_fn_handle, "entry");
-//         auto recurse_block = bytecode_append_block(&bb, recursive_fn_handle, "recurse_block");
-//         auto return_block = bytecode_append_block(&bb, recursive_fn_handle, "return_block");
+    // recurse
+    Type *param_types[] = { &builtin_type_s64 };
+    auto recursive_fn_type = get_function_type(&builtin_type_s64, param_types, &zc.ast_allocator);
+    auto recursive_fn_handle = bytecode_function_create(&bb, "recurse", recursive_fn_type);
+    {
+        auto add_fn_entry_handle = bytecode_append_block(&bb, recursive_fn_handle, "entry");
+        auto recurse_block = bytecode_append_block(&bb, recursive_fn_handle, "recurse_block");
+        auto return_block = bytecode_append_block(&bb, recursive_fn_handle, "return_block");
 
-//         bytecode_set_insert_point(&bb, recursive_fn_handle, add_fn_entry_handle);
+        bytecode_set_insert_point(&bb, recursive_fn_handle, add_fn_entry_handle);
 
-//         auto a1 = bytecode_load_argument(&bb, 0);
-//         auto cond = bytecode_emit_gt(&bb, a1, bytecode_integer_literal(&bb, &builtin_type_s64, 0));
-//         bytecode_emit_print(&bb, cond);
-//         bytecode_emit_jmp_if(&bb, cond, recurse_block, return_block);
+        auto a1 = bytecode_load_argument(&bb, 0);
+        auto cond = bytecode_emit_gt(&bb, a1, bytecode_integer_literal(&bb, &builtin_type_s64, 0));
+        bytecode_emit_print(&bb, cond);
+        bytecode_emit_jmp_if(&bb, cond, recurse_block, return_block);
 
-//         bytecode_set_insert_point(&bb, recursive_fn_handle, recurse_block);
-//         auto next_value = bytecode_emit_sub(&bb, a1, bytecode_integer_literal(&bb, &builtin_type_s64, 1));
-//         bytecode_emit_push_arg(&bb, next_value);
-//         auto result_val = bytecode_emit_call(&bb, recursive_fn_handle, 1);
-//         bytecode_emit_return(&bb, result_val);
+        bytecode_set_insert_point(&bb, recursive_fn_handle, recurse_block);
+        auto next_value = bytecode_emit_sub(&bb, a1, bytecode_integer_literal(&bb, &builtin_type_s64, 1));
+        bytecode_emit_push_arg(&bb, next_value);
+        auto result_val = bytecode_emit_call(&bb, recursive_fn_handle, 1);
+        bytecode_emit_return(&bb, result_val);
 
 
-//         bytecode_set_insert_point(&bb, recursive_fn_handle, return_block);
-//         bytecode_emit_return(&bb, a1);
-//     }
+        bytecode_set_insert_point(&bb, recursive_fn_handle, return_block);
+        bytecode_emit_return(&bb, a1);
+    }
 
-//     // Main
-//     Bytecode_Function_Handle main_fn_handle = -1;
-//     {
-//         Type *main_fn_type = get_function_type(&builtin_type_void, Array_Ref<Type*>(), &zc.ast_allocator);
+    // Main
+    Bytecode_Function_Handle main_fn_handle = -1;
+    {
+        Type *main_fn_type = get_function_type(&builtin_type_void, Array_Ref<Type*>(), &zc.ast_allocator);
 
-//         main_fn_handle = bytecode_function_create(&bb, "main_fn", main_fn_type);
-//         Bytecode_Block_Handle entry_block_handle = bytecode_append_block(&bb, main_fn_handle, "entry");
-//         auto return_block = bytecode_append_block(&bb, main_fn_handle, "return_block");
+        main_fn_handle = bytecode_function_create(&bb, "main_fn", main_fn_type);
+        Bytecode_Block_Handle entry_block_handle = bytecode_append_block(&bb, main_fn_handle, "entry");
+        auto return_block = bytecode_append_block(&bb, main_fn_handle, "return_block");
 
-//         bytecode_set_insert_point(&bb, main_fn_handle, entry_block_handle);
+        bytecode_set_insert_point(&bb, main_fn_handle, entry_block_handle);
 
-//         bytecode_emit_push_arg(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 2));
+        bytecode_emit_push_arg(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 2));
 
-//         auto result = bytecode_emit_call(&bb, recursive_fn_handle, 1);
-//         bytecode_emit_jmp(&bb, return_block);
+        auto result = bytecode_emit_call(&bb, recursive_fn_handle, 1);
+        bytecode_emit_jmp(&bb, return_block);
 
-//         bytecode_set_insert_point(&bb, main_fn_handle, return_block);
-//         bytecode_emit_print(&bb, result);
-//         bytecode_emit_return(&bb);
-//     }
+        bytecode_set_insert_point(&bb, main_fn_handle, return_block);
+        bytecode_emit_print(&bb, result);
+        bytecode_emit_return(&bb);
+    }
 
-//     //bytecode_print(&bb);
+    print_bytecode(bb);
 
-//     Bytecode_Validator validator = {};
-//     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-//     bool bytecode_valid = validate_bytecode(&validator);
+    Bytecode_Validator validator = {};
+    bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    bool bytecode_valid = validate_bytecode(&validator);
 
-//     MunitResult result = MUNIT_OK;
+    MunitResult result = MUNIT_OK;
 
-//     if (!bytecode_valid) {
-//         bytecode_validator_print_errors(&validator);
-//         result = MUNIT_FAIL;
+    if (!bytecode_valid) {
+        bytecode_validator_print_errors(&validator);
+        result = MUNIT_FAIL;
 
-//     } else {
-//         Interpreter interp = interpreter_create(c_alloc, &zc);
+    } else {
+        Interpreter interp = interpreter_create(c_alloc, &zc);
 
-//         interp.std_out = create_temp_file();
+        interp.std_out = platform_temp_file();
 
-//         auto program = bytecode_get_program(&bb);
-//         program.entry_handle = main_fn_handle;
-//         interpreter_start(&interp, program);
+        auto program = bytecode_get_program(&bb);
+        program.entry_handle = main_fn_handle;
+        interpreter_start(&interp, program);
 
-//         assert_zodiac_stream(&interp.std_out, "true\ntrue\nfalse\n0\n");
+        assert_zodiac_stream(interp.std_out, "true\ntrue\nfalse\n0\n");
 
-//         munit_assert(file_close(&interp.std_out) == 0);
+        munit_assert(filesystem_close(&interp.std_out));
 
-//         interpreter_free(&interp);
-//     }
+        interpreter_free(&interp);
+    }
 
-//     bytecode_validator_free(&validator);
-//     bytecode_builder_free(&bb);
-//     zodiac_context_destroy(&zc);
+    bytecode_validator_free(&validator);
+    bytecode_builder_free(&bb);
+    zodiac_context_destroy(&zc);
 
-//     return result;
-// }
+    return result;
+}
 
 // MunitResult Insert_And_Extract_Value(const MunitParameter params[], void *user_data_or_fixture)
 // {
@@ -1881,7 +1882,7 @@ START_TESTS(bytecode_tests)
     DEFINE_TEST(Building_1),
     DEFINE_TEST(Simple_Function_Call),
     DEFINE_TEST(Arguments_And_Return_Values),
-    // DEFINE_TEST(Recursion_And_Jumps),
+    DEFINE_TEST(Recursion_And_Jumps),
     // DEFINE_TEST(Insert_And_Extract_Value),
     // DEFINE_TEST(Extract_Struct_Value),
     // DEFINE_TEST(Return_Struct),

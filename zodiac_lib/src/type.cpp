@@ -175,7 +175,9 @@ void type_to_string(Type *type, String_Builder *sb)
         }
 
         case Type_Kind::FLOAT: assert(false); break;
-        case Type_Kind::BOOLEAN: assert(false); break;
+
+        case Type_Kind::BOOLEAN: string_builder_append(sb, "bool"); break;
+
         case Type_Kind::POINTER: assert(false); break;
         case Type_Kind::STRUCTURE: assert(false); break;
         case Type_Kind::STATIC_ARRAY: assert(false); break;

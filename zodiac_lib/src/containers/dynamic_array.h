@@ -40,6 +40,8 @@ struct Array_Ref
     template <size_t N>
     constexpr Array_Ref(const Element_Type (&c_arr)[N]) : data((Element_Type *)c_arr), count(N) {}
 
+    Array_Ref(const Element_Type *begin, const Element_Type *end) : data(begin), count(end - begin) {}
+
     Element_Type& operator[](u64 index) {
         assert(index >= 0 && index < count);
         return data[index];
