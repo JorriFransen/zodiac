@@ -30,7 +30,7 @@ file_local void print_bytecode(const Bytecode_Builder &bb)
 #endif
 }
 
-static MunitResult Building_1(const MunitParameter params[], void* user_data_or_fixture)
+file_local MunitResult Building_1(const MunitParameter params[], void* user_data_or_fixture)
 {
     Zodiac_Context zc;
     zodiac_context_create(&zc);
@@ -89,7 +89,7 @@ static MunitResult Building_1(const MunitParameter params[], void* user_data_or_
     munit_assert_string_equal(_buf, expected_string); \
 }
 
-static MunitResult Simple_Function_Call(const MunitParameter params[], void* user_data_or_fixture)
+file_local MunitResult Simple_Function_Call(const MunitParameter params[], void* user_data_or_fixture)
 {
     Zodiac_Context zc;
     zodiac_context_create(&zc);
@@ -149,7 +149,7 @@ static MunitResult Simple_Function_Call(const MunitParameter params[], void* use
     return result;
 }
 
-MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* user_data_or_fixture)
+file_local MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* user_data_or_fixture)
 {
     auto c_alloc = c_allocator();
 
@@ -226,7 +226,7 @@ MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* use
     return result;
 }
 
-MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_or_fixture)
+file_local MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_or_fixture)
 {
     auto c_alloc = c_allocator();
 
@@ -317,7 +317,7 @@ MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_o
     return result;
 }
 
-MunitResult Insert_And_Extract_Value(const MunitParameter params[], void *user_data_or_fixture)
+file_local MunitResult Insert_And_Extract_Value(const MunitParameter params[], void *user_data_or_fixture)
 {
     auto c_alloc = c_allocator();
 
