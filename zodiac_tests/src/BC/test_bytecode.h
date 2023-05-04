@@ -1,6 +1,7 @@
 #pragma once
 
 #include <munit/munit.h>
+
 #include "test_common.h"
 
 #include "bytecode/bytecode.h"
@@ -776,7 +777,7 @@ file_local MunitResult Struct_Pointers(const MunitParameter params[], void *user
     return result;
 }
 
-MunitResult Invalid_Extract_Element(const MunitParameter params[], void *user_data_or_fixture)
+file_local MunitResult Invalid_Extract_Element(const MunitParameter params[], void *user_data_or_fixture)
 {
     auto c_alloc = c_allocator();
 
@@ -795,7 +796,6 @@ MunitResult Invalid_Extract_Element(const MunitParameter params[], void *user_da
         auto struct_alloc = bytecode_emit_alloc(&bb, vec_type, "v");
         auto inserted_struct_val = bytecode_emit_insert_value(&bb, struct_alloc, bytecode_integer_literal(&bb, &builtin_type_s64, 42), vec_type, 0);
         inserted_struct_val = bytecode_emit_insert_value(&bb, struct_alloc, bytecode_integer_literal(&bb, &builtin_type_s64, 24), vec_type, 1);
-        // bytecode_emit_store_alloc(&bb, struct_val, struct_alloc);
 
         auto struct_ptr = bytecode_emit_address_of_alloc(&bb, struct_alloc);
         auto loaded_struct = bytecode_emit_load_pointer(&bb, struct_ptr);
@@ -1552,7 +1552,7 @@ MunitResult Invalid_Extract_Element(const MunitParameter params[], void *user_da
 
 //     auto return_bool_fn_type = get_function_type(Type::boolean, {}, &zc.ast_allocator);
 //     auto return_bool = bytecode_function_create(&bb, "return_bool", return_bool_fn_type);
-//     auto return_bool_entry_block = bytecode_append_block(&bb, return_bool, "enry");
+//     auto return_bool_entry_block = bytecode_append_block(&bb, return_bool, "entry");
 //     bytecode_set_insert_point(&bb, return_bool, return_bool_entry_block);
 //     {
 //         auto b = bytecode_boolean_literal(&bb, Type::boolean, true);
@@ -1644,7 +1644,7 @@ MunitResult Invalid_Extract_Element(const MunitParameter params[], void *user_da
 
 //     auto return_bool_fn_type = get_function_type(Type::boolean, {}, &zc.ast_allocator);
 //     auto return_bool = bytecode_function_create(&bb, "return_bool", return_bool_fn_type);
-//     auto return_bool_entry_block = bytecode_append_block(&bb, return_bool, "enry");
+//     auto return_bool_entry_block = bytecode_append_block(&bb, return_bool, "entry");
 //     bytecode_set_insert_point(&bb, return_bool, return_bool_entry_block);
 //     {
 //         auto b = bytecode_boolean_literal(&bb, Type::boolean, true);

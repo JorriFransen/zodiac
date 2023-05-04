@@ -1,4 +1,5 @@
 
+- Merge error systems (resolve errors, and the old system used in bytecode(/validator))
 
 - Containers
   - Hash table

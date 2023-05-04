@@ -11,6 +11,7 @@
 #include "type.h"
 #include "util/asserts.h"
 #include "util/string_builder.h"
+#include "zodiac_context.h"
 
 namespace Zodiac { namespace Bytecode {
 
@@ -38,23 +39,22 @@ void bytecode_validator_print_errors(Bytecode_Validator *validator)
 
         if (i != 0) fprintf(stderr, "\n");
 
-        assert(false);
-        // Validation_Error &ve = validator->errors[i];
+        Validation_Error &ve = validator->errors[i];
 
-        // auto err = validator->context->errors[ve.error_handle];
+        auto err = validator->context->errors[ve.error_handle];
 
-        // auto fn = &validator->visitor.functions[ve.instruction_handle.fn_index];
-        // auto block = &fn->blocks[ve.instruction_handle.block_index];
+        auto fn = &validator->visitor.functions[ve.instruction_handle.fn_index];
+        auto block = &fn->blocks[ve.instruction_handle.block_index];
 
-        // fprintf(stderr, "%.*s:%" PRId64 ":%" PRId64 ": ",
-        //         (int)err.start.source_id.length, err.start.source_id.data,
-        //         err.start.line, err.start.column);
+        fprintf(stderr, "%.*s:%lld:%lld: ",
+                (int)err.start.name.length, err.start.name.data,
+                err.start.line, err.start.index_in_line);
 
-        // fprintf(stderr, "%.*s\n\tIn function: '%.*s'\n\tIn block: '%.*s'\n\tIndex in block: %" PRId64 "\n",
-        //         (int)err.message.length, err.message.data,
-        //         (int)fn->name.length, fn->name.data,
-        //         (int)block->name.length, block->name.data,
-        //         ve.instruction_handle.instruction_index);
+        fprintf(stderr, "%.*s\n\tIn function: '%.*s'\n\tIn block: '%.*s'\n\tIndex in block: %lld\n",
+                (int)err.message.length, err.message.data,
+                (int)fn->name.length, fn->name.data,
+                (int)block->name.length, block->name.data,
+                ve.instruction_handle.instruction_index);
     }
 }
 
@@ -76,6 +76,7 @@ void bytecode_validator_report_error(Bytecode_Validator *validator, Bytecode_Ins
     Source_Pos begin = {};
     Source_Pos end = {};
     if (validator->visitor.instruction_locations) {
+        assert(validator->visitor.instruction_locations->count);
         assert(false);
         // bool found = hash_table_find(validator->visitor.instruction_locations, location, &sp);
         // zodiac_assert_fatal(found, "Did not find location for Bytecode_Instruction_Handle");
