@@ -1190,8 +1190,8 @@ file_local MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void
 //         bytecode_emit_return(&bb, r);
 //     }
 
-//     Type *add32_arg_types[] = { Type::s32, Type::s32 };
-//     auto add32_fn_type = get_function_type(Type::s32, add32_arg_types, &zc.ast_allocator);
+//     Type *add32_arg_types[] = { &builtin_type_s32, &builtin_type_s32 };
+//     auto add32_fn_type = get_function_type(&builtin_type_s32, add32_arg_types, &zc.ast_allocator);
 //     auto add32_fn = bytecode_function_create(&bb, "add32", add32_fn_type);
 //     auto add32_entry_block = bytecode_append_block(&bb, add32_fn, "entry");
 //     bytecode_set_insert_point(&bb, add32_fn, add32_entry_block);
@@ -1210,8 +1210,8 @@ file_local MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void
 //     {
 //         auto a = bytecode_integer_literal(&bb, &builtin_type_s64, 42);
 //         auto b = bytecode_integer_literal(&bb, &builtin_type_s64, 24);
-//         auto a32 = bytecode_integer_literal(&bb, Type::s32, 21);
-//         auto b32 = bytecode_integer_literal(&bb, Type::s32, 12);
+//         auto a32 = bytecode_integer_literal(&bb, &builtin_type_s32, 21);
+//         auto b32 = bytecode_integer_literal(&bb, &builtin_type_s32, 12);
 
 //         // Calling bytecode function
 //         bytecode_emit_push_arg(&bb, a);
@@ -1255,7 +1255,7 @@ file_local MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void
 //         bytecode_emit_return(&bb, r);
 //     }
 
-//     //bytecode_print(&bb);
+//     print_bytecode(bb);
 
 //     Bytecode_Validator validator = {};
 //     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -1270,16 +1270,16 @@ file_local MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void
 //     } else {
 
 //         Interpreter interp = interpreter_create(c_alloc, &zc);
-//         interp.std_out = create_temp_file();
+//         filesystem_temp_file(&interp.std_out);
 //         auto program = bytecode_get_program(&bb);
 //         program.entry_handle = main_fn;
 //         Interpreter_Register result_register = interpreter_start(&interp, program);
 //         munit_assert(result_register.type == &builtin_type_s64);
-//         assert_int64(result_register.value.integer.s64, ==, 66);
+//         munit_assert_int64(result_register.value.integer.s64, ==, 66);
 
-//         assert_zodiac_stream(&interp.std_out, "66\n66\n66\n66\n33\n33\n");
+//         assert_zodiac_stream(interp.std_out, "66\n66\n66\n66\n33\n33\n");
 
-//         munit_assert(file_close(&interp.std_out) == 0);
+//         munit_assert(filesystem_close(&interp.std_out));
 
 //         interpreter_free(&interp);
 //     }

@@ -586,49 +586,43 @@ Bytecode_Register bytecode_emit_call(Bytecode_Builder *builder, Bytecode_Functio
 
 Bytecode_Register bytecode_emit_call_pointer(Bytecode_Builder *builder, Bytecode_Register fn_ptr_reg, Bytecode_Register arg_count_register)
 {
-    assert(false);
-    return {};
+    assert(fn_ptr_reg.kind == Bytecode_Register_Kind::TEMPORARY);
+    assert(fn_ptr_reg.type->kind == Type_Kind::POINTER);
+    assert(fn_ptr_reg.type->pointer.base->kind == Type_Kind::FUNCTION);
 
-    // assert(fn_ptr_reg.kind == Bytecode_Register_Kind::TEMPORARY);
-    // assert(fn_ptr_reg.type->kind == Type_Kind::POINTER);
-    // assert(fn_ptr_reg.type->pointer.base->kind == Type_Kind::FUNCTION);
+    assert(arg_count_register.kind == Bytecode_Register_Kind::TEMPORARY);
+    assert(arg_count_register.flags & BC_REGISTER_FLAG_LITERAL);
+    assert(arg_count_register.type->kind == Type_Kind::INTEGER);
+    assert(arg_count_register.type->integer.sign);
+    assert(arg_count_register.type->bit_size == 64);
 
-    // assert(arg_count_register.kind == Bytecode_Register_Kind::TEMPORARY);
-    // assert(arg_count_register.flags & BC_REGISTER_FLAG_LITERAL);
-    // assert(arg_count_register.type->kind == Type_Kind::INTEGER);
-    // assert(arg_count_register.type->integer.sign);
-    // assert(arg_count_register.type->bit_size == 64);
+    auto fn_type = fn_ptr_reg.type->pointer.base;
+    assert(arg_count_register.value.integer.s64 == fn_type->function.parameter_types.count);
 
-    // auto fn_type = fn_ptr_reg.type->pointer.base;
-    // assert(arg_count_register.value.integer.s64 == fn_type->function.arg_types.count);
-
-    // Bytecode_Register result_register = {};
-    // if (fn_type->function.return_type->kind != Type_Kind::VOID) {
-    //     result_register = bytecode_register_create(builder,
-    //                                                Bytecode_Register_Kind::TEMPORARY,
-    //                                                fn_type->function.return_type);
-    // }
+    Bytecode_Register result_register = {};
+    if (fn_type->function.return_type->kind != Type_Kind::VOID) {
+        result_register = bytecode_register_create(builder,
+                                                   Bytecode_Register_Kind::TEMPORARY,
+                                                   fn_type->function.return_type);
+    }
 
 
-    // bytecode_emit_instruction(builder, Bytecode_Opcode::CALL_PTR, fn_ptr_reg, arg_count_register, result_register);
+    bytecode_emit_instruction(builder, Bytecode_Opcode::CALL_PTR, fn_ptr_reg, arg_count_register, result_register);
 
-    // return result_register;
+    return result_register;
 
 }
 
 Bytecode_Register bytecode_emit_call_pointer(Bytecode_Builder *builder, Bytecode_Register fn_ptr_reg, s64 arg_count)
 {
-    assert(false);
-    return {};
+    assert(fn_ptr_reg.kind == Bytecode_Register_Kind::TEMPORARY);
+    assert(fn_ptr_reg.type->kind == Type_Kind::POINTER);
+    assert(fn_ptr_reg.type->pointer.base->kind == Type_Kind::FUNCTION);
 
-    // assert(fn_ptr_reg.kind == Bytecode_Register_Kind::TEMPORARY);
-    // assert(fn_ptr_reg.type->kind == Type_Kind::POINTER);
-    // assert(fn_ptr_reg.type->pointer.base->kind == Type_Kind::FUNCTION);
+    assert(arg_count >= 0);
+    auto arg_count_register = bytecode_integer_literal(builder, &builtin_type_s64, arg_count);
 
-    // assert(arg_count >= 0);
-    // auto arg_count_register = bytecode_integer_literal(builder, Type::s64, arg_count);
-
-    // return bytecode_emit_call_pointer(builder, fn_ptr_reg, arg_count_register);
+    return bytecode_emit_call_pointer(builder, fn_ptr_reg, arg_count_register);
 }
 
 void bytecode_emit_return(Bytecode_Builder *builder)
@@ -678,31 +672,28 @@ Bytecode_Register bytecode_emit_address_of_alloc(Bytecode_Builder *builder, Byte
 
 Bytecode_Register bytecode_emit_address_of_function(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle)
 {
-    assert(false);
-    return {};
+    assert(fn_handle >= 0 && fn_handle < builder->functions.count);
+    auto fn = &builder->functions[fn_handle];
 
-    // assert(fn_handle >= 0 && fn_handle < builder->functions.count);
-    // auto fn = &builder->functions[fn_handle];
+    if (!fn->type->pointer_to) {
+        get_pointer_type(fn->type, &builder->zodiac_context->ast_allocator);
+    }
 
-    // if (!fn->type->pointer_to) {
-    //     ast_pointer_type_get_or_new(builder->zodiac_context, fn->type);
-    // }
+    assert(fn->type->pointer_to);
 
-    // assert(fn->type->pointer_to);
+    Bytecode_Register result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, fn->type->pointer_to);
 
-    // Bytecode_Register result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, fn->type->pointer_to);
+    Bytecode_Register fn_register = {
+        .kind = Bytecode_Register_Kind::FUNCTION,
+        .flags = BC_REGISTER_FLAG_LITERAL,
+        .index = -1,
+        .type = fn->type,
+        .value = { .function_handle = fn_handle },
+    };
 
-    // Bytecode_Register fn_register = {
-    //     .kind = Bytecode_Register_Kind::FUNCTION,
-    //     .flags = BC_REGISTER_FLAG_LITERAL,
-    //     .index = -1,
-    //     .type = fn->type,
-    //     .value = { .function_handle = fn_handle },
-    // };
+    bytecode_emit_instruction(builder, Bytecode_Opcode::ADDROF_FUNC, fn_register, {}, result);
 
-    // bytecode_emit_instruction(builder, Bytecode_Opcode::ADDROF_FUNC, fn_register, {}, result);
-
-    // return result;
+    return result;
 }
 
 void bytecode_emit_store_global(Bytecode_Builder *builder, Bytecode_Register source, Bytecode_Global_Handle global_handle)

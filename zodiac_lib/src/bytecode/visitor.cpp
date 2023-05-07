@@ -147,11 +147,10 @@ void visit_instruction_post(Bytecode_Visitor *visitor, Bytecode_Instruction *ins
         } else {
             assert(op == Bytecode_Opcode::CALL_PTR);
 
-            assert(false);
-            // assert(instruction->a.type->kind == Type_Kind::POINTER);
-            // assert(instruction->a.type->pointer.base->kind == Type_Kind::FUNCTION);
+            assert(instruction->a.type->kind == Type_Kind::POINTER);
+            assert(instruction->a.type->pointer.base->kind == Type_Kind::FUNCTION);
 
-            // fn_type = instruction->a.type->pointer.base;
+            fn_type = instruction->a.type->pointer.base;
         }
 
         assert(fn_type);

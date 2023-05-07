@@ -224,8 +224,7 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
 
         UNOP_CASE_TYPED_(CALL_FOREIGN, instruction->a.type->function.return_type)
 
-        // UNOP_CASE_TYPED_(CALL_PTR, instruction->a.type->pointer.base->function.return_type)
-        case Bytecode_Opcode::CALL_PTR: { assert(false); break; }
+        UNOP_CASE_TYPED_(CALL_PTR, instruction->a.type->pointer.base->function.return_type)
 
         OP_CASE_(RETURN_VOID)
         UNOP_CASE_(RETURN)

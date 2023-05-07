@@ -672,43 +672,42 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            assert(false);
-            // auto fn_type = instruction->a.type->pointer.base;
-            // assert(fn_type->kind == Type_Kind::FUNCTION);
+            auto fn_type = instruction->a.type->pointer.base;
+            assert(fn_type->kind == Type_Kind::FUNCTION);
 
-            // const auto &args = fn_type->function.arg_types;
-            // auto fn_arg_count = args.count;
-            // auto pushed_arg_count = stack_count(&visitor->arg_stack);
+            const auto &args = fn_type->function.parameter_types;
+            auto fn_arg_count = args.count;
+            auto pushed_arg_count = stack_count(&visitor->arg_stack);
 
-            // if (fn_arg_count > pushed_arg_count) {
-            //     bytecode_validator_report_error(validator, "'CALL_PTR' expected %" PRId64 " args, got %" PRId64, fn_arg_count, pushed_arg_count);
-            //     return false;
-            // }
+            if (fn_arg_count > pushed_arg_count) {
+                bytecode_validator_report_error(validator, "'CALL_PTR' expected %d args, got %d", fn_arg_count, pushed_arg_count);
+                return false;
+            }
 
-            // bool arg_match = true;
-            // for (s64 i = 0; i < fn_arg_count; i++) {
-            //     auto arg_reg = stack_peek_ptr(&visitor->arg_stack, (fn_arg_count - 1) - i);
-            //     if (arg_reg->type != args[i]) {
-            //         bytecode_validator_report_error(validator, "Mismatching type for argument %" PRId64, i);
-            //         arg_match = false;
-            //     }
+            bool arg_match = true;
+            for (s64 i = 0; i < fn_arg_count; i++) {
+                auto arg_reg = stack_peek_ptr(&visitor->arg_stack, (fn_arg_count - 1) - i);
+                if (arg_reg->type != args[i]) {
+                    bytecode_validator_report_error(validator, "Mismatching type for argument %d", i);
+                    arg_match = false;
+                }
 
-            // }
+            }
 
-            // if (!arg_match) return false;
+            if (!arg_match) return false;
 
-            // if (instruction->dest.index != -1) {
+            if (instruction->dest.index != -1) {
 
-            //     if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
-            //         bytecode_validator_report_error(validator, "The 'dest' register for 'CALL_PTR' must be a temporary");
-            //         return false;
-            //     }
+                if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
+                    bytecode_validator_report_error(validator, "The 'dest' register for 'CALL_PTR' must be a temporary");
+                    return false;
+                }
 
-            //     if (instruction->dest.type != fn_type->function.return_type) {
-            //         bytecode_validator_report_error(validator, "The type of the 'dest' register for 'CALL_PTR' does noet match the return type of the called function");
-            //         return false;
-            //     }
-            // }
+                if (instruction->dest.type != fn_type->function.return_type) {
+                    bytecode_validator_report_error(validator, "The type of the 'dest' register for 'CALL_PTR' does noet match the return type of the called function");
+                    return false;
+                }
+            }
 
             return true;
             break;
@@ -826,12 +825,11 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            assert(false);
-            // if (!(instruction->dest.type->kind == Type_Kind::POINTER &&
-            //       instruction->dest.type->pointer.base->kind == Type_Kind::FUNCTION)) {
-            //     bytecode_validator_report_error(validator, "The 'dest' register for 'ADDROF_FUNC' must be of function pointer type");
-            //     return false;
-            // }
+            if (!(instruction->dest.type->kind == Type_Kind::POINTER &&
+                  instruction->dest.type->pointer.base->kind == Type_Kind::FUNCTION)) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'ADDROF_FUNC' must be of function pointer type");
+                return false;
+            }
 
             return true;
             break;

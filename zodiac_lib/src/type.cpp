@@ -313,7 +313,10 @@ void type_to_string(Type *type, String_Builder *sb)
             break;
         }
 
-        case Type_Kind::FUNCTION: assert(false); break;
+        case Type_Kind::FUNCTION: {
+            string_builder_append(sb, "fn_type");
+            break;
+        }
     }
 }
 
