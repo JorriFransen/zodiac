@@ -20,12 +20,14 @@ Type builtin_type_s32;
 Type builtin_type_r32;
 
 Dynamic_Array<Type *> function_types;
+Dynamic_Array<Type *> static_array_types;
 
 bool type_system_initialize()
 {
     assert(!type_system_initialized);
 
     dynamic_array_create(&dynamic_allocator, &function_types);
+    dynamic_array_create(&dynamic_allocator, &static_array_types);
 
     create_type(&builtin_type_unsized_integer, Type_Kind::UNSIZED_INTEGER, 0, TYPE_FLAG_INT);
     create_type(&builtin_type_void, Type_Kind::VOID, 0);
@@ -98,6 +100,24 @@ void create_struct_type(Type *type, Dynamic_Array<Type *> member_types, Atom nam
     type->structure.member_types = member_types;
 }
 
+void create_static_array_type(Type *type, Type *element_type, u64 count)
+{
+    assert(type);
+    assert(element_type);
+
+    assert(element_type->bit_size > 0);
+    assert(element_type->bit_size % 8 == 0);
+
+    //TODO: Alignment
+    auto bit_size = count * element_type->bit_size;
+    assert(bit_size % 8 == 0);
+
+    create_type(type, Type_Kind::STATIC_ARRAY, bit_size, TYPE_FLAG_ARRAY);
+
+    type->static_array.element_type = element_type;
+    type->static_array.count = count;
+}
+
 void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types)
 {
     assert(type);
@@ -141,6 +161,25 @@ Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allo
     auto members_copy = dynamic_array_copy(member_types, allocator);
 
     create_struct_type(result, members_copy, name);
+    return result;
+}
+
+Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator)
+{
+    assert(element_type);
+    assert(allocator);
+
+    for (u64 i = 0; i < static_array_types.count; i++) {
+
+        auto sat = static_array_types[i];
+        if (sat->static_array.element_type == element_type && sat->static_array.count == count) {
+            return sat;
+        }
+    }
+
+    Type *result = alloc<Type>(allocator);
+    create_static_array_type(result, element_type, count);
+
     return result;
 }
 
@@ -234,7 +273,10 @@ void type_to_string(Type *type, String_Builder *sb)
     switch (type->kind) {
         case Type_Kind::INVALID: assert(false); break;
 
-        case Type_Kind::VOID: string_builder_append(sb, "void"); break;
+        case Type_Kind::VOID: {
+            string_builder_append(sb, "void");
+            break;
+        }
 
         case Type_Kind::UNSIZED_INTEGER: assert(false); break;
 
@@ -249,12 +291,28 @@ void type_to_string(Type *type, String_Builder *sb)
             break;
         }
 
-        case Type_Kind::BOOLEAN: string_builder_append(sb, "bool"); break;
+        case Type_Kind::BOOLEAN: {
+            string_builder_append(sb, "bool");
+            break;
+        }
 
-        case Type_Kind::POINTER: string_builder_append(sb, "*"); type_to_string(type->pointer.base, sb); break;
+        case Type_Kind::POINTER: {
+            string_builder_append(sb, "*");
+            type_to_string(type->pointer.base, sb);
+            break;
+        }
 
-        case Type_Kind::STRUCTURE: string_builder_append(sb, "%.*s", (int)type->structure.name.length, type->structure.name.data); break;
-        case Type_Kind::STATIC_ARRAY: assert(false); break;
+        case Type_Kind::STRUCTURE: {
+            string_builder_append(sb, "%.*s", (int)type->structure.name.length, type->structure.name.data);
+            break;
+        }
+
+        case Type_Kind::STATIC_ARRAY: {
+            string_builder_append(sb, "[%lu]", type->static_array.count);
+            type_to_string(type->static_array.element_type, sb);
+            break;
+        }
+
         case Type_Kind::FUNCTION: assert(false); break;
     }
 }

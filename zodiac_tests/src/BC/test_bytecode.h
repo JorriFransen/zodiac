@@ -1005,81 +1005,81 @@ file_local MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void
     return result;
 }
 
-// file_local MunitResult Insert_And_Extract_Element(const MunitParameter params[], void *user_data_or_fixture)
-// {
-//     auto c_alloc = c_allocator();
+file_local MunitResult Insert_And_Extract_Element(const MunitParameter params[], void *user_data_or_fixture)
+{
+    auto c_alloc = c_allocator();
 
-//     Zodiac_Context zc;
-//     zodiac_context_create(&zc);
-//     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    Zodiac_Context zc;
+    zodiac_context_create(&zc);
+    Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
-//     auto array_type = ast_static_array_type_get_or_new(&zc, &builtin_type_s64, 5);
+    auto array_type = get_static_array_type(&builtin_type_s64, 5, &zc.ast_allocator);
 
-//     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
-//     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
-//     auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
-//     bytecode_set_insert_point(&bb, main_fn, main_entry_block);
-//     {
-//         auto array_alloc = bytecode_emit_alloc(&bb, array_type, "array_alloc");
+    auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
+    auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
+    auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
+    bytecode_set_insert_point(&bb, main_fn, main_entry_block);
+    {
+        auto array_alloc = bytecode_emit_alloc(&bb, array_type, "array_alloc");
 
-//         Bytecode_Register array_val = {};
+        Bytecode_Register array_val = {};
 
-//         for (int64_t i = 0; i < array_type->static_array.count; i++) {
-//             auto elem_val = bytecode_integer_literal(&bb, &builtin_type_s64, i + 1);
-//             array_val = bytecode_emit_insert_element(&bb, array_val, elem_val, array_type, i);
-//         }
-//         bytecode_emit_store_alloc(&bb, array_val, array_alloc);
+        for (int64_t i = 0; i < array_type->static_array.count; i++) {
+            auto elem_val = bytecode_integer_literal(&bb, &builtin_type_s64, i + 1);
+            array_val = bytecode_emit_insert_element(&bb, array_val, elem_val, array_type, i);
+        }
+        bytecode_emit_store_alloc(&bb, array_val, array_alloc);
 
-//         auto sum = bytecode_integer_literal(&bb, &builtin_type_s64, 0);
-//         array_val = bytecode_emit_load_alloc(&bb, array_alloc);
+        auto sum = bytecode_integer_literal(&bb, &builtin_type_s64, 0);
+        array_val = bytecode_emit_load_alloc(&bb, array_alloc);
 
-//         for (int64_t i = array_type->static_array.count - 1; i >= 0; i--) {
-//             auto elem_val = bytecode_emit_extract_element(&bb, array_val, i);
-//             bytecode_emit_print(&bb, elem_val);
-//             sum = bytecode_emit_add(&bb, sum ,elem_val);
-//         }
+        for (int64_t i = array_type->static_array.count - 1; i >= 0; i--) {
+            auto elem_val = bytecode_emit_extract_element(&bb, array_val, i);
+            bytecode_emit_print(&bb, elem_val);
+            sum = bytecode_emit_add(&bb, sum ,elem_val);
+        }
 
-//         bytecode_emit_print(&bb, sum);
+        bytecode_emit_print(&bb, sum);
 
-//         bytecode_emit_return(&bb, sum);
-//     }
+        bytecode_emit_return(&bb, sum);
+    }
 
-//     //bytecode_print(&bb);
+    print_bytecode(bb);
 
-//     Bytecode_Validator validator = {};
-//     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-//     bool bytecode_valid = validate_bytecode(&validator);
+    Bytecode_Validator validator = {};
+    bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    bool bytecode_valid = validate_bytecode(&validator);
 
-//     MunitResult result = MUNIT_OK;
+    MunitResult result = MUNIT_OK;
 
-//     if (!bytecode_valid) {
-//         bytecode_validator_print_errors(&validator);
-//         result = MUNIT_FAIL;
+    if (!bytecode_valid) {
+        bytecode_validator_print_errors(&validator);
+        result = MUNIT_FAIL;
 
-//     } else {
+    } else {
 
 
-//         Interpreter interp = interpreter_create(c_alloc, &zc);
-//         interp.std_out = create_temp_file();
-//         auto program = bytecode_get_program(&bb);
-//         program.entry_handle = main_fn;
-//         Interpreter_Register result_register = interpreter_start(&interp, program);
-//         munit_assert(result_register.type == &builtin_type_s64);
-//         assert_int64(result_register.value.integer.s64, ==, 15);
+        Interpreter interp = interpreter_create(c_alloc, &zc);
+        filesystem_temp_file(&interp.std_out);
+        auto program = bytecode_get_program(&bb);
+        program.entry_handle = main_fn;
+        Interpreter_Register result_register = interpreter_start(&interp, program);
+        munit_assert(result_register.type == &builtin_type_s64);
+        munit_assert_int64(result_register.value.integer.s64, ==, 15);
 
-//         assert_zodiac_stream(&interp.std_out, "5\n4\n3\n2\n1\n15\n");
+        assert_zodiac_stream(interp.std_out, "5\n4\n3\n2\n1\n15\n");
 
-//         munit_assert(file_close(&interp.std_out) == 0);
+        munit_assert(filesystem_close(&interp.std_out));
 
-//         interpreter_free(&interp);
-//     }
+        interpreter_free(&interp);
+    }
 
-//     bytecode_validator_free(&validator);
-//     bytecode_builder_free(&bb);
-//     zodiac_context_destroy(&zc);
+    bytecode_validator_free(&validator);
+    bytecode_builder_free(&bb);
+    zodiac_context_destroy(&zc);
 
-//     return result;
-// }
+    return result;
+}
 
 // file_local MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture)
 // {
@@ -1894,7 +1894,7 @@ START_TESTS(bytecode_tests)
     DEFINE_TEST(Invalid_Extract_Element),
     DEFINE_TEST(Simple_AGG_OFFSET_PTR),
     DEFINE_TEST(Nested_AGG_OFFSET_PTR),
-    // DEFINE_TEST(Insert_And_Extract_Element),
+    DEFINE_TEST(Insert_And_Extract_Element),
     // DEFINE_TEST(Simple_ARR_OFFSET_PTR),
     // DEFINE_TEST(Calling_Function_Pointers),
     // DEFINE_TEST(BC_FN_PTR_Calls_With_Structs),

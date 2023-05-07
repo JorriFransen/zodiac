@@ -838,53 +838,46 @@ Bytecode_Register bytecode_emit_extract_value(Bytecode_Builder *builder, Bytecod
 
 Bytecode_Register bytecode_emit_insert_element(Bytecode_Builder *builder, Bytecode_Register array, Bytecode_Register new_elem_val, Type *array_type, s64 index)
 {
-    assert(false);
-    return {};
+    assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
-    // assert(array_type->kind == Type_Kind::STATIC_ARRAY);
+    if (array.kind == Bytecode_Register_Kind::INVALID) {
+        assert(array.type == nullptr);
+        array.kind = Bytecode_Register_Kind::UNDEF;
+        array.type = array_type;
+    }
 
-    // if (array.kind == Bytecode_Register_Kind::INVALID) {
-    //     assert(array.type == nullptr);
-    //     array.kind = Bytecode_Register_Kind::UNDEF;
-    //     array.type = array_type;
-    // }
+    assert(new_elem_val.type == array_type->static_array.element_type);
+    assert(index >= 0 && index < array_type->static_array.count);
 
-    // assert(new_elem_val.type == array_type->static_array.element_type);
-    // assert(index >= 0 && index < array_type->static_array.count);
+    Bytecode_Register result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, array_type);
 
-    // Bytecode_Register result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, array_type);
+    auto handle = bytecode_emit_instruction(builder, Bytecode_Opcode::INSERT_ELEMENT, array, new_elem_val, result);
+    auto ip = bytecode_get_instruction(builder, handle);
+    ip->additional_index = index;
 
-    // auto handle = bytecode_emit_instruction(builder, Bytecode_Opcode::INSERT_ELEMENT, array, new_elem_val, result);
-    // auto ip = bytecode_get_instruction(builder, handle);
-    // ip->additional_index = index;
-
-    // return result;
+    return result;
 }
 
 
 Bytecode_Register bytecode_emit_extract_element(Bytecode_Builder *builder, Bytecode_Register array, s64 index)
 {
-    assert(false);
-    return {};
-
     // @TODO: @CLEANUP: This should be checked in a validation pass
-//     zodiac_assert_fatal(array.kind == Bytecode_Register_Kind::TEMPORARY,
-//                         "[Bytecode] array register passed to bytecode_emit_extract_element must be a temporary register");
-//
-//     assert(array.type);
-//
-//     Type *array_type = array.type;
-//     assert(array_type->flags & AST_TYPE_FLAG_ARRAY);
-//     assert(array_type->kind == Type_Kind::STATIC_ARRAY);
-//
-//     assert(index >= 0 && index < array_type->static_array.count);
-//
-//     Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, array_type->static_array.element_type, BC_REGISTER_FLAG_NONE);
-//     Bytecode_Register index_value = bytecode_integer_literal(builder, Type::s64, index);
-//
-//     bytecode_emit_instruction(builder, Bytecode_Opcode::EXTRACT_ELEMENT, array, index_value, result_register);
-//
-//     return result_register;
+    assert_msg(array.kind == Bytecode_Register_Kind::TEMPORARY, "[Bytecode] array register passed to bytecode_emit_extract_element must be a temporary register");
+
+    assert(array.type);
+
+    Type *array_type = array.type;
+    assert(array_type->flags & TYPE_FLAG_ARRAY);
+    assert(array_type->kind == Type_Kind::STATIC_ARRAY);
+
+    assert(index >= 0 && index < array_type->static_array.count);
+
+    Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, array_type->static_array.element_type, BC_REGISTER_FLAG_NONE);
+    Bytecode_Register index_value = bytecode_integer_literal(builder, &builtin_type_s64, index);
+
+    bytecode_emit_instruction(builder, Bytecode_Opcode::EXTRACT_ELEMENT, array, index_value, result_register);
+
+    return result_register;
 }
 
 Bytecode_Register bytecode_emit_aggregate_offset_pointer(Bytecode_Builder *builder, Bytecode_Register agg_register, s64 index)

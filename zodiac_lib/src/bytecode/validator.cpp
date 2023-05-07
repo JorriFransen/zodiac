@@ -1139,76 +1139,74 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             }
 
             assert(dest_type->kind == Type_Kind::STATIC_ARRAY);
-            assert(false);
-            // auto elem_count = dest_type->static_array.count;
+            auto elem_count = dest_type->static_array.count;
 
-            // if (instruction->additional_index < 0 || instruction->additional_index > elem_count) {
-            //     bytecode_validator_report_error(validator, "Index for 'INSERT_ELEMENT' is not in range of the specified aggregate type");
-            //     return false;
-            // }
+            if (instruction->additional_index < 0 || instruction->additional_index > elem_count) {
+                bytecode_validator_report_error(validator, "Index for 'INSERT_ELEMENT' is not in range of the specified aggregate type");
+                return false;
+            }
 
-            // auto dest_elem_type = dest_type->static_array.element_type;
+            auto dest_elem_type = dest_type->static_array.element_type;
 
-            // if (dest_elem_type != instruction->b.type) {
-            //     bytecode_validator_report_error(validator, "The 'b' registers type does noet match the arrays element type ('INSERT_ELEMENT')");
-            //     return false;
-            // }
+            if (dest_elem_type != instruction->b.type) {
+                bytecode_validator_report_error(validator, "The 'b' registers type does noet match the arrays element type ('INSERT_ELEMENT')");
+                return false;
+            }
 
-            // return true;
-            // break;
+            return true;
+            break;
 
         }
 
         case Bytecode_Opcode::EXTRACT_ELEMENT: {
-            assert(false);
-            // if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
-            //     bytecode_validator_report_error(validator, "The 'a' register for 'EXTRACT_ELEMENT' must be a temporary");
-            //     return false;;
-            // }
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'a' register for 'EXTRACT_ELEMENT' must be a temporary");
+                return false;;
+            }
 
-            // if (instruction->a.type->kind != Type_Kind::STATIC_ARRAY) {
-            //     bytecode_validator_report_error(validator, "The 'a' register for 'EXTRACT_ELEMENT' is not of static array type");
-            //     return false;
-            // }
+            if (instruction->a.type->kind != Type_Kind::STATIC_ARRAY) {
+                bytecode_validator_report_error(validator, "The 'a' register for 'EXTRACT_ELEMENT' is not of static array type");
+                return false;
+            }
 
-            // Type *array_type = instruction->a.type;
+            Type *array_type = instruction->a.type;
 
-            // if (instruction->b.kind != Bytecode_Register_Kind::TEMPORARY) {
-            //     bytecode_validator_report_error(validator, "The 'b' register for 'EXTRACT_ELEMENT' must be a temporary");
-            // }
+            if (instruction->b.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'b' register for 'EXTRACT_ELEMENT' must be a temporary");
+            }
 
-            // if (instruction->b.type != &builtin_type_s64) {
-            //     bytecode_validator_report_error(validator, "The 'b' register for 'EXTRACT_ELEMENT' does not have the expected integer type (s64)");
-            //     return false;
-            // }
+            if (instruction->b.type != &builtin_type_s64) {
+                bytecode_validator_report_error(validator, "The 'b' register for 'EXTRACT_ELEMENT' does not have the expected integer type (s64)");
+                return false;
+            }
 
-            // if (!(instruction->b.flags & BC_REGISTER_FLAG_LITERAL)) {
-            //     bytecode_validator_report_error(validator, "The 'b' register for 'EXTRACT_ELEMENT' must be a literal");
-            //     return false;
-            // }
+            if (!(instruction->b.flags & BC_REGISTER_FLAG_LITERAL)) {
+                bytecode_validator_report_error(validator, "The 'b' register for 'EXTRACT_ELEMENT' must be a literal");
+                return false;
+            }
 
-            // auto index = instruction->b.value.integer.s32;
+            auto index = instruction->b.value.integer.s32;
 
-            // assert(array_type->kind == Type_Kind::STATIC_ARRAY);
-            // if (index < 0 || index > array_type->static_array.count) {
-            //     bytecode_validator_report_error(validator, "The index specified in the 'b' register for 'EXTRACT_ELEMENT' is out of range for the specified aggregate type");
-            //     return false;
-            // }
+            assert(array_type->kind == Type_Kind::STATIC_ARRAY);
+            if (index < 0 || index > array_type->static_array.count) {
+                bytecode_validator_report_error(validator, "The index specified in the 'b' register for 'EXTRACT_ELEMENT' is out of range for the specified aggregate type");
+                return false;
+            }
 
-            // Type *result_type = array_type->static_array.element_type;
+            Type *result_type = array_type->static_array.element_type;
 
-            // if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
-            //     bytecode_validator_report_error(validator, "The 'dest' register for 'EXTRACT_ELEMENT' must be a temporary");
-            //     return false;
-            // }
+            if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'EXTRACT_ELEMENT' must be a temporary");
+                return false;
+            }
 
-            // if (result_type != instruction->dest.type) {
-            //     bytecode_validator_report_error(validator, "The 'dest' register for 'EXTRACT_ELEMENT' does not match the expected aggregate member type");
-            //     return false;
-            // }
+            if (result_type != instruction->dest.type) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'EXTRACT_ELEMENT' does not match the expected aggregate member type");
+                return false;
+            }
 
-            // return true;
-            // break;
+            return true;
+            break;
         }
 
         case Bytecode_Opcode::AGG_OFFSET_POINTER: {

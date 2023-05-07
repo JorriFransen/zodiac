@@ -750,82 +750,79 @@ switch (operand.type->bit_size) { \
         }
 
         case Bytecode_Opcode::INSERT_ELEMENT: {
-assert(false);
-            // Type *array_type = instruction.dest.type;
-            // assert(array_type->flags & TYPE_FLAG_ARRAY);
-            // assert(array_type->kind == Type_Kind::STATIC_ARRAY);
+            Type *array_type = instruction.dest.type;
+            assert(array_type->flags & TYPE_FLAG_ARRAY);
+            assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
-            // assert(instruction.additional_index >= 0);
-            // assert(instruction.additional_index < array_type->static_array.count);
+            assert(instruction.additional_index >= 0);
+            assert(instruction.additional_index < array_type->static_array.count);
 
-            // auto element_type = array_type->static_array.element_type;
+            auto element_type = array_type->static_array.element_type;
 
-            // // @Cleanup: @TODO: @FIXME: alignment?
-            // assert(array_type->bit_size % 8 == 0);
-            // auto size = array_type->bit_size / 8;
-            // assert(frame->sp + size <= frame->stack_mem.data + frame->stack_mem.count);
+            // @Cleanup: @TODO: @FIXME: alignment?
+            assert(array_type->bit_size % 8 == 0);
+            auto size = array_type->bit_size / 8;
+            assert(frame->sp + size <= frame->stack_mem.data + frame->stack_mem.count);
 
-            // u8 *ptr = frame->sp;
-            // frame->sp += size;
+            u8 *ptr = frame->sp;
+            frame->sp += size;
 
-            // Interpreter_Register result_value = {
-            //     .type = array_type,
-            //     .pointer = ptr,
-            // };
+            Interpreter_Register result_value = {
+                .type = array_type,
+                .pointer = ptr,
+            };
 
-            // if (instruction.a.kind == Bytecode_Register_Kind::UNDEF) {
-            //     memset(result_value.pointer, 0, size);
-            // } else {
-            //     zodiac_assert_fatal(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY,
-            //                         "[Interpreter] a register of INSERT_ELEMENT must be a temporary register");
+            if (instruction.a.kind == Bytecode_Register_Kind::UNDEF) {
+                memset(result_value.pointer, 0, size);
+            } else {
+                assert_msg(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY, "[Interpreter] a register of INSERT_ELEMENT must be a temporary register");
 
-            //     // @TODO: @FIXME: When we do register allocation, we'll only have
-            //     //                  to copy the old value over when we don't use
-            //     //                  the same register...
-            //     Interpreter_Register old_value = interpreter_load_register(interp, instruction.a);
-            //     assert(old_value.type == array_type);
-            //     interpreter_store_pointer(interp, old_value, result_value.pointer);
-            // }
+                // @TODO: @FIXME: When we do register allocation, we'll only have
+                //                  to copy the old value over when we don't use
+                //                  the same register...
+                Interpreter_Register old_value = interpreter_load_register(interp, instruction.a);
+                assert(old_value.type == array_type);
+                interpreter_store_pointer(interp, old_value, result_value.pointer);
+            }
 
-            // assert(element_type->bit_size % 8 == 0);
-            // u64 elem_offset = instruction.additional_index * (element_type->bit_size / 8);
-            // assert(elem_offset % 8 == 0);
-            // u8 *elem_ptr = result_value.pointer + elem_offset;
+            assert(element_type->bit_size % 8 == 0);
+            u64 elem_offset = instruction.additional_index * (element_type->bit_size / 8);
+            assert(elem_offset % 8 == 0);
+            u8 *elem_ptr = result_value.pointer + elem_offset;
 
-            // Interpreter_Register new_value = interpreter_load_register(interp, instruction.b);
-            // interpreter_store_pointer(interp, new_value, elem_ptr);
+            Interpreter_Register new_value = interpreter_load_register(interp, instruction.b);
+            interpreter_store_pointer(interp, new_value, elem_ptr);
 
-            // interpreter_store_register(interp, result_value, instruction.dest);
+            interpreter_store_register(interp, result_value, instruction.dest);
 
-            // break;
+            break;
         }
 
         case Bytecode_Opcode::EXTRACT_ELEMENT: {
-                                                   assert(false);
-            // Interpreter_Register array_val = interpreter_load_register(interp, instruction.a);
-            // Interpreter_Register index_val = interpreter_load_register(interp, instruction.b);
+            Interpreter_Register array_val = interpreter_load_register(interp, instruction.a);
+            Interpreter_Register index_val = interpreter_load_register(interp, instruction.b);
 
-            // Type *array_type = array_val.type;
-            // assert(array_type->flags & TYPE_FLAG_ARRAY);
-            // assert(array_type->kind == Type_Kind::STATIC_ARRAY);
+            Type *array_type = array_val.type;
+            assert(array_type->flags & TYPE_FLAG_ARRAY);
+            assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
-            // assert(index_val.type == &builtin_type_s64);
-            // auto index = index_val.value.integer.s64;
+            assert(index_val.type == &builtin_type_s64);
+            auto index = index_val.value.integer.s64;
 
-            // auto element_type = array_type->static_array.element_type;
-            // assert(index >= 0);
-            // assert(index < array_type->static_array.count);
+            auto element_type = array_type->static_array.element_type;
+            assert(index >= 0);
+            assert(index < array_type->static_array.count);
 
-            // assert(element_type->bit_size % 8 == 0);
-            // u64 elem_offset = index * (element_type->bit_size / 8);
-            // assert(elem_offset % 8 == 0);
-            // u8 *elem_ptr = array_val.pointer + elem_offset;
+            assert(element_type->bit_size % 8 == 0);
+            u64 elem_offset = index * (element_type->bit_size / 8);
+            assert(elem_offset % 8 == 0);
+            u8 *elem_ptr = array_val.pointer + elem_offset;
 
-            // Interpreter_Register result = interpreter_load_pointer(interp, elem_ptr, element_type);
+            Interpreter_Register result = interpreter_load_pointer(interp, elem_ptr, element_type);
 
-            // interpreter_store_register(interp, result, instruction.dest);
+            interpreter_store_register(interp, result, instruction.dest);
 
-            // break;
+            break;
         }
 
         case Bytecode_Opcode::AGG_OFFSET_POINTER: {
