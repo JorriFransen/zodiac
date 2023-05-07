@@ -96,7 +96,7 @@ void *dynamic_allocator_allocate_aligned(Dynamic_Allocator *state, u64 size, u64
         }
 
         if (!block) {
-            state->initial_block_size = zmax(state->initial_block_size, actual_size);
+            state->initial_block_size = max(state->initial_block_size, actual_size);
             block = allocate_block(state->initial_block_size);
             state->current_block->next = block;
             state->current_block = block;

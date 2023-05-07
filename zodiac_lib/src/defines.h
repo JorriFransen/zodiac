@@ -37,16 +37,6 @@ typedef i64 s64;
 typedef float  r32;
 typedef double r64;
 
-#define U64_MAX UINT64_MAX
-#define U32_MAX UINT32_MAX
-#define U16_MAX UINT16_MAX
-#define U8_MAX UINT8_MAX
-
-#define I64_MAX INT64_MAX
-#define I32_MAX INT32_MAX
-#define I16_MAX INT16_MAX
-#define I8_MAX INT8_MAX
-
 STATIC_ASSERT(sizeof(u8) == 1, "Expected sizeof(u8) to be 1 byte");
 STATIC_ASSERT(sizeof(u16) == 2, "Expected sizeof(u16) to be 2 bytes");
 STATIC_ASSERT(sizeof(u32) == 4, "Expected sizeof(u32) to be 4 bytes");
@@ -65,7 +55,20 @@ STATIC_ASSERT(sizeof(s64) == 8, "Expected sizeof(s64) to be 8 bytes");
 STATIC_ASSERT(sizeof(r32) == 4, "Expected sizeof(r32) to be 4 bytes");
 STATIC_ASSERT(sizeof(r64) == 8, "Expected sizeof(r64) to be 8 bytes");
 
+#define U64_MAX (18446744073709551615UL)
+#define U32_MAX (4294967295U)
+#define U16_MAX (65535U)
+#define U8_MAX  (255U)
 
+#define I64_MAX (9223372036854775807L)
+#define I32_MAX (2147483647)
+#define I16_MAX (32767)
+#define I8_MAX  (127)
+
+#define I64_MIN (-9223372036854775808UL)
+#define I32_MIN (-2147483648)
+#define I16_MIN (-32768)
+#define I8_MIN  (-128)
 
 #define GIBIBYTE(x) (x * 1024 * 1024 * 1024)
 #define MEBIBYTE(x) (x * 1024 * 1024)
@@ -116,8 +119,6 @@ STATIC_ASSERT(false, "Unsupported platform (Apple).");
 #endif
 
 #endif // ZEXPORT
-
-#define zmax(a, b) ((a) >= (b) ? (a) : (b))
 
 ZINLINE u64 get_aligned(u64 operand, u64 alignment) {
     return ((operand + (alignment - 1)) & ~(alignment - 1));
