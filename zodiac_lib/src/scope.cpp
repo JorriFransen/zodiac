@@ -8,6 +8,9 @@
 #include "util/asserts.h"
 #include "zodiac_context.h"
 
+// (Complaining about String_Ref)
+// IWYU pragma: no_include "util/zstring.h"
+
 namespace Zodiac
 {
 
@@ -86,11 +89,11 @@ Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Sy
     auto ex_sym = scope_get_symbol(scope, name);
     if (ex_sym) {
         assert(decl);
-        report_redecl(ctx, ex_sym->pos, name, pos);
+        report_redecl(ctx, ex_sym->range, name, pos);
         return nullptr;
     }
 
-    Symbol sym = { kind, state, flags, name, decl, pos };
+    Symbol sym = { kind, state, flags, name, decl, range };
 
     dynamic_array_append(&scope->symbols, sym);
 
@@ -99,13 +102,13 @@ Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Sy
 
 Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
-    return add_unresolved_symbol(ctx, scope, kind, flags, name, decl, decl->pos);
+    return add_unresolved_symbol(ctx, scope, kind, flags, name, decl, decl->range);
 }
 
 Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Range range)
 {
     assert(scope && decl);
-    return scope_add_symbol(ctx, scope, kind, Symbol_State::UNRESOLVED, flags, name, decl, pos);
+    return scope_add_symbol(ctx, scope, kind, Symbol_State::UNRESOLVED, flags, name, decl, range);
 }
 
 Symbol *add_resolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
@@ -139,7 +142,7 @@ Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declar
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
 
-                auto param_sym = add_unresolved_symbol(ctx, parameter_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param.identifier.name, decl, param.identifier.pos);
+                auto param_sym = add_unresolved_symbol(ctx, parameter_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param.identifier.name, decl, param.identifier.range);
                 if (!param_sym) {
                     return nullptr;
                 }
@@ -157,7 +160,7 @@ Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declar
 
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
-                auto mem_sym = add_unresolved_symbol(ctx, aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field.identifier.name, decl, field.identifier.pos);
+                auto mem_sym = add_unresolved_symbol(ctx, aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field.identifier.name, decl, field.identifier.range);
                 if (!mem_sym) {
                     return nullptr;
                 }

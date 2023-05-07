@@ -160,7 +160,7 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
     assert(decl->identifier.name.data);
     auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
     if (decl_sym && decl_sym->decl != decl) {
-        report_redecl(ctx, decl_sym->pos, decl->identifier.name, decl->identifier.pos);
+        report_redecl(ctx, decl_sym->range, decl->identifier.name, decl->identifier.pos);
         return;
     }
 

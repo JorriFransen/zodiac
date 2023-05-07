@@ -112,13 +112,13 @@ case (first_char): {                                                \
 
         case ' ': case '\n': case '\r': case '\t': {
             if (*lex->stream == '\n') {
-                lex->token.start.line += 1;
+                lex->token.range.start.line += 1;
                 lex->line_start = lex->stream + 1;
             }
             lex->stream += 1;
             while (isspace(*lex->stream)) {
                 if (*lex->stream == '\n') {
-                    lex->token.start.line += 1;
+                    lex->token.range.start.line += 1;
                     lex->line_start = lex->stream + 1;
                 }
                 lex->stream += 1;
@@ -226,7 +226,7 @@ case (first_char): {                                                \
         lex->token.atom = {};
     }
 
-    lex->token.start.index_in_line = lex->stream - lex->line_start - length + 1;
+    lex->token.range.start.index_in_line = lex->stream - lex->line_start - length + 1;
 
     return true;
 }

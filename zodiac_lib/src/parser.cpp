@@ -99,29 +99,29 @@ AST_Expression *parse_expr_operand(Parser *parser)
 
     Source_Pos start_pos = cur_tok(parser).range.start;
 
-    if (is_token(parser, TOK_INT)) {
-        u64 value = cur_tok(parser).integer;
-        next_token(parser);
+    auto ct = cur_tok(parser);
 
-        return ast_integer_literal_expr_new(parser->context, start_pos,  { .u64 = value });
+    Source_Range range = { start_pos, ct.range.end };
+
+    if (is_token(parser, TOK_INT)) {
+        next_token(parser);
+        return ast_integer_literal_expr_new(parser->context, range,  { .u64 = ct.integer });
 
     } else if (is_token(parser, TOK_NAME)) {
-        Atom name_atom = cur_tok(parser).atom;
         next_token(parser);
-
-        return ast_identifier_expr_new(parser->context, start_pos, name_atom);
+        return ast_identifier_expr_new(parser->context, range, ct.atom);
 
     } else if (is_token(parser, TOK_STRING)) {
-        Atom token_atom = cur_tok(parser).atom;
+        Atom token_atom = ct.atom;
         next_token(parser);
 
         Atom content_atom = atom_get(&parser->context->atoms, token_atom.data + 1, token_atom.length - 2);
-        return ast_string_literal_expr_new(parser->context, start_pos, content_atom);
+        return ast_string_literal_expr_new(parser->context, range, content_atom);
 
     } else if (is_token(parser, TOK_KEYWORD)) {
 
         if (match_keyword(parser, keyword_null)) {
-            return ast_null_literal_expr_new(parser->context, start_pos);
+            return ast_null_literal_expr_new(parser->context, range);
         }
 
     } else {
@@ -141,13 +141,15 @@ AST_Expression *parse_expr_base(Parser *parser)
 {
     AST_Expression *expr = parse_expr_operand(parser);
 
-    Source_Pos start_pos = cur_tok(parser).start;
+    auto start_pos = cur_tok(parser).range.start;
 
     while (is_token(parser, '(') || is_token(parser, '[') || is_token(parser, '.')) {
 
         if (match_token(parser, '(')) {
 
             auto temp_args = temp_array_create<AST_Expression *>(parser);
+
+            auto end_pos = cur_tok(parser).range.end;
 
             while (!match_token(parser, ')')) {
 
@@ -157,23 +159,26 @@ AST_Expression *parse_expr_base(Parser *parser)
 
                 AST_Expression *arg = parse_expression(parser);
                 dynamic_array_append(&temp_args.array, arg);
+
+                end_pos = cur_tok(parser).range.end;
             }
 
             auto args = temp_array_finalize(parser, temp_args);
-            expr = ast_call_expr_new(parser->context, start_pos, expr, args);
+            expr = ast_call_expr_new(parser->context, {start_pos, end_pos}, expr, args);
 
         } else if (match_token(parser, '[')) {
 
             AST_Expression *index = parse_expression(parser);
+            auto end_pos = cur_tok(parser).range.end;
             expect_token(parser, ']');
-            expr = ast_index_expr_new(parser->context, start_pos, expr, index);
+            expr = ast_index_expr_new(parser->context, {start_pos, end_pos}, expr, index);
 
 
         } else if (match_token(parser, '.')) {
 
             Token name_tok = cur_tok(parser);
             expect_token(parser, TOK_NAME);
-            expr = ast_member_expr_new(parser->context, start_pos, expr, name_tok.atom);
+            expr = ast_member_expr_new(parser->context, {start_pos, name_tok.range.end}, expr, name_tok.atom);
 
         } else {
             Token t = cur_tok(parser);
@@ -186,16 +191,17 @@ AST_Expression *parse_expr_base(Parser *parser)
 
 AST_Expression *parse_expr_unary(Parser *parser)
 {
-    Source_Pos start_pos = cur_tok(parser).start;
+    Source_Pos start_pos = cur_tok(parser).range.start;
+
     if (is_token(parser, '+')) {
 
         next_token(parser);
         AST_Expression *operand = parse_expr_unary(parser);
-        return ast_unary_expr_new(parser->context, start_pos, AST_Unary_Operator::PLUS, operand);
+        return ast_unary_expr_new(parser->context, {start_pos, operand->range.end} , AST_Unary_Operator::PLUS, operand);
     } else if (is_token(parser, '-')) {
         next_token(parser);
         AST_Expression *operand = parse_expr_unary(parser);
-        return ast_unary_expr_new(parser->context, start_pos, AST_Unary_Operator::MINUS, operand);
+        return ast_unary_expr_new(parser->context, {start_pos, operand->range.end}, AST_Unary_Operator::MINUS, operand);
     } else {
         return parse_expr_base(parser);
     }
@@ -230,7 +236,7 @@ AST_Expression *parse_expr_mul(Parser *parser)
 
         auto ast_op = token_kind_to_ast_binop[(int)op];
         assert(ast_op != AST_Binary_Operator::INVALID);
-        lhs = ast_binary_expr_new(parser->context, lhs->pos, ast_op, lhs, rhs);
+        lhs = ast_binary_expr_new(parser->context, {lhs->range.start, rhs->range.end}, ast_op, lhs, rhs);
     }
 
     return lhs;
@@ -248,7 +254,7 @@ AST_Expression *parse_expr_add(Parser *parser)
 
         auto ast_op = token_kind_to_ast_binop[(int)op];
         assert(ast_op != AST_Binary_Operator::INVALID);
-        lhs = ast_binary_expr_new(parser->context, lhs->pos, ast_op, lhs, rhs);
+        lhs = ast_binary_expr_new(parser->context, {lhs->range.start, rhs->range.end}, ast_op, lhs, rhs);
     }
 
     return lhs;
@@ -266,7 +272,7 @@ AST_Expression *parse_expr_cmp(Parser *parser)
 
         auto cmp_op = token_kind_to_ast_binop[(int)op];
         assert(cmp_op != AST_Binary_Operator::INVALID);
-        lhs = ast_binary_expr_new(parser->context, lhs->pos, cmp_op, lhs, rhs);
+        lhs = ast_binary_expr_new(parser->context, {lhs->range.start, rhs->range.end}, cmp_op, lhs, rhs);
     }
 
     return lhs;
@@ -281,12 +287,14 @@ AST_Statement *parse_keyword_statement(Parser *parser)
 {
     assert(parser);
 
-    Source_Pos start_pos = cur_tok(parser).start;
+    Source_Pos start_pos = cur_tok(parser).range.start;
 
     if (match_keyword(parser, keyword_if)) {
         AST_Expression *cond = parse_expression(parser);
         AST_Statement *then_stmt = parse_statement(parser);
         AST_Statement *else_stmt = nullptr;
+
+        auto end_pos = then_stmt->range.end;
 
         auto temp_else_ifs = temp_array_create<AST_Else_If>(parser);
 
@@ -296,22 +304,24 @@ AST_Statement *parse_keyword_statement(Parser *parser)
                 AST_Statement *else_if_then = parse_statement(parser);
                 AST_Else_If else_if = { else_if_cond, else_if_then };
                 dynamic_array_append(&temp_else_ifs.array, else_if);
+                end_pos = else_if_then->range.end;
             } else {
                 else_stmt = parse_statement(parser);
+                end_pos = else_stmt->range.end;
                 break;
             }
         }
 
         auto else_ifs = temp_array_finalize(parser, temp_else_ifs);
 
-        return ast_if_stmt_new(parser->context, start_pos, cond, then_stmt, else_ifs, else_stmt);
+        return ast_if_stmt_new(parser->context, {start_pos, end_pos}, cond, then_stmt, else_ifs, else_stmt);
 
     } else if (match_keyword(parser, keyword_while)) {
 
         AST_Expression *cond = parse_expression(parser);
         AST_Statement *do_stmt = parse_statement(parser);
 
-        return ast_while_stmt_new(parser->context, start_pos, cond, do_stmt);
+        return ast_while_stmt_new(parser->context, { start_pos, do_stmt->range.end }, cond, do_stmt);
 
     } else if (match_keyword(parser, keyword_return)) {
 
@@ -320,18 +330,20 @@ AST_Statement *parse_keyword_statement(Parser *parser)
             value = parse_expression(parser);
         }
 
+        auto end_pos = cur_tok(parser).range.end;
         expect_token(parser, ';');
 
-        return ast_return_stmt_new(parser->context, start_pos, value);
+        return ast_return_stmt_new(parser->context, { start_pos, end_pos }, value);
 
     } else if (match_keyword(parser, keyword_print)) {
 
         expect_token(parser, '(');
         AST_Expression *print_expr = parse_expression(parser);
         expect_token(parser, ')');
+        auto end_pos = cur_tok(parser).range.end;
         expect_token(parser, ';');
 
-        return ast_print_statement_new(parser->context, start_pos, print_expr);
+        return ast_print_statement_new(parser->context, { start_pos, end_pos }, print_expr);
     }
 
     Token t = cur_tok(parser);
@@ -347,7 +359,7 @@ AST_Statement *parse_statement(Parser *parser)
         return parse_keyword_statement(parser);
     }
 
-    Source_Pos start_pos = cur_tok(parser).start;
+    Source_Pos start_pos = cur_tok(parser).range.start;
 
     if (match_token(parser, '{')) {
         auto temp_statements = temp_array_create<AST_Statement *>(parser);
@@ -357,17 +369,18 @@ AST_Statement *parse_statement(Parser *parser)
             AST_Statement *stmt = parse_statement(parser);
             dynamic_array_append(&temp_statements.array, stmt);
         }
+        auto end_pos = cur_tok(parser).range.end;
         expect_token(parser, '}');
 
         auto statements = temp_array_finalize(parser, temp_statements);
-        return ast_block_stmt_new(parser->context, start_pos, statements);
+        return ast_block_stmt_new(parser->context, {start_pos, end_pos}, statements);
     }
 
     // All remaining options start with an expression
     AST_Statement *result = nullptr;
     AST_Expression *expr = parse_expression(parser);
     if (expr->kind == AST_Expression_Kind::CALL) {
-        result = ast_call_stmt_new(parser->context, start_pos, expr);
+        result = ast_call_stmt_new(parser->context, expr->range, expr);
 
     } else if (expr->kind == AST_Expression_Kind::IDENTIFIER && match_token(parser, ':')) {
 
@@ -381,16 +394,18 @@ AST_Statement *parse_statement(Parser *parser)
             value = parse_expression(parser);
         }
 
+        auto end_pos = cur_tok(parser).range.end;
         expect_token(parser, ';');
 
-        AST_Declaration *decl = ast_variable_decl_new(parser->context, start_pos, expr->identifier, type_spec, value);
-        return ast_declaration_stmt_new(parser->context, start_pos, decl);
+        Source_Range range = {start_pos, end_pos};
+        AST_Declaration *decl = ast_variable_decl_new(parser->context, range, expr->identifier, type_spec, value);
+        return ast_declaration_stmt_new(parser->context, range, decl);
 
     } else {
         expect_token(parser, '=');
         AST_Expression *value = parse_expression(parser);
         assert(value);
-        result = ast_assign_stmt_new(parser->context, start_pos, expr, value);
+        result = ast_assign_stmt_new(parser->context, {start_pos, value->range.end}, expr, value);
     }
 
     assert(result);
@@ -419,7 +434,7 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
             AST_Type_Spec *ts = parse_type_spec(parser);
 
             AST_Identifier param_ident;
-            ast_identifier_create(name_tok.atom, name_tok.start, &param_ident);
+            ast_identifier_create(name_tok.atom, name_tok.range, &param_ident);
 
             dynamic_array_append(&temp_params.array, { param_ident, ts });
         } while (match_token(parser, ','));
@@ -448,7 +463,7 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
 
     auto statements = temp_array_finalize(parser, temp_stmts);
 
-    return ast_function_decl_new(parser->context, ident.pos, ident, params, return_ts, statements);
+    return ast_function_decl_new(parser->context, ident.range, ident, params, return_ts, statements);
 }
 
 AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier ident)
@@ -479,7 +494,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
         expect_token(parser, TOK_NAME);
 
         AST_Identifier first_ident;
-        ast_identifier_create(first_name_tok.atom, first_name_tok.start, &first_ident);
+        ast_identifier_create(first_name_tok.atom, first_name_tok.range, &first_ident);
         dynamic_array_append(&temp_idents.array, first_ident);
 
         while (match_token(parser, ',')) {
@@ -487,7 +502,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
             expect_token(parser, TOK_NAME);
 
             AST_Identifier ident;
-            ast_identifier_create(name_tok.atom, name_tok.start, &ident);
+            ast_identifier_create(name_tok.atom, name_tok.range, &ident);
             dynamic_array_append(&temp_idents.array, ident);
         }
 
@@ -502,7 +517,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
     }
 
     auto fields = temp_array_finalize(parser, temp_fields);
-    return ast_aggregate_decl_new(parser->context, ident.pos, ident, kind, fields);
+    return ast_aggregate_decl_new(parser->context, ident.range, ident, kind, fields);
 }
 
 AST_Declaration *parse_declaration(Parser *parser)
@@ -542,7 +557,7 @@ AST_Declaration *parse_declaration(Parser *parser)
         AST_Expression *const_value = parse_expression(parser);
         expect_token(parser, ';');
 
-        return ast_constant_variable_decl_new(parser->context, ident.pos, ident, ts, const_value);
+        return ast_constant_variable_decl_new(parser->context, ident.range, ident, ts, const_value);
 
     } else if (is_token(parser, '=') || is_token(parser, ';')) {
         // Variable
@@ -552,7 +567,7 @@ AST_Declaration *parse_declaration(Parser *parser)
         }
         expect_token(parser, ';');
 
-        return ast_variable_decl_new(parser->context, ident.pos, ident, ts, value);
+        return ast_variable_decl_new(parser->context, ident.range, ident, ts, value);
     }
 
     fatal_syntax_error(parser, "Unexpected token: '%s' when parsing declaration", cur_tok(parser).atom.data);
@@ -567,16 +582,16 @@ AST_Type_Spec *parse_type_spec(Parser *parser)
         case TOK_STAR: {
             next_token(parser);
             AST_Type_Spec *base = parse_type_spec(parser);
-            return ast_pointer_ts_new(parser->context, t.start, base);
+            return ast_pointer_ts_new(parser->context, t.range, base);
         }
 
         case TOK_NAME: {
             next_token(parser);
 
             AST_Identifier ident;
-            ast_identifier_create(t.atom, t.start, &ident);
+            ast_identifier_create(t.atom, t.range, &ident);
 
-            return ast_name_ts_new(parser->context, t.start, ident);
+            return ast_name_ts_new(parser->context, t.range, ident);
         }
 
         default: {
@@ -755,7 +770,7 @@ void syntax_error(Parser *parser, const String_Ref fmt, va_list args)
     }
 
     Token t = cur_tok(parser);
-    Source_Pos pos = t.start;
+    Source_Pos pos = t.range.start;
 
     out_length = string_format(err_msg, "%s:%i:%i: error: %s", pos.name.data, pos.line, pos.index_in_line, err_msg);
 
