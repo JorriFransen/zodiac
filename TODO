@@ -1,5 +1,4 @@
 
-- Merge error systems (resolve errors, and the old system used in bytecode(/validator))
 - AST nodes should use Source_Range instead of source pos (begin/end)
 
 - Containers
