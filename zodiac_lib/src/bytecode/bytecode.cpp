@@ -915,34 +915,31 @@ Bytecode_Register bytecode_emit_aggregate_offset_pointer(Bytecode_Builder *build
 
 Bytecode_Register bytecode_emit_array_offset_pointer(Bytecode_Builder *builder, Bytecode_Register array_register, s64 index)
 {
-    assert(false);
-    return {};
+    Type *array_type = nullptr;
 
-    // Type *array_type = nullptr;
+    if (array_register.kind == Bytecode_Register_Kind::ALLOC) {
+        array_type = array_register.type;
+    } else {
+        assert(array_register.type->kind == Type_Kind::POINTER);
+        array_type = array_register.type->pointer.base;
+    }
 
-    // if (array_register.kind == Bytecode_Register_Kind::ALLOC) {
-    //     array_type = array_register.type;
-    // } else {
-    //     assert(array_register.type->kind == Type_Kind::POINTER);
-    //     array_type = array_register.type->pointer.base;
-    // }
+    assert(array_type);
+    assert(array_type->flags & TYPE_FLAG_ARRAY);
+    assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
-    // assert(array_type);
-    // assert(array_type->flags & AST_TYPE_FLAG_ARRAY);
-    // assert(array_type->kind == Type_Kind::STATIC_ARRAY);
+    assert(index >= 0);
+    assert(index < array_type->static_array.count);
 
-    // assert(index >= 0);
-    // assert(index < array_type->static_array.count);
+    auto index_register = bytecode_integer_literal(builder, &builtin_type_s64, index);
 
-    // auto index_register = bytecode_integer_literal(builder, Type::s64, index);
+    auto element_type = array_type->static_array.element_type;
+    Type *result_type = get_pointer_type(element_type, &builder->zodiac_context->ast_allocator);
 
-    // auto element_type = array_type->static_array.element_type;
-    // Type *result_type = ast_pointer_type_get_or_new(builder->zodiac_context, element_type);
+    Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, result_type, BC_REGISTER_FLAG_NONE);
+    bytecode_emit_instruction(builder, Bytecode_Opcode::ARR_OFFSET_POINTER, array_register, index_register, result_register);
 
-    // Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, result_type, BC_REGISTER_FLAG_NONE);
-    // bytecode_emit_instruction(builder, Bytecode_Opcode::ARR_OFFSET_POINTER, array_register, index_register, result_register);
-
-    // return result_register;
+    return result_register;
 }
 
 void bytecode_emit_jmp(Bytecode_Builder *builder, Bytecode_Block_Handle block)

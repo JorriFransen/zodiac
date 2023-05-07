@@ -1286,75 +1286,74 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
         }
 
         case Bytecode_Opcode::ARR_OFFSET_POINTER: {
-            assert(false);
-            // Type *array_type = nullptr;
+            Type *array_type = nullptr;
 
-            // if (instruction->a.kind == Bytecode_Register_Kind::ALLOC) {
-            //     array_type = instruction->a.type;
+            if (instruction->a.kind == Bytecode_Register_Kind::ALLOC) {
+                array_type = instruction->a.type;
 
-            // } else if (instruction->a.kind == Bytecode_Register_Kind::TEMPORARY) {
+            } else if (instruction->a.kind == Bytecode_Register_Kind::TEMPORARY) {
 
-            //     if (instruction->a.type->kind != Type_Kind::POINTER) {
-            //         bytecode_validator_report_error(validator, "The 'a' register of 'ARR_OFFSET_POINTER' must be of pointer type when it is a temporary");
-            //         return false;
-            //     }
+                if (instruction->a.type->kind != Type_Kind::POINTER) {
+                    bytecode_validator_report_error(validator, "The 'a' register of 'ARR_OFFSET_POINTER' must be of pointer type when it is a temporary");
+                    return false;
+                }
 
-            //     array_type = instruction->a.type->pointer.base;
+                array_type = instruction->a.type->pointer.base;
 
-            // } else {
-            //     bytecode_validator_report_error(validator, "The 'a' register of 'ARR_OFFSET_POINTER' must be a temporary or an alloc");
-            //     return false;
-            // }
+            } else {
+                bytecode_validator_report_error(validator, "The 'a' register of 'ARR_OFFSET_POINTER' must be a temporary or an alloc");
+                return false;
+            }
 
-            // assert(array_type);
+            assert(array_type);
 
-            // if (array_type->kind != Type_Kind::STATIC_ARRAY) {
-            //     bytecode_validator_report_error(validator, "The 'a' register of ARR_OFFSET_POINTER' must be of static array type");
-            //     return false;
-            // }
+            if (array_type->kind != Type_Kind::STATIC_ARRAY) {
+                bytecode_validator_report_error(validator, "The 'a' register of ARR_OFFSET_POINTER' must be of static array type");
+                return false;
+            }
 
-            // if (instruction->b.kind != Bytecode_Register_Kind::TEMPORARY) {
-            //     bytecode_validator_report_error(validator, "The 'b' register of 'ARR_OFFSET_POINTER' must be a temporary");
-            //     return false;
-            // }
+            if (instruction->b.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'b' register of 'ARR_OFFSET_POINTER' must be a temporary");
+                return false;
+            }
 
-            // if (instruction->b.type != &builtin_type_s64) {
-            //     bytecode_validator_report_error(validator, "The 'b' register of 'ARR_OFFSET_POINTER' does not have the right integer type (s64)");
-            //     return false;
-            // }
+            if (instruction->b.type != &builtin_type_s64) {
+                bytecode_validator_report_error(validator, "The 'b' register of 'ARR_OFFSET_POINTER' does not have the right integer type (s64)");
+                return false;
+            }
 
-            // if (!(instruction->b.flags & BC_REGISTER_FLAG_LITERAL)) {
-            //     bytecode_validator_report_error(validator, "The 'b' register of 'ARR_OFFSET_POINTER' must be a literal");
-            //     return false;
-            // }
+            if (!(instruction->b.flags & BC_REGISTER_FLAG_LITERAL)) {
+                bytecode_validator_report_error(validator, "The 'b' register of 'ARR_OFFSET_POINTER' must be a literal");
+                return false;
+            }
 
-            // auto index = instruction->b.value.integer.s32;
-            // assert(array_type);
+            auto index = instruction->b.value.integer.s32;
+            assert(array_type);
 
-            // assert(array_type->kind == Type_Kind::STATIC_ARRAY);
-            // if (index < 0 || index > array_type->static_array.count) {
-            //     bytecode_validator_report_error(validator, "The index for 'ARR_OFFSET_POINTER' (specified in the 'b' register) is out of bounds for the specified array type");
-            //     return false;
-            // }
-            // Type *result_type = array_type->static_array.element_type;
+            assert(array_type->kind == Type_Kind::STATIC_ARRAY);
+            if (index < 0 || index > array_type->static_array.count) {
+                bytecode_validator_report_error(validator, "The index for 'ARR_OFFSET_POINTER' (specified in the 'b' register) is out of bounds for the specified array type");
+                return false;
+            }
+            Type *result_type = array_type->static_array.element_type;
 
-            // if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
-            //     bytecode_validator_report_error(validator, "The 'dest' register for 'ARR_OFFSET_POINTER' must be a temporary");
-            //     return false;
-            // }
+            if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'ARR_OFFSET_POINTER' must be a temporary");
+                return false;
+            }
 
-            // if  (instruction->dest.type->kind != Type_Kind::POINTER) {
-            //     bytecode_validator_report_error(validator, "The 'dest' register for 'ARR_OFFSET_POINTER' must be of pointer type (pointer to the array element type)");
-            //     return false;
-            // }
+            if  (instruction->dest.type->kind != Type_Kind::POINTER) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'ARR_OFFSET_POINTER' must be of pointer type (pointer to the array element type)");
+                return false;
+            }
 
-            // if (instruction->dest.type->pointer.base != result_type) {
-            //     bytecode_validator_report_error(validator, "The type of the 'dest' register for 'ARR_OFFSET_POINTER' does not match the type extracted from the array type");
-            //     return false;
-            // }
+            if (instruction->dest.type->pointer.base != result_type) {
+                bytecode_validator_report_error(validator, "The type of the 'dest' register for 'ARR_OFFSET_POINTER' does not match the type extracted from the array type");
+                return false;
+            }
 
-            // return true;
-            // break;
+            return true;
+            break;
         }
 
         case Bytecode_Opcode::JMP: {

@@ -878,54 +878,53 @@ switch (operand.type->bit_size) { \
         }
 
         case Bytecode_Opcode::ARR_OFFSET_POINTER: {
-                                                      assert(false);
-            // assert(instruction.a.kind == Bytecode_Register_Kind::ALLOC ||
-            //        instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
+            assert(instruction.a.kind == Bytecode_Register_Kind::ALLOC ||
+                   instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
 
-            // Interpreter_Register array_register = interpreter_load_register(interp, instruction.a);
-            // Interpreter_Register index_register = interpreter_load_register(interp, instruction.b);
+            Interpreter_Register array_register = interpreter_load_register(interp, instruction.a);
+            Interpreter_Register index_register = interpreter_load_register(interp, instruction.b);
 
-            // Type *array_type = array_register.type;
-            // if (instruction.a.kind == Bytecode_Register_Kind::TEMPORARY) {
-            //     assert(instruction.a.type->kind == Type_Kind::POINTER);
-            //     array_type = array_type->pointer.base;
-            // }
+            Type *array_type = array_register.type;
+            if (instruction.a.kind == Bytecode_Register_Kind::TEMPORARY) {
+                assert(instruction.a.type->kind == Type_Kind::POINTER);
+                array_type = array_type->pointer.base;
+            }
 
-            // assert(array_type->flags & TYPE_FLAG_ARRAY);
-            // assert(array_type->kind == Type_Kind::STATIC_ARRAY);
+            assert(array_type->flags & TYPE_FLAG_ARRAY);
+            assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
-            // assert(index_register.type == &builtin_type_s64);
-            // auto index = index_register.value.integer.s64;
-            // assert(index >= 0);
-            // assert(index < array_type->static_array.count);
+            assert(index_register.type == &builtin_type_s64);
+            auto index = index_register.value.integer.s64;
+            assert(index >= 0);
+            assert(index < array_type->static_array.count);
 
-            // u8 *ptr = nullptr;
+            u8 *ptr = nullptr;
 
-            // if (instruction.a.kind == Bytecode_Register_Kind::ALLOC) {
-            //     ptr = array_register.pointer;
-            // } else {
-            //     assert(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
-            //     ptr = array_register.value.pointer;
-            // }
-            // assert(ptr);
+            if (instruction.a.kind == Bytecode_Register_Kind::ALLOC) {
+                ptr = array_register.pointer;
+            } else {
+                assert(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
+                ptr = array_register.value.pointer;
+            }
+            assert(ptr);
 
-            // auto element_type = array_type->static_array.element_type;
+            auto element_type = array_type->static_array.element_type;
 
-            // // @Cleanup: @TODO: @FIXME: alignment?
-            // assert(element_type->bit_size % 8 == 0);
-            // s64 offset = index * (element_type->bit_size / 8);
-            // assert(offset % 8 == 0);
-            // ptr += offset;
+            // @Cleanup: @TODO: @FIXME: alignment?
+            assert(element_type->bit_size % 8 == 0);
+            s64 offset = index * (element_type->bit_size / 8);
+            assert(offset % 8 == 0);
+            ptr += offset;
 
-            // Type *dest_type = ast_pointer_type_get_or_new(interp->context, element_type);
+            Type *dest_type = get_pointer_type(element_type, &interp->context->ast_allocator);
 
-            // Interpreter_Register result = {
-            //     .type = dest_type,
-            //     .value = { .pointer = ptr },
-            // };
+            Interpreter_Register result = {
+                .type = dest_type,
+                .value = { .pointer = ptr },
+            };
 
-            // interpreter_store_register(interp, result, instruction.dest);
-            // break;
+            interpreter_store_register(interp, result, instruction.dest);
+            break;
         }
 
         case Bytecode_Opcode::JMP: {
