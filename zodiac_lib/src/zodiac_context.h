@@ -26,6 +26,7 @@ struct Zodiac_Context
     Allocator error_allocator;
 
     Dynamic_Array<Zodiac_Error> errors;
+    bool fatal_resolve_error;
 };
 
 ZAPI void zodiac_context_create(Zodiac_Context *out_context);

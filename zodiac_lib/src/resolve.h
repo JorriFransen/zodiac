@@ -55,12 +55,12 @@ Dynamic_Array<Flat_Root_Node> nodes_to_name_resolve;
 };
 
 ZAPI void resolver_create(Resolver *resolver, Zodiac_Context *ctx, Scope *global_scope);
-ZAPI void resolver_add_declaration(Resolver *resolver, AST_Declaration *decl);
+ZAPI void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Declaration *decl);
 ZAPI void resolve_names(Resolver *resolver);
 ZAPI void resolve_types(Resolver *resolver);
 
-ZAPI void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest);
-ZAPI void flatten_statement(AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest);
+ZAPI void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest);
+ZAPI void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 ZAPI void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 ZAPI void flatten_type_spec(AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 
@@ -72,16 +72,16 @@ ZAPI Flat_Node to_flat_node(const AST_Field_Declaration param, Scope *scope);
 
 ZAPI Flat_Node to_flat_proto(AST_Declaration *decl);
 
-ZAPI bool name_resolve_node(Flat_Node *node);
+ZAPI bool name_resolve_node(Zodiac_Context *ctx, Flat_Node *node);
 ZAPI bool name_resolve_decl(AST_Declaration *decl, Scope *scope);
 ZAPI bool name_resolve_stmt(AST_Statement *stmt, Scope *scope);
-ZAPI bool name_resolve_expr(AST_Expression *expr, Scope *scope);
-ZAPI bool name_resolve_ts(AST_Type_Spec *ts, Scope *scope);
+ZAPI bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope);
+ZAPI bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope);
 
-ZAPI bool type_resolve_node(Flat_Node *node);
+ZAPI bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node);
 ZAPI bool type_resolve_declaration(AST_Declaration *decl, Scope *scope);
 ZAPI bool type_resolve_statement(AST_Statement *stmt, Scope *scope);
-ZAPI bool type_resolve_expression(AST_Expression *expr, Scope *scope);
+ZAPI bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope);
 ZAPI bool type_resolve_ts(AST_Type_Spec *ts, Scope *scope);
 
 }

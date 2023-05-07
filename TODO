@@ -1,6 +1,6 @@
 
 - Merge error systems (resolve errors, and the old system used in bytecode(/validator))
-- platform_temp_file should be in filesystem
+- AST nodes should use Source_Range instead of source pos (begin/end)
 
 - Containers
   - Hash table

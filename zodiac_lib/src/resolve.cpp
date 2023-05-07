@@ -1,9 +1,9 @@
 #include "resolve.h"
 
 #include "atom.h"
+#include "error.h"
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
-#include "resolve_error.h"
 #include "scope.h"
 #include "type.h"
 #include "util/asserts.h"
@@ -26,7 +26,7 @@ void resolver_create(Resolver *resolver, Zodiac_Context *ctx, Scope *global_scop
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_type_resolve);
 }
 
-void resolver_add_declaration(Resolver *resolver, AST_Declaration *decl)
+void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Declaration *decl)
 {
     assert(resolver);
     assert(decl);
@@ -38,13 +38,13 @@ void resolver_add_declaration(Resolver *resolver, AST_Declaration *decl)
 
     dynamic_array_create(&dynamic_allocator, &node.nodes);
 
-    if (!add_unresolved_decl_symbol(resolver->global_scope, decl, true)) {
-        assert(fatal_resolve_error);
+    if (!add_unresolved_decl_symbol(ctx, resolver->global_scope, decl, true)) {
+        assert(ctx->fatal_resolve_error);
         assert(false);
         return;
     }
 
-    flatten_declaration(decl, resolver->global_scope, &node.nodes);
+    flatten_declaration(ctx, decl, resolver->global_scope, &node.nodes);
 
     dynamic_array_append(&resolver->nodes_to_name_resolve, node);
 }
@@ -54,7 +54,7 @@ void resolve_names(Resolver *resolver)
     bool progress = true;
     bool done = false;
 
-    while (progress && !done && !fatal_resolve_error) {
+    while (progress && !done && !resolver->ctx->fatal_resolve_error) {
         progress = false;
         done = true;
 
@@ -65,7 +65,7 @@ void resolve_names(Resolver *resolver)
             for (u64 i = node->current_index; i < node->nodes.count; i++) {
 
                 node->current_index = i;
-                bool result = name_resolve_node(&node->nodes[i]);
+                bool result = name_resolve_node(resolver->ctx, &node->nodes[i]);
 
                 if (!result) {
                     done = false;
@@ -92,9 +92,12 @@ void resolve_names(Resolver *resolver)
 
         }
 
-        if (progress && resolve_errors.count) {
+        if (progress && resolve_error_count(resolver->ctx)) {
             assert(!done);
-            resolve_errors.count = 0;
+
+            // TODO: CLEANUP: Is it actually ok to clear all errors here?
+            resolver->ctx->errors.count = 0;
+
             temporary_allocator_reset(&resolver->ctx->error_allocator_state);
         }
     }
@@ -105,7 +108,7 @@ void resolve_types(Resolver *resolver)
     bool progress = true;
     bool done = false;
 
-    while (progress && !done && !fatal_resolve_error) {
+    while (progress && !done && !resolver->ctx->fatal_resolve_error) {
         progress = false;
         done = true;
 
@@ -116,7 +119,7 @@ void resolve_types(Resolver *resolver)
             for (u64 i = node->current_index; i < node->nodes.count; i++) {
 
                 node->current_index = i;
-                bool result = type_resolve_node(&node->nodes[i]);
+                bool result = type_resolve_node(resolver->ctx, &node->nodes[i]);
 
                 if (!result) {
                     done = false;
@@ -139,22 +142,25 @@ void resolve_types(Resolver *resolver)
             }
         }
 
-        if (progress && resolve_errors.count) {
+        if (progress && resolve_error_count(resolver->ctx)) {
             assert(!done);
-            resolve_errors.count = 0;
+
+            // TODO: CLEANUP: Is it actually ok to clear all errors here?
+            resolver->ctx->errors.count = 0;
+
             temporary_allocator_reset(&resolver->ctx->error_allocator_state);
         }
     }
 }
 
-void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest)
+void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest)
 {
     assert(decl && scope && dest);
 
     assert(decl->identifier.name.data);
     auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
     if (decl_sym && decl_sym->decl != decl) {
-        report_redecl(decl_sym->pos, decl->identifier.name, decl->identifier.pos);
+        report_redecl(ctx, decl_sym->pos, decl->identifier.name, decl->identifier.pos);
         return;
     }
 
@@ -162,7 +168,7 @@ void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat
         assert_msg(decl_sym, "Global symbol should have been registered already");
     } else if (!decl_sym) {
         // First time local symbol is encountered
-        if (!add_unresolved_decl_symbol(scope, decl, false)) {
+        if (!add_unresolved_decl_symbol(ctx, scope, decl, false)) {
             return;
         }
         decl_sym = scope_get_symbol(scope, decl->identifier);
@@ -230,7 +236,7 @@ void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat
             dynamic_array_append(dest, proto_node);
 
             for (u64 i = 0; i < decl->function.body.count; i++) {
-                flatten_statement(decl->function.body[i], local_scope, dest);
+                flatten_statement(ctx, decl->function.body[i], local_scope, dest);
             }
 
             break;
@@ -255,7 +261,7 @@ void flatten_declaration(AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat
     dynamic_array_append(dest, flat_decl);
 }
 
-void flatten_statement(AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest)
+void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest)
 {
     assert(stmt && scope && dest);
 
@@ -267,13 +273,13 @@ void flatten_statement(AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Nod
             Scope *block_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
 
             for (u64 i = 0; i < stmt->block.statements.count; i++) {
-                flatten_statement(stmt->block.statements[i], block_scope, dest);
+                flatten_statement(ctx, stmt->block.statements[i], block_scope, dest);
             }
             break;
         }
 
         case AST_Statement_Kind::DECLARATION: {
-            flatten_declaration(stmt->decl.decl, scope, dest);
+            flatten_declaration(ctx, stmt->decl.decl, scope, dest);
             break;
         }
 
@@ -443,7 +449,7 @@ Flat_Node to_flat_proto(AST_Declaration *decl)
     return result;
 }
 
-bool name_resolve_node(Flat_Node *node)
+bool name_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
 {
     assert(node);
 
@@ -457,11 +463,11 @@ bool name_resolve_node(Flat_Node *node)
         }
 
         case Flat_Node_Kind::EXPR: {
-            return name_resolve_expr(node->expr, node->scope);
+            return name_resolve_expr(ctx, node->expr, node->scope);
         }
 
         case Flat_Node_Kind::TS: {
-            return name_resolve_ts(node->ts, node->scope);
+            return name_resolve_ts(ctx, node->ts, node->scope);
         }
 
         case Flat_Node_Kind::PARAM_DECL: {
@@ -606,7 +612,7 @@ bool name_resolve_stmt(AST_Statement *stmt, Scope *scope)
     return result;
 }
 
-bool name_resolve_expr(AST_Expression *expr, Scope *scope)
+bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 {
     assert(expr && scope);
 
@@ -632,7 +638,7 @@ bool name_resolve_expr(AST_Expression *expr, Scope *scope)
             Symbol *sym = scope_get_symbol(scope, base->identifier);
             assert(sym);
             if (sym->kind != Symbol_Kind::FUNC) {
-                resolve_error(base, "Not a function '%s'", sym->name.data);
+                resolve_error(ctx, base, "Not a function '%s'", sym->name.data);
                 result = false;
                 break;
             }
@@ -647,20 +653,20 @@ bool name_resolve_expr(AST_Expression *expr, Scope *scope)
             Symbol *sym = scope_get_symbol(scope, expr->identifier.name);
 
             if (!sym) {
-                resolve_error(expr, "Undefined symbol: '%s'", expr->identifier.name.data);
+                resolve_error(ctx, expr, "Undefined symbol: '%s'", expr->identifier.name.data);
                 result = false;
                 break;
             }
 
             if (sym->state == Symbol_State::RESOLVING) {
 
-                fatal_resolve_error(expr, "Circular dependency detected");
+                fatal_resolve_error(ctx, expr, "Circular dependency detected");
                 result = false;
                 break;
 
             } else if (sym->state == Symbol_State::UNRESOLVED) {
 
-                resolve_error(expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
+                resolve_error(ctx, expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
                 result = false;
                 break;
 
@@ -678,7 +684,7 @@ bool name_resolve_expr(AST_Expression *expr, Scope *scope)
     return result;
 }
 
-bool name_resolve_ts(AST_Type_Spec *ts, Scope *scope)
+bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
 {
     assert(ts && scope);
 
@@ -691,26 +697,26 @@ bool name_resolve_ts(AST_Type_Spec *ts, Scope *scope)
             Symbol *sym = scope_get_symbol(scope, ts->identifier.name);
 
             if (!sym) {
-                resolve_error(ts, "Undefined symbol: '%s'", ts->identifier.name.data);
+                resolve_error(ctx, ts, "Undefined symbol: '%s'", ts->identifier.name.data);
                 result = false;
                 break;
             }
 
             if (sym->kind != Symbol_Kind::TYPE) {
-                resolve_error(ts, "Not a type: '%s'", ts->identifier.name.data);
+                resolve_error(ctx, ts, "Not a type: '%s'", ts->identifier.name.data);
                 result = false;
                 break;
             }
 
             if (sym->state == Symbol_State::RESOLVING) {
 
-                fatal_resolve_error(ts, "Circular dependency detected");
+                fatal_resolve_error(ctx, ts, "Circular dependency detected");
                 result = false;
                 break;
 
             } else if (sym->state == Symbol_State::UNRESOLVED) {
 
-                resolve_error(ts, "Unresolved symbol: '%s'", ts->identifier.name.data);
+                resolve_error(ctx, ts, "Unresolved symbol: '%s'", ts->identifier.name.data);
                 result = false;
                 break;
 
@@ -731,7 +737,7 @@ bool name_resolve_ts(AST_Type_Spec *ts, Scope *scope)
     return result;
 }
 
-bool type_resolve_node(Flat_Node *node)
+bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
 {
     assert(node);
 
@@ -748,7 +754,7 @@ bool type_resolve_node(Flat_Node *node)
         }
 
         case Flat_Node_Kind::EXPR: {
-            return type_resolve_expression(node->expr, node->scope);
+            return type_resolve_expression(ctx, node->expr, node->scope);
             break;
         }
 
@@ -887,7 +893,7 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
     return false;
 }
 
-bool type_resolve_expression(AST_Expression *expr, Scope *scope)
+bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 {
     assert(expr);
     assert(expr->resolved_type == nullptr);
@@ -908,7 +914,7 @@ bool type_resolve_expression(AST_Expression *expr, Scope *scope)
             auto sym = scope_get_symbol(scope, expr->identifier.name);
             assert(sym);
             if (sym->state != Symbol_State::TYPED) {
-                resolve_error(expr, "Waiting for declaration to be resolved");
+                resolve_error(ctx, expr, "Waiting for declaration to be resolved");
                 return false;
             }
 

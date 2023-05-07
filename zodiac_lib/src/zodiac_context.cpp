@@ -30,6 +30,7 @@ void zodiac_context_create(Zodiac_Context *out_context)
     out_context->error_allocator = temporary_allocator_allocator(&out_context->error_allocator_state);
 
     dynamic_array_create(c_allocator(), &out_context->errors);
+    out_context->fatal_resolve_error = false;
 
     zodiac_register_keywords(&out_context->atoms);
 }

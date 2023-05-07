@@ -47,8 +47,8 @@ void bytecode_validator_print_errors(Bytecode_Validator *validator)
         auto block = &fn->blocks[ve.instruction_handle.block_index];
 
         fprintf(stderr, "%.*s:%lld:%lld: ",
-                (int)err.start.name.length, err.start.name.data,
-                err.start.line, err.start.index_in_line);
+                (int)err.source_range.start.name.length, err.source_range.start.name.data,
+                err.source_range.start.line, err.source_range.start.index_in_line);
 
         fprintf(stderr, "%.*s\n\tIn function: '%.*s'\n\tIn block: '%.*s'\n\tIndex in block: %lld\n",
                 (int)err.message.length, err.message.data,
@@ -73,8 +73,7 @@ void bytecode_validator_report_error(Bytecode_Validator *validator, Bytecode_Ins
     va_list args;
     va_start(args, fmt);
 
-    Source_Pos begin = {};
-    Source_Pos end = {};
+    Source_Pos pos;
     if (validator->visitor.instruction_locations) {
         assert(validator->visitor.instruction_locations->count);
         assert(false);
@@ -86,12 +85,11 @@ void bytecode_validator_report_error(Bytecode_Validator *validator, Bytecode_Ins
             .line = 0,
             .index_in_line = 0,
         };
-        begin = dummy;
-        end = dummy;
+        pos = dummy;
     }
 
 
-    auto err_handle = zodiac_report_error(validator->context, Zodiac_Error_Kind::ZODIAC_BC_VALIDATION_ERROR, begin, end, fmt, args);
+    auto err_handle = zodiac_report_error(validator->context, Zodiac_Error_Kind::ZODIAC_BC_VALIDATION_ERROR, pos, fmt, args);
 
     Validation_Error ve {
         .instruction_handle = location,

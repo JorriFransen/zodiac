@@ -8,6 +8,8 @@
 namespace Zodiac
 {
 
+struct Zodiac_Context;
+
 struct Allocator;
 struct AST_Identifier;
 struct AST_Declaration;
@@ -95,14 +97,14 @@ ZAPI Scope *scope_new(Allocator *allocator, Scope_Kind kind, Scope *parent);
 ZAPI Symbol *scope_get_symbol(Scope *scope, const Atom &name);
 ZAPI Symbol *scope_get_symbol(Scope *scope, const AST_Identifier &ident);
 
-ZAPI Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl);
-ZAPI Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Pos pos);
+ZAPI Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl);
+ZAPI Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Pos pos);
 
-ZAPI Symbol *add_unresolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
-ZAPI Symbol *add_unresolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Pos pos);
+ZAPI Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
+ZAPI Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Pos pos);
 
-ZAPI Symbol *add_resolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
-ZAPI Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool global);
+ZAPI Symbol *add_resolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
+ZAPI Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declaration *decl, bool global);
 
 ZAPI AST_Declaration *enclosing_function(Scope *scope);
 

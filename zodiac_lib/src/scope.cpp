@@ -2,10 +2,11 @@
 
 #include "ast.h"
 #include "atom.h"
+#include "error.h"
 #include "memory/allocator.h"
 #include "memory/zmemory.h"
-#include "resolve_error.h"
 #include "util/asserts.h"
+#include "zodiac_context.h"
 
 namespace Zodiac
 {
@@ -59,7 +60,7 @@ Symbol *scope_get_symbol(Scope *scope, const AST_Identifier &ident)
     return scope_get_symbol(scope, ident.name);
 }
 
-Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl)
+Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
     assert(scope);
 
@@ -71,11 +72,12 @@ Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Sym
         pos = { .name = "<builtin>", .line = 0, .index_in_line = 0, };
     }
 
-    return scope_add_symbol(scope, kind, state, flags, name, decl, pos);
+    return scope_add_symbol(ctx, scope, kind, state, flags, name, decl, pos);
 }
 
-Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Pos pos)
+Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Pos pos)
 {
+    assert(ctx);
     assert(scope);
     assert(state != Symbol_State::RESOLVING);
     assert(decl || (flags & SYM_FLAG_BUILTIN));
@@ -83,7 +85,7 @@ Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Sym
     auto ex_sym = scope_get_symbol(scope, name);
     if (ex_sym) {
         assert(decl);
-        report_redecl(ex_sym->pos, name, pos);
+        report_redecl(ctx, ex_sym->pos, name, pos);
         return nullptr;
     }
 
@@ -94,24 +96,24 @@ Symbol *scope_add_symbol(Scope *scope, Symbol_Kind kind, Symbol_State state, Sym
     return &scope->symbols[scope->symbols.count - 1];
 }
 
-Symbol *add_unresolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
+Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
-    return add_unresolved_symbol(scope, kind, flags, name, decl, decl->pos);
+    return add_unresolved_symbol(ctx, scope, kind, flags, name, decl, decl->pos);
 }
 
-Symbol *add_unresolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Pos pos)
+Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Pos pos)
 {
     assert(scope && decl);
-    return scope_add_symbol(scope, kind, Symbol_State::UNRESOLVED, flags, name, decl, pos);
+    return scope_add_symbol(ctx, scope, kind, Symbol_State::UNRESOLVED, flags, name, decl, pos);
 }
 
-Symbol *add_resolved_symbol(Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
+Symbol *add_resolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
     assert(scope);
-    return scope_add_symbol(scope, kind, Symbol_State::RESOLVED, flags, name, decl);
+    return scope_add_symbol(ctx, scope, kind, Symbol_State::RESOLVED, flags, name, decl);
 }
 
-Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool global)
+Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declaration *decl, bool global)
 {
     assert(scope && decl);
 
@@ -136,7 +138,7 @@ Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool glo
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
 
-                auto param_sym = add_unresolved_symbol(parameter_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param.identifier.name, decl, param.identifier.pos);
+                auto param_sym = add_unresolved_symbol(ctx, parameter_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param.identifier.name, decl, param.identifier.pos);
                 if (!param_sym) {
                     return nullptr;
                 }
@@ -154,7 +156,7 @@ Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool glo
 
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
-                auto mem_sym = add_unresolved_symbol(aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field.identifier.name, decl, field.identifier.pos);
+                auto mem_sym = add_unresolved_symbol(ctx, aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field.identifier.name, decl, field.identifier.pos);
                 if (!mem_sym) {
                     return nullptr;
                 }
@@ -168,7 +170,7 @@ Symbol *add_unresolved_decl_symbol(Scope *scope, AST_Declaration *decl, bool glo
     Symbol_Flags flags = SYM_FLAG_NONE;
     if (global) flags |= SYM_FLAG_GLOBAL;
 
-    Symbol *result = add_unresolved_symbol(scope, kind, flags, decl->identifier.name, decl);
+    Symbol *result = add_unresolved_symbol(ctx, scope, kind, flags, decl->identifier.name, decl);
     if (!result) return nullptr;
 
     switch (result->kind) {

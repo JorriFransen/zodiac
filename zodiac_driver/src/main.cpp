@@ -1,12 +1,12 @@
 #include "ast.h"
 #include "containers/dynamic_array.h"
 #include "defines.h"
+#include "error.h"
 #include "lexer.h"
 #include "memory/allocator.h"
 #include "memory/zmemory.h"
 #include "parser.h"
 #include "platform/filesystem.h"
-#include "resolve_error.h"
 #include "resolve.h"
 #include "scope.h"
 #include "source_pos.h"
@@ -20,7 +20,7 @@
 
 using namespace Zodiac;
 
-void flat_resolve_test(AST_File *file);
+void flat_resolve_test(Zodiac_Context *ctx, AST_File *file);
 
 int main() {
 
@@ -30,9 +30,6 @@ int main() {
 
     Zodiac_Context c;
     zodiac_context_create(&c);
-
-    // TODO: CLEANUP: Used in the resolver / resolve_error.h
-    ctx = &c;
 
     Lexer lexer;
     lexer_create(&c, &lexer);
@@ -53,54 +50,54 @@ int main() {
     if (parser.error) return 1;;
     assert(file);
 
-    flat_resolve_test(file);
+    flat_resolve_test(&c, file);
 
     free(&dynamic_allocator, stream.data);
 
     return 0;
 }
 
-#define add_builtin_symbol(kind, atom) {                                                              \
-    add_resolved_symbol(global_scope, (kind), (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), (atom), nullptr); \
+#define add_builtin_symbol(ctx, kind, atom) {                                                              \
+    add_resolved_symbol(ctx, global_scope, (kind), (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), (atom), nullptr); \
 }
 
-void flat_resolve_test(AST_File *file)
+void flat_resolve_test(Zodiac_Context *ctx, AST_File *file)
 {
     assert(file);
 
     Scope *global_scope = scope_new(&dynamic_allocator, Scope_Kind::GLOBAL, nullptr);
-    dynamic_array_create(&dynamic_allocator, &resolve_errors); // TODO: CLEANUP: Use the resolve_error_allocator for this?
 
     Resolver resolver;
     resolver_create(&resolver, ctx, global_scope);
 
-    auto sym = add_resolved_symbol(global_scope, Symbol_Kind::TYPE, (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), atom_s64, nullptr);
+    auto sym = add_resolved_symbol(ctx, global_scope, Symbol_Kind::TYPE, (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), atom_s64, nullptr);
     sym->builtin_type = &builtin_type_s64;
 
     // add_builtin_symbol(Symbol_Kind::TYPE, atom_s64);
-    add_builtin_symbol(Symbol_Kind::TYPE, atom_s8);
-    add_builtin_symbol(Symbol_Kind::TYPE, atom_u16);
-    add_builtin_symbol(Symbol_Kind::TYPE, atom_u32);
-    add_builtin_symbol(Symbol_Kind::TYPE, atom_r32);
-    add_builtin_symbol(Symbol_Kind::TYPE, atom_String);
+    add_builtin_symbol(ctx, Symbol_Kind::TYPE, atom_s8);
+    add_builtin_symbol(ctx, Symbol_Kind::TYPE, atom_u16);
+    add_builtin_symbol(ctx, Symbol_Kind::TYPE, atom_u32);
+    add_builtin_symbol(ctx, Symbol_Kind::TYPE, atom_r32);
+    add_builtin_symbol(ctx, Symbol_Kind::TYPE, atom_String);
 
     for (u64 i = 0; i < file->declarations.count; i++) {
-        resolver_add_declaration(&resolver, file->declarations[i]);
+        resolver_add_declaration(ctx, &resolver, file->declarations[i]);
     }
 
     resolve_names(&resolver);
     resolve_types(&resolver);
 
-    for (u64 i = 0; i < resolve_errors.count; i++) {
+    for (u64 i = 0; i < ctx->errors.count; i++) {
 
-        auto err = resolve_errors[i];
+        auto err = ctx->errors[i];
 
-        if (!fatal_resolve_error) assert(!err.fatal);
+        if (!ctx->fatal_resolve_error) assert(!err.fatal);
 
-        bool print = fatal_resolve_error == err.fatal;
+        bool print = ctx->fatal_resolve_error == err.fatal;
 
         if (print) {
-            printf("%s:%llu:%llu: error: %s\n", err.pos.name.data, err.pos.line, err.pos.index_in_line, err.message.data);
+            auto start = err.source_range.start;
+            printf("%s:%llu:%llu: error: %s\n", start.name.data, start.line, start.index_in_line, err.message.data);
         }
     }
 }

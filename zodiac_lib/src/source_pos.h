@@ -13,4 +13,10 @@ struct Source_Pos
     u64 index_in_line;
 };
 
+struct Source_Range
+{
+    Source_Pos start;
+    Source_Pos end;
+};
+
 }
