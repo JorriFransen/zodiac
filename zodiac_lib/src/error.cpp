@@ -74,8 +74,7 @@ Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind
     va_list args;
     va_start(args, fmt);
 
-    Source_Range sr = { expr->pos, expr->pos };
-    auto result = zodiac_report_error(context, kind, sr, fmt, args);
+    auto result = zodiac_report_error(context, kind, expr->range, fmt, args);
 
     va_end(args);
 
@@ -87,8 +86,7 @@ Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind
     va_list args;
     va_start(args, fmt);
 
-    Source_Range sr = { stmt->pos, stmt->pos };
-    auto result = zodiac_report_error(context, kind, sr, fmt, args);
+    auto result = zodiac_report_error(context, kind, stmt->range, fmt, args);
 
     va_end(args);
 
@@ -101,8 +99,7 @@ Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind
     va_list args;
     va_start(args, fmt);
 
-    Source_Range sr = { decl->pos, decl->pos };
-    auto result = zodiac_report_error(context, kind, sr, fmt, args);
+    auto result = zodiac_report_error(context, kind, decl->range, fmt, args);
 
     va_end(args);
 
@@ -114,8 +111,7 @@ Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind
     va_list args;
     va_start(args, fmt);
 
-    Source_Range sr = { ts->pos, ts->pos };
-    auto result = zodiac_report_error(context, kind, sr, fmt, args);
+    auto result = zodiac_report_error(context, kind, ts->range, fmt, args);
 
     va_end(args);
 

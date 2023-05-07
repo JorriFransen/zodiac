@@ -89,7 +89,7 @@ AST_Identifier parse_identifier(Parser *parser)
     expect_token(parser, TOK_NAME);
 
     AST_Identifier result;
-    ast_identifier_create(ident_tok.atom, ident_tok.start, &result);
+    ast_identifier_create(ident_tok.atom, ident_tok.range, &result);
     return result;
 }
 
@@ -97,7 +97,7 @@ AST_Expression *parse_expr_operand(Parser *parser)
 {
     assert(parser);
 
-    Source_Pos start_pos = cur_tok(parser).start;
+    Source_Pos start_pos = cur_tok(parser).range.start;
 
     if (is_token(parser, TOK_INT)) {
         u64 value = cur_tok(parser).integer;

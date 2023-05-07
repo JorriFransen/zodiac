@@ -11,12 +11,12 @@
 namespace Zodiac
 {
 
-void ast_identifier_create(Atom name, Source_Pos pos, AST_Identifier *out_ident)
+void ast_identifier_create(Atom name, Source_Range range, AST_Identifier *out_ident)
 {
     assert(out_ident);
 
     out_ident->name = name;
-    out_ident->pos = pos;
+    out_ident->range = range;
 }
 
 void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_expr)
@@ -287,222 +287,222 @@ void ast_file_create(Dynamic_Array<AST_Declaration *> decls, AST_File *out_file)
     out_file->declarations = decls;
 }
 
-AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Source_Pos pos, Integer_Value value)
+AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Integer_Value value)
 {
     assert(ctx);
 
-    auto expr = ast_expression_new(ctx, pos);
+    auto expr = ast_expression_new(ctx, range);
     ast_integer_literal_expr_create(value, expr);
     return expr;
 }
 
-AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Source_Pos pos, Atom atom)
+AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Atom atom)
 {
     assert(ctx);
 
-    auto expr = ast_expression_new(ctx, pos);
+    auto expr = ast_expression_new(ctx, range);
     ast_string_literal_expr_create(atom, expr);
     return expr;
 }
 
-AST_Expression *ast_null_literal_expr_new(Zodiac_Context *ctx, Source_Pos pos)
+AST_Expression *ast_null_literal_expr_new(Zodiac_Context *ctx, Source_Range range)
 {
     assert(ctx);
 
-    auto expr = ast_expression_new(ctx, pos);
+    auto expr = ast_expression_new(ctx, range);
     ast_null_literal_expr_create(expr);
     return expr;
 }
 
-AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Source_Pos pos, Atom atom)
+AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Source_Range range, Atom atom)
 {
     assert(ctx);
 
     AST_Identifier ident;
-    ast_identifier_create(atom, pos, &ident);
+    ast_identifier_create(atom, range, &ident);
 
-    auto expr = ast_expression_new(ctx, pos);
+    auto expr = ast_expression_new(ctx, range);
     ast_identifier_expr_create(ident, expr);
     return expr;
 }
 
-AST_Expression *ast_member_expr_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *base, Atom atom)
+AST_Expression *ast_member_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *base, Atom atom)
 {
     assert(ctx && base);
 
-    auto expr = ast_expression_new(ctx, pos);
+    auto expr = ast_expression_new(ctx, range);
     ast_member_expr_create(base, atom, expr);
     return expr;
 }
 
-AST_Expression *ast_index_expr_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *base, AST_Expression *index)
+AST_Expression *ast_index_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *base, AST_Expression *index)
 {
     assert(ctx && base && index);
 
-    auto expr = ast_expression_new(ctx, pos);
+    auto expr = ast_expression_new(ctx, range);
     ast_index_expr_create(base, index, expr);
     return expr;
 }
 
-AST_Expression *ast_call_expr_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *base, Dynamic_Array<AST_Expression *> args)
+AST_Expression *ast_call_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *base, Dynamic_Array<AST_Expression *> args)
 {
     assert(ctx && base);
 
-    auto expr = ast_expression_new(ctx, pos);
+    auto expr = ast_expression_new(ctx, range);
     ast_call_expr_create(base, args, expr);
     return expr;
 
 }
 
-AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, Source_Pos pos, AST_Unary_Operator op, AST_Expression *operand)
+AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Unary_Operator op, AST_Expression *operand)
 {
     assert(ctx && operand);
 
-    auto expr = ast_expression_new(ctx, pos);
+    auto expr = ast_expression_new(ctx, range);
     ast_unary_expr_create(op, operand, expr);
     return expr;
 }
 
-AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, Source_Pos pos, AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs)
+AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs)
 {
     assert(ctx && lhs && rhs);
 
-    auto expr = ast_expression_new(ctx, pos);
+    auto expr = ast_expression_new(ctx, range);
     ast_binary_expr_create(op, lhs, rhs, expr);
     return expr;
 }
 
-AST_Expression *ast_expression_new(Zodiac_Context *ctx, Source_Pos pos)
+AST_Expression *ast_expression_new(Zodiac_Context *ctx, Source_Range range)
 {
     AST_Expression *result = alloc<AST_Expression>(&ctx->ast_allocator);
-    result->pos = pos;
+    result->range = range;
     return result;
 }
 
-AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Source_Pos pos, Dynamic_Array<AST_Statement *> statements)
+AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Statement *> statements)
 {
     assert(ctx);
 
-    auto stmt = ast_statement_new(ctx, pos);
+    auto stmt = ast_statement_new(ctx, range);
     ast_block_stmt_create(statements, stmt);
     return stmt;
 }
 
-AST_Statement *ast_declaration_stmt_new(Zodiac_Context *ctx, Source_Pos pos, AST_Declaration *decl)
+AST_Statement *ast_declaration_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Declaration *decl)
 {
     assert(ctx && decl);
 
-    auto stmt = ast_statement_new(ctx, pos);
+    auto stmt = ast_statement_new(ctx, range);
     ast_declaration_stmt_create(decl, stmt);
     return stmt;
 }
 
-AST_Statement *ast_assign_stmt_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *dest, AST_Expression *value)
+AST_Statement *ast_assign_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *dest, AST_Expression *value)
 {
     assert(ctx && dest && value);
 
-    auto stmt = ast_statement_new(ctx, pos);
+    auto stmt = ast_statement_new(ctx, range);
     ast_assign_stmt_create(dest, value, stmt);
     return stmt;
 }
 
-AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *call)
+AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *call)
 {
     assert(ctx && call);
 
-    auto stmt = ast_statement_new(ctx, pos);
+    auto stmt = ast_statement_new(ctx, range);
     ast_call_stmt_create(call, stmt);
     return stmt;
 }
 
-AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *cond, AST_Statement *then_stmt, Dynamic_Array<AST_Else_If> else_ifs, AST_Statement *else_stmt)
+AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *cond, AST_Statement *then_stmt, Dynamic_Array<AST_Else_If> else_ifs, AST_Statement *else_stmt)
 {
     assert(ctx && cond && then_stmt);
 
-    auto stmt = ast_statement_new(ctx, pos);
+    auto stmt = ast_statement_new(ctx, range);
     ast_if_stmt_create(cond, then_stmt, else_ifs, else_stmt, stmt);
     return stmt;
 }
 
-AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *cond, AST_Statement *do_stmt)
+AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *cond, AST_Statement *do_stmt)
 {
     assert(ctx && cond && do_stmt);
 
-    auto stmt = ast_statement_new(ctx, pos);
+    auto stmt = ast_statement_new(ctx, range);
     ast_while_stmt_create(cond, do_stmt, stmt);
     return stmt;
 }
 
-AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *value)
+AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *value)
 {
     assert(ctx);
 
-    auto stmt = ast_statement_new(ctx, pos);
+    auto stmt = ast_statement_new(ctx, range);
     ast_return_stmt_create(value, stmt);
     return stmt;
 }
 
-AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Pos pos, AST_Expression *print_expr)
+AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *print_expr)
 {
     assert(ctx);
 
-    auto stmt = ast_statement_new(ctx, pos);
+    auto stmt = ast_statement_new(ctx, range);
     ast_print_stmt_create(print_expr, stmt);
     return stmt;
 }
 
-AST_Statement *ast_statement_new(Zodiac_Context *ctx, Source_Pos pos)
+AST_Statement *ast_statement_new(Zodiac_Context *ctx, Source_Range range)
 {
     assert(ctx);
 
     AST_Statement *result = alloc<AST_Statement>(&ctx->ast_allocator);
-    result->pos = pos;
+    result->range = range;
     return result;
 }
 
-AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value)
+AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value)
 {
     assert(ctx);
 
-    auto decl = ast_declaration_new(ctx, pos);
+    auto decl = ast_declaration_new(ctx, range);
     ast_variable_decl_create(ident, ts, value, decl);
     return decl;
 }
 
-AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value)
+AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value)
 {
     assert(ctx && value);
 
-    auto decl = ast_declaration_new(ctx, pos);
+    auto decl = ast_declaration_new(ctx, range);
     ast_constant_variable_decl_create(ident, ts, value, decl);
     return decl;
 }
 
-AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body)
+AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body)
 {
     assert(ctx);
 
-    auto decl = ast_declaration_new(ctx, pos);
+    auto decl = ast_declaration_new(ctx, range);
     ast_function_decl_create(ident, args, return_ts, body, decl);
     return decl;
 }
 
-AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields)
+AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields)
 {
     assert(ctx);
     assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
 
-    auto decl = ast_declaration_new(ctx, pos);
+    auto decl = ast_declaration_new(ctx, range);
     ast_aggregate_decl_create(ident, kind, fields, decl);
     return decl;
 }
 
-AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Pos pos)
+AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Range range)
 {
     assert(ctx);
 
     AST_Declaration *result = alloc<AST_Declaration>(&ctx->ast_allocator);
-    result->pos = pos;
+    result->range = range;
     return result;
 }
 
@@ -521,30 +521,30 @@ file_local const char *ast_binop_to_string[(int)AST_Binary_Operator::LAST_BINOP 
     [(int)AST_Binary_Operator::GTEQ] = ">=",
 };
 
-AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Pos pos, AST_Identifier ident)
+AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident)
 {
     assert(ctx);
 
-    auto ts = ast_type_spec_new(ctx, pos);
+    auto ts = ast_type_spec_new(ctx, range);
     ast_name_ts_create(ident, ts);
     return ts;
 }
 
-AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Pos pos, AST_Type_Spec *base)
+AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *base)
 {
     assert(ctx && base);
 
-    auto ts = ast_type_spec_new(ctx, pos);
+    auto ts = ast_type_spec_new(ctx, range);
     ast_pointer_ts_create(base, ts);
     return ts;
 }
 
-AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Pos pos)
+AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range range)
 {
     assert(ctx);
 
     AST_Type_Spec *result = alloc<AST_Type_Spec>(&ctx->ast_allocator);
-    result->pos = pos;
+    result->range = range;
     return result;
 }
 

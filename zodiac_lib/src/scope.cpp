@@ -64,18 +64,19 @@ Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Sy
 {
     assert(scope);
 
-    Source_Pos pos = {};
+    Source_Range range = {};
 
     if (decl) {
-        pos = decl->pos;
+        range = decl->range;
     } else {
-        pos = { .name = "<builtin>", .line = 0, .index_in_line = 0, };
+        Source_Pos pos = { .name = "<builtin>", .line = 0, .index_in_line = 0, };
+        range = { pos, pos };
     }
 
-    return scope_add_symbol(ctx, scope, kind, state, flags, name, decl, pos);
+    return scope_add_symbol(ctx, scope, kind, state, flags, name, decl, range);
 }
 
-Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Pos pos)
+Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Range range)
 {
     assert(ctx);
     assert(scope);
@@ -101,7 +102,7 @@ Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kin
     return add_unresolved_symbol(ctx, scope, kind, flags, name, decl, decl->pos);
 }
 
-Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Pos pos)
+Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Range range)
 {
     assert(scope && decl);
     return scope_add_symbol(ctx, scope, kind, Symbol_State::UNRESOLVED, flags, name, decl, pos);

@@ -69,9 +69,9 @@ void lexer_init_stream(Lexer *lexer, const String_Ref stream, const String_Ref s
     lexer->line_start = stream.data;
 
     lexer->token.kind = TOK_INVALID;
-    lexer->token.start.name = stream_name;
-    lexer->token.start.line = 1;
-    lexer->token.start.index_in_line = 0;
+    lexer->token.range.start.name = stream_name;
+    lexer->token.range.start.line = 1;
+    lexer->token.range.start.index_in_line = 0;
 
     next_token(lexer);
 }

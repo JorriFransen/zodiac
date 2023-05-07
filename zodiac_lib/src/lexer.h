@@ -39,7 +39,7 @@ struct Token
 
     Atom atom;
 
-    Source_Pos start;
+    Source_Range range;
 
     union
     {
