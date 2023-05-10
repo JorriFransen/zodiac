@@ -33,7 +33,6 @@ all: scaffold compile link
 scaffold:
 	@mkdir -p bin
 	@mkdir -p $(addprefix $(OBJ_DIR)/,$(DIRECTORIES))
-	@mkdir -p $(DYNCALL_INSTALL_DIR)
 
 .PHONY: compile
 compile:

@@ -3,11 +3,10 @@ include Makefile.dyncall.linux.mak
 
 COMMON_FLAGS := --no-print-directory
 
-
 all: zodiac_lib zodiac_driver zodiac_tests iwyu
 
 .PHONY: zodiac_lib
-zodiac_lib: $(DYNCALL_LIB)
+zodiac_lib: dyncall
 	@$(MAKE) -f Makefile.zodiac_lib.linux.mak $(COMMON_FLAGS)
 
 .PHONY: zodiac_driver
