@@ -732,7 +732,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             auto fn_return_type = validator->visitor.current_function->type->function.return_type;
             assert(fn_return_type);
             if (fn_return_type != &builtin_type_void) {
-                auto return_type_str = type_to_string(temp_allocator(), fn_return_type);
+                auto return_type_str = type_to_string(temp_allocator_allocator(), fn_return_type);
                 bytecode_validator_report_error(validator, "Invalid 'RETURN_VOID' in function with return type '%.*s'",
                                                 (int)return_type_str.length, return_type_str.data);
                 return false;
@@ -753,7 +753,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
 
             auto expected_return_type = visitor->current_function->type->function.return_type;
             if (expected_return_type != instruction->a.type) {
-                auto ert_str = type_to_string(temp_allocator(), expected_return_type);
+                auto ert_str = type_to_string(temp_allocator_allocator(), expected_return_type);
                 bytecode_validator_report_error(validator, "The type of the 'a' register for 'RETURN' does not match the return type of the function it's in ('%.*s').",
                                                 (int)ert_str.length, ert_str.data);
                 return false;
@@ -1476,7 +1476,7 @@ Array_Ref<Graph_Node> validator_build_block_graph(Bytecode_Function *func)
 {
 
     Dynamic_Array<Graph_Node> nodes;
-    dynamic_array_create<Graph_Node>(temp_allocator(), &nodes, func->blocks.count + 1);
+    dynamic_array_create<Graph_Node>(temp_allocator_allocator(), &nodes, func->blocks.count + 1);
 
     for (s64 i = 0; i < func->blocks.count; i++) {
         auto node = Graph_Node { .a = nullptr, .b = nullptr, .block = &func->blocks[i] };

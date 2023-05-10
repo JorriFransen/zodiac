@@ -7,8 +7,6 @@
 namespace Zodiac
 {
 
-ZAPI Allocator *temp_allocator();
-
 struct Temporary_Allocator
 {
     Linear_Allocator linear_allocator;
@@ -18,6 +16,9 @@ struct Temporary_Allocator_Mark
 {
     u64 offset;
 };
+
+ZAPI Temporary_Allocator *temp_allocator();
+ZAPI Allocator *temp_allocator_allocator();
 
 ZAPI void temporary_allocator_create(u64 size, void *memory, Temporary_Allocator *out_allocator);
 ZAPI void temporary_allocator_destroy(Temporary_Allocator *allocator);

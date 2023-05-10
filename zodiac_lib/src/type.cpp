@@ -15,8 +15,13 @@ bool type_system_initialized = false;
 Type builtin_type_unsized_integer;
 Type builtin_type_void;
 Type builtin_type_boolean;
+
 Type builtin_type_s64;
 Type builtin_type_s32;
+
+Type builtin_type_u8;
+
+Type builtin_type_r64;
 Type builtin_type_r32;
 
 Dynamic_Array<Type *> function_types;
@@ -36,6 +41,9 @@ bool type_system_initialize()
     create_integer_type(&builtin_type_s64, 64, true);
     create_integer_type(&builtin_type_s32, 32, true);
 
+    create_integer_type(&builtin_type_u8, 8, false);
+
+    create_float_type(&builtin_type_r64, 64);
     create_float_type(&builtin_type_r32, 32);
 
     type_system_initialized = true;

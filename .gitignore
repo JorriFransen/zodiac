@@ -1,3 +1,4 @@
+.vim
 .cache
 .nvim_build.sh
 .nvim_clean.sh

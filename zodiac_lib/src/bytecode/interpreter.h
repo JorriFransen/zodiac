@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bytecode/bytecode.h"
+#include "bytecode/ffi.h"
 #include "containers/dynamic_array.h"
 #include "containers/stack.h"
 #include "defines.h"
@@ -63,7 +64,7 @@ struct Interpreter
 
     File_Handle std_out;
 
-    // FFI_Context ffi = {};
+    FFI_Context ffi = {};
 };
 
 ZAPI Interpreter interpreter_create(Allocator *allocator, Zodiac_Context *context);

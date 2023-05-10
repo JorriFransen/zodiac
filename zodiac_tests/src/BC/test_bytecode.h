@@ -27,7 +27,7 @@ file_local void print_bytecode(const Bytecode_Builder &bb)
     printf("\n\n");
 
     // Assume this uses printf
-    bytecode_print(&bb, temp_allocator());
+    bytecode_print(&bb, temp_allocator_allocator());
 #endif
 }
 

@@ -12,9 +12,9 @@ file_local void *temporary_alloc_func(Allocator *allocator, Allocation_Mode mode
 
 file_local bool temp_allocator_initialized = false;
 file_local Temporary_Allocator temp_allocator_data;
-file_local Allocator temp_allocator_allocator;
+file_local Allocator temp_allocator_allocator_;
 
-Allocator *temp_allocator()
+Temporary_Allocator *temp_allocator()
 {
     if (!temp_allocator_initialized) {
         auto c_alloc = c_allocator();
@@ -22,12 +22,20 @@ Allocator *temp_allocator()
         void *mem = alloc(c_alloc, size);
 
         temporary_allocator_create(size, mem, &temp_allocator_data);
-        temp_allocator_allocator = temporary_allocator_allocator(&temp_allocator_data);
+        temp_allocator_allocator_ = temporary_allocator_allocator(&temp_allocator_data);
 
         temp_allocator_initialized = true;
     }
 
-    return &temp_allocator_allocator;
+    return &temp_allocator_data;
+}
+
+Allocator *temp_allocator_allocator()
+{
+    // Initialize
+    temp_allocator();
+
+    return &temp_allocator_allocator_;
 }
 
 void temporary_allocator_create(u64 size, void *memory, Temporary_Allocator *out_allocator)
