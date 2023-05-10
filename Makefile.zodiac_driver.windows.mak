@@ -3,12 +3,14 @@ DIR := $(subst /,\,${CURDIR})
 BUILD_DIR := bin
 OBJ_DIR := obj
 
+include Makefile.dyncall_vars.windows.mak
+
 BASE_DIR := zodiac_driver
 SRC_DIR := $(BASE_DIR)\src
 ASSEMBLY := zodiac
 EXTENSION := .exe
 COMPILER_FLAGS := -g -MD -MP -Werror=vla -Wno-c99-designator -fdeclspec
-INCLUDE_FLAGS := -Izodiac_lib\src -I$(SRC_DIR)
+INCLUDE_FLAGS := -Izodiac_lib\src -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
 LINKER_FLAGS := $(BUILD_DIR)\libzodiac.lib
 DEFINES := -D_DEBUG -DZIMPORT
 
@@ -48,6 +50,6 @@ clean:
 	if exist $(BUILD_DIR)\$(ASSEMBLY)$(EXTENSION) del $(BUILD_DIR)\$(ASSEMBLY)$(EXTENSION)
 	if exist $(BUILD_DIR)\$(ASSEMBLY).pdb del $(BUILD_DIR)\$(ASSEMBLY).pdb
 	if exist $(BUILD_DIR)\$(ASSEMBLY).ilk del $(BUILD_DIR)\$(ASSEMBLY).ilk
-	rmdir /s /q $(OBJ_DIR)\$(BASE_DIR)
+	if exist $(OBJ_DIR)\$(BASE_DIR) rmdir /s /q $(OBJ_DIR)\$(BASE_DIR)
 
 -include $(OBJ_FILES:.o=.d)

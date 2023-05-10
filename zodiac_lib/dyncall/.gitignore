@@ -1,5 +1,8 @@
 install
 
+*.obj
+*.lib
+
 dyncall-1.4/Makefile
 dyncall-1.4/Makefile.config
 dyncall-1.4/doc/Makefile

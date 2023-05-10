@@ -13,9 +13,11 @@ EXTENSION := .dll
 # LLVM_DEBUG_BUILD_DIR := "$(DIR)\$(BUILD_DIR)\llvm_build_debug"
 # LLVM_DEBUG_INSTALL_DIR := "$(DIR)\$(BUILD_DIR)\llvm_install_debug"
 
+include Makefile.dyncall_vars.windows.mak
+
 COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wno-c99-designator -Wvla -fdeclspec
-INCLUDE_FLAGS := -I$(SRC_DIR)
-LINKER_FLAGS := -g -shared -lmsvcrt -Wl,-nodefaultlib:libcmt
+INCLUDE_FLAGS := -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
+LINKER_FLAGS := -g -shared -lmsvcrt -Wl,-nodefaultlib:libcmt $(DYNCALL_LINK_FLAGS)
 DEFINES := -D_DEBUG -DZEXPORT -D_DLL -D_CRT_SECURE_NO_WARNINGS
 
 # Make does not offer a recursive wildcard function, so here's one:
@@ -90,6 +92,6 @@ clean:
 	if exist $(BUILD_DIR)\$(ASSEMBLY).pdb del $(BUILD_DIR)\$(ASSEMBLY).pdb
 	if exist $(BUILD_DIR)\$(ASSEMBLY).exp del $(BUILD_DIR)\$(ASSEMBLY).exp
 	if exist $(BUILD_DIR)\$(ASSEMBLY).lib del $(BUILD_DIR)\$(ASSEMBLY).lib
-	rmdir /s /q $(OBJ_DIR)\$(BASE_DIR)
+	if exist $(OBJ_DIR)\$(BASE_DIR) rmdir /s /q $(OBJ_DIR)\$(BASE_DIR)
 
 -include $(OBJ_FILES:.o=.d)

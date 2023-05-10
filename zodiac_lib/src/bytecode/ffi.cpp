@@ -37,16 +37,16 @@ FFI_Context ffi_create(Allocator *allocator, Zodiac_Context *zc, bool link_c, FF
 #if _WIN32
     DLLib *kernel32_lib = dlLoadLibrary("kernel32.dll");
     assert(kernel32_lib);
-    array_append(&result.libs, kernel32_lib);
+    dynamic_array_append(&result.libs, kernel32_lib);
 
     DLLib *ucrtbase_lib = dlLoadLibrary("ucrtbase.dll");
     assert(ucrtbase_lib);
-    array_append(&result.libs, ucrtbase_lib);
+    dynamic_array_append(&result.libs, ucrtbase_lib);
 
     if (link_c) {
         DLLib* msvcrt_lib = dlLoadLibrary("msvcrt.dll");
         assert(msvcrt_lib);
-        array_append(&result.libs, msvcrt_lib);
+        dynamic_array_append(&result.libs, msvcrt_lib);
     }
 
 #endif

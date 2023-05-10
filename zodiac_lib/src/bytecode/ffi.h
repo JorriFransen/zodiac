@@ -4,9 +4,9 @@
 #include "containers/dynamic_array.h"
 #include "util/zstring.h"
 
+#include <dyncall.h>
 #include <dyncall_args.h>
 #include <dyncall_callback.h>
-#include <dyncall.h>
 #include <dyncall_types.h>
 #include <dyncall_value.h>
 #include <dynload.h>
