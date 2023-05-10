@@ -1,13 +1,14 @@
 #include "ffi.h"
 
 #include "bytecode/bytecode.h"
-#include "interpreter.h"
-#include "type.h"
 #include "common.h"
 #include "containers/stack.h"
-#include "util/string_builder.h"
+#include "interpreter.h"
 #include "memory/temporary_allocator.h"
+#include "type.h"
 #include "util/asserts.h"
+#include "util/logger.h"
+#include "util/string_builder.h"
 
 #include <dyncall_args.h>
 #include <dyncall_callback.h>
@@ -95,6 +96,7 @@ FFI_Handle ffi_load_function(FFI_Context *ffi, const String_Ref &fn_name)
         return symbol;
     }
 
+    ZWARN("Did not find function '%s' in any loaded library", fn_name.data);
     return nullptr;
 }
 
@@ -268,7 +270,7 @@ s64 ffi_find_callback(FFI_Context *ffi, FFI_Handle ffi_handle)
     // if (found) return handle;
 
     for (u64 i = 0; i < ffi->callbacks.count; i++) {
-        if (ffi->callbacks[i].handle == ffi_handle) {
+        if (ffi->callbacks[i].ffi_handle == ffi_handle) {
             return ffi->callbacks[i].bc_handle;
         }
     }
@@ -389,7 +391,7 @@ char dcb_callback_handler(DCCallback *cb, DCArgs *args, DCValue *result, void *u
 
     bool found = false;
     for (u64 i = 0; i < interp->ffi.callbacks.count; i++) {
-        if (interp->ffi.callbacks[i].handle == cb) {
+        if (interp->ffi.callbacks[i].ffi_handle == cb) {
             fn_handle = interp->ffi.callbacks[i].bc_handle;
             found = true;
             break;

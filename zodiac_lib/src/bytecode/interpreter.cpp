@@ -78,13 +78,11 @@ Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytecode_F
         auto ffn = &interp->functions[ffn_handle];
         assert(ffn->flags & BC_FUNCTION_FLAG_FOREIGN);
 
-        // TODO: Add ffi code
-        assert(false);
-        // ffi_handle ffi_handle = ffi_load_function(&interp->ffi, ffn->name);
-        // assert(ffi_handle);
+        FFI_Handle ffi_handle = ffi_load_function(&interp->ffi, ffn->name);
+        assert(ffi_handle);
 
-        // assert(ffn->ffi_handle == nullptr);
-        // ffn->ffi_handle = ffi_handle;
+        assert(ffn->ffi_handle == nullptr);
+        ffn->ffi_handle = ffi_handle;
     }
 
     if (globals.count) {

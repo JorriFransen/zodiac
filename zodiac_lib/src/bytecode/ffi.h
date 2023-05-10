@@ -26,7 +26,7 @@ typedef Interpreter_Register * (*FFI_Callback_Handler)(Interpreter *interp, s64 
 
 struct FFI_Callback
 {
-    FFI_Handle handle;
+    FFI_Handle ffi_handle;
     s64 bc_handle;
 };
 

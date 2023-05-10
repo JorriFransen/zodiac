@@ -1167,129 +1167,129 @@ file_local MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void
     return result;
 }
 
-// file_local MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_data_or_fixture)
-// {
-//     auto c_alloc = c_allocator();
+file_local MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_data_or_fixture)
+{
+    auto c_alloc = c_allocator();
 
-//     Zodiac_Context zc;
-//     zodiac_context_create(&zc);
-//     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    Zodiac_Context zc;
+    zodiac_context_create(&zc);
+    Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
 
-//     Type *add_arg_types[] = { &builtin_type_s64, &builtin_type_s64 };
-//     auto add_fn_type = get_function_type(&builtin_type_s64, add_arg_types, &zc.ast_allocator);
-//     auto foreign_add_fn = bytecode_foreign_function_create(&bb, "foreign_add", add_fn_type);
+    Type *add_arg_types[] = { &builtin_type_s64, &builtin_type_s64 };
+    auto add_fn_type = get_function_type(&builtin_type_s64, add_arg_types, &zc.ast_allocator);
+    auto foreign_add_fn = bytecode_foreign_function_create(&bb, "foreign_add", add_fn_type);
 
-//     auto add_fn = bytecode_function_create(&bb, "add", add_fn_type);
-//     auto add_entry_block = bytecode_append_block(&bb, add_fn, "entry");
-//     bytecode_set_insert_point(&bb, add_fn, add_entry_block);
-//     {
-//         auto a = bytecode_load_argument(&bb, 0);
-//         auto b = bytecode_load_argument(&bb, 1);
+    auto add_fn = bytecode_function_create(&bb, "add", add_fn_type);
+    auto add_entry_block = bytecode_append_block(&bb, add_fn, "entry");
+    bytecode_set_insert_point(&bb, add_fn, add_entry_block);
+    {
+        auto a = bytecode_load_argument(&bb, 0);
+        auto b = bytecode_load_argument(&bb, 1);
 
-//         auto r = bytecode_emit_add(&bb, a, b);
-//         bytecode_emit_return(&bb, r);
-//     }
+        auto r = bytecode_emit_add(&bb, a, b);
+        bytecode_emit_return(&bb, r);
+    }
 
-//     Type *add32_arg_types[] = { &builtin_type_s32, &builtin_type_s32 };
-//     auto add32_fn_type = get_function_type(&builtin_type_s32, add32_arg_types, &zc.ast_allocator);
-//     auto add32_fn = bytecode_function_create(&bb, "add32", add32_fn_type);
-//     auto add32_entry_block = bytecode_append_block(&bb, add32_fn, "entry");
-//     bytecode_set_insert_point(&bb, add32_fn, add32_entry_block);
-//     {
-//         auto a = bytecode_load_argument(&bb, 0);
-//         auto b = bytecode_load_argument(&bb, 1);
+    Type *add32_arg_types[] = { &builtin_type_s32, &builtin_type_s32 };
+    auto add32_fn_type = get_function_type(&builtin_type_s32, add32_arg_types, &zc.ast_allocator);
+    auto add32_fn = bytecode_function_create(&bb, "add32", add32_fn_type);
+    auto add32_entry_block = bytecode_append_block(&bb, add32_fn, "entry");
+    bytecode_set_insert_point(&bb, add32_fn, add32_entry_block);
+    {
+        auto a = bytecode_load_argument(&bb, 0);
+        auto b = bytecode_load_argument(&bb, 1);
 
-//         auto r = bytecode_emit_add(&bb, a, b);
-//         bytecode_emit_return(&bb, r);
-//     }
+        auto r = bytecode_emit_add(&bb, a, b);
+        bytecode_emit_return(&bb, r);
+    }
 
-//     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
-//     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
-//     auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
-//     bytecode_set_insert_point(&bb, main_fn, main_entry_block);
-//     {
-//         auto a = bytecode_integer_literal(&bb, &builtin_type_s64, 42);
-//         auto b = bytecode_integer_literal(&bb, &builtin_type_s64, 24);
-//         auto a32 = bytecode_integer_literal(&bb, &builtin_type_s32, 21);
-//         auto b32 = bytecode_integer_literal(&bb, &builtin_type_s32, 12);
+    auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
+    auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
+    auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
+    bytecode_set_insert_point(&bb, main_fn, main_entry_block);
+    {
+        auto a = bytecode_integer_literal(&bb, &builtin_type_s64, 42);
+        auto b = bytecode_integer_literal(&bb, &builtin_type_s64, 24);
+        auto a32 = bytecode_integer_literal(&bb, &builtin_type_s32, 21);
+        auto b32 = bytecode_integer_literal(&bb, &builtin_type_s32, 12);
 
-//         // Calling bytecode function
-//         bytecode_emit_push_arg(&bb, a);
-//         bytecode_emit_push_arg(&bb, b);
-//         auto r3 = bytecode_emit_call(&bb, add_fn, 2);
-//         bytecode_emit_print(&bb, r3);
+        // Calling bytecode function
+        bytecode_emit_push_arg(&bb, a);
+        bytecode_emit_push_arg(&bb, b);
+        auto r3 = bytecode_emit_call(&bb, add_fn, 2);
+        bytecode_emit_print(&bb, r3);
 
-//         // Calling bytecode function trough pointer
-//         auto add_fn_ptr = bytecode_emit_address_of_function(&bb, add_fn);
-//         bytecode_emit_push_arg(&bb, a);
-//         bytecode_emit_push_arg(&bb, b);
-//         auto r4 = bytecode_emit_call_pointer(&bb, add_fn_ptr, 2);
-//         bytecode_emit_print(&bb, r4);
+        // Calling bytecode function trough pointer
+        auto add_fn_ptr = bytecode_emit_address_of_function(&bb, add_fn);
+        bytecode_emit_push_arg(&bb, a);
+        bytecode_emit_push_arg(&bb, b);
+        auto r4 = bytecode_emit_call_pointer(&bb, add_fn_ptr, 2);
+        bytecode_emit_print(&bb, r4);
 
-//         // Calling foreign function trough ffi
-//         bytecode_emit_push_arg(&bb, a);
-//         bytecode_emit_push_arg(&bb, b);
-//         auto r = bytecode_emit_call(&bb, foreign_add_fn, 2);
-//         bytecode_emit_print(&bb, r);
+        // Calling foreign function trough ffi
+        bytecode_emit_push_arg(&bb, a);
+        bytecode_emit_push_arg(&bb, b);
+        auto r = bytecode_emit_call(&bb, foreign_add_fn, 2);
+        bytecode_emit_print(&bb, r);
 
-//          //Calling foreign function trough ffi via pointer
-//         auto foreign_add_fn_ptr = bytecode_emit_address_of_function(&bb, foreign_add_fn);
-//         bytecode_emit_push_arg(&bb, a);
-//         bytecode_emit_push_arg(&bb, b);
-//         auto r2 = bytecode_emit_call_pointer(&bb, foreign_add_fn_ptr, 2);
-//         bytecode_emit_print(&bb, r2);
+         //Calling foreign function trough ffi via pointer
+        auto foreign_add_fn_ptr = bytecode_emit_address_of_function(&bb, foreign_add_fn);
+        bytecode_emit_push_arg(&bb, a);
+        bytecode_emit_push_arg(&bb, b);
+        auto r2 = bytecode_emit_call_pointer(&bb, foreign_add_fn_ptr, 2);
+        bytecode_emit_print(&bb, r2);
 
-//         // Calling add32 trough bytecode
-//         bytecode_emit_push_arg(&bb, a32);
-//         bytecode_emit_push_arg(&bb, b32);
-//         auto r32 = bytecode_emit_call(&bb, add32_fn, 2);
-//         bytecode_emit_print(&bb, r32);
+        // Calling add32 trough bytecode
+        bytecode_emit_push_arg(&bb, a32);
+        bytecode_emit_push_arg(&bb, b32);
+        auto r32 = bytecode_emit_call(&bb, add32_fn, 2);
+        bytecode_emit_print(&bb, r32);
 
-//         // Calling add32 trough a pointer
-//         auto add32_fn_ptr = bytecode_emit_address_of_function(&bb, add32_fn);
-//         bytecode_emit_push_arg(&bb, a32);
-//         bytecode_emit_push_arg(&bb, b32);
-//         r32 = bytecode_emit_call_pointer(&bb, add32_fn_ptr, 2);
-//         bytecode_emit_print(&bb, r32);
+        // Calling add32 trough a pointer
+        auto add32_fn_ptr = bytecode_emit_address_of_function(&bb, add32_fn);
+        bytecode_emit_push_arg(&bb, a32);
+        bytecode_emit_push_arg(&bb, b32);
+        r32 = bytecode_emit_call_pointer(&bb, add32_fn_ptr, 2);
+        bytecode_emit_print(&bb, r32);
 
-//         bytecode_emit_return(&bb, r);
-//     }
+        bytecode_emit_return(&bb, r);
+    }
 
-//     print_bytecode(bb);
+    print_bytecode(bb);
 
-//     Bytecode_Validator validator = {};
-//     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-//     bool bytecode_valid = validate_bytecode(&validator);
+    Bytecode_Validator validator = {};
+    bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    bool bytecode_valid = validate_bytecode(&validator);
 
-//     MunitResult result = MUNIT_OK;
+    MunitResult result = MUNIT_OK;
 
-//     if (!bytecode_valid) {
-//         bytecode_validator_print_errors(&validator);
-//         result = MUNIT_FAIL;
+    if (!bytecode_valid) {
+        bytecode_validator_print_errors(&validator);
+        result = MUNIT_FAIL;
 
-//     } else {
+    } else {
 
-//         Interpreter interp = interpreter_create(c_alloc, &zc);
-//         filesystem_temp_file(&interp.std_out);
-//         auto program = bytecode_get_program(&bb);
-//         program.entry_handle = main_fn;
-//         Interpreter_Register result_register = interpreter_start(&interp, program);
-//         munit_assert(result_register.type == &builtin_type_s64);
-//         munit_assert_int64(result_register.value.integer.s64, ==, 66);
+        Interpreter interp = interpreter_create(c_alloc, &zc);
+        filesystem_temp_file(&interp.std_out);
+        auto program = bytecode_get_program(&bb);
+        program.entry_handle = main_fn;
+        Interpreter_Register result_register = interpreter_start(&interp, program);
+        munit_assert(result_register.type == &builtin_type_s64);
+        munit_assert_int64(result_register.value.integer.s64, ==, 66);
 
-//         assert_zodiac_stream(interp.std_out, "66\n66\n66\n66\n33\n33\n");
+        assert_zodiac_stream(interp.std_out, "66\n66\n66\n66\n33\n33\n");
 
-//         munit_assert(filesystem_close(&interp.std_out));
+        munit_assert(filesystem_close(&interp.std_out));
 
-//         interpreter_free(&interp);
-//     }
+        interpreter_free(&interp);
+    }
 
-//     bytecode_validator_free(&validator);
-//     bytecode_builder_free(&bb);
-//     zodiac_context_destroy(&zc);
+    bytecode_validator_free(&validator);
+    bytecode_builder_free(&bb);
+    zodiac_context_destroy(&zc);
 
-//     return result;
-// }
+    return result;
+}
 
 
 // file_local MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[], void *user_data_or_fixture)
@@ -1896,7 +1896,7 @@ START_TESTS(bytecode_tests)
     DEFINE_TEST(Nested_AGG_OFFSET_PTR),
     DEFINE_TEST(Insert_And_Extract_Element),
     DEFINE_TEST(Simple_ARR_OFFSET_PTR),
-    // DEFINE_TEST(Calling_Function_Pointers),
+    DEFINE_TEST(Calling_Function_Pointers),
     // DEFINE_TEST(BC_FN_PTR_Calls_With_Structs),
     // DEFINE_TEST(BC_Callback_From_C),
     // DEFINE_TEST(Non_Return_Error_Simple),
