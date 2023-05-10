@@ -10,10 +10,7 @@ EXTENSION := .so
 # LLVM_CXX_FLAGS := $(shell llvm-config --cxxflags)
 # LLVM_LD_FLAGS := $(shell llvm-config --ldflags)
 
-DYNCALL_VERSION := 1.4
-DYNCALL_INSTALL_DIR := $(BASE_DIR)/dyncall/install
-DYNCALL_INCLUDE_FLAGS := -I$(DYNCALL_INSTALL_DIR)/include
-DYNCALL_LINK_FLAGS := -L$(DYNCALL_INSTALL_DIR)/lib -ldyncall_s -ldynload_s -ldyncallback_s
+include Makefile.dyncall_vars.linux.mak
 
 COMPILER_FLAGS := -g -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC $(LLVM_CXX_FLAGS)
 INCLUDE_FLAGS := -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)

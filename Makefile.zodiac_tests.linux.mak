@@ -7,9 +7,7 @@ SRC_DIR := $(BASE_DIR)/src
 ASSEMBLY := zodiac_tests
 EXTENSION :=
 
-DYNCALL_INSTALL_DIR := zodiac_lib/dyncall/install
-DYNCALL_INCLUDE_FLAGS := -I$(DYNCALL_INSTALL_DIR)/include
-DYNCALL_LINK_FLAGS := -L$(DYNCALL_INSTALL_DIR)/lib -ldyncall_s -ldynload_s -ldyncallback_s
+include Makefile.dyncall_vars.linux.mak
 
 COMPILER_FLAGS := -g -MD -MP -Werror=vla -fdeclspec -fPIC
 INCLUDE_FLAGS := -Izodiac_lib/src -I$(BASE_DIR)/munit -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
