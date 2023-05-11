@@ -81,6 +81,15 @@ void bytecode_print_global(const Bytecode_Builder *builder, Bytecode_Function *f
 
 void bytecode_print_function(const Bytecode_Builder *builder, const Bytecode_Function *function, String_Builder *sb)
 {
+    if (function->flags & BC_FUNCTION_FLAG_NORETURN) {
+        string_builder_append(sb, "#noreturn ");
+    }
+
+    bool is_foreign = function->flags & BC_FUNCTION_FLAG_FOREIGN;
+    if (is_foreign) {
+        string_builder_append(sb, "#foreign ");
+    }
+
     string_builder_append(sb, "%.*s(", (int)function->name.length, function->name.data);
 
     auto fn_type = function->type;
@@ -100,14 +109,13 @@ void bytecode_print_function(const Bytecode_Builder *builder, const Bytecode_Fun
         type_to_string(return_type, sb);
     }
 
-    if (function->flags & BC_FUNCTION_FLAG_NORETURN) {
-        string_builder_append(sb, " #noreturn");
-    }
-
     string_builder_append(sb, "\n");
 
-    for (s64 i = 0; i < function->blocks.count; i++) {
-        bytecode_print_block(builder, function, &function->blocks[i], sb, 2);
+    if (!is_foreign) {
+        for (s64 i = 0; i < function->blocks.count; i++) {
+            bytecode_print_block(builder, function, &function->blocks[i], sb, 2);
+        }
+
     }
 }
 

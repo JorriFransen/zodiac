@@ -1492,30 +1492,32 @@ Array_Ref<Graph_Node> validator_build_block_graph(Bytecode_Function *func)
         auto current_node = &nodes[i];
 
         auto block = &func->blocks[i];
-        auto last_op = block->instructions[block->instructions.count - 1];
+        if (block->instructions.count > 0) {
+            auto last_op = block->instructions[block->instructions.count - 1];
 
-        if (last_op.op == Bytecode_Opcode::RETURN_VOID ||
-            last_op.op == Bytecode_Opcode::RETURN) {
+            if (last_op.op == Bytecode_Opcode::RETURN_VOID ||
+                last_op.op == Bytecode_Opcode::RETURN) {
 
-            current_node->a = exit_node;
-            current_node->returns = true;
-
-        }  else if (last_op.op == Bytecode_Opcode::JMP) {
-
-            current_node->a = &nodes[last_op.a.block_handle];
-            if (current_node->a->returns) {
+                current_node->a = exit_node;
                 current_node->returns = true;
+
+            }  else if (last_op.op == Bytecode_Opcode::JMP) {
+
+                current_node->a = &nodes[last_op.a.block_handle];
+                if (current_node->a->returns) {
+                    current_node->returns = true;
+                }
+
+            } else if (last_op.op == Bytecode_Opcode::JMP_IF){
+
+                current_node->a = &nodes[last_op.b.block_handle];
+                current_node->b = &nodes[last_op.dest.block_handle];
+
+                if (current_node->a->returns || current_node->b->returns) {
+                    current_node->returns = true;
+                }
+
             }
-
-        } else if (last_op.op == Bytecode_Opcode::JMP_IF){
-
-            current_node->a = &nodes[last_op.b.block_handle];
-            current_node->b = &nodes[last_op.dest.block_handle];
-
-            if (current_node->a->returns || current_node->b->returns) {
-                current_node->returns = true;
-            }
-
         }
     }
 

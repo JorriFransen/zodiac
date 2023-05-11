@@ -1089,47 +1089,45 @@ void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_co
 
 Interpreter_Register *interpreter_handle_ffi_callback(Interpreter *interp, Bytecode_Function_Handle fn_handle)
 {
-    assert(false);
-    return nullptr;
-//    // Arguments are already transformed into the regular form on the ffi side.
-//
-//    assert(fn_handle >= 0 && fn_handle < interp->functions.count);
-//    auto bc_func = &interp->functions[fn_handle];
-//
-//    // Push a dummy stack frame for the return value
-//    auto return_type = bc_func->type->function.return_type;
-//    Interpreter_Register *return_value_reg = nullptr;
-//    if (return_type->kind != Type_Kind::VOID) {
-//        assert(!(return_type->flags & TYPE_FLAG_AGGREGATE));
-//        assert(interp->registers.count - interp->used_register_count > 0);
-//
-//        Interpreter_Stack_Frame dummy_frame = {
-//            .ip = 0,
-//            .bp = 0,
-//            .fn_handle = -1,
-//            .registers = Array_Ref<Interpreter_Register>(&interp->registers[interp->used_register_count], 1),
-//            .stack_mem = {},
-//            .sp = nullptr,
-//            .dest_index = -1,
-//        };
-//
-//        interp->used_register_count += 1;
-//        dummy_frame.registers[0].type = return_type;
-//        return_value_reg = &dummy_frame.registers[0];
-//
-//        stack_push(&interp->frames, dummy_frame);
-//    }
-//
-//    auto &arg_types = bc_func->type->function.arg_types;
-//    auto sp = stack_count(&interp->frames);
-//    interpreter_push_stack_frame(interp, fn_handle, arg_types.count, 0);
-//
-//    while (stack_count(&interp->frames) > sp) {
-//        auto instruction = interpreter_fetch_instruction(interp);
-//        interpreter_execute_instruction(interp, instruction);
-//    }
-//
-//    return return_value_reg;
+   // Arguments are already transformed into the regular form on the ffi side.
+
+   assert(fn_handle >= 0 && fn_handle < interp->functions.count);
+   auto bc_func = &interp->functions[fn_handle];
+
+   // Push a dummy stack frame for the return value
+   auto return_type = bc_func->type->function.return_type;
+   Interpreter_Register *return_value_reg = nullptr;
+   if (return_type->kind != Type_Kind::VOID) {
+       assert(!(return_type->flags & TYPE_FLAG_AGGREGATE));
+       assert(interp->registers.count - interp->used_register_count > 0);
+
+       Interpreter_Stack_Frame dummy_frame = {
+           .ip = 0,
+           .bp = 0,
+           .fn_handle = -1,
+           .registers = Array_Ref<Interpreter_Register>(&interp->registers[interp->used_register_count], 1),
+           .stack_mem = {},
+           .sp = nullptr,
+           .dest_index = -1,
+       };
+
+       interp->used_register_count += 1;
+       dummy_frame.registers[0].type = return_type;
+       return_value_reg = &dummy_frame.registers[0];
+
+       stack_push(&interp->frames, dummy_frame);
+   }
+
+   auto &arg_types = bc_func->type->function.parameter_types;
+   auto sp = stack_count(&interp->frames);
+   interpreter_push_stack_frame(interp, fn_handle, arg_types.count, 0);
+
+   while (stack_count(&interp->frames) > sp) {
+       auto instruction = interpreter_fetch_instruction(interp);
+       interpreter_execute_instruction(interp, instruction);
+   }
+
+   return return_value_reg;
 }
 
 Interpreter_Register interpreter_load_register(Interpreter *interp,
