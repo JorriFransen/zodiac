@@ -3,6 +3,7 @@
 #include "test_dynamic_array.h"
 #include "test_freelist.h"
 #include "test_stack.h"
+#include "test_hash_table.h"
 
 #include <munit/munit.h>
 
@@ -33,10 +34,19 @@ static MunitSuite stack_suite = {
     MUNIT_SUITE_OPTION_NONE,
 };
 
+static MunitSuite hash_table_suite = {
+    (char *)"HT/",
+    Hash_Table_Tests::hash_table_tests,
+    nullptr,
+    1,
+    MUNIT_SUITE_OPTION_NONE,
+};
+
 static MunitSuite containers_child_suites[] = {
     dynamic_array_suite,
     freelist_suite,
     stack_suite,
+    hash_table_suite,
     {},
 };
 

@@ -131,7 +131,7 @@ extern "C" {
 #  define MUNIT_UNUSED
 #endif
 
-// NOTE: (Jorri) Disabling variable length arrays all together.  
+// NOTE: (Jorri) Disabling variable length arrays all together.
 //#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) && !defined(__PGI)
 //#  define MUNIT_ARRAY_PARAM(name) name
 //#else
