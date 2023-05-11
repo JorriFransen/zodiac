@@ -41,7 +41,7 @@ Interpreter interpreter_create(Allocator *allocator, Zodiac_Context *context)
 
     filesystem_stdout_file(&result.std_out);
 
-    // result.ffi = ffi_create(allocator, context, true, interpreter_handle_ffi_callback);
+    result.ffi = ffi_create(allocator, context, true, interpreter_handle_ffi_callback);
 
     return result;
 }
@@ -56,7 +56,7 @@ void interpreter_free(Interpreter *interp)
     free(interp->allocator, interp->registers.data);
     free(interp->allocator, interp->stack_mem.data);
 
-    // ffi_free(&interp->ffi);
+    ffi_free(&interp->ffi);
 }
 
 Interpreter_Register interpreter_start(Interpreter *interp, Bytecode_Program program)
@@ -466,19 +466,18 @@ switch (operand.type->bit_size) { \
         }
 
         case Bytecode_Opcode::CALL_PTR: {
-                                            assert(false);
-            // assert(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
-            // assert(instruction.a.type->kind == Type_Kind::POINTER);
-            // assert(instruction.a.type->pointer.base->kind == Type_Kind::FUNCTION);
+            assert(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
+            assert(instruction.a.type->kind == Type_Kind::POINTER);
+            assert(instruction.a.type->pointer.base->kind == Type_Kind::FUNCTION);
 
-            // Interpreter_Register arg_count_reg = interpreter_load_register(interp, instruction.b);
-            // assert(arg_count_reg.type == &builtin_type_s64);
-            // assert(arg_count_reg.value.integer.s64 <= stack_count(&interp->arg_stack));
+            Interpreter_Register arg_count_reg = interpreter_load_register(interp, instruction.b);
+            assert(arg_count_reg.type == &builtin_type_s64);
+            assert(arg_count_reg.value.integer.s64 <= stack_count(&interp->arg_stack));
 
-            // auto arg_count = arg_count_reg.value.integer.s64;
+            auto arg_count = arg_count_reg.value.integer.s64;
 
-            // interpreter_call_pointer(interp, instruction.a, arg_count, instruction.dest.index);
-            // break;
+            interpreter_call_pointer(interp, instruction.a, arg_count, instruction.dest.index);
+            break;
         }
 
         case Bytecode_Opcode::RETURN_VOID: {
@@ -563,33 +562,32 @@ switch (operand.type->bit_size) { \
         }
 
         case Bytecode_Opcode::ADDROF_FUNC: {
-                                               assert(false);
-            // assert(instruction.a.kind == Bytecode_Register_Kind::FUNCTION);
-            // Bytecode_Function_Handle fn_handle = instruction.a.value.function_handle;
-            // assert(fn_handle >= 0 && fn_handle < interp->functions.count);
+            assert(instruction.a.kind == Bytecode_Register_Kind::FUNCTION);
+            Bytecode_Function_Handle fn_handle = instruction.a.value.function_handle;
+            assert(fn_handle >= 0 && fn_handle < interp->functions.count);
 
-            // Bytecode_Function *fn = &interp->functions[fn_handle];
+            Bytecode_Function *fn = &interp->functions[fn_handle];
 
-            // Interpreter_Register result = {
-            //     .type = instruction.dest.type,
-            //     .value = { .pointer = nullptr },
-            // };
+            Interpreter_Register result = {
+                .type = instruction.dest.type,
+                .value = { .pointer = nullptr },
+            };
 
-            // if (!(fn->flags & BC_FUNCTION_FLAG_FOREIGN) &&
-            //     !fn->ffi_handle) {
+            if (!(fn->flags & BC_FUNCTION_FLAG_FOREIGN) &&
+                !fn->ffi_handle) {
 
-            //     FFI_Function_User_Data func_data = { .interp = interp, .handle = fn_handle };
-            //     FFI_Handle ffi_handle = ffi_create_callback(&interp->ffi, func_data, fn->type);
-            //     assert(ffi_handle);
-            //     fn->ffi_handle = ffi_handle;
-            // }
+                FFI_Function_User_Data func_data = { .interp = interp, .handle = fn_handle };
+                FFI_Handle ffi_handle = ffi_create_callback(&interp->ffi, func_data, fn->type);
+                assert(ffi_handle);
+                fn->ffi_handle = ffi_handle;
+            }
 
-            // assert(fn->ffi_handle);
-            // result.value.pointer = (u8 *)fn->ffi_handle;
-            // assert(result.value.pointer);
+            assert(fn->ffi_handle);
+            result.value.pointer = (u8 *)fn->ffi_handle;
+            assert(result.value.pointer);
 
-            // interpreter_store_register(interp, result, instruction.dest);
-            // break;
+            interpreter_store_register(interp, result, instruction.dest);
+            break;
         }
 
         case Bytecode_Opcode::STORE_G: {
@@ -993,101 +991,101 @@ switch (operand.type->bit_size) { \
 
 void interpreter_call_foreign_function(Interpreter *interp, Bytecode_Function_Handle fn_handle, s64 arg_count, s64 dest_index)
 {
-    assert(false);
-    // assert(fn_handle >= 0 && fn_handle < interp->functions.count);
-    // auto foreign_fn = &interp->functions[fn_handle];
-    // assert(foreign_fn->flags & BC_FUNCTION_FLAG_FOREIGN);
+    assert(fn_handle >= 0 && fn_handle < interp->functions.count);
+    auto foreign_fn = &interp->functions[fn_handle];
+    assert(foreign_fn->flags & BC_FUNCTION_FLAG_FOREIGN);
 
-    // assert(foreign_fn->ffi_handle); // This should always exist for foreign functions
+    assert(foreign_fn->ffi_handle); // This should always exist for foreign functions
 
-    // interpreter_call_ffi(interp, foreign_fn->ffi_handle, arg_count, dest_index, foreign_fn->type->function.return_type);
+    interpreter_call_ffi(interp, foreign_fn->ffi_handle, arg_count, dest_index, foreign_fn->type->function.return_type);
 }
 
 void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_ptr_reg_, s64 arg_count, s64 dest_index)
 {
-    assert(false);
-    // assert(fn_ptr_reg_.kind == Bytecode_Register_Kind::TEMPORARY);
-    // assert(fn_ptr_reg_.type->kind == Type_Kind::POINTER);
-    // assert(fn_ptr_reg_.type->pointer.base->kind == Type_Kind::FUNCTION);
-    // auto fn_ptr_reg = interpreter_load_register(interp, fn_ptr_reg_);
-    // assert(fn_ptr_reg.type->kind == Type_Kind::POINTER);
-    // assert(fn_ptr_reg.type->pointer.base->kind == Type_Kind::FUNCTION);
+    assert(fn_ptr_reg_.kind == Bytecode_Register_Kind::TEMPORARY);
+    assert(fn_ptr_reg_.type->kind == Type_Kind::POINTER);
+    assert(fn_ptr_reg_.type->pointer.base->kind == Type_Kind::FUNCTION);
+    auto fn_ptr_reg = interpreter_load_register(interp, fn_ptr_reg_);
+    assert(fn_ptr_reg.type->kind == Type_Kind::POINTER);
+    assert(fn_ptr_reg.type->pointer.base->kind == Type_Kind::FUNCTION);
 
 
-    // FFI_Handle ffi_handle = fn_ptr_reg.value.pointer;
+    FFI_Handle ffi_handle = fn_ptr_reg.value.pointer;
 
-    // Bytecode_Function_Handle bc_fn_handle = ffi_find_callback(&interp->ffi, ffi_handle);
-    // if (bc_fn_handle !=  -1) {
-    //     interpreter_push_stack_frame(interp, bc_fn_handle, arg_count, dest_index);
-    // } else {
-    //     auto return_type = fn_ptr_reg.type->pointer.base->function.return_type;
-    //     interpreter_call_ffi(interp, ffi_handle, arg_count, dest_index, return_type);
-    // }
+    Bytecode_Function_Handle bc_fn_handle = ffi_find_callback(&interp->ffi, ffi_handle);
+    if (bc_fn_handle !=  -1) {
+        interpreter_push_stack_frame(interp, bc_fn_handle, arg_count, dest_index);
+    } else {
+        auto return_type = fn_ptr_reg.type->pointer.base->function.return_type;
+        interpreter_call_ffi(interp, ffi_handle, arg_count, dest_index, return_type);
+    }
 
 }
 
-// void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_count, s64 dest_index, Type *return_type)
-// {
-//     assert(stack_count(&interp->arg_stack) >= arg_count);
+void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_count, s64 dest_index, Type *return_type)
+{
+    assert(stack_count(&interp->arg_stack) >= arg_count);
 
-//     ffi_reset(&interp->ffi);
+    ffi_reset(&interp->ffi);
 
-//     for (s64 i = 0; i < arg_count; i++) {
-//         Interpreter_Register arg_reg = stack_peek(&interp->arg_stack, (arg_count - 1) - i);
-//         void *arg_ptr = nullptr;
+    for (s64 i = 0; i < arg_count; i++) {
+        Interpreter_Register arg_reg = stack_peek(&interp->arg_stack, (arg_count - 1) - i);
+        void *arg_ptr = nullptr;
 
-//         switch (arg_reg.type->kind) {
-//             case Type_Kind::INVALID: assert(false); break;
-//             case Type_Kind::VOID: assert(false); break;
+        switch (arg_reg.type->kind) {
+            case Type_Kind::INVALID: assert(false); break;
+            case Type_Kind::VOID: assert(false); break;
+            case Type_Kind::UNSIZED_INTEGER: assert(false); break;
 
-//             case Type_Kind::INTEGER:
-//             case Type_Kind::FLOAT:
-//             case Type_Kind::POINTER: {
-//                 arg_ptr = &arg_reg.value;
-//                 break;
-//             }
+            case Type_Kind::INTEGER:
+            case Type_Kind::FLOAT:
+            case Type_Kind::POINTER: {
+                arg_ptr = &arg_reg.value;
+                break;
+            }
 
-//             case Type_Kind::FUNCTION: assert(false); break;
-//             case Type_Kind::BOOLEAN: assert(false); break;
-//             case Type_Kind::STRUCTURE: assert(false); break;
-//             case Type_Kind::STATIC_ARRAY: assert(false); break;
-//         }
+            case Type_Kind::FUNCTION: assert(false); break;
+            case Type_Kind::BOOLEAN: assert(false); break;
+            case Type_Kind::STRUCTURE: assert(false); break;
+            case Type_Kind::STATIC_ARRAY: assert(false); break;
+        }
 
-//         assert(arg_ptr);
+        assert(arg_ptr);
 
-//         ffi_push_arg(&interp->ffi, arg_ptr, arg_reg.type);
-//     }
+        ffi_push_arg(&interp->ffi, arg_ptr, arg_reg.type);
+    }
 
-//     if (arg_count) stack_pop(&interp->arg_stack, arg_count);
+    if (arg_count) stack_pop(&interp->arg_stack, arg_count);
 
-//     auto frame = stack_top_ptr(&interp->frames);
-//     void *return_val_ptr = nullptr;
-//     if (dest_index >= 0) {
-//         Interpreter_Register *dest_reg = &frame->registers[dest_index];
+    auto frame = stack_top_ptr(&interp->frames);
+    void *return_val_ptr = nullptr;
+    if (dest_index >= 0) {
+        Interpreter_Register *dest_reg = &frame->registers[dest_index];
 
-//         switch (dest_reg->type->kind) {
-//             case Type_Kind::INVALID: assert(false); break;
+        switch (dest_reg->type->kind) {
+            case Type_Kind::INVALID: assert(false); break;
+            case Type_Kind::UNSIZED_INTEGER: assert(false); break;
 
-//             case Type_Kind::VOID: break;
+            case Type_Kind::VOID: break;
 
-//             case Type_Kind::INTEGER:
-//             case Type_Kind::FLOAT: {
-//                 return_val_ptr = &dest_reg->value;
-//                 break;
-//             }
+            case Type_Kind::INTEGER:
+            case Type_Kind::FLOAT: {
+                return_val_ptr = &dest_reg->value;
+                break;
+            }
 
-//             case Type_Kind::POINTER: assert(false); break;
-//             case Type_Kind::FUNCTION: assert(false); break;
-//             case Type_Kind::BOOLEAN: assert(false); break;
-//             case Type_Kind::STRUCTURE: assert(false); break;
-//             case Type_Kind::STATIC_ARRAY: assert(false); break;
-//         }
+            case Type_Kind::POINTER: assert(false); break;
+            case Type_Kind::FUNCTION: assert(false); break;
+            case Type_Kind::BOOLEAN: assert(false); break;
+            case Type_Kind::STRUCTURE: assert(false); break;
+            case Type_Kind::STATIC_ARRAY: assert(false); break;
+        }
 
-//         assert(return_val_ptr || dest_reg->type->kind == Type_Kind::VOID);
-//     }
+        assert(return_val_ptr || dest_reg->type->kind == Type_Kind::VOID);
+    }
 
-//     ffi_call(&interp->ffi, ffi_handle, return_val_ptr, return_type);
-// }
+    ffi_call(&interp->ffi, ffi_handle, return_val_ptr, return_type);
+}
 
 Interpreter_Register *interpreter_handle_ffi_callback(Interpreter *interp, Bytecode_Function_Handle fn_handle)
 {

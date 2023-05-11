@@ -6,6 +6,7 @@
 #include "memory/allocator.h"
 #include "memory/linear_allocator.h"
 #include "memory/temporary_allocator.h"
+#include "util/zstring.h"
 
 namespace Zodiac
 {
@@ -27,6 +28,10 @@ struct Zodiac_Context
 
     Dynamic_Array<Zodiac_Error> errors;
     bool fatal_resolve_error;
+
+    String compiler_exe_path;
+    String compiler_exe_dir;
+    String support_lib_dynamic_path;
 };
 
 ZAPI void zodiac_context_create(Zodiac_Context *out_context);

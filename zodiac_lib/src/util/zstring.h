@@ -25,6 +25,7 @@ struct String
     String(char* data, u64 length) : data(data), length(length) {}
     String(Allocator* allocator, char *cstr, u64 length) { init(allocator, cstr, length); }
     String(Allocator* allocator, const char *cstr, u64 length) { init(allocator, (char *)cstr, length); }
+    String(Allocator *allocator, const char *cstr) { init(allocator, (char *)cstr, strlen(cstr)); }
 
     void init(Allocator * allocator, char *cstr, u64 length);
 

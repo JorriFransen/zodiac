@@ -38,6 +38,9 @@ ZAPI void platform_console_write(const String_Ref message, Platform_Console_Colo
 ZAPI void platform_console_write_error(const String_Ref message);
 ZAPI void platform_console_write_error(const String_Ref message, Platform_Console_Color color);
 
+ZAPI String platform_exe_path(Allocator *allocator);
+ZAPI String platform_dir_name(Allocator *allocator, const String_Ref path);
+
 ZAPI void platform_exit(int exit_code);
 
 }

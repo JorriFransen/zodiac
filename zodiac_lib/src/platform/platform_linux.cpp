@@ -3,6 +3,8 @@
 #ifdef ZPLATFORM_LINUX
 
 #include <cmath>
+#include <libgen.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,10 +15,12 @@
 #include "platform/filesystem.h"
 #include "util/asserts.h"
 #include "util/zstring.h"
-
+#include "memory/temporary_allocator.h"
 
 namespace Zodiac
 {
+
+struct Allocator;
 
 struct Linear_Alloc_Header
 {
@@ -158,6 +162,29 @@ void platform_console_write_error(const String_Ref message, Platform_Console_Col
     File_Handle zstderr;
     filesystem_stderr_file(&zstderr);
     platform_file_write(&zstderr, message, color);
+}
+
+String platform_exe_path(Allocator *allocator)
+{
+    char exe_path[PATH_MAX];
+    ssize_t exe_path_length = readlink("/proc/self/exe", exe_path, PATH_MAX);
+    assert(exe_path_length != -1);
+
+    return String(allocator, exe_path, exe_path_length);
+}
+
+String platform_dir_name(Allocator *allocator, const String_Ref path)
+{
+    assert(filesystem_exists(path));
+    assert(path.data[path.length] == '\0');
+
+    // Dirname may copy the passed in string, so copy it first
+    auto _path = string_copy(temp_allocator_allocator(), path);
+
+    char *result = dirname((char *)_path.data);
+    assert(result);
+
+    return String(allocator, result);
 }
 
 void platform_exit(int exit_code)

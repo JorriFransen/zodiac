@@ -1,8 +1,10 @@
 #include "zodiac_context.h"
 
 #include "lexer.h"
-#include "util/asserts.h"
+#include "platform/filesystem.h"
 #include "type.h"
+#include "util/asserts.h"
+#include "util/zstring.h"
 
 #include "error.h" // IWYU pragma: keep
 
@@ -33,6 +35,15 @@ void zodiac_context_create(Zodiac_Context *out_context)
     out_context->fatal_resolve_error = false;
 
     zodiac_register_keywords(&out_context->atoms);
+
+    out_context->compiler_exe_path = filesystem_exe_path(c_allocator());
+    assert(filesystem_exists(out_context->compiler_exe_path));
+
+    out_context->compiler_exe_dir = filesystem_dir_name(c_allocator(), out_context->compiler_exe_path);
+    assert(filesystem_exists(out_context->compiler_exe_dir));
+
+    out_context->support_lib_dynamic_path = string_append(c_allocator(), out_context->compiler_exe_dir, "/libzrs.so");
+    assert(filesystem_exists(out_context->support_lib_dynamic_path));
 }
 
 void zodiac_context_destroy(Zodiac_Context *context)

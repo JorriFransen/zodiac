@@ -9,6 +9,7 @@
 #include "util/asserts.h"
 #include "util/logger.h"
 #include "util/string_builder.h"
+#include "zodiac_context.h"
 
 #include <dyncall_args.h>
 #include <dyncall_callback.h>
@@ -52,9 +53,9 @@ FFI_Context ffi_create(Allocator *allocator, Zodiac_Context *zc, bool link_c, FF
 
 #endif
 
-    // DLLib *rt_support_lib = dlLoadLibrary(zc->support_lib_dynamic_path.data);
-    // assert(rt_support_lib);
-    // array_append(&result.libs, rt_support_lib);
+    DLLib *rt_support_lib = dlLoadLibrary(zc->support_lib_dynamic_path.data);
+    assert(rt_support_lib);
+    dynamic_array_append(&result.libs, rt_support_lib);
 
     // TODO: Hash table
     // hash_table_init(allocator, &result.callbacks, hash_table_equal);

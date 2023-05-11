@@ -171,4 +171,14 @@ void filesystem_stderr_file(File_Handle *out_file)
     out_file->valid = true;
 }
 
+String filesystem_exe_path(Allocator *allocator)
+{
+    return platform_exe_path(allocator);
+}
+
+String filesystem_dir_name(Allocator *allocator, const String_Ref path)
+{
+    return platform_dir_name(allocator, path);
+}
+
 }

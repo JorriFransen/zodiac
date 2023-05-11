@@ -169,6 +169,33 @@ void platform_console_write_error(const String_Ref message, Platform_Console_Col
     platform_file_write(&zstderr, message, color);
 }
 
+String platform_exe_path(Allocator *allocator)
+{
+    const auto buf_length = 2048;
+    TCHAR buf[buf_length];
+
+    DWORD result = GetModuleFileNameW(nullptr, bu, buf_length);
+
+    if (result >= 0 && result < buf_length) {
+        return String(allocator, buf, result);
+    } else {
+        auto err = GetLastError();
+        if (err == ERROR_INSUFFICIENT_BUFFER) {
+            assert_msg(false, "this_exe_path() failed with error: ERROR_INSUFFICIENT_BUFFER");
+        } else {
+            assert_msg(false, "this_exe_path() failed with unknown error");
+        }
+        exit(1);
+        return {};
+    }
+}
+
+String platform_dir_name(Allocator *allocator, const String_Ref path)
+{
+    assert(false);
+    return {};
+}
+
 void platform_exit(int exit_code)
 {
     exit(exit_code);
