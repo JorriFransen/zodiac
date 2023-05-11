@@ -1,6 +1,8 @@
 #pragma once
 
 #include "defines.h"
+#include "memory/allocator.h"
+#include "util/asserts.h"
 
 namespace Zodiac {
 
@@ -34,16 +36,16 @@ void hash_table_create(Allocator *allocator, Hash_Table<Key_Type, Value_Type> *h
     assert(hash_table);
     assert(keys_equal);
 
-    auto hashes_size = sizeof(uint64_t) * HASH_TABLE_INITIAL_CAPACITY;
+    auto hashes_size = sizeof(u64) * HASH_TABLE_INITIAL_CAPACITY;
     auto keys_size = sizeof(Key_Type) * HASH_TABLE_INITIAL_CAPACITY;
     auto values_size = sizeof(Value_Type) * HASH_TABLE_INITIAL_CAPACITY;
 
     auto total_size = hashes_size + keys_size + values_size;
 
-    uint8_t *mem = alloc_array<uint8_t>(allocator, total_size);
+    u8 *mem = alloc_array<u8>(allocator, total_size);
     assert(mem);
 
-    hash_table->hashes = (uint64_t*)mem;
+    hash_table->hashes = (u64 *)mem;
     hash_table->keys = (Key_Type*)(&mem[hashes_size]);
     hash_table->values = (Value_Type*)(&mem[hashes_size + keys_size]);
 
