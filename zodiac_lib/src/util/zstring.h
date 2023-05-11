@@ -29,11 +29,11 @@ struct String
 
     void init(Allocator * allocator, char *cstr, u64 length);
 
-#ifdef _WIN32
+#ifdef ZPLATFORM_WINDOWS
     String(Allocator* allocator, wchar_t *wstr, u64 length) { init(allocator, wstr, length); }
     String(Allocator* allocator, const wchar_t *wstr, u64 length) { init(allocator, (wchar_t *)wstr, length); }
     void init(Allocator * allocator, wchar_t *wstr, u64 length);
-#endif
+#endif //ZPLATFORM_WINDOWS
 
     char &operator[](u64 index)
     {
@@ -66,9 +66,37 @@ struct String_Ref
     }
 };
 
+#ifdef ZPLATFORM_WINDOWS
+
+struct Wide_String_Ref
+{
+    const wchar_t *data;
+    s64 length;
+
+    Wide_String_Ref() : data(nullptr), length(0) {}
+    Wide_String_Ref(const wchar_t *wcstr) : data(wcstr), length(wcslen(wcstr)) {}
+};
+
+struct Wide_String
+{
+    wchar_t *data;
+    s64 length;
+
+    Wide_String() : data(nullptr), length(0) {}
+    Wide_String(wchar_t *data, s64 length) : data(data), length(length) {}
+    Wide_String(Allocator *allocator, const String_Ref str_ref);
+};
+
+#endif //ZPLATFORM_WINDOWS
+
 ZAPI String string_copy(Allocator *allocator, const String_Ref &original);
 ZAPI String string_copy(Allocator *allocator, const char *cstr, u64 length);
+
 ZAPI String string_append(Allocator *allocator, const String_Ref &a, const String_Ref &b);
+
+#ifdef ZPLATFORM_WINDOWS
+ZAPI Wide_String string_append(Allocator *allocator, const Wide_String_Ref &a, const Wide_String_Ref &b);
+#endif //ZPLATFORM_WINDOWS
 
 ZAPI bool string_contains(const String_Ref &string, const String_Ref &sub_string);
 ZAPI bool string_starts_with(const String_Ref &string, const String_Ref &start);

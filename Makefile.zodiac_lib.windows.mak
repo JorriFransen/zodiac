@@ -8,6 +8,10 @@ SRC_DIR := $(BASE_DIR)\src
 ASSEMBLY := libzodiac
 EXTENSION := .dll
 
+SUPPORT_SRC_DIR := $(BASE_DIR)\support
+SUPPORT_ASSEMBLY := libzrs
+SUPPORT_EXTENSION := .dll
+
 # LLVM_VERSION := 15.0.2
 # LLVM_SRC_DIR := $(DIR)\$(BUILD_DIR)\llvm-$(LLVM_VERSION).src
 # LLVM_DEBUG_BUILD_DIR := "$(DIR)\$(BUILD_DIR)\llvm_build_debug"
@@ -27,14 +31,24 @@ SRC_FILES := $(subst /,\, $(call rwildcard,$(SRC_DIR)/,*.cpp))
 DIRECTORIES := \$(SRC_DIR) $(subst $(DIR),,$(shell dir $(SRC_DIR) /S /AD /B | findstr /i src)) #All source directories
 OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)\\%.o)
 
-FULL_ASSEMBLY_PATH := $(BUILD_DIR)/$(ASSEMBLY)$(EXTENSION)
+SUPPORT_SRC_FILES := $(subst /,\, $(call rwildcard,$(SUPPORT_SRC_DIR)/,*.cpp))
+SUPPORT_DIRECTORIES := \$(SUPPORT_SRC_DIR) $(subst $(DIR),,$(shell dir $(SUPPORT_SRC_DIR) /S /AD /B | findstr /i support))
+SUPPORT_OBJ_FILES := $(SUPPORT_SRC_FILES:%=$(OBJ_DIR)\\%.o)
 
-all: scaffold llvm llvm_vars compile link
+FULL_ASSEMBLY_PATH := $(BUILD_DIR)/$(ASSEMBLY)$(EXTENSION)
+SUPPORT_ASSEMBLY_PATH := $(BUILD_DIR)/$(SUPPORT_ASSEMBLY)$(SUPPORT_EXTENSION)
+
+all: scaffold llvm llvm_vars compile_support compile link
 
 .PHONY: scaffold
 scaffold:
 	-@setlocal enableextensions enabledelayedexpansion && mkdir $(addprefix $(OBJ_DIR), $(DIRECTORIES)) 2>NUL || cd .
+	-@setlocal enableextensions enabledelayedexpansion && mkdir $(addprefix $(OBJ_DIR), $(SUPPORT_DIRECTORIES)) 2>NUL || cd .
 	-@setlocal enableextensions enabledelayedexpansion && mkdir $(BUILD_DIR) 2>NUL || cd .
+
+.PHONY: compile_support
+compile_support:
+	@echo Compiling $(SUPPORT_ASSEMBLY)
 
 .PHONY: compile
 compile: llvm_vars
@@ -45,11 +59,15 @@ $(OBJ_DIR)\\%.cpp.o: %.cpp
 	@clang $< $(COMPILER_FLAGS) -c -o $(subst /,\, $@) $(DEFINES) $(INCLUDE_FLAGS)
 
 .PHONY: link
-link: llvm_vars $(FULL_ASSEMBLY_PATH)
+link: llvm_vars $(FULL_ASSEMBLY_PATH) $(SUPPORT_ASSEMBLY_PATH)
+
+$(SUPPORT_ASSEMBLY_PATH): $(SUPPORT_OBJ_FILES)
+	@echo Linking $(SUPPORT_ASSEMBLY)
+	clang $(SUPPORT_OBJ_FILES) -o $@ $(DEFINES) $(LINKER_FLAGS)
 
 $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 	@echo Linking $(ASSEMBLY)
-	clang $(subst /,\, $(OBJ_FILES)) -o $@ $(DEFINES) $(LINKER_FLAGS)
+	clang $(OBJ_FILES) -o $@ $(DEFINES) $(LINKER_FLAGS)
 
 .PHONY: llvm
 llvm:

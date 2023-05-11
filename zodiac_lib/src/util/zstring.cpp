@@ -28,7 +28,7 @@ void String::init(Allocator * allocator, char *cstr, u64 len)
     this->data[len] = '\0';
 }
 
-#ifdef _WIN32
+#ifdef ZPLATFORM_WINDOWS
 
 void String::init(Allocator* allocator, wchar_t* wstr, u64 _length)
 {
@@ -49,7 +49,27 @@ void String::init(Allocator* allocator, wchar_t* wstr, u64 _length)
     }
 }
 
-#endif
+Wide_String::Wide_String(Allocator *allocator, const String_Ref str_ref)
+{
+    if (str_ref.length == 0) {
+        assert(str_ref.data == nullptr);
+        this->data = nullptr;
+        this->length = 0;
+        return;
+    }
+
+    auto size = MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, str_ref.data, (int)str_ref.length + 1, nullptr, 0);
+    assert(size > 0);
+
+    LPWSTR buf = alloc_array<WCHAR>(allocator, size);
+    auto written_size = MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, str_ref.data, (int)str_ref.length + 1, buf, size);
+    assert(written_size == size);
+
+    this->data = buf;
+    this->length = written_size - 1;
+}
+
+#endif //ZPLATFORM_WINDOWS
 
 String string_copy(Allocator *allocator, const String_Ref &original)
 {
@@ -78,6 +98,23 @@ String string_append(Allocator *allocator, const String_Ref &a, const String_Ref
 
     return result;
 }
+
+#ifdef ZPLATFORM_WINDOWS
+Wide_String string_append(Allocator *allocator, const Wide_String_Ref &a, const Wide_String_Ref &b)
+{
+    auto new_length = a.length + b.length;
+    auto data = alloc_array<wchar_t>(allocator, new_length + 1);
+
+    Wide_String new_str(data, new_length);
+
+    memcpy(new_str.data, a.data, a.length * sizeof(wchar_t));
+    memcpy(new_str.data + a.length, b.data, b.length * sizeof(wchar_t));
+
+    new_str.data[new_length] = L'\0';
+
+    return new_str;
+}
+#endif //ZPLATFORM_WINDOWS
 
 bool string_contains(const String_Ref &str, const String_Ref &sub_str)
 {

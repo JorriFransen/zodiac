@@ -1,10 +1,9 @@
 
 #include "defines.h"
 
-
-#ifdef linux
+#ifdef ZPLATFORM_LINUX
 #define public extern "C"
-#elif _WIN32
+#elif ZPLATFORM_WINDOWS
 #define public extern "C" __declspec(dllexport)
 #endif
 

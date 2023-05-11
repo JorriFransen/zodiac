@@ -3,9 +3,12 @@
 #ifdef ZPLATFORM_WINDOWS
 
 #include <windows.h>
+
 #include <io.h>
+#include <libloaderapi.h>
 
 #include "filesystem.h"
+#include "memory/temporary_allocator.h"
 
 namespace Zodiac
 {
@@ -172,9 +175,9 @@ void platform_console_write_error(const String_Ref message, Platform_Console_Col
 String platform_exe_path(Allocator *allocator)
 {
     const auto buf_length = 2048;
-    TCHAR buf[buf_length];
+    WCHAR buf[buf_length];
 
-    DWORD result = GetModuleFileNameW(nullptr, bu, buf_length);
+    DWORD result = GetModuleFileNameW(nullptr, buf, buf_length);
 
     if (result >= 0 && result < buf_length) {
         return String(allocator, buf, result);
@@ -192,8 +195,16 @@ String platform_exe_path(Allocator *allocator)
 
 String platform_dir_name(Allocator *allocator, const String_Ref path)
 {
-    assert(false);
-    return {};
+    Wide_String wide_path = Wide_String(temp_allocator_allocator(), path);
+
+    WCHAR drive_name[_MAX_DRIVE];
+    WCHAR dir_name[_MAX_DIR];
+
+    _wsplitpath_s(wide_path.data, drive_name, _MAX_DRIVE, dir_name, _MAX_DIR, nullptr, 0, nullptr, 0);
+
+    Wide_String result = string_append(temp_allocator_allocator(), Wide_String_Ref(drive_name), Wide_String_Ref(dir_name));
+
+    return String(allocator, result.data, result.length);
 }
 
 void platform_exit(int exit_code)
