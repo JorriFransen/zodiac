@@ -40,6 +40,8 @@ ZAPI ZINLINE bool is_power_of_two(T n) {
     return n && (!(n & (n-1)));
 }
 
+ZAPI u64 hash_s64(s64 key);
+
 ZAPI u64 hash_c_string(const char *cstr, u64 length);
 ZAPI u64 hash_mix(u64 a, u64 b);
 

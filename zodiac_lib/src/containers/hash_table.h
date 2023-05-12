@@ -34,7 +34,7 @@ ZAPI u64 hash_key(s64 key);
 
 template <typename T>
 s64 hash_key(T *ptr) {
-    return hash_key((s64)ptr);
+    return hash_s64((s64)ptr);
 }
 
 template <typename Key_Type, typename Value_Type>

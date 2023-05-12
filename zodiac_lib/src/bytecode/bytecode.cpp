@@ -22,6 +22,15 @@ const bool operator!=(const Bytecode_Instruction_Handle &lhs, const Bytecode_Ins
     return !operator==(lhs, rhs);
 }
 
+u64 hash_key(Bytecode_Instruction_Handle handle)
+{
+    auto h1 = hash_s64((s64)handle.fn_index);
+    auto h2 = hash_s64((s64)handle.block_index);
+    auto h3 = hash_s64((s64)handle.instruction_index);
+
+    return hash_mix(hash_mix(h1, h2), h3);
+}
+
 Bytecode_Builder bytecode_builder_create(Allocator *allocator, Zodiac_Context *cu)
 {
     assert(allocator);

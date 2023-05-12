@@ -157,6 +157,8 @@ struct Bytecode_Instruction_Handle
 ZAPI const bool operator==(const Bytecode_Instruction_Handle &lhs, const Bytecode_Instruction_Handle &rhs);
 ZAPI const bool operator!=(const Bytecode_Instruction_Handle &lhs, const Bytecode_Instruction_Handle &rhs);
 
+ZAPI u64 hash_key(Bytecode_Instruction_Handle handle);
+
 struct Bytecode_Phi_Args
 {
     Bytecode_Register true_value = {};

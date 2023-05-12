@@ -38,7 +38,7 @@ struct Bytecode_Validator
     Dynamic_Array<Validation_Error> errors = {};
 };
 
-ZAPI void bytecode_validator_init(Zodiac_Context *context, Allocator *allocator, Bytecode_Validator *validator, Array_Ref<Bytecode_Function> functions, Dynamic_Array<Inst_Loc__> *instruction_locations);
+ZAPI void bytecode_validator_init(Zodiac_Context *context, Allocator *allocator, Bytecode_Validator *validator, Array_Ref<Bytecode_Function> functions, Hash_Table<Bytecode_Instruction_Handle, Source_Pos> *instruction_locations);
 
 ZAPI void bytecode_validator_free(Bytecode_Validator *validator);
 

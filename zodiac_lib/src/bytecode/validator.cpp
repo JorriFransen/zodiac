@@ -15,7 +15,7 @@
 
 namespace Zodiac { namespace Bytecode {
 
-void bytecode_validator_init(Zodiac_Context *context, Allocator *allocator, Bytecode_Validator *validator, Array_Ref<Bytecode_Function> functions, Dynamic_Array<Inst_Loc__> *instruction_locations)
+void bytecode_validator_init(Zodiac_Context *context, Allocator *allocator, Bytecode_Validator *validator, Array_Ref<Bytecode_Function> functions, Hash_Table<Bytecode_Instruction_Handle, Source_Pos> *instruction_locations)
 {
     *validator = {};
     validator->context = context;
@@ -75,10 +75,8 @@ void bytecode_validator_report_error(Bytecode_Validator *validator, Bytecode_Ins
 
     Source_Pos pos;
     if (validator->visitor.instruction_locations) {
-        assert(validator->visitor.instruction_locations->count);
-        assert(false);
-        // bool found = hash_table_find(validator->visitor.instruction_locations, location, &sp);
-        // zodiac_assert_fatal(found, "Did not find location for Bytecode_Instruction_Handle");
+        bool found = hash_table_find(validator->visitor.instruction_locations, location, &pos);
+        assert_msg(found, "Did not find location for Bytecode_Instruction_Handle");
     } else {
         Source_Pos dummy = {
             .name = "<no_source>",

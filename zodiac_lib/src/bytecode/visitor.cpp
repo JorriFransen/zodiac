@@ -9,7 +9,7 @@
 
 namespace Zodiac { namespace Bytecode {
 
-void bytecode_visitor_init(Allocator *allocator, Bytecode_Visitor *visitor, void *user_data, const Array_Ref<Bytecode_Function> &functions, Dynamic_Array<Inst_Loc__> *instruction_locations)
+void bytecode_visitor_init(Allocator *allocator, Bytecode_Visitor *visitor, void *user_data, const Array_Ref<Bytecode_Function> &functions, Hash_Table<Bytecode_Instruction_Handle, Source_Pos> *instruction_locations)
 {
     *visitor = {};
 
