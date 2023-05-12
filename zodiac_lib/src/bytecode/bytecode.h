@@ -208,12 +208,6 @@ struct Bytecode_Program
     s64 required_global_size = -1;
 };
 
-struct BC_Global_Reg__
-{
-    Atom atom;
-    Bytecode_Register reg;
-};
-
 struct Bytecode_Builder
 {
     Allocator *allocator = nullptr;
@@ -225,9 +219,7 @@ struct Bytecode_Builder
     Dynamic_Array<Bytecode_Global> globals = {};
     s64 required_global_size = 0;
 
-    // TODO
-    // Hash_Table<Atom, Bytecode_Register> global_registers = {};
-    Dynamic_Array<BC_Global_Reg__> global_registers;
+    Hash_Table<Atom, Bytecode_Register> global_registers = {};
 
     s64 insert_fn_index = -1;
     s32 insert_block_index = -1;

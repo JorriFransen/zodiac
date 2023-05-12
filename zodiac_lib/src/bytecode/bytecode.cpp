@@ -38,9 +38,7 @@ Bytecode_Builder bytecode_builder_create(Allocator *allocator, Zodiac_Context *c
     dynamic_array_create(allocator, &result.foreign_functions);
     dynamic_array_create(allocator, &result.globals);
 
-    // TODO
-    // hash_table_init(allocator, &result.global_registers, hash_table_equal);
-    dynamic_array_create(allocator, &result.global_registers);
+    hash_table_create(allocator, &result.global_registers);
 
     return result;
 }
@@ -136,9 +134,7 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
     auto reg = bytecode_register_create(builder, Bytecode_Register_Kind::FUNCTION, fn_type);
     reg.value.function_handle = fn_index;
 
-    // TODO
-    // hash_table_add(&builder->global_registers, fn_name, reg);
-    dynamic_array_append(&builder->global_registers, { fn_name, reg });
+    hash_table_add(&builder->global_registers, fn_name, reg);
 
     return index;
 }
@@ -185,8 +181,7 @@ Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, Atom na
     auto global_reg = bytecode_register_create(builder, Bytecode_Register_Kind::GLOBAL, type);
     global_reg.index = index;
 
-    // hash_table_add(&builder->global_registers, name, global_reg);
-    dynamic_array_append(&builder->global_registers, { name, global_reg });
+    hash_table_add(&builder->global_registers, name, global_reg);
 
     return (Bytecode_Global_Handle)index;
 }

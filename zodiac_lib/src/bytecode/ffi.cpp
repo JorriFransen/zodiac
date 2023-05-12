@@ -57,9 +57,7 @@ FFI_Context ffi_create(Allocator *allocator, Zodiac_Context *zc, bool link_c, FF
     assert(rt_support_lib);
     dynamic_array_append(&result.libs, rt_support_lib);
 
-    // TODO: Hash table
-    // hash_table_init(allocator, &result.callbacks, hash_table_equal);
-    dynamic_array_create(allocator, &result.callbacks);
+    hash_table_create(allocator, &result.callbacks);
 
     assert(callback_handler);
     result.callback_handler = callback_handler;
@@ -75,9 +73,7 @@ void ffi_free(FFI_Context *ffi)
 
     dynamic_array_free(&ffi->libs);
 
-    // TODO: Hash table
-    // hash_table_free(&ffi->callbacks);
-    dynamic_array_free(&ffi->callbacks);
+    hash_table_free(&ffi->callbacks);
 
     dcFree(ffi->dc_vm);
 }
@@ -240,16 +236,7 @@ FFI_Handle ffi_create_callback(FFI_Context *ffi, FFI_Function_User_Data func_dat
 
 #ifndef NDEBUG
     FFI_Handle ex_fn_callback = nullptr;
-    // bool found = hash_table_find_key(&ffi->callbacks, func_data.handle, &ex_fn_callback);
-    // assert(!found);
-
-    bool found = false;
-    for (u64 i = 0; i < ffi->callbacks.count; i++) {
-        if (ffi->callbacks[i].bc_handle == func_data.handle) {
-            found = true;
-            break;
-        }
-    }
+    bool found = hash_table_find_key(&ffi->callbacks, func_data.handle, &ex_fn_callback);
     assert(!found);
 
     assert(ex_fn_callback == nullptr);
@@ -258,23 +245,16 @@ FFI_Handle ffi_create_callback(FFI_Context *ffi, FFI_Function_User_Data func_dat
     auto sig = ffi_dcb_func_sig(fn_type);
     DCCallback *callback = dcbNewCallback(sig.data, dcb_callback_handler, func_data.interp);
 
-    // hash_table_add(&ffi->callbacks, (FFI_Handle)callback, func_data.handle);
-    dynamic_array_append(&ffi->callbacks, { (FFI_Handle)callback, func_data.handle });
+    hash_table_add(&ffi->callbacks, (FFI_Handle)callback, func_data.handle);
 
     return (FFI_Handle)callback;
 }
 
 s64 ffi_find_callback(FFI_Context *ffi, FFI_Handle ffi_handle)
 {
-    // s64 handle = -1;
-    // bool found = hash_table_find(&ffi->callbacks, ffi_handle, &handle);
-    // if (found) return handle;
-
-    for (u64 i = 0; i < ffi->callbacks.count; i++) {
-        if (ffi->callbacks[i].ffi_handle == ffi_handle) {
-            return ffi->callbacks[i].bc_handle;
-        }
-    }
+    s64 handle = -1;
+    bool found = hash_table_find(&ffi->callbacks, ffi_handle, &handle);
+    if (found) return handle;
 
     return -1;
 }
@@ -386,18 +366,7 @@ char dcb_callback_handler(DCCallback *cb, DCArgs *args, DCValue *result, void *u
     auto interp = static_cast<Interpreter *>(userdata);
 
     s64 fn_handle = -1;
-    // TODO: Hash table
-    // bool found = hash_table_find(&interp->ffi.callbacks, (FFI_Handle)cb, &fn_handle);
-    // assert(found);
-
-    bool found = false;
-    for (u64 i = 0; i < interp->ffi.callbacks.count; i++) {
-        if (interp->ffi.callbacks[i].ffi_handle == cb) {
-            fn_handle = interp->ffi.callbacks[i].bc_handle;
-            found = true;
-            break;
-        }
-    }
+    bool found = hash_table_find(&interp->ffi.callbacks, (FFI_Handle)cb, &fn_handle);
     assert(found);
 
     assert(fn_handle >= 0 && fn_handle < interp->functions.count);

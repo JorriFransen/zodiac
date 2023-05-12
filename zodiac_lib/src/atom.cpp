@@ -190,4 +190,9 @@ Atom atom_get(Atom_Table *at, const String_Ref &string_ref)
     return atom_get(at, string_ref.data, string_ref.length);
 }
 
+u64 hash_key(const Atom &atom)
+{
+    return hash_c_string(atom.data, atom.length);
+}
+
 }

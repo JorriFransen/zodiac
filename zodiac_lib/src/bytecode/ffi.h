@@ -1,7 +1,8 @@
 #pragma once
 
-#include "defines.h"
 #include "containers/dynamic_array.h"
+#include "containers/hash_table.h"
+#include "defines.h"
 #include "util/zstring.h"
 
 #include <dyncall.h>
@@ -24,12 +25,6 @@ struct Interpreter_Register;
 typedef DCpointer FFI_Handle;
 typedef Interpreter_Register * (*FFI_Callback_Handler)(Interpreter *interp, s64 fn_handle);
 
-struct FFI_Callback
-{
-    FFI_Handle ffi_handle;
-    s64 bc_handle;
-};
-
 struct FFI_Context
 {
     Allocator *allocator = nullptr;
@@ -38,10 +33,8 @@ struct FFI_Context
 
     Dynamic_Array<DLLib *> libs = {};
 
-    // TODO: Hash table
-    // Hash_Table<FFI_Handle, s64> callbacks = {};
+    Hash_Table<FFI_Handle, s64> callbacks = {};
 
-    Dynamic_Array<FFI_Callback> callbacks;
     FFI_Callback_Handler callback_handler = nullptr;
 };
 
