@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common.h"
 #include "defines.h"
 #include "memory/allocator.h"
 #include "util/asserts.h"
