@@ -122,7 +122,7 @@ void hash_table_grow(Hash_Table<Key_Type, Value_Type> *ht)
     auto old_keys = ht->keys;
     auto old_values = ht->values;
 
-    auto new_mem = alloc_array<uint8_t>(ht->allocator, new_total_size);
+    auto new_mem = alloc_array<u8>(ht->allocator, new_total_size);
 
     ht->capacity = new_cap;
     ht->hashes = (u64*)(&new_mem[0]);
