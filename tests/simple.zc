@@ -2,5 +2,7 @@
 main :: () -> s64 {
     return 1 + x + z;
 }
-x : s64 : 42;
+
+x : s32 : 42;
+yy : String;
 z :: 32;

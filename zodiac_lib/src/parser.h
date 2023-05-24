@@ -53,11 +53,16 @@ ZAPI AST_Declaration *parse_aggregate_decl(Parser *parser, AST_Identifier ident)
 ZAPI AST_Declaration *parse_declaration(Parser *parser);
 
 #define ZODIAC_BUILTIN_TYPES         \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 64)   \
     ZODIAC_NUMERIC_TYPE_DEF(s, 64)   \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 8)    \
     ZODIAC_NUMERIC_TYPE_DEF(u, 32)   \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 32)   \
     ZODIAC_NUMERIC_TYPE_DEF(u, 16)   \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 16)   \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 8)    \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 8)    \
     ZODIAC_NUMERIC_TYPE_DEF(r, 32)   \
+    ZODIAC_NUMERIC_TYPE_DEF(r, 64)   \
     ZODIAC_NAME_TYPE_DEF(String)     \
 
 // Builtin type atoms

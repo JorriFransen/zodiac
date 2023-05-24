@@ -57,8 +57,9 @@ int main() {
     return 0;
 }
 
-#define add_builtin_symbol(ctx, kind, atom) {                                                              \
-    add_resolved_symbol(ctx, global_scope, (kind), (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), (atom), nullptr); \
+#define add_builtin_type_symbol(type) { \
+    auto sym = add_resolved_symbol(ctx, global_scope, Symbol_Kind::TYPE, (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), atom_##type, nullptr); \
+    sym->builtin_type = &builtin_type_##type; \
 }
 
 void flat_resolve_test(Zodiac_Context *ctx, AST_File *file)
@@ -70,22 +71,27 @@ void flat_resolve_test(Zodiac_Context *ctx, AST_File *file)
     Resolver resolver;
     resolver_create(&resolver, ctx, global_scope);
 
-    auto sym = add_resolved_symbol(ctx, global_scope, Symbol_Kind::TYPE, (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), atom_s64, nullptr);
-    sym->builtin_type = &builtin_type_s64;
+    add_builtin_type_symbol(u64);
+    add_builtin_type_symbol(s64);
+    add_builtin_type_symbol(u32);
+    add_builtin_type_symbol(s32);
+    add_builtin_type_symbol(u16);
+    add_builtin_type_symbol(s16);
+    add_builtin_type_symbol(u8);
+    add_builtin_type_symbol(s8);
 
-    // add_builtin_symbol(Symbol_Kind::TYPE, atom_s64);
-    add_builtin_symbol(ctx, Symbol_Kind::TYPE, atom_s8);
-    add_builtin_symbol(ctx, Symbol_Kind::TYPE, atom_u16);
-    add_builtin_symbol(ctx, Symbol_Kind::TYPE, atom_u32);
-    add_builtin_symbol(ctx, Symbol_Kind::TYPE, atom_r32);
-    add_builtin_symbol(ctx, Symbol_Kind::TYPE, atom_String);
+    add_builtin_type_symbol(r32);
+    add_builtin_type_symbol(r64);
 
+    add_builtin_type_symbol(String);
+    
     for (u64 i = 0; i < file->declarations.count; i++) {
         resolver_add_declaration(ctx, &resolver, file->declarations[i]);
     }
 
-    resolve_names(&resolver);
-    resolve_types(&resolver);
+    bool names_done = resolve_names(&resolver);
+
+    if (names_done) resolve_types(&resolver);
 
     for (u64 i = 0; i < ctx->errors.count; i++) {
 

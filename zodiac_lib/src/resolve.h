@@ -56,7 +56,7 @@ Dynamic_Array<Flat_Root_Node> nodes_to_name_resolve;
 
 ZAPI void resolver_create(Resolver *resolver, Zodiac_Context *ctx, Scope *global_scope);
 ZAPI void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Declaration *decl);
-ZAPI void resolve_names(Resolver *resolver);
+ZAPI bool resolve_names(Resolver *resolver);
 ZAPI void resolve_types(Resolver *resolver);
 
 ZAPI void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest);

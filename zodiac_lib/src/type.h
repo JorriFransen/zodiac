@@ -84,13 +84,19 @@ ZAPI extern Type builtin_type_unsized_integer;
 ZAPI extern Type builtin_type_void;
 ZAPI extern Type builtin_type_boolean;
 
+ZAPI extern Type builtin_type_u64;
 ZAPI extern Type builtin_type_s64;
+ZAPI extern Type builtin_type_u32;
 ZAPI extern Type builtin_type_s32;
-
+ZAPI extern Type builtin_type_u16;
+ZAPI extern Type builtin_type_s16;
 ZAPI extern Type builtin_type_u8;
+ZAPI extern Type builtin_type_s8;
 
 ZAPI extern Type builtin_type_r64;
 ZAPI extern Type builtin_type_r32;
+
+ZAPI extern Type builtin_type_String;
 
 ZAPI extern Dynamic_Array<Type *> function_types;
 ZAPI extern Dynamic_Array<Type *> static_array_types;

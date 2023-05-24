@@ -114,6 +114,9 @@ Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kin
 Symbol *add_resolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
     assert(scope);
+
+    if (!decl) assert(flags & SYM_FLAG_BUILTIN);
+
     return scope_add_symbol(ctx, scope, kind, Symbol_State::RESOLVED, flags, name, decl);
 }
 

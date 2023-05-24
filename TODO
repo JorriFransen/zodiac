@@ -4,10 +4,12 @@
     - Remove
   - Bucket array
 
+- Cleanup builtin types/symbols/atoms
+    - Remove builtin type stuff from parser (probably move to type.h and include this)
+
 - Use a actual declaration ast nodes for function parameters. (Instead of the field declaration, which complicates things like redelcarations etc.)
 - Report circular dependency chains (Right now we just emit error for all the unresolved symbols in the chain)
 
-- Cleanup builtin types/symbols/atoms
 - decls_to_resolve should be a bucket array
 - Report the circle when a circular dependency happens
 - Report unused return value for call statements

@@ -16,13 +16,19 @@ Type builtin_type_unsized_integer;
 Type builtin_type_void;
 Type builtin_type_boolean;
 
+Type builtin_type_u64;
 Type builtin_type_s64;
+Type builtin_type_u32;
 Type builtin_type_s32;
-
+Type builtin_type_u16;
+Type builtin_type_s16;
 Type builtin_type_u8;
+Type builtin_type_s8;
 
 Type builtin_type_r64;
 Type builtin_type_r32;
+
+Type builtin_type_String;
 
 Dynamic_Array<Type *> function_types;
 Dynamic_Array<Type *> static_array_types;
@@ -38,13 +44,21 @@ bool type_system_initialize()
     create_type(&builtin_type_void, Type_Kind::VOID, 0);
     create_type(&builtin_type_boolean, Type_Kind::BOOLEAN, 8);
 
+    create_integer_type(&builtin_type_u64, 64, false);
     create_integer_type(&builtin_type_s64, 64, true);
+    create_integer_type(&builtin_type_u32, 32, false);
     create_integer_type(&builtin_type_s32, 32, true);
+    create_integer_type(&builtin_type_u16, 16, false);
+    create_integer_type(&builtin_type_s16, 16, true);
+    create_integer_type(&builtin_type_u8, 8, false);
+    create_integer_type(&builtin_type_s8, 8, true);
 
     create_integer_type(&builtin_type_u8, 8, false);
 
     create_float_type(&builtin_type_r64, 64);
     create_float_type(&builtin_type_r32, 32);
+
+    create_type(&builtin_type_String, Type_Kind::STRUCTURE, 0, TYPE_FLAG_AGGREGATE);
 
     type_system_initialized = true;
     return true;
@@ -263,7 +277,19 @@ bool valid_static_type_conversion(Type *from, Type *to)
             break;
         }
 
-        case Type_Kind::INTEGER: assert(false);
+        case Type_Kind::INTEGER: {
+
+            if (from->integer.sign == to->integer.sign &&
+                from->bit_size < to->bit_size) {
+
+                return true;
+
+            } else {
+                assert_msg(false, "Not implemented!");
+            }
+            break;
+        }
+
         case Type_Kind::FLOAT: assert(false);
         case Type_Kind::BOOLEAN: assert(false);
         case Type_Kind::POINTER: assert(false);

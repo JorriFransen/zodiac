@@ -49,7 +49,7 @@ void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Decla
     dynamic_array_append(&resolver->nodes_to_name_resolve, node);
 }
 
-void resolve_names(Resolver *resolver)
+bool resolve_names(Resolver *resolver)
 {
     bool progress = true;
     bool done = false;
@@ -101,6 +101,8 @@ void resolve_names(Resolver *resolver)
             temporary_allocator_reset(&resolver->ctx->error_allocator_state);
         }
     }
+
+    return done;
 }
 
 void resolve_types(Resolver *resolver)
@@ -805,7 +807,26 @@ bool type_resolve_declaration(AST_Declaration *decl, Scope *scope)
 
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
-        case AST_Declaration_Kind::VARIABLE: assert(false);
+
+        case AST_Declaration_Kind::VARIABLE: {
+            assert(decl->variable.resolved_type == nullptr);
+
+            if (decl->variable.type_spec && decl->variable.value) {
+                assert(valid_static_type_conversion(decl->variable.value->resolved_type,
+                                                    decl->variable.type_spec->resolved_type));
+                decl->variable.resolved_type = decl->variable.type_spec->resolved_type;
+            } else {
+                assert(decl->variable.type_spec);
+                decl->variable.resolved_type = decl->variable.type_spec->resolved_type;
+            }
+
+            assert(decl->variable.resolved_type);
+
+            auto sym = scope_get_symbol(scope, decl->identifier.name);
+            assert(sym && sym->state == Symbol_State::RESOLVED);
+            sym->state = Symbol_State::TYPED;
+            return true;
+        }
 
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
             assert(decl->variable.resolved_type == nullptr);
