@@ -105,7 +105,7 @@ bool resolve_names(Resolver *resolver)
     return done;
 }
 
-void resolve_types(Resolver *resolver)
+bool resolve_types(Resolver *resolver)
 {
     bool progress = true;
     bool done = false;
@@ -153,6 +153,8 @@ void resolve_types(Resolver *resolver)
             temporary_allocator_reset(&resolver->ctx->error_allocator_state);
         }
     }
+
+    return done;
 }
 
 void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest)

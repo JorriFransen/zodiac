@@ -20,6 +20,9 @@ struct Zodiac_Context
     Linear_Allocator ast_allocator_state;
     Allocator ast_allocator;
 
+    Linear_Allocator bytecode_allocator_state;
+    Allocator bytecode_allocator;
+
     Temporary_Allocator temp_allocator_state;
     Allocator temp_allocator;
 

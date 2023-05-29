@@ -1,8 +1,9 @@
 //test
 main :: () -> s64 {
-    return 1 + x + z;
+    return 42;
+    //return 1 + x + z;
 }
 
-x : s32 : 42;
-yy : String;
-z :: 32;
+//x : s32 : 42;
+//yy : String;
+//z :: 32;

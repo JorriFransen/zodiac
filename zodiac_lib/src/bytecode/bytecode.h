@@ -5,7 +5,6 @@
 #include "containers/dynamic_array.h"
 #include "containers/hash_table.h"
 #include "defines.h"
-#include "ffi.h"
 
 namespace Zodiac {
 
@@ -189,7 +188,7 @@ struct Bytecode_Function
 
     s64 required_stack_size = 0;
 
-    FFI_Handle ffi_handle = nullptr;
+    void *ffi_handle = nullptr;
 };
 
 struct Bytecode_Global
