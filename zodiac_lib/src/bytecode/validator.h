@@ -11,6 +11,10 @@ namespace Zodiac {
 
 struct Allocator;
 struct Zodiac_Context;
+struct Source_Pos;
+
+template <typename Key_Type, typename Value_Type>
+struct Hash_Table;
 
 namespace Bytecode {
 

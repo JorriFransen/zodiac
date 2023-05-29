@@ -1,13 +1,17 @@
 #pragma once
 
 #include "bytecode/bytecode.h"
-#include "containers/stack.h"
 #include "containers/dynamic_array.h"
-#include "source_pos.h"
+#include "containers/stack.h"
+#include "defines.h"
 
 namespace Zodiac {
 
 struct Allocator;
+struct Source_Pos;
+
+template <typename Key_Type, typename Value_Type>
+struct Hash_Table;
 
 namespace Bytecode {
 

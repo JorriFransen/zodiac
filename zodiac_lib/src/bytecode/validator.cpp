@@ -5,6 +5,7 @@
 
 #include "atom.h"
 #include "common.h"
+#include "containers/hash_table.h"
 #include "containers/stack.h"
 #include "memory/temporary_allocator.h"
 #include "source_pos.h"

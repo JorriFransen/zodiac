@@ -3,6 +3,7 @@
 #include "atom.h"
 #include "common.h"
 #include "containers/dynamic_array.h"
+#include "containers/hash_table.h"
 #include "defines.h"
 #include "ffi.h"
 

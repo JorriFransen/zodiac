@@ -84,7 +84,7 @@ void flat_resolve_test(Zodiac_Context *ctx, AST_File *file)
     add_builtin_type_symbol(r64);
 
     add_builtin_type_symbol(String);
-    
+
     for (u64 i = 0; i < file->declarations.count; i++) {
         resolver_add_declaration(ctx, &resolver, file->declarations[i]);
     }
