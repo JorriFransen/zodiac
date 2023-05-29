@@ -23,13 +23,13 @@
 using namespace Zodiac;
 using namespace Bytecode;
 
-ZAPI void flat_resolve_test(Zodiac_Context *ctx, AST_File *file);
+void flat_resolve_test(Zodiac_Context *ctx, AST_File *file);
 
-ZAPI void ast_file_to_bytecode(Bytecode_Builder *bb, AST_File *file);
-ZAPI void ast_decl_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl);
-ZAPI void ast_function_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl);
-ZAPI void ast_stmt_to_bytecode(Bytecode_Builder *bb, AST_Statement *stmt);
-ZAPI Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *expr);
+void ast_file_to_bytecode(Bytecode_Builder *bb, AST_File *file);
+void ast_decl_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl);
+void ast_function_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl);
+void ast_stmt_to_bytecode(Bytecode_Builder *bb, AST_Statement *stmt);
+Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *expr);
 
 int main() {
 
