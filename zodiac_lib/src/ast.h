@@ -27,6 +27,7 @@ struct AST_Identifier
 struct AST_Integer_Literal_Expression
 {
     Integer_Value value;
+    AST_Type_Spec *infer_type_from;
 };
 
 struct AST_String_Literal_Expression

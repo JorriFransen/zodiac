@@ -644,6 +644,7 @@ void bytecode_emit_return(Bytecode_Builder *builder, Bytecode_Register return_va
 #ifndef NDEBUG
     auto fn = builder->functions[builder->insert_fn_index];
 #endif
+    assert(fn.type);
     assert(fn.type->function.return_type == return_value.type);
 
     bytecode_emit_instruction(builder, Bytecode_Opcode::RETURN, return_value, {}, {});

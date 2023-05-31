@@ -172,7 +172,10 @@ void ast_function_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl)
     assert(decl->function.type->kind == Type_Kind::FUNCTION);
     assert(decl->identifier.name.data);
 
-    /*Bytecode_Function_Handle fn_handle =*/ bytecode_function_create(bb, decl->identifier.name, decl->function.type);
+    Bytecode_Function_Handle fn_handle = bytecode_function_create(bb, decl->identifier.name, decl->function.type);
+    Bytecode_Block_Handle entry_block_handle = bytecode_append_block(bb, fn_handle, "entry");
+
+    bytecode_set_insert_point(bb, fn_handle, entry_block_handle);
 
     for (u64 i = 0; i < decl->function.body.count; i++) {
         AST_Statement *stmt = decl->function.body[i];

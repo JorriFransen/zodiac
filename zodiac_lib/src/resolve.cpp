@@ -213,7 +213,7 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
             auto val = decl->variable.value;
 
             if (ts) flatten_type_spec(ts, scope, dest);
-            if (val) flatten_expression(val, scope, dest);
+            if (val) flatten_expression(val, scope, dest, ts);
 
             break;
         }
@@ -288,13 +288,13 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
         }
 
         case AST_Statement_Kind::ASSIGN: {
-            flatten_expression(stmt->assign.dest, scope, dest);
-            flatten_expression(stmt->assign.value, scope, dest);
+            flatten_expression(stmt->assign.dest, scope, dest, nullptr);
+            flatten_expression(stmt->assign.value, scope, dest, nullptr);
             break;
         }
 
         case AST_Statement_Kind::CALL: {
-            flatten_expression(stmt->call.call, scope, dest);
+            flatten_expression(stmt->call.call, scope, dest, nullptr);
             break;
         }
 
@@ -303,13 +303,23 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
 
         case AST_Statement_Kind::RETURN: {
             if (stmt->return_stmt.value) {
-                flatten_expression(stmt->return_stmt.value, scope, dest);
+                AST_Declaration *func_decl = enclosing_function(scope);
+                assert(func_decl);
+
+                AST_Type_Spec *infer_from = func_decl->function.return_ts;
+                if (stmt->return_stmt.value->kind == AST_Expression_Kind::INTEGER_LITERAL) {
+                    // We need a known return type to infer from in this case
+                    assert(func_decl->function.return_ts || func_decl->function.type);
+                }
+                assert(infer_from);
+
+                flatten_expression(stmt->return_stmt.value, scope, dest, infer_from);
             }
             break;
         }
 
         case AST_Statement_Kind::PRINT: {
-            flatten_expression(stmt->print_expr, scope, dest);
+            flatten_expression(stmt->print_expr, scope, dest, nullptr);
             break;
         }
     }
@@ -318,14 +328,19 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
     dynamic_array_append(dest, flat_stmt);
 }
 
-void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest)
+void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest, AST_Type_Spec *infer_type_from)
 {
     assert(expr && scope && dest);
 
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false);
 
-        case AST_Expression_Kind::INTEGER_LITERAL:
+        case AST_Expression_Kind::INTEGER_LITERAL: {
+            assert(infer_type_from);
+            expr->integer_literal.infer_type_from = infer_type_from;
+            break;
+        }
+
         case AST_Expression_Kind::STRING_LITERAL:
         case AST_Expression_Kind::NULL_LITERAL:
         case AST_Expression_Kind::IDENTIFIER: {
@@ -337,10 +352,10 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
         case AST_Expression_Kind::INDEX: assert(false);
 
         case AST_Expression_Kind::CALL: {
-            flatten_expression(expr->call.base, scope, dest);
+            flatten_expression(expr->call.base, scope, dest, nullptr);
 
             for (u64 i = 0 ; i < expr->call.args.count; i++) {
-                flatten_expression(expr->call.args[i], scope, dest);
+                flatten_expression(expr->call.args[i], scope, dest, nullptr);
             }
             break;
         }
@@ -348,8 +363,9 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
         case AST_Expression_Kind::UNARY: assert(false);
 
         case AST_Expression_Kind::BINARY: {
-            flatten_expression(expr->binary.lhs, scope, dest);
-            flatten_expression(expr->binary.rhs, scope, dest);
+            assert(infer_type_from);
+            flatten_expression(expr->binary.lhs, scope, dest, infer_type_from);
+            flatten_expression(expr->binary.rhs, scope, dest, infer_type_from);
             break;
         }
     }
@@ -789,7 +805,6 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
                 assert(param_field->type_spec->resolved_type);
             }
 
-            // TODO: At this point we can create a function type
             func_decl->function.type = get_function_type(func_decl->function.return_ts->resolved_type, param_types, &ctx->ast_allocator);
 
             temporary_allocator_reset(&ctx->temp_allocator_state, mark);
@@ -926,7 +941,14 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
         case AST_Expression_Kind::INVALID: assert(false);
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
-            expr->resolved_type = &builtin_type_unsized_integer;
+                AST_Type_Spec *infer_from = expr->integer_literal.infer_type_from;
+                assert(infer_from);
+                assert(infer_from);
+                assert(infer_from->resolved_type);
+                assert(infer_from->resolved_type->kind == Type_Kind::INTEGER);
+                // TODO: Make sure the literal fits in this type
+
+                expr->resolved_type = infer_from->resolved_type;
             break;
         }
 
@@ -981,6 +1003,9 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                         assert(false); // Report error
                     }
 
+                } else if (lhs->resolved_type->kind == Type_Kind::INTEGER &&
+                            rhs->resolved_type->kind == Type_Kind::INTEGER) {
+                    expr->resolved_type = lhs->resolved_type;
                 } else {
                     assert(false);
                 }

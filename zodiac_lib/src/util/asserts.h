@@ -11,7 +11,9 @@
 
 #if _MSC_VER
 
-#define ZODIAC_ABORT() raise(SIGABRT)
+#include <stdlib.h>
+
+#define ZODIAC_ABORT() abort()
 #define ZODIAC_DEBUG_BREAK() __debugbreak()
 
 #else //_MSC_VER
