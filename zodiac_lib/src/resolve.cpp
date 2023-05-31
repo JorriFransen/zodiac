@@ -223,6 +223,9 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
             assert(parameter_scope);
             assert(local_scope);
 
+            decl->function.parameter_scope = parameter_scope;
+            decl->function.local_scope = local_scope;
+
             for (u64 i = 0; i < decl->function.params.count; i++) {
 
                 auto field = decl->function.params[i];
@@ -275,6 +278,7 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
         case AST_Statement_Kind::BLOCK: {
 
             Scope *block_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+            stmt->block.scope = block_scope;
 
             for (u64 i = 0; i < stmt->block.statements.count; i++) {
                 flatten_statement(ctx, stmt->block.statements[i], block_scope, dest);

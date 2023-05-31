@@ -231,7 +231,13 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *exp
 
         case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
-        case AST_Expression_Kind::IDENTIFIER: assert(false); break;
+
+        case AST_Expression_Kind::IDENTIFIER:
+        {
+            assert(false);
+            break;
+        }
+
         case AST_Expression_Kind::MEMBER: assert(false); break;
         case AST_Expression_Kind::INDEX: assert(false); break;
         case AST_Expression_Kind::CALL: assert(false); break;

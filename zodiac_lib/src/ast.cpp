@@ -123,6 +123,7 @@ void ast_block_stmt_create(Dynamic_Array<AST_Statement *> statements, AST_Statem
     ast_statement_create(AST_Statement_Kind::BLOCK, out_stmt);
 
     out_stmt->block.statements = statements;
+    out_stmt->block.scope = nullptr;
 }
 
 void ast_declaration_stmt_create(AST_Declaration *decl, AST_Statement *out_stmt)
@@ -161,8 +162,10 @@ void ast_if_stmt_create(AST_Expression *cond, AST_Statement *then_stmt, Dynamic_
 
     out_stmt->if_stmt.cond = cond;
     out_stmt->if_stmt.then_stmt = then_stmt;
+    out_stmt->if_stmt.then_scope = nullptr;
     out_stmt->if_stmt.else_ifs = else_ifs;
     out_stmt->if_stmt.else_stmt = else_stmt;
+    out_stmt->if_stmt.else_scope = nullptr;
 }
 
 void ast_while_stmt_create(AST_Expression *cond, AST_Statement *do_stmt, AST_Statement *out_stmt)
@@ -173,6 +176,7 @@ void ast_while_stmt_create(AST_Expression *cond, AST_Statement *do_stmt, AST_Sta
 
     out_stmt->while_stmt.cond = cond;
     out_stmt->while_stmt.do_stmt = do_stmt;
+    out_stmt->while_stmt.scope = nullptr;
 }
 
 void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
@@ -235,6 +239,8 @@ void ast_function_decl_create(AST_Identifier ident, Dynamic_Array<AST_Field_Decl
     out_decl->function.return_ts = return_ts;
     out_decl->function.body = body;
     out_decl->function.type = nullptr;
+    out_decl->function.parameter_scope = nullptr;
+    out_decl->function.local_scope = nullptr;
 }
 
 void ast_aggregate_decl_create(AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields, AST_Declaration *out_decl)

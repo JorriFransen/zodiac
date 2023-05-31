@@ -9,13 +9,14 @@
 namespace Zodiac
 {
 
+struct AST_Declaration;
 struct AST_Expression;
 struct AST_Statement;
-struct AST_Declaration;
 struct AST_Type_Spec;
+struct Scope;
 struct String_Builder;
-struct Zodiac_Context;
 struct Type;
+struct Zodiac_Context;
 
 struct AST_Identifier
 {
@@ -140,6 +141,7 @@ struct AST_Expression
 
 struct AST_Block_Statement
 {
+    Scope *scope;
     Dynamic_Array<AST_Statement *> statements;
 };
 
@@ -163,20 +165,24 @@ struct AST_Else_If
 {
     AST_Expression *cond;
     AST_Statement *then;
+    Scope *then_scope;
 };
 
 struct AST_If_Statement
 {
     AST_Expression *cond;
     AST_Statement *then_stmt;
+    Scope *then_scope;
     Dynamic_Array<AST_Else_If> else_ifs;
     AST_Statement *else_stmt;
+    Scope *else_scope;
 };
 
 struct AST_While_Statement
 {
     AST_Expression *cond;
     AST_Statement *do_stmt;
+    Scope *scope;
 };
 
 struct AST_Return_Statement
@@ -246,6 +252,9 @@ struct AST_Function_Declaration
     Dynamic_Array<AST_Statement *> body;
 
     Type *type;
+
+    Scope *parameter_scope;
+    Scope *local_scope;
 };
 
 struct AST_Aggregate_Declaration

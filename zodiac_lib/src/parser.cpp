@@ -7,6 +7,7 @@
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 #include "platform/platform.h"
+#include "scope.h"
 #include "source_pos.h"
 #include "util/asserts.h"
 #include "zodiac_context.h"
