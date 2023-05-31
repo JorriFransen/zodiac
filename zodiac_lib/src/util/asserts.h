@@ -13,7 +13,11 @@
 
 #include <stdlib.h>
 
-#define ZODIAC_ABORT() abort()
+#define ZODIAC_ABORT() { \
+    __debugbreak();  \
+    abort(); \
+}
+
 #define ZODIAC_DEBUG_BREAK() __debugbreak()
 
 #else //_MSC_VER
