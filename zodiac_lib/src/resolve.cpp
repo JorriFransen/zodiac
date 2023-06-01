@@ -346,9 +346,14 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
         }
 
         case AST_Expression_Kind::STRING_LITERAL:
-        case AST_Expression_Kind::NULL_LITERAL:
-        case AST_Expression_Kind::IDENTIFIER: {
+        case AST_Expression_Kind::NULL_LITERAL: {
             // Leaf expression
+            break;
+        }
+
+        case AST_Expression_Kind::IDENTIFIER: {
+            assert(expr->identifier.scope == nullptr);
+            expr->identifier.scope = scope;
             break;
         }
 
@@ -891,14 +896,14 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
     switch (stmt->kind) {
         case AST_Statement_Kind::INVALID: assert(false);
         case AST_Statement_Kind::BLOCK: assert(false);
-        case AST_Statement_Kind::DECLARATION: assert(false);
-        case AST_Statement_Kind::ASSIGN: assert(false);
-        case AST_Statement_Kind::CALL: assert(false);
-        case AST_Statement_Kind::IF: assert(false);
-        case AST_Statement_Kind::WHILE: assert(false);
+      case AST_Statement_Kind::DECLARATION: assert(false);
+      case AST_Statement_Kind::ASSIGN: assert(false);
+      case AST_Statement_Kind::CALL: assert(false);
+      case AST_Statement_Kind::IF: assert(false);
+      case AST_Statement_Kind::WHILE: assert(false);
 
-        case AST_Statement_Kind::RETURN: {
-            AST_Declaration *fn_decl = enclosing_function(scope);
+      case AST_Statement_Kind::RETURN: {
+          AST_Declaration *fn_decl = enclosing_function(scope);
             assert(fn_decl && fn_decl->kind == AST_Declaration_Kind::FUNCTION);
 
             //TODO: Use the function proto here

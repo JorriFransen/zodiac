@@ -7,7 +7,6 @@
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 #include "platform/platform.h"
-#include "scope.h"
 #include "source_pos.h"
 #include "util/asserts.h"
 #include "zodiac_context.h"
@@ -391,7 +390,11 @@ AST_Statement *parse_statement(Parser *parser)
         }
 
         AST_Expression *value = nullptr;
+        bool is_constant = false;
         if (match_token(parser, '=')) {
+            value = parse_expression(parser);
+        } else if (match_token(parser, ':')) {
+            is_constant = true;
             value = parse_expression(parser);
         }
 
@@ -399,8 +402,13 @@ AST_Statement *parse_statement(Parser *parser)
         expect_token(parser, ';');
 
         Source_Range range = {start_pos, end_pos};
-        AST_Declaration *decl = ast_variable_decl_new(parser->context, range, expr->identifier, type_spec, value);
-        return ast_declaration_stmt_new(parser->context, range, decl);
+        if (is_constant) {
+            auto decl = ast_constant_variable_decl_new(parser->context, range, expr->identifier, type_spec, value);
+            return ast_declaration_stmt_new(parser->context, range, decl);
+        } else {
+            auto decl = ast_variable_decl_new(parser->context, range, expr->identifier, type_spec, value);
+            return ast_declaration_stmt_new(parser->context, range, decl);
+        }
 
     } else {
         expect_token(parser, '=');

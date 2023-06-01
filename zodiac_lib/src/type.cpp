@@ -239,8 +239,8 @@ Type *decl_type(AST_Declaration *decl)
 {
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
-        case AST_Declaration_Kind::VARIABLE: assert(false);
 
+        case AST_Declaration_Kind::VARIABLE:
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
             assert(decl->variable.resolved_type);
             return decl->variable.resolved_type;

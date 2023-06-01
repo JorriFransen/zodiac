@@ -1,4 +1,5 @@
 #include "ast.h"
+#include "atom.h"
 #include "bytecode/bytecode.h"
 #include "bytecode/printer.h"
 #include "containers/dynamic_array.h"
@@ -6,6 +7,7 @@
 #include "error.h"
 #include "lexer.h"
 #include "memory/allocator.h"
+#include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 #include "parser.h"
 #include "platform/filesystem.h"
@@ -150,7 +152,19 @@ void ast_decl_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl)
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false); break;
         case AST_Declaration_Kind::VARIABLE: assert(false); break;
-        case AST_Declaration_Kind::CONSTANT_VARIABLE: assert(false); break;
+
+        case AST_Declaration_Kind::CONSTANT_VARIABLE: {
+
+            if (decl->variable.resolved_type->kind == Type_Kind::INTEGER) {
+                // No need to emit anything
+                break;
+            } else {
+                assert_msg(false, "Not implemented")
+            }
+
+            assert(false);
+            break;
+        }
 
         case AST_Declaration_Kind::FUNCTION: {
             ast_function_to_bytecode(bb, decl);
@@ -232,9 +246,28 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *exp
         case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
 
-        case AST_Expression_Kind::IDENTIFIER:
-        {
-            assert(false);
+        case AST_Expression_Kind::IDENTIFIER: {
+
+            assert(expr->identifier.scope);
+            Symbol *ident_sym = scope_get_symbol(expr->identifier.scope, expr->identifier);
+            assert(ident_sym);
+            assert(ident_sym->decl);
+            AST_Declaration *ident_decl = ident_sym->decl;
+
+            switch (ident_decl->kind) {
+                case AST_Declaration_Kind::INVALID: assert(false); break;
+                case AST_Declaration_Kind::VARIABLE: assert(false); break;
+
+                case AST_Declaration_Kind::CONSTANT_VARIABLE: {
+                    assert(ident_decl->variable.value);
+                    return ast_expr_to_bytecode(bb, ident_decl->variable.value);
+                }
+
+                case AST_Declaration_Kind::FUNCTION: assert(false); break;
+                case AST_Declaration_Kind::STRUCT: assert(false); break;
+                case AST_Declaration_Kind::UNION: assert(false); break;
+            }
+
             break;
         }
 

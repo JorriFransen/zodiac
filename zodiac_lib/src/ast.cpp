@@ -17,6 +17,7 @@ void ast_identifier_create(Atom name, Source_Range range, AST_Identifier *out_id
 
     out_ident->name = name;
     out_ident->range = range;
+    out_ident->scope = nullptr;
 }
 
 void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_expr)

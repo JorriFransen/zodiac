@@ -23,6 +23,8 @@ struct AST_Identifier
     Atom name;
 
     Source_Range range;
+
+    Scope *scope;
 };
 
 struct AST_Integer_Literal_Expression
