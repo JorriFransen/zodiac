@@ -1,3 +1,4 @@
+#include "lexer.h"
 #include "ast.h"
 #include "atom.h"
 #include "bytecode/bytecode.h"
@@ -5,9 +6,8 @@
 #include "containers/dynamic_array.h"
 #include "defines.h"
 #include "error.h"
-#include "lexer.h"
-#include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
+#include "memory/allocator.h"
 #include "memory/zmemory.h"
 #include "parser.h"
 #include "platform/filesystem.h"
@@ -25,13 +25,13 @@
 using namespace Zodiac;
 using namespace Bytecode;
 
-void flat_resolve_test(Zodiac_Context *ctx, AST_File *file);
+void flat_resolve_test(Resolver *resolver, AST_File *file);
 
-void ast_file_to_bytecode(Bytecode_Builder *bb, AST_File *file);
+void emit_bytecode(Resolver *resolver, Bytecode_Builder *bb);
 void ast_decl_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl);
 void ast_function_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl);
 void ast_stmt_to_bytecode(Bytecode_Builder *bb, AST_Statement *stmt);
-Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *expr);
+Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *expr, Type *actual_type = nullptr);
 
 int main() {
 
@@ -61,7 +61,12 @@ int main() {
     if (parser.error) return 1;;
     assert(file);
 
-    flat_resolve_test(&c, file);
+    Scope *global_scope = scope_new(&dynamic_allocator, Scope_Kind::GLOBAL, nullptr);
+
+    Resolver resolver;
+    resolver_create(&resolver, &c, global_scope);
+
+    flat_resolve_test(&resolver, file);
 
     for (u64 i = 0; i < c.errors.count; i++) {
 
@@ -83,7 +88,7 @@ int main() {
     // This bytecode builder should maybe be part of the context?
     Bytecode_Builder bb = bytecode_builder_create(&c.bytecode_allocator, &c);
 
-    ast_file_to_bytecode(&bb, file);
+    emit_bytecode(&resolver, &bb);
 
     bytecode_print(&bb, temp_allocator_allocator());
 
@@ -91,18 +96,13 @@ int main() {
 }
 
 #define add_builtin_type_symbol(type) { \
-    auto sym = add_resolved_symbol(ctx, global_scope, Symbol_Kind::TYPE, (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), atom_##type, nullptr); \
+    auto sym = add_resolved_symbol(resolver->ctx, resolver->global_scope, Symbol_Kind::TYPE, (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), atom_##type, nullptr); \
     sym->builtin_type = &builtin_type_##type; \
 }
 
-void flat_resolve_test(Zodiac_Context *ctx, AST_File *file)
+void flat_resolve_test(Resolver *resolver, AST_File *file)
 {
     assert(file);
-
-    Scope *global_scope = scope_new(&dynamic_allocator, Scope_Kind::GLOBAL, nullptr);
-
-    Resolver resolver;
-    resolver_create(&resolver, ctx, global_scope);
 
     add_builtin_type_symbol(u64);
     add_builtin_type_symbol(s64);
@@ -119,27 +119,41 @@ void flat_resolve_test(Zodiac_Context *ctx, AST_File *file)
     add_builtin_type_symbol(String);
 
     for (u64 i = 0; i < file->declarations.count; i++) {
-        resolver_add_declaration(ctx, &resolver, file->declarations[i]);
+        resolver_add_declaration(resolver->ctx, resolver, file->declarations[i]);
     }
 
-    bool names_done = resolve_names(&resolver);
+    bool names_done = resolve_names(resolver);
 
     bool types_done = false;
-    if (names_done) types_done = resolve_types(&resolver);
+    if (names_done) types_done = resolve_types(resolver);
 
-    if ((!names_done) || (!types_done)) assert(ctx->errors.count == 0);
+    if (names_done && types_done) assert(resolver->ctx->errors.count == 0);
 }
 
 
-void ast_file_to_bytecode(Bytecode_Builder *bb, AST_File *file)
+void emit_bytecode(Resolver *resolver, Bytecode_Builder *bb)
 {
+    assert(resolver);
     assert(bb);
-    assert(file);
 
-    for (u64 i = 0 ; i < file->declarations.count; i++) {
-        AST_Declaration *decl = file->declarations[i];
+    for (u64 i = 0; i < resolver->nodes_to_emit_bytecode.count; i++) {
 
-        ast_decl_to_bytecode(bb, decl);
+        Flat_Root_Node root_node = resolver->nodes_to_emit_bytecode[i];
+
+        switch (root_node.root.kind) {
+
+            case Flat_Node_Kind::DECL: {
+                ast_decl_to_bytecode(bb, root_node.root.decl);
+                break;
+            }
+
+            case Flat_Node_Kind::STMT: assert(false); break;
+            case Flat_Node_Kind::EXPR: assert(false); break;
+            case Flat_Node_Kind::TS: assert(false); break;
+            case Flat_Node_Kind::PARAM_DECL: assert(false); break;
+            case Flat_Node_Kind::FIELD_DECL: assert(false); break;
+            case Flat_Node_Kind::FUNCTION_PROTO: assert(false); break;
+        }
     }
 }
 
@@ -155,7 +169,8 @@ void ast_decl_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl)
 
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
 
-            if (decl->variable.resolved_type->kind == Type_Kind::INTEGER) {
+            if (decl->variable.resolved_type->kind == Type_Kind::INTEGER ||
+                decl->variable.resolved_type == &builtin_type_unsized_integer) {
                 // No need to emit anything
                 break;
             } else {
@@ -225,10 +240,13 @@ void ast_stmt_to_bytecode(Bytecode_Builder *bb, AST_Statement *stmt)
     }
 }
 
-Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *expr)
+Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *expr, Type *actual_type/*=nullptr*/)
 {
     assert(bb);
     assert(expr);
+
+    if (actual_type) assert(expr->resolved_type == &builtin_type_unsized_integer ||
+                            expr->resolved_type == actual_type);
 
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false); break;
@@ -236,10 +254,10 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *exp
         case AST_Expression_Kind::INTEGER_LITERAL: {
             Type *literal_type = expr->resolved_type;
             if (literal_type->kind == Type_Kind::UNSIZED_INTEGER) {
-                assert(false); // This should have been resolved to an integer type at this point.
-            } else {
-                assert(literal_type->kind == Type_Kind::INTEGER);
+                assert(actual_type);
+                literal_type = actual_type;
             }
+            assert(literal_type->kind == Type_Kind::INTEGER);
             return bytecode_integer_literal(bb, literal_type, expr->integer_literal.value);
         }
 
@@ -260,7 +278,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *exp
 
                 case AST_Declaration_Kind::CONSTANT_VARIABLE: {
                     assert(ident_decl->variable.value);
-                    return ast_expr_to_bytecode(bb, ident_decl->variable.value);
+                    return ast_expr_to_bytecode(bb, ident_decl->variable.value, expr->resolved_type);
                 }
 
                 case AST_Declaration_Kind::FUNCTION: assert(false); break;
@@ -277,6 +295,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *exp
         case AST_Expression_Kind::UNARY: assert(false); break;
 
         case AST_Expression_Kind::BINARY: {
+
             Bytecode_Register lhs_reg = ast_expr_to_bytecode(bb, expr->binary.lhs);
             Bytecode_Register rhs_reg = ast_expr_to_bytecode(bb, expr->binary.rhs);
 

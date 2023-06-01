@@ -50,8 +50,10 @@ struct Resolver
 {
     Zodiac_Context *ctx;
     Scope *global_scope;
-Dynamic_Array<Flat_Root_Node> nodes_to_name_resolve;
+
+    Dynamic_Array<Flat_Root_Node> nodes_to_name_resolve;
     Dynamic_Array<Flat_Root_Node> nodes_to_type_resolve;
+    Dynamic_Array<Flat_Root_Node> nodes_to_emit_bytecode;
 };
 
 ZAPI void resolver_create(Resolver *resolver, Zodiac_Context *ctx, Scope *global_scope);

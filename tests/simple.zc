@@ -1,13 +1,10 @@
 //test
+
+
 main :: () -> s64 {
-    // return 1 + x;
-    return y + x + z;
+    return x + y;
 }
 
-x : s64 : 10;
-y : s64 = 42;
-z : s64 : 11;
-// z : s64 = 8;
-//x : s32 : 42;
-//yy : String;
-//z :: 32;
+x : s64 : 21;
+y ::  2;
+z : s64 = 19;

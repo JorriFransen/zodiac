@@ -21,10 +21,13 @@ void bytecode_print(const Bytecode_Builder *builder, Allocator *allocator)
 
     bytecode_print(builder, &sb);
 
-    auto str = string_builder_to_string(&sb);
-    printf("%s\n", str.data);
+    if (sb.total_size) {
+        auto str = string_builder_to_string(&sb);
+        printf("%s\n", str.data);
 
-    free(allocator, str.data);
+        free(allocator, str.data);
+    }
+
     string_builder_destroy(&sb);
 }
 

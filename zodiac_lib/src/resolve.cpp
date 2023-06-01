@@ -24,6 +24,7 @@ void resolver_create(Resolver *resolver, Zodiac_Context *ctx, Scope *global_scop
 
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_name_resolve);
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_type_resolve);
+    dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_emit_bytecode);
 }
 
 void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Declaration *decl)
@@ -133,14 +134,17 @@ bool resolve_types(Resolver *resolver)
             }
 
             if (node->current_index >= node->nodes.count) {
-                // Done name resolving, move to type resolving
+                // Done type resolving, move to bytecode emit
                 node->current_index = 0;
 
+                auto node_copy = *node;
+
+                // TODO: This needs to be ordered removal for correctness!!!
                 // Because we remove unordered, reuse the current index
                 dynamic_array_remove_unordered(&resolver->nodes_to_type_resolve, flat_index);
                 flat_index--;
 
-                // dynamic_array_append(&resolver->nodes_to_type_resolve, *node);
+                dynamic_array_append(&resolver->nodes_to_emit_bytecode, node_copy);
             }
         }
 
@@ -340,7 +344,6 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
         case AST_Expression_Kind::INVALID: assert(false);
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
-            assert(infer_type_from);
             expr->integer_literal.infer_type_from = infer_type_from;
             break;
         }
@@ -838,10 +841,25 @@ bool type_resolve_declaration(AST_Declaration *decl, Scope *scope)
             assert(decl->variable.resolved_type == nullptr);
 
             if (decl->variable.type_spec && decl->variable.value) {
+
+                // Type and value
                 assert(valid_static_type_conversion(decl->variable.value->resolved_type,
                                                     decl->variable.type_spec->resolved_type));
                 decl->variable.resolved_type = decl->variable.type_spec->resolved_type;
+
+            } else if ((!decl->variable.type_spec) && decl->variable.value) {
+
+                // Value only
+                assert(decl->variable.value->resolved_type);
+                if (decl->variable.value->resolved_type == &builtin_type_unsized_integer) {
+
+                    // TODO: Check if this fits
+                    decl->variable.resolved_type = &builtin_type_s64;
+                }
+
             } else {
+
+                // Type spec only
                 assert(decl->variable.type_spec);
                 decl->variable.resolved_type = decl->variable.type_spec->resolved_type;
             }
@@ -951,13 +969,16 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
                 AST_Type_Spec *infer_from = expr->integer_literal.infer_type_from;
-                assert(infer_from);
-                assert(infer_from);
-                assert(infer_from->resolved_type);
-                assert(infer_from->resolved_type->kind == Type_Kind::INTEGER);
-                // TODO: Make sure the literal fits in this type
+                if (infer_from) {
+                    assert(infer_from);
+                    assert(infer_from->resolved_type);
+                    assert(infer_from->resolved_type->kind == Type_Kind::INTEGER);
+                    // TODO: Make sure the literal fits in this type
 
-                expr->resolved_type = infer_from->resolved_type;
+                    expr->resolved_type = infer_from->resolved_type;
+                } else {
+                    expr->resolved_type = &builtin_type_unsized_integer;
+                }
             break;
         }
 
@@ -999,6 +1020,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
                     if (valid_static_type_conversion(rhs->resolved_type, lhs->resolved_type)) {
                         expr->resolved_type = lhs->resolved_type;
+                        rhs->resolved_type = lhs->resolved_type;
                     } else {
                         assert(false); // Report error
                     }
@@ -1007,13 +1029,15 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                            rhs->resolved_type->kind == Type_Kind::INTEGER) {
 
                     if (valid_static_type_conversion(lhs->resolved_type, rhs->resolved_type)) {
-                        expr->resolved_type= rhs->resolved_type;
+                        expr->resolved_type = rhs->resolved_type;
+                        lhs->resolved_type = rhs->resolved_type;
                     } else {
                         assert(false); // Report error
                     }
 
                 } else if (lhs->resolved_type->kind == Type_Kind::INTEGER &&
                             rhs->resolved_type->kind == Type_Kind::INTEGER) {
+                    assert(lhs->resolved_type == rhs->resolved_type);
                     expr->resolved_type = lhs->resolved_type;
                 } else {
                     assert(false);
