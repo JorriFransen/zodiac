@@ -1,4 +1,6 @@
 
+- Add scope to return ast nodes, needed to lookup the enclosing function, so we can infer constant/integer literal types from the return type.
+
 - Use bytecode validator
 
 - Containers

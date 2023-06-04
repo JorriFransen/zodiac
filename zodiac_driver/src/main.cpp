@@ -220,7 +220,12 @@ void ast_stmt_to_bytecode(Bytecode_Builder *bb, AST_Statement *stmt)
     switch (stmt->kind) {
         case AST_Statement_Kind::INVALID: assert(false); break;
         case AST_Statement_Kind::BLOCK: assert(false); break;
-        case AST_Statement_Kind::DECLARATION: assert(false); break;
+
+        case AST_Statement_Kind::DECLARATION: {
+            ast_decl_to_bytecode(bb, stmt->decl.decl);
+            break;
+        }
+
         case AST_Statement_Kind::ASSIGN: assert(false); break;
         case AST_Statement_Kind::CALL: assert(false); break;
         case AST_Statement_Kind::IF: assert(false); break;
@@ -245,8 +250,11 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *exp
     assert(bb);
     assert(expr);
 
-    if (actual_type) assert(expr->resolved_type == &builtin_type_unsized_integer ||
-                            expr->resolved_type == actual_type);
+    if (actual_type) {
+        assert(expr->resolved_type == &builtin_type_unsized_integer ||
+               expr->resolved_type == actual_type);
+        assert(actual_type != &builtin_type_unsized_integer);
+    }
 
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false); break;
