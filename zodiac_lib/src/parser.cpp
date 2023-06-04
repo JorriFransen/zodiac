@@ -385,7 +385,7 @@ AST_Statement *parse_statement(Parser *parser)
     } else if (expr->kind == AST_Expression_Kind::IDENTIFIER && match_token(parser, ':')) {
 
         AST_Type_Spec *type_spec = nullptr;
-        if (!is_token(parser, '=')) {
+        if ((!is_token(parser, '=')) && (!is_token(parser, ':'))) {
             type_spec = parse_type_spec(parser);
         }
 
