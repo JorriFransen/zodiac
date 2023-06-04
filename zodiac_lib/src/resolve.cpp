@@ -914,14 +914,19 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
     switch (stmt->kind) {
         case AST_Statement_Kind::INVALID: assert(false);
         case AST_Statement_Kind::BLOCK: assert(false);
-      case AST_Statement_Kind::DECLARATION: assert(false);
-      case AST_Statement_Kind::ASSIGN: assert(false);
-      case AST_Statement_Kind::CALL: assert(false);
-      case AST_Statement_Kind::IF: assert(false);
-      case AST_Statement_Kind::WHILE: assert(false);
 
-      case AST_Statement_Kind::RETURN: {
-          AST_Declaration *fn_decl = enclosing_function(scope);
+        case AST_Statement_Kind::DECLARATION: {
+            // This declaration should have been emitted before the statement, and therefore resolved if we got to this point.
+            return true;
+        }
+
+        case AST_Statement_Kind::ASSIGN: assert(false);
+        case AST_Statement_Kind::CALL: assert(false);
+        case AST_Statement_Kind::IF: assert(false);
+        case AST_Statement_Kind::WHILE: assert(false);
+
+        case AST_Statement_Kind::RETURN: {
+            AST_Declaration *fn_decl = enclosing_function(scope);
             assert(fn_decl && fn_decl->kind == AST_Declaration_Kind::FUNCTION);
 
             //TODO: Use the function proto here
