@@ -187,6 +187,7 @@ void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
     ast_statement_create(AST_Statement_Kind::RETURN, out_stmt);
 
     out_stmt->return_stmt.value = value;
+    out_stmt->return_stmt.scope = nullptr;
 }
 
 void ast_print_stmt_create(AST_Expression *print_expr, AST_Statement *out_stmt)

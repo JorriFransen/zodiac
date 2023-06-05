@@ -321,6 +321,8 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
                 }
                 assert(infer_from);
 
+                stmt->return_stmt.scope = scope;
+
                 flatten_expression(stmt->return_stmt.value, scope, dest, infer_from);
             }
             break;

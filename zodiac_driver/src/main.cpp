@@ -233,7 +233,14 @@ void ast_stmt_to_bytecode(Bytecode_Builder *bb, AST_Statement *stmt)
 
         case AST_Statement_Kind::RETURN: {
             if (stmt->return_stmt.value) {
-                Bytecode_Register return_value_register = ast_expr_to_bytecode(bb, stmt->return_stmt.value);
+                assert(stmt->return_stmt.scope);
+                AST_Declaration *func_decl = enclosing_function(stmt->return_stmt.scope);
+                assert(func_decl);
+
+                assert(func_decl->function.type);
+                Type *return_type = func_decl->function.type->function.return_type;
+
+                Bytecode_Register return_value_register = ast_expr_to_bytecode(bb, stmt->return_stmt.value, return_type);
                 bytecode_emit_return(bb, return_value_register);
             } else {
                 bytecode_emit_return(bb);
@@ -286,7 +293,12 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *exp
 
                 case AST_Declaration_Kind::CONSTANT_VARIABLE: {
                     assert(ident_decl->variable.value);
-                    return ast_expr_to_bytecode(bb, ident_decl->variable.value, expr->resolved_type);
+                    Type *type = expr->resolved_type;
+                    if (ident_decl->variable.resolved_type == &builtin_type_unsized_integer) {
+                        assert(actual_type);
+                        type = actual_type;
+                    }
+                    return ast_expr_to_bytecode(bb, ident_decl->variable.value, type);
                 }
 
                 case AST_Declaration_Kind::FUNCTION: assert(false); break;

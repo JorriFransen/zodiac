@@ -190,6 +190,7 @@ struct AST_While_Statement
 struct AST_Return_Statement
 {
     AST_Expression *value;
+    Scope *scope;
 };
 
 enum class AST_Statement_Kind
