@@ -33,6 +33,13 @@
         "isWholeLine": false,
     },
     "files.associations": {
-        "vector": "cpp"
+        "vector": "cpp",
+        "chrono": "cpp",
+        "functional": "cpp",
+        "xutility": "cpp",
+        "optional": "cpp",
+        "system_error": "cpp",
+        "type_traits": "cpp",
+        "xtr1common": "cpp"
     },
 }

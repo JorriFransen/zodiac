@@ -316,10 +316,15 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *exp
 
         case AST_Expression_Kind::BINARY: {
 
-            assert(expr->resolved_type->kind == Type_Kind::INTEGER);
+            if (actual_type) {
+                assert(actual_type == expr->resolved_type);
+            } else {
+                actual_type = expr->resolved_type;
+            }
+            assert(actual_type->kind == Type_Kind::INTEGER);
 
-            Bytecode_Register lhs_reg = ast_expr_to_bytecode(bb, expr->binary.lhs, expr->resolved_type);
-            Bytecode_Register rhs_reg = ast_expr_to_bytecode(bb, expr->binary.rhs, expr->resolved_type);
+            Bytecode_Register lhs_reg = ast_expr_to_bytecode(bb, expr->binary.lhs, actual_type);
+            Bytecode_Register rhs_reg = ast_expr_to_bytecode(bb, expr->binary.rhs, actual_type);
 
             switch (expr->binary.op) {
                 case AST_Binary_Operator::INVALID: assert(false); break;
