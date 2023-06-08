@@ -3,8 +3,8 @@
 
 main :: () -> s64 {
     z :: 19;
-    return z;
+    return z + x + y;
 }
 
-//x : s64 : 21;
-//y ::  2;
+x : s64 : 21;
+y ::  2;
