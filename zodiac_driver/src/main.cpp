@@ -27,11 +27,23 @@ using namespace Bytecode;
 
 void flat_resolve_test(Resolver *resolver, AST_File *file);
 
-void emit_bytecode(Resolver *resolver, Bytecode_Builder *bb);
-void ast_decl_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl);
-void ast_function_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl);
-void ast_stmt_to_bytecode(Bytecode_Builder *bb, AST_Statement *stmt);
-Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *expr, Type *actual_type = nullptr);
+struct Bytecode_Converter
+{
+    Allocator *allocator;
+    Zodiac_Context *context;
+    Bytecode_Builder *builder;
+
+    // TODO: should these be separated per funciton?
+    Hash_Table<AST_Declaration *, Bytecode_Register> allocations;
+};
+
+Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Context *context, Bytecode_Builder *bb);
+
+void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc);
+void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl);
+void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl);
+void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt);
+Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr, Type *actual_type = nullptr);
 
 int main() {
 
@@ -58,7 +70,7 @@ int main() {
     Parser parser;
     parser_create(&c, &lexer, &parser);
     AST_File *file = parse_file(&parser);
-    if (parser.error) return 1;;
+    if (parser.error) return 1;
     assert(file);
 
     Scope *global_scope = scope_new(&dynamic_allocator, Scope_Kind::GLOBAL, nullptr);
@@ -88,7 +100,9 @@ int main() {
     // This bytecode builder should maybe be part of the context?
     Bytecode_Builder bb = bytecode_builder_create(&c.bytecode_allocator, &c);
 
-    emit_bytecode(&resolver, &bb);
+    Bytecode_Converter bc = bytecode_converter_create(&c.bytecode_allocator, &c, &bb);
+
+    emit_bytecode(&resolver, &bc);
 
     bytecode_print(&bb, temp_allocator_allocator());
 
@@ -131,10 +145,23 @@ void flat_resolve_test(Resolver *resolver, AST_File *file)
 }
 
 
-void emit_bytecode(Resolver *resolver, Bytecode_Builder *bb)
+Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Context *context, Bytecode_Builder *bb)
+{
+    Bytecode_Converter result = {};
+
+    result.allocator = allocator;
+    result.context = context;
+    result.builder = bb;
+
+    hash_table_create(allocator, &result.allocations);
+
+    return result;
+}
+
+void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
 {
     assert(resolver);
-    assert(bb);
+    assert(bc);
 
     for (u64 i = 0; i < resolver->nodes_to_emit_bytecode.count; i++) {
 
@@ -143,7 +170,7 @@ void emit_bytecode(Resolver *resolver, Bytecode_Builder *bb)
         switch (root_node.root.kind) {
 
             case Flat_Node_Kind::DECL: {
-                ast_decl_to_bytecode(bb, root_node.root.decl);
+                ast_decl_to_bytecode(bc, root_node.root.decl);
                 break;
             }
 
@@ -157,15 +184,40 @@ void emit_bytecode(Resolver *resolver, Bytecode_Builder *bb)
     }
 }
 
-void ast_decl_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl)
+void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 {
-    assert(bb);
+    assert(bc);
     assert(decl);
     assert(decl->kind != AST_Declaration_Kind::INVALID);
 
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false); break;
-        case AST_Declaration_Kind::VARIABLE: assert(false); break;
+
+        case AST_Declaration_Kind::VARIABLE: {
+
+            Scope *variable_scope = decl->identifier.scope;
+            assert(variable_scope);
+
+            if (variable_scope->kind == Scope_Kind::GLOBAL) {
+                assert(false);
+            }
+
+            assert(decl->variable.resolved_type);
+            Type *alloc_type = decl->variable.resolved_type;
+            auto alloc_name = decl->identifier.name;
+            auto alloc_reg = bytecode_emit_alloc(bc->builder, alloc_type, alloc_name.data);
+
+            assert(!hash_table_find(&bc->allocations, decl));
+
+            hash_table_add(&bc->allocations, decl, alloc_reg);
+
+            if (decl->variable.value) {
+                Bytecode_Register value_reg = ast_expr_to_bytecode(bc, decl->variable.value, decl->variable.resolved_type);
+                bytecode_emit_store_alloc(bc->builder, value_reg, alloc_reg);
+            }
+            break;
+        }
+
 
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
 
@@ -182,7 +234,7 @@ void ast_decl_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl)
         }
 
         case AST_Declaration_Kind::FUNCTION: {
-            ast_function_to_bytecode(bb, decl);
+            ast_function_to_bytecode(bc, decl);
             break;
         }
 
@@ -191,9 +243,9 @@ void ast_decl_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl)
     }
 }
 
-void ast_function_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl)
+void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 {
-    assert(bb);
+    assert(bc);
     assert(decl);
     assert(decl->kind == AST_Declaration_Kind::FUNCTION);
 
@@ -201,20 +253,21 @@ void ast_function_to_bytecode(Bytecode_Builder *bb, AST_Declaration *decl)
     assert(decl->function.type->kind == Type_Kind::FUNCTION);
     assert(decl->identifier.name.data);
 
-    Bytecode_Function_Handle fn_handle = bytecode_function_create(bb, decl->identifier.name, decl->function.type);
-    Bytecode_Block_Handle entry_block_handle = bytecode_append_block(bb, fn_handle, "entry");
+    Bytecode_Function_Handle fn_handle = bytecode_function_create(bc->builder, decl->identifier.name, decl->function.type);
 
-    bytecode_set_insert_point(bb, fn_handle, entry_block_handle);
+    Bytecode_Block_Handle entry_block_handle = bytecode_append_block(bc->builder, fn_handle, "entry");
+
+    bytecode_set_insert_point(bc->builder, fn_handle, entry_block_handle);
 
     for (u64 i = 0; i < decl->function.body.count; i++) {
         AST_Statement *stmt = decl->function.body[i];
-        ast_stmt_to_bytecode(bb, stmt);
+        ast_stmt_to_bytecode(bc, stmt);
     }
 }
 
-void ast_stmt_to_bytecode(Bytecode_Builder *bb, AST_Statement *stmt)
+void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 {
-    assert(bb);
+    assert(bc);
     assert(stmt);
 
     switch (stmt->kind) {
@@ -222,7 +275,7 @@ void ast_stmt_to_bytecode(Bytecode_Builder *bb, AST_Statement *stmt)
         case AST_Statement_Kind::BLOCK: assert(false); break;
 
         case AST_Statement_Kind::DECLARATION: {
-            ast_decl_to_bytecode(bb, stmt->decl.decl);
+            ast_decl_to_bytecode(bc, stmt->decl.decl);
             break;
         }
 
@@ -240,10 +293,10 @@ void ast_stmt_to_bytecode(Bytecode_Builder *bb, AST_Statement *stmt)
                 assert(func_decl->function.type);
                 Type *return_type = func_decl->function.type->function.return_type;
 
-                Bytecode_Register return_value_register = ast_expr_to_bytecode(bb, stmt->return_stmt.value, return_type);
-                bytecode_emit_return(bb, return_value_register);
+                Bytecode_Register return_value_register = ast_expr_to_bytecode(bc, stmt->return_stmt.value, return_type);
+                bytecode_emit_return(bc->builder, return_value_register);
             } else {
-                bytecode_emit_return(bb);
+                bytecode_emit_return(bc->builder);
             }
             break;
         }
@@ -252,9 +305,9 @@ void ast_stmt_to_bytecode(Bytecode_Builder *bb, AST_Statement *stmt)
     }
 }
 
-Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *expr, Type *actual_type/*=nullptr*/)
+Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr, Type *actual_type/*=nullptr*/)
 {
-    assert(bb);
+    assert(bc);
     assert(expr);
 
     if (actual_type) {
@@ -273,7 +326,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *exp
                 literal_type = actual_type;
             }
             assert(literal_type->kind == Type_Kind::INTEGER);
-            return bytecode_integer_literal(bb, literal_type, expr->integer_literal.value);
+            return bytecode_integer_literal(bc->builder, literal_type, expr->integer_literal.value);
         }
 
         case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
@@ -289,7 +342,16 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *exp
 
             switch (ident_decl->kind) {
                 case AST_Declaration_Kind::INVALID: assert(false); break;
-                case AST_Declaration_Kind::VARIABLE: assert(false); break;
+
+                case AST_Declaration_Kind::VARIABLE: {
+                    assert(ident_decl->variable.resolved_type);
+
+                    Bytecode_Register alloc_reg;
+                    bool found = hash_table_find(&bc->allocations, ident_decl, &alloc_reg);
+                    assert(found);
+
+                    return bytecode_emit_load_alloc(bc->builder, alloc_reg);
+                }
 
                 case AST_Declaration_Kind::CONSTANT_VARIABLE: {
                     assert(ident_decl->variable.value);
@@ -298,7 +360,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *exp
                         assert(actual_type);
                         type = actual_type;
                     }
-                    return ast_expr_to_bytecode(bb, ident_decl->variable.value, type);
+                    return ast_expr_to_bytecode(bc, ident_decl->variable.value, type);
                 }
 
                 case AST_Declaration_Kind::FUNCTION: assert(false); break;
@@ -323,14 +385,14 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Builder *bb, AST_Expression *exp
             }
             assert(actual_type->kind == Type_Kind::INTEGER);
 
-            Bytecode_Register lhs_reg = ast_expr_to_bytecode(bb, expr->binary.lhs, actual_type);
-            Bytecode_Register rhs_reg = ast_expr_to_bytecode(bb, expr->binary.rhs, actual_type);
+            Bytecode_Register lhs_reg = ast_expr_to_bytecode(bc, expr->binary.lhs, actual_type);
+            Bytecode_Register rhs_reg = ast_expr_to_bytecode(bc, expr->binary.rhs, actual_type);
 
             switch (expr->binary.op) {
                 case AST_Binary_Operator::INVALID: assert(false); break;
 
                 case AST_Binary_Operator::ADD: {
-                    return bytecode_emit_add(bb, lhs_reg, rhs_reg);
+                    return bytecode_emit_add(bc->builder, lhs_reg, rhs_reg);
                 }
 
                 case AST_Binary_Operator::SUB: assert(false); break;

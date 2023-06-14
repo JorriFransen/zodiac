@@ -219,6 +219,9 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
             if (ts) flatten_type_spec(ts, scope, dest);
             if (val) flatten_expression(val, scope, dest, ts);
 
+
+            assert(decl->identifier.scope == nullptr);
+            decl->identifier.scope = scope;
             break;
         }
 

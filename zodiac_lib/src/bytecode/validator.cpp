@@ -1042,7 +1042,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
         case Bytecode_Opcode::EXTRACT_VALUE: {
             if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
                 bytecode_validator_report_error(validator, "The 'a' register for 'EXTRACT_VALUE' must be a temporary");
-                return false;;
+                return false;
             }
 
             if (!(instruction->a.type->flags & TYPE_FLAG_AGGREGATE)) {
@@ -1158,7 +1158,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
         case Bytecode_Opcode::EXTRACT_ELEMENT: {
             if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
                 bytecode_validator_report_error(validator, "The 'a' register for 'EXTRACT_ELEMENT' must be a temporary");
-                return false;;
+                return false;
             }
 
             if (instruction->a.type->kind != Type_Kind::STATIC_ARRAY) {

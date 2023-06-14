@@ -2,9 +2,11 @@
 
 
 main :: () -> s64 {
-    z :: 19;
-    return z + x + y;
+    a : s64 = 10;
+    z : s64 : 19;
+    b : s64 = z + x + y;
+    return a + b;
 }
 
 x : s64 : 21;
-y ::  2;
+y : s64 :  2;

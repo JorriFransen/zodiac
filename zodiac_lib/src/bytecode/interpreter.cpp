@@ -844,7 +844,7 @@ switch (operand.type->bit_size) { \
             auto &member_types = agg_type->structure.member_types;
             assert(index >= 0 && index < member_types.count);
 
-            u8 *ptr = nullptr;;
+            u8 *ptr = nullptr;
 
             if (instruction.a.kind == Bytecode_Register_Kind::ALLOC) {
                 ptr = agg_register.pointer;
