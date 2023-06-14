@@ -30,7 +30,6 @@ struct AST_Identifier
 struct AST_Integer_Literal_Expression
 {
     Integer_Value value;
-    AST_Type_Spec *infer_type_from;
 };
 
 struct AST_String_Literal_Expression
@@ -127,6 +126,7 @@ struct AST_Expression
     Source_Range range;
 
     Type *resolved_type;
+    AST_Type_Spec *infer_type_from;
 
     union
     {

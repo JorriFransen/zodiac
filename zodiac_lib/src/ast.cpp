@@ -27,7 +27,6 @@ void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_ex
     ast_expression_create(AST_Expression_Kind::INTEGER_LITERAL, out_expr);
 
     out_expr->integer_literal.value = value;
-    out_expr->integer_literal.infer_type_from = nullptr;
 }
 
 void ast_string_literal_expr_create(Atom atom, AST_Expression *out_expr)
@@ -115,6 +114,7 @@ void ast_expression_create(AST_Expression_Kind kind, AST_Expression *out_expr)
 
     out_expr->kind = kind;
     out_expr->resolved_type = nullptr;
+    out_expr->infer_type_from = nullptr;
 }
 
 void ast_block_stmt_create(Dynamic_Array<AST_Statement *> statements, AST_Statement *out_stmt)

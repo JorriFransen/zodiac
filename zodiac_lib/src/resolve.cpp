@@ -349,7 +349,7 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
         case AST_Expression_Kind::INVALID: assert(false);
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
-            expr->integer_literal.infer_type_from = infer_type_from;
+            expr->infer_type_from = infer_type_from;
             break;
         }
 
@@ -383,6 +383,7 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
             assert(infer_type_from);
             flatten_expression(expr->binary.lhs, scope, dest, infer_type_from);
             flatten_expression(expr->binary.rhs, scope, dest, infer_type_from);
+            expr->infer_type_from = infer_type_from;
             break;
         }
     }
@@ -983,7 +984,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
         case AST_Expression_Kind::INVALID: assert(false);
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
-                AST_Type_Spec *infer_from = expr->integer_literal.infer_type_from;
+                AST_Type_Spec *infer_from = expr->infer_type_from;
                 if (infer_from) {
                     assert(infer_from);
                     assert(infer_from->resolved_type);
@@ -1055,7 +1056,10 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                     assert(lhs->resolved_type == rhs->resolved_type);
                     expr->resolved_type = lhs->resolved_type;
                 } else {
-                    assert(false);
+                    assert(expr->infer_type_from);
+                    assert(expr->infer_type_from->resolved_type);
+                    assert(expr->infer_type_from->resolved_type->kind == Type_Kind::INTEGER);
+                    expr->resolved_type = expr->infer_type_from->resolved_type;
                 }
             } else {
                 assert(false);
