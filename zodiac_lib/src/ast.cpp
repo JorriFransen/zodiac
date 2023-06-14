@@ -230,7 +230,7 @@ void ast_constant_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, 
     out_decl->variable.resolved_type = nullptr;
 }
 
-void ast_function_decl_create(AST_Identifier ident, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl)
+void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl)
 {
     assert(out_decl);
 
@@ -238,6 +238,7 @@ void ast_function_decl_create(AST_Identifier ident, Dynamic_Array<AST_Field_Decl
 
     out_decl->identifier = ident;
     out_decl->function.params = args;
+    dynamic_array_create(allocator, &out_decl->function.variables, 0);
     out_decl->function.return_ts = return_ts;
     out_decl->function.body = body;
     out_decl->function.type = nullptr;
@@ -492,7 +493,7 @@ AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range range, 
     assert(ctx);
 
     auto decl = ast_declaration_new(ctx, range);
-    ast_function_decl_create(ident, args, return_ts, body, decl);
+    ast_function_decl_create(&ctx->ast_allocator, ident, args, return_ts, body, decl);
     return decl;
 }
 

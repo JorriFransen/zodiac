@@ -33,7 +33,7 @@ struct Bytecode_Converter
     Zodiac_Context *context;
     Bytecode_Builder *builder;
 
-    // TODO: should these be separated per funciton?
+    // TODO: should these be separated per function?
     Hash_Table<AST_Declaration *, Bytecode_Register> allocations;
 };
 
@@ -194,30 +194,9 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
         case AST_Declaration_Kind::INVALID: assert(false); break;
 
         case AST_Declaration_Kind::VARIABLE: {
-
-            Scope *variable_scope = decl->identifier.scope;
-            assert(variable_scope);
-
-            if (variable_scope->kind == Scope_Kind::GLOBAL) {
-                assert(false);
-            }
-
-            assert(decl->variable.resolved_type);
-            Type *alloc_type = decl->variable.resolved_type;
-            auto alloc_name = decl->identifier.name;
-            auto alloc_reg = bytecode_emit_alloc(bc->builder, alloc_type, alloc_name.data);
-
-            assert(!hash_table_find(&bc->allocations, decl));
-
-            hash_table_add(&bc->allocations, decl, alloc_reg);
-
-            if (decl->variable.value) {
-                Bytecode_Register value_reg = ast_expr_to_bytecode(bc, decl->variable.value, decl->variable.resolved_type);
-                bytecode_emit_store_alloc(bc->builder, value_reg, alloc_reg);
-            }
+            // Leaf
             break;
         }
-
 
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
 
@@ -255,9 +234,52 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
     Bytecode_Function_Handle fn_handle = bytecode_function_create(bc->builder, decl->identifier.name, decl->function.type);
 
-    Bytecode_Block_Handle entry_block_handle = bytecode_append_block(bc->builder, fn_handle, "entry");
+    if (decl->function.variables.count) {
 
-    bytecode_set_insert_point(bc->builder, fn_handle, entry_block_handle);
+        Bytecode_Block_Handle allocs_block_handle = bytecode_append_block(bc->builder, fn_handle, "allocs");
+        bytecode_set_insert_point(bc->builder, fn_handle, allocs_block_handle);
+
+        bool has_inits = false;
+
+        for (u64 i = 0; i < decl->function.variables.count; i++) {
+            AST_Declaration *var_decl = decl->function.variables[i];
+            assert(var_decl->variable.resolved_type);
+
+            Type *alloc_type = var_decl->variable.resolved_type;
+            auto alloc_name = var_decl->identifier.name;
+            auto alloc_reg = bytecode_emit_alloc(bc->builder, alloc_type, alloc_name.data);
+
+            debug_assert(!hash_table_find(&bc->allocations, var_decl));
+
+            hash_table_add(&bc->allocations, var_decl, alloc_reg);
+
+            if (var_decl->variable.value) has_inits = true;
+        }
+
+        if (has_inits) {
+            Bytecode_Block_Handle inits_block_handle = bytecode_append_block(bc->builder, fn_handle, "inits");
+            bytecode_set_insert_point(bc->builder, fn_handle, inits_block_handle);
+
+            for (u64 i = 0; i < decl->function.variables.count; i++) {
+                AST_Declaration *var_decl = decl->function.variables[i];
+                if (var_decl->variable.value) {
+                    Bytecode_Register value = ast_expr_to_bytecode(bc, var_decl->variable.value);
+
+                    // TODO: Temporarily store this on the stack from before?
+                    Bytecode_Register alloc_reg;
+                    bool found = hash_table_find(&bc->allocations, var_decl, &alloc_reg);
+                    assert(found)
+
+                    bytecode_emit_store_alloc(bc->builder, value, alloc_reg);
+                }
+            }
+        }
+        Bytecode_Block_Handle start_block_handle = bytecode_append_block(bc->builder, fn_handle, "start");
+        bytecode_set_insert_point(bc->builder, fn_handle, start_block_handle);
+    } else {
+        Bytecode_Block_Handle entry_block_handle = bytecode_append_block(bc->builder, fn_handle, "entry");
+        bytecode_set_insert_point(bc->builder, fn_handle, entry_block_handle);
+    }
 
     for (u64 i = 0; i < decl->function.body.count; i++) {
         AST_Statement *stmt = decl->function.body[i];

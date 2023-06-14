@@ -579,7 +579,12 @@ bool name_resolve_decl(AST_Declaration *decl, Scope *scope)
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
 
-        case AST_Declaration_Kind::VARIABLE:
+        case AST_Declaration_Kind::VARIABLE: {
+            AST_Declaration *func_decl = enclosing_function(scope);
+            dynamic_array_append(&func_decl->function.variables, decl);
+            break;
+        };
+
         case AST_Declaration_Kind::CONSTANT_VARIABLE:
         case AST_Declaration_Kind::FUNCTION:
         case AST_Declaration_Kind::STRUCT:
