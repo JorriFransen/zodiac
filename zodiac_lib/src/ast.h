@@ -9,6 +9,7 @@
 namespace Zodiac
 {
 
+struct Allocator;
 struct AST_Declaration;
 struct AST_Expression;
 struct AST_Statement;
