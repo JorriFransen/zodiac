@@ -66,7 +66,7 @@ bool resolve_names(Resolver *resolver)
             for (u64 i = node->current_index; i < node->nodes.count; i++) {
 
                 node->current_index = i;
-                bool result = name_resolve_node(resolver->ctx, &node->nodes[i]);
+                bool result = name_resolve_node(resolver, &node->nodes[i]);
 
                 if (!result) {
                     done = false;
@@ -487,13 +487,14 @@ Flat_Node to_flat_proto(AST_Declaration *decl)
     return result;
 }
 
-bool name_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
+bool name_resolve_node(Resolver *resolver, Flat_Node *node)
 {
+    assert(resolver);
     assert(node);
 
     switch (node->kind) {
         case Flat_Node_Kind::DECL: {
-            return name_resolve_decl(node->decl, node->scope);
+            return name_resolve_decl(resolver, node->decl, node->scope);
         }
 
         case Flat_Node_Kind::STMT: {
@@ -501,11 +502,11 @@ bool name_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
         }
 
         case Flat_Node_Kind::EXPR: {
-            return name_resolve_expr(ctx, node->expr, node->scope);
+            return name_resolve_expr(resolver->ctx, node->expr, node->scope);
         }
 
         case Flat_Node_Kind::TS: {
-            return name_resolve_ts(ctx, node->ts, node->scope);
+            return name_resolve_ts(resolver->ctx, node->ts, node->scope);
         }
 
         case Flat_Node_Kind::PARAM_DECL: {
@@ -539,16 +540,20 @@ bool name_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
     return false;
 }
 
-bool name_resolve_decl(AST_Declaration *decl, Scope *scope)
+bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
 {
+    assert(resolver);
     assert(decl && scope);
 
     assert(decl->identifier.name.data);
     auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
 
+    bool global = decl->flags & AST_DECL_FLAG_GLOBAL;
+
+    assert(global == (scope->kind == Scope_Kind::GLOBAL));
+
     if (!decl_sym) {
         assert_msg(scope->kind != Scope_Kind::GLOBAL, "Global declaration should have been defined");
-
         assert_msg(false, "TODO: local declaration symbol");
     }
 
@@ -581,8 +586,10 @@ bool name_resolve_decl(AST_Declaration *decl, Scope *scope)
         case AST_Declaration_Kind::INVALID: assert(false);
 
         case AST_Declaration_Kind::VARIABLE: {
-            AST_Declaration *func_decl = enclosing_function(scope);
-            dynamic_array_append(&func_decl->function.variables, decl);
+            if (!global) {
+                AST_Declaration *func_decl = enclosing_function(scope);
+                dynamic_array_append(&func_decl->function.variables, decl);
+            }
             break;
         };
 

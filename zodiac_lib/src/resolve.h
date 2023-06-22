@@ -74,8 +74,8 @@ ZAPI Flat_Node to_flat_node(const AST_Field_Declaration param, Scope *scope);
 
 ZAPI Flat_Node to_flat_proto(AST_Declaration *decl);
 
-ZAPI bool name_resolve_node(Zodiac_Context *ctx, Flat_Node *node);
-ZAPI bool name_resolve_decl(AST_Declaration *decl, Scope *scope);
+ZAPI bool name_resolve_node(Resolver *resolver, Flat_Node *node);
+ZAPI bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope);
 ZAPI bool name_resolve_stmt(AST_Statement *stmt, Scope *scope);
 ZAPI bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope);
 ZAPI bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope);

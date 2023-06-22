@@ -8,13 +8,13 @@
 namespace Zodiac
 {
 
-struct Zodiac_Context;
-
 struct Allocator;
-struct AST_Identifier;
 struct AST_Declaration;
+struct AST_File;
+struct AST_Identifier;
 struct Scope;
 struct Type;
+struct Zodiac_Context;
 
 enum class Symbol_Kind : u16
 {
@@ -45,7 +45,6 @@ enum Symbol_Flag : Symbol_Flags
 {
     SYM_FLAG_NONE    = 0x00,
     SYM_FLAG_BUILTIN = 0x01,
-    SYM_FLAG_GLOBAL  = 0x02,
 };
 
 struct Symbol

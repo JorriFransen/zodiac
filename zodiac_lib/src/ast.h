@@ -281,10 +281,19 @@ enum class AST_Declaration_Kind
     UNION,
 };
 
+typedef u32 AST_Declaration_Flags;
+
+enum AST_Declaration_Flag : AST_Declaration_Flags
+{
+    AST_DECL_FLAG_NONE   = 0x00,
+    AST_DECL_FLAG_GLOBAL = 0x01,
+};
+
 struct AST_Declaration
 
 {
     AST_Declaration_Kind kind;
+    AST_Declaration_Flags flags;
 
     Source_Range range;
 

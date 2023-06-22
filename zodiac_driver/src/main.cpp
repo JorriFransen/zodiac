@@ -36,6 +36,9 @@ struct Bytecode_Converter
 
     // TODO: should these be separated per function?
     Hash_Table<AST_Declaration *, Bytecode_Register> allocations;
+
+    // TODO: should these be separated per file?
+    Hash_Table<AST_Declaration *, Bytecode_Global_Handle> globals;
 };
 
 Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Context *context, Bytecode_Builder *bb);
@@ -111,7 +114,7 @@ int main() {
 }
 
 #define add_builtin_type_symbol(type) { \
-    auto sym = add_resolved_symbol(resolver->ctx, resolver->global_scope, Symbol_Kind::TYPE, (SYM_FLAG_GLOBAL | SYM_FLAG_BUILTIN), atom_##type, nullptr); \
+    auto sym = add_resolved_symbol(resolver->ctx, resolver->global_scope, Symbol_Kind::TYPE, (SYM_FLAG_BUILTIN), atom_##type, nullptr); \
     sym->builtin_type = &builtin_type_##type; \
 }
 
@@ -155,6 +158,7 @@ Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Contex
     result.builder = bb;
 
     hash_table_create(allocator, &result.allocations);
+    hash_table_create(allocator, &result.globals);
 
     return result;
 }
@@ -195,7 +199,25 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
         case AST_Declaration_Kind::INVALID: assert(false); break;
 
         case AST_Declaration_Kind::VARIABLE: {
-            // Leaf
+
+            if (decl->flags & AST_DECL_FLAG_GLOBAL) {
+
+                Type *global_type = decl->variable.resolved_type;
+                assert(global_type);
+                auto global_name = decl->identifier.name;
+
+                Bytecode_Register initial_value_reg;
+                if (decl->variable.value) {
+                    initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value, decl->variable.resolved_type);
+                }
+
+                auto global_handle = bytecode_create_global(bc->builder, global_name, global_type, initial_value_reg);
+
+                hash_table_add(&bc->globals, decl, global_handle);
+
+            } else {
+                // Leaf
+            }
             break;
         }
 
@@ -369,11 +391,21 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                 case AST_Declaration_Kind::VARIABLE: {
                     assert(ident_decl->variable.resolved_type);
 
-                    Bytecode_Register alloc_reg;
-                    bool found = hash_table_find(&bc->allocations, ident_decl, &alloc_reg);
-                    assert(found);
+                    if (ident_decl->flags & AST_DECL_FLAG_GLOBAL) {
 
-                    return bytecode_emit_load_alloc(bc->builder, alloc_reg);
+                        Bytecode_Global_Handle global_handle;
+                        bool found = hash_table_find(&bc->globals, ident_decl, &global_handle);
+                        assert(found);
+
+                        return bytecode_emit_load_global(bc->builder, global_handle);
+
+                    } else {
+                        Bytecode_Register alloc_reg;
+                        bool found = hash_table_find(&bc->allocations, ident_decl, &alloc_reg);
+                        assert(found);
+
+                        return bytecode_emit_load_alloc(bc->builder, alloc_reg);
+                    }
                 }
 
                 case AST_Declaration_Kind::CONSTANT_VARIABLE: {
