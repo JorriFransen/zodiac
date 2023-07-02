@@ -12,10 +12,10 @@ namespace Zodiac
 {
 
 static void atom_table_grow(Atom_Table *at);
-static void atom_table_add_block(Atom_Table *at, Atom_Block *new_block, u64 block_size);
-static Atom atom_table_add(Atom_Table *at, const char *cstr, u64 length);
+static void atom_table_add_block(Atom_Table *at, Atom_Block *new_block, s64 block_size);
+static Atom atom_table_add(Atom_Table *at, const char *cstr, s64 length);
 
-void atom_table_init(Allocator *allocator, Atom_Table *at, u64 initial_capacity/*= ATOM_TABLE_INITIAL_CAPACITY*/)
+void atom_table_init(Allocator *allocator, Atom_Table *at, s64 initial_capacity/*= ATOM_TABLE_INITIAL_CAPACITY*/)
 {
     at->allocator = allocator;
 
@@ -28,7 +28,7 @@ void atom_table_init(Allocator *allocator, Atom_Table *at, u64 initial_capacity/
     atom_table_add_block(at, &at->first_block, ATOM_TABLE_INITIAL_BLOCK_SIZE);
 }
 
-void atom_table_init(Atom_Table *at, u64 initial_capacity /*= ATOM_TABLE_INITIAL_CAPACITY*/)
+void atom_table_init(Atom_Table *at, s64 initial_capacity /*= ATOM_TABLE_INITIAL_CAPACITY*/)
 {
     atom_table_init(&dynamic_allocator, at, initial_capacity);
 }
@@ -67,7 +67,7 @@ static void atom_table_grow(Atom_Table *at)
     at->atoms = new_atoms;
     at->hashes = new_hashes;
 
-    for (u64 i = 0; i < old_cap; i++) {
+    for (s64 i = 0; i < old_cap; i++) {
 
         u64 hash = old_hashes[i];
         u64 hash_index = hash % at->capacity;
@@ -95,7 +95,7 @@ static void atom_table_grow(Atom_Table *at)
     free(at->allocator, old_atoms);
 }
 
-static void atom_table_add_block(Atom_Table *at, Atom_Block *new_block, u64 block_size)
+static void atom_table_add_block(Atom_Table *at, Atom_Block *new_block, s64 block_size)
 {
     assert(new_block->first == nullptr);
     assert(new_block->current == nullptr);
@@ -112,7 +112,7 @@ static void atom_table_add_block(Atom_Table *at, Atom_Block *new_block, u64 bloc
     at->current_block = new_block;
 }
 
-static Atom atom_table_add(Atom_Table *at, const char *cstr, u64 length)
+static Atom atom_table_add(Atom_Table *at, const char *cstr, s64 length)
 {
     assert(at->current_block);
 
@@ -145,7 +145,7 @@ static Atom atom_table_add(Atom_Table *at, const char *cstr, u64 length)
     return result;
 }
 
-Atom atom_get(Atom_Table *at, const char *cstr, u64 length)
+Atom atom_get(Atom_Table *at, const char *cstr, s64 length)
 {
     u64 hash = hash_c_string(cstr, length);
     u64 hash_index = hash % at->capacity;

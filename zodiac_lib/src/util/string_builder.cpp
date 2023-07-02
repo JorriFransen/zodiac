@@ -10,7 +10,7 @@
 namespace Zodiac
 {
 
-file_local String_Builder_Block *sb_alloc_block(Allocator *allocator, u64 block_size);
+file_local String_Builder_Block *sb_alloc_block(Allocator *allocator, s64 block_size);
 
 void string_builder_create(String_Builder *out_sb)
 {
@@ -18,7 +18,7 @@ void string_builder_create(String_Builder *out_sb)
     string_builder_create(out_sb, &dynamic_allocator);
 }
 
-void string_builder_create(String_Builder *out_sb, Allocator *allocator, u64 new_block_size /*= ZSTRINGBUILDER_DEFAULT_BLOCK_SIZE*/)
+void string_builder_create(String_Builder *out_sb, Allocator *allocator, s64 new_block_size /*= ZSTRINGBUILDER_DEFAULT_BLOCK_SIZE*/)
 {
     assert(allocator);
     assert(out_sb);
@@ -102,7 +102,7 @@ void string_builder_append(String_Builder *sb, String_Ref fmt, va_list args)
     if (temp_result.length > sb->current_block->size - sb->current_block->used) {
 
         // Copy the first part into the current block
-        u64 size = sb->current_block->size - sb->current_block->used;
+        s64 size = sb->current_block->size - sb->current_block->used;
         zmemcpy(sb->current_block->memory + sb->current_block->used, temp_result.data, size);
         sb->current_block->used += size;
         sb->total_size += size;
@@ -112,7 +112,7 @@ void string_builder_append(String_Builder *sb, String_Ref fmt, va_list args)
         assert(temp_result.length > 0);
 
         // Add a new block
-        u64 new_block_size = max(sb->new_block_size, temp_result.length);
+        s64 new_block_size = max(sb->new_block_size, temp_result.length);
         if (new_block_size > sb->new_block_size) {
             sb->new_block_size = max(sb->new_block_size * 2, temp_result.length);
         }
@@ -129,9 +129,9 @@ void string_builder_append(String_Builder *sb, String_Ref fmt, va_list args)
     temporary_allocator_reset(ta, temp_mark);
 }
 
-file_local String_Builder_Block *sb_alloc_block(Allocator *allocator, u64 block_size)
+file_local String_Builder_Block *sb_alloc_block(Allocator *allocator, s64 block_size)
 {
-    u64 total_size = block_size + sizeof(String_Builder_Block);
+    s64 total_size = block_size + sizeof(String_Builder_Block);
     void *memory = alloc(allocator, total_size);
 
     auto result = (String_Builder_Block *)memory;

@@ -84,7 +84,7 @@ int main() {
 
     flat_resolve_test(&resolver, file);
 
-    for (u64 i = 0; i < c.errors.count; i++) {
+    for (s64 i = 0; i < c.errors.count; i++) {
 
         auto err = c.errors[i];
 
@@ -136,7 +136,7 @@ void flat_resolve_test(Resolver *resolver, AST_File *file)
 
     add_builtin_type_symbol(String);
 
-    for (u64 i = 0; i < file->declarations.count; i++) {
+    for (s64 i = 0; i < file->declarations.count; i++) {
         resolver_add_declaration(resolver->ctx, resolver, file->declarations[i]);
     }
 
@@ -168,7 +168,7 @@ void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
     assert(resolver);
     assert(bc);
 
-    for (u64 i = 0; i < resolver->nodes_to_emit_bytecode.count; i++) {
+    for (s64 i = 0; i < resolver->nodes_to_emit_bytecode.count; i++) {
 
         Flat_Root_Node root_node = resolver->nodes_to_emit_bytecode[i];
 
@@ -264,7 +264,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
         bool has_inits = false;
 
-        for (u64 i = 0; i < decl->function.variables.count; i++) {
+        for (s64 i = 0; i < decl->function.variables.count; i++) {
             AST_Declaration *var_decl = decl->function.variables[i];
             assert(var_decl->variable.resolved_type);
 
@@ -283,7 +283,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             Bytecode_Block_Handle inits_block_handle = bytecode_append_block(bc->builder, fn_handle, "inits");
             bytecode_set_insert_point(bc->builder, fn_handle, inits_block_handle);
 
-            for (u64 i = 0; i < decl->function.variables.count; i++) {
+            for (s64 i = 0; i < decl->function.variables.count; i++) {
                 AST_Declaration *var_decl = decl->function.variables[i];
                 if (var_decl->variable.value) {
                     Bytecode_Register value = ast_expr_to_bytecode(bc, var_decl->variable.value);
@@ -304,7 +304,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
         bytecode_set_insert_point(bc->builder, fn_handle, entry_block_handle);
     }
 
-    for (u64 i = 0; i < decl->function.body.count; i++) {
+    for (s64 i = 0; i < decl->function.body.count; i++) {
         AST_Statement *stmt = decl->function.body[i];
         ast_stmt_to_bytecode(bc, stmt);
     }

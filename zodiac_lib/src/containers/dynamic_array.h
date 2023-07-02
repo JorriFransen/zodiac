@@ -11,16 +11,16 @@ template <typename Element_Type>
 struct Dynamic_Array
 {
     Element_Type *data;
-    u64 count;
-    u64 capacity;
+    s64 count;
+    s64 capacity;
     Allocator* backing_allocator;
 
-    Element_Type& operator[](u64 index) {
+    Element_Type& operator[](s64 index) {
         assert(index >= 0 && index < count);
         return data[index];
     }
 
-    const Element_Type& operator[](u64 index) const {
+    const Element_Type& operator[](s64 index) const {
         assert(index >= 0 && index < count);
         return data[index];
     }
@@ -30,33 +30,34 @@ template <typename Element_Type>
 struct Array_Ref
 {
     Element_Type *data = nullptr;
-    u64 count = 0;
+    s64 count = 0;
 
     Array_Ref() = default;
 
     Array_Ref(const Dynamic_Array<Element_Type> &dyn_arr) : data(dyn_arr.data), count(dyn_arr.count) { }
-    Array_Ref(Element_Type *data, u64 count) : data(data), count(count) { }
+    Array_Ref(Element_Type *data, s64 count) : data(data), count(count) { }
 
     template <size_t N>
     constexpr Array_Ref(const Element_Type (&c_arr)[N]) : data((Element_Type *)c_arr), count(N) {}
 
     Array_Ref(const Element_Type *begin, const Element_Type *end) : data(begin), count(end - begin) {}
 
-    Element_Type& operator[](u64 index) {
+    Element_Type& operator[](s64 index) {
         assert(index >= 0 && index < count);
         return data[index];
     }
 
-    const Element_Type& operator[](u64 index) const {
+    const Element_Type& operator[](s64 index) const {
         assert(index >= 0 && index < count);
         return data[index];
     }
 };
 
 template <typename Element_Type>
-void dynamic_array_create(Allocator *backing_allocator, Dynamic_Array<Element_Type> *out_array, u64 capacity = ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY)
+void dynamic_array_create(Allocator *backing_allocator, Dynamic_Array<Element_Type> *out_array, s64 capacity = ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY)
 {
     assert(backing_allocator && out_array);
+    assert(capacity >= 0);
 
     if (capacity) out_array->data = alloc_array<Element_Type>(backing_allocator, capacity);
     else out_array->data = nullptr;
@@ -82,7 +83,7 @@ void dynamic_array_free(Dynamic_Array<Element_Type> *array)
 template <typename Element_Type>
 void dynamic_array_grow(Dynamic_Array<Element_Type> *array)
 {
-    u64 new_cap = max(array->capacity * 2, (u64)1);
+    s64 new_cap = max(array->capacity * 2, (s64)1);
     assert(new_cap);
 
     Element_Type *new_data = alloc_array<Element_Type>(array->backing_allocator, new_cap);
@@ -138,9 +139,10 @@ Dynamic_Array<Element_Type> dynamic_array_copy(Dynamic_Array<Element_Type> *sour
 }
 
 template <typename Element_Type>
-void dynamic_array_remove_unordered(Dynamic_Array<Element_Type> *array, u64 index)
+void dynamic_array_remove_unordered(Dynamic_Array<Element_Type> *array, s64 index)
 {
     assert(array);
+    assert(index >= 0);
     assert(array->count > index);
 
     array->data[index] = array->data[array->count - 1];

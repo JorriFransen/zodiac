@@ -16,7 +16,7 @@ struct String_Ref;
 struct Atom
 {
     const char *data;
-    u64 length;
+    s64 length;
 };
 
 inline bool operator==(const Atom &lhs, const Atom &rhs)
@@ -68,11 +68,11 @@ struct Atom_Table
 };
 
 
-ZAPI void atom_table_init(Allocator *allocator, Atom_Table *at, u64 initial_capacity = ATOM_TABLE_INITIAL_CAPACITY);
-ZAPI void atom_table_init(Atom_Table *at, u64 initial_capacity = ATOM_TABLE_INITIAL_CAPACITY);
+ZAPI void atom_table_init(Allocator *allocator, Atom_Table *at, s64 initial_capacity = ATOM_TABLE_INITIAL_CAPACITY);
+ZAPI void atom_table_init(Atom_Table *at, s64 initial_capacity = ATOM_TABLE_INITIAL_CAPACITY);
 ZAPI void atom_table_free(Atom_Table *at);
 
-ZAPI Atom atom_get(Atom_Table *at, const char *cstr, u64 length);
+ZAPI Atom atom_get(Atom_Table *at, const char *cstr, s64 length);
 ZAPI Atom atom_get(Atom_Table *at, const char *cstr);
 ZAPI Atom atom_get(Atom_Table *at, const String_Ref &string_ref);
 

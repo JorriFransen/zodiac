@@ -121,7 +121,7 @@ static MunitResult Growing(const MunitParameter params[], void *user_data_or_fix
         munit_assert_int(array.count, ==, ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY + 1);
 
         munit_assert_int(array[0], ==, 42);
-        for (u64 i = 0; i < ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY - 1; i++) {
+        for (i64 i = 0; i < ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY - 1; i++) {
             munit_assert_int(array[i + 1], ==, i);
         }
         munit_assert_int(array[ZODIAC_DYNAMIC_ARRAY_DEFAULT_CAPACITY], ==, 21);
@@ -182,10 +182,10 @@ static MunitResult Growing(const MunitParameter params[], void *user_data_or_fix
 
 static MunitResult Unordered_Remove(const MunitParameter params[], void *user_data_or_fixture)
 {
-    Dynamic_Array<u64> array;
+    Dynamic_Array<i64> array;
     dynamic_array_create(c_allocator(), &array);
 
-    for (u64 i = 0; i < 10; i++) {
+    for (i64 i = 0; i < 10; i++) {
         dynamic_array_append(&array, i);
     }
     // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
@@ -213,7 +213,7 @@ static MunitResult Unordered_Remove(const MunitParameter params[], void *user_da
 
 
     // Leave 1 element
-    for (u64 i = 0; i < 6; i++) {
+    for (i64 i = 0; i < 6; i++) {
         dynamic_array_remove_unordered(&array, 0);
     }
     munit_assert_int(array.count, ==, 1);

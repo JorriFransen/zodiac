@@ -80,7 +80,7 @@ file_local MunitResult Building_1(const MunitParameter params[], void* user_data
     u64 length; \
     filesystem_size(&stream, &length); \
     const auto _buf_size = 1024; \
-    munit_assert((int64_t)_buf_size > length); \
+    munit_assert((s64)_buf_size > length); \
     char _buf[_buf_size]; \
     u64 read_length; \
     bool read_res = filesystem_read(&stream, length, (u8 *)_buf, &read_length); \
@@ -823,7 +823,7 @@ file_local MunitResult Invalid_Extract_Element(const MunitParameter params[], vo
     auto err = &zc.errors[ve.error_handle];
 
     auto expected_msg = "The 'a' register of 'INSERT_VALUE' must be a temporary or <undef>";
-    munit_assert_int64(err->message.length, ==, (int64_t)strlen(expected_msg));
+    munit_assert_int64(err->message.length, ==, (s64)strlen(expected_msg));
     munit_assert_string_equal(err->message.data, expected_msg);
 
     bytecode_validator_free(&validator);
@@ -1024,7 +1024,7 @@ file_local MunitResult Insert_And_Extract_Element(const MunitParameter params[],
 
         Bytecode_Register array_val = {};
 
-        for (int64_t i = 0; i < array_type->static_array.count; i++) {
+        for (s64 i = 0; i < array_type->static_array.count; i++) {
             auto elem_val = bytecode_integer_literal(&bb, &builtin_type_s64, i + 1);
             array_val = bytecode_emit_insert_element(&bb, array_val, elem_val, array_type, i);
         }
@@ -1033,7 +1033,7 @@ file_local MunitResult Insert_And_Extract_Element(const MunitParameter params[],
         auto sum = bytecode_integer_literal(&bb, &builtin_type_s64, 0);
         array_val = bytecode_emit_load_alloc(&bb, array_alloc);
 
-        for (int64_t i = array_type->static_array.count - 1; i >= 0; i--) {
+        for (s64 i = array_type->static_array.count - 1; i >= 0; i--) {
             auto elem_val = bytecode_emit_extract_element(&bb, array_val, i);
             bytecode_emit_print(&bb, elem_val);
             sum = bytecode_emit_add(&bb, sum ,elem_val);
@@ -1100,7 +1100,7 @@ file_local MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void
 
         Bytecode_Register array_val = {};
 
-        for (int64_t i = 0; i < array_type->static_array.count; i++) {
+        for (s64 i = 0; i < array_type->static_array.count; i++) {
             auto elem_val = bytecode_integer_literal(&bb, &builtin_type_s64, i + 1);
             array_val = bytecode_emit_insert_element(&bb, array_val, elem_val, array_type, i);
         }
@@ -1108,7 +1108,7 @@ file_local MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void
 
         auto sum = bytecode_integer_literal(&bb, &builtin_type_s64, 0);
 
-        for (int64_t i = array_type->static_array.count - 1; i >= 0; i--) {
+        for (s64 i = array_type->static_array.count - 1; i >= 0; i--) {
             auto elem_ptr = bytecode_emit_array_offset_pointer(&bb, array_alloc, i);
             auto elem = bytecode_emit_load_pointer(&bb, elem_ptr);
 
@@ -1118,7 +1118,7 @@ file_local MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void
 
         auto array_ptr = bytecode_emit_address_of_alloc(&bb, array_alloc);
 
-        for (int64_t i = array_type->static_array.count - 1; i >= 0; i--) {
+        for (s64 i = array_type->static_array.count - 1; i >= 0; i--) {
             auto elem_ptr = bytecode_emit_array_offset_pointer(&bb, array_ptr, i);
             auto elem = bytecode_emit_load_pointer(&bb, elem_ptr);
 
@@ -1613,7 +1613,7 @@ file_local MunitResult Non_Return_Error_Simple(const MunitParameter params[], vo
     bytecode_validator_print_errors(&validator);
 
     const char *expected_err_msg = "Not all control paths return a value";
-    munit_assert_int64(err->message.length, ==, (int64_t)strlen(expected_err_msg));
+    munit_assert_int64(err->message.length, ==, (s64)strlen(expected_err_msg));
     munit_assert_string_equal(err->message.data, expected_err_msg);
 
     bytecode_validator_free(&validator);
@@ -1689,7 +1689,7 @@ file_local MunitResult Non_Return_Error_Indirect(const MunitParameter params[], 
 
     auto expected_msg = "Not all control paths return a value";
 
-    munit_assert_int64(err->message.length, ==, (int64_t)strlen(expected_msg));
+    munit_assert_int64(err->message.length, ==, (s64)strlen(expected_msg));
     munit_assert_string_equal(err->message.data, expected_msg);
 
     bytecode_validator_free(&validator);
@@ -1756,7 +1756,7 @@ file_local MunitResult Non_Return_Flag(const MunitParameter params[], void *user
 
     auto expected_msg = "Not all control paths return a value";
 
-    munit_assert_int64(err->message.length, ==, (int64_t)strlen(expected_msg));
+    munit_assert_int64(err->message.length, ==, (s64)strlen(expected_msg));
     munit_assert_string_equal(err->message.data, expected_msg);
 
     munit_assert_int64(ve.instruction_handle.fn_index, ==, 1);

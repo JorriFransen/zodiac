@@ -28,9 +28,6 @@
 #include <stdbool.h>
 #include <stdarg.h> // IWYU pragma: keep
 
-struct MunitArgument_;
-struct MunitSuite_;
-
 #define MUNIT_VERSION(major, minor, revision) \
   (((major) << 16) | ((minor) << 8) | (revision))
 
