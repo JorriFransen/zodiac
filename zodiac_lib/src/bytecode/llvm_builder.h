@@ -75,7 +75,7 @@ struct LLVM_Builder
     String_Ref out_file_name = {};
 
     Hash_Table<Bytecode_Function_Handle, llvm::Function*> functions = {};
-    Hash_Table<AST_Type *, llvm::StructType *> struct_types = {};
+    Hash_Table<Type *, llvm::StructType *> struct_types = {};
     Hash_Table<Atom, llvm::Constant *> string_literals = {};
 
     llvm::Function *current_function = nullptr;
@@ -102,15 +102,15 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
 llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Register &bc_reg);
 llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode_Register &bc_reg);
-llvm::Constant *llvm_builder_emit_integer_literal(LLVM_Builder *builder, AST_Type *type, Integer_Value integer);
-llvm::Constant *llvm_builder_emit_float_literal(LLVM_Builder *builder, AST_Type *type, Real_Value real);
-llvm::Constant *llvm_builder_emit_bool_literal(LLVM_Builder *builder, AST_Type *type, bool value);
+llvm::Constant *llvm_builder_emit_integer_literal(LLVM_Builder *builder, Type *type, Integer_Value integer);
+llvm::Constant *llvm_builder_emit_float_literal(LLVM_Builder *builder, Type *type, Real_Value real);
+llvm::Constant *llvm_builder_emit_bool_literal(LLVM_Builder *builder, Type *type, bool value);
 llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_Ref str);
 void llvm_builder_store_result(LLVM_Builder *builder, const Bytecode_Register &bc_dest_reg, llvm::Value *result_val);
 
-llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, AST_Type *ast_type);
+llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type);
 
-llvm::Function *llvm_get_intrinsic(LLVM_Builder *builder, AST_Type *fn_type, const char *name);
+llvm::Function *llvm_get_intrinsic(LLVM_Builder *builder, Type *fn_type, const char *name);
 
 void llvm_builder_emit_binary(LLVM_Builder *builder);
 bool llvm_builder_run_linker(LLVM_Builder *builder);
