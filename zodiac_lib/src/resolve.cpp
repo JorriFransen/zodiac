@@ -974,7 +974,13 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
             return true;
         }
 
-        case AST_Statement_Kind::PRINT: assert(false);
+        case AST_Statement_Kind::PRINT: {
+            assert(stmt->print_expr->resolved_type);
+
+            assert(stmt->print_expr->resolved_type->kind == Type_Kind::INTEGER);
+
+            return true;
+        }
     }
 
     assert(false);

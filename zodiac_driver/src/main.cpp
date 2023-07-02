@@ -346,7 +346,12 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             break;
         }
 
-        case AST_Statement_Kind::PRINT: assert(false); break;
+        case AST_Statement_Kind::PRINT: {
+            assert(stmt->print_expr->resolved_type->kind == Type_Kind::INTEGER);
+            Bytecode_Register value_reg = ast_expr_to_bytecode(bc, stmt->print_expr);
+            bytecode_emit_print(bc->builder, value_reg);
+            break;
+        }
     }
 }
 
