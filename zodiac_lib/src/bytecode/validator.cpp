@@ -135,8 +135,8 @@ bool validate_function(Bytecode_Validator *validator, Bytecode_Function_Handle f
 
     auto nodes = validator_build_block_graph(function);
 
-    //auto dot = block_graph_to_dot(nodes, function, temp_allocator());
-    //printf("%.*s\n", (int)dot.length, dot.data);
+    // auto dot = block_graph_to_dot(nodes, function, temp_allocator_allocator());
+    // printf("%.*s\n", (int)dot.length, dot.data);
 
     bool noreturn = function->flags & BC_FUNCTION_FLAG_NORETURN;
 
@@ -1516,6 +1516,9 @@ Array_Ref<Graph_Node> validator_build_block_graph(Bytecode_Function *func)
                     current_node->returns = true;
                 }
 
+            } else if (i < func->blocks.count - 1) {
+                // Not the last block, falltrough to the next block
+                current_node->a = &nodes[i + 1];
             }
         }
     }

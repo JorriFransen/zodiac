@@ -2,6 +2,7 @@
 #include "atom.h"
 #include "bytecode/bytecode.h"
 #include "bytecode/printer.h"
+#include "bytecode/validator.h"
 #include "containers/dynamic_array.h"
 #include "containers/hash_table.h"
 #include "defines.h"
@@ -109,6 +110,16 @@ int main() {
     emit_bytecode(&resolver, &bc);
 
     bytecode_print(&bb, temp_allocator_allocator());
+
+    Bytecode_Validator validator = {};
+    bytecode_validator_init(&c, &c.bytecode_allocator, &validator, bb.functions, nullptr);
+    bool bytecode_valid = validate_bytecode(&validator);
+
+    if (!bytecode_valid) {
+        assert(validator.errors.count);
+
+        bytecode_validator_print_errors(&validator);
+    }
 
     return 0;
 }

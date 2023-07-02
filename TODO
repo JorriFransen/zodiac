@@ -1,8 +1,6 @@
 - Calculate/substitute non leaf constant expressions before emitting bytecode.
 - Initializers for globals should also be constant.
 
-- Use bytecode validator
-
 - Containers
   - Hash table
     - Remove
