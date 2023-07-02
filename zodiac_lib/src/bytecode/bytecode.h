@@ -101,6 +101,7 @@ enum Bytecode_Register_Flags_ : Bytecode_Register_Flags
 
 typedef s64 Bytecode_Function_Handle;
 typedef s64 Bytecode_Global_Handle;
+
 typedef s64 Bytecode_Block_Handle;
 typedef s64 Bytecode_Phi_Args_Handle;
 typedef s64 Bytecode_Global_Handle;

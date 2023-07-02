@@ -80,8 +80,8 @@ struct LLVM_Builder
 
     llvm::Function *current_function = nullptr;
     Bytecode_Function *current_bytecode_function = nullptr;
-    Hash_Table<int64_t, llvm::Value *> stored_registers = {}; // Result registers/temps for current_function
-    Hash_Table<int64_t, llvm::GlobalVariable *> globals = {};
+    Hash_Table<s64, llvm::Value *> stored_registers = {}; // Result registers/temps for current_function
+    Hash_Table<s64, llvm::GlobalVariable *> globals = {};
     Stack<llvm::Value *> arg_stack = {};
 
     LLVM_Builder() {}
