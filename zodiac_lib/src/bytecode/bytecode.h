@@ -231,6 +231,7 @@ ZAPI Bytecode_Builder bytecode_builder_create(Allocator *allocator, Zodiac_Conte
 ZAPI void bytecode_builder_free(Bytecode_Builder *bb);
 
 ZAPI Bytecode_Program bytecode_get_program(Bytecode_Builder *builder);
+ZAPI Bytecode_Function_Handle bytecode_find_entry(Bytecode_Program program);
 
 ZAPI Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, const char* cstr_fn_name, Type *fn_type, BC_Function_Flag flags = BC_FUNCTION_FLAG_NONE);
 ZAPI Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Atom fn_name, Type *fn_type, BC_Function_Flag flags = BC_FUNCTION_FLAG_NONE);

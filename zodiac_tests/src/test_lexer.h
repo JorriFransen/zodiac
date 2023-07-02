@@ -21,11 +21,11 @@ namespace Zodiac { namespace Lexer_Tests {
     PRINT_TOK();                                    \
     munit_assert(next_token(lexer));
 
-#define ASSERT_TOK_NAME(str) {                            \
-    munit_assert_int(lexer->token.kind, ==, TOK_NAME);    \
-    munit_assert(string_equal(lexer->token.atom, (str))); \
-    PRINT_TOK();                                          \
-    munit_assert(next_token(lexer));                      \
+#define ASSERT_TOK_NAME(str) {                             \
+    munit_assert_int(lexer->token.kind, ==, TOK_NAME);     \
+    munit_assert(string_equal(&lexer->token.atom, (str))); \
+    PRINT_TOK();                                           \
+    munit_assert(next_token(lexer));                       \
 }
 
 #define ASSERT_TOK_INT(num) {                             \
@@ -90,7 +90,7 @@ static MunitResult Create_And_Free(const MunitParameter params[], void *user_dat
     munit_assert_ptr_equal(lexer->stream, stream + 1);
     munit_assert_int(lexer->token.kind, ==, '(');
     munit_assert_uint64(lexer->token.atom.length, ==, 1);
-    munit_assert(string_equal(lexer->token.atom, stream));
+    munit_assert(string_equal(&lexer->token.atom, stream));
 
     lexer_destroy(lexer);
     munit_assert_ptr_null(lexer->stream_start);

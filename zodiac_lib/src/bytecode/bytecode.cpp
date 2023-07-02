@@ -71,6 +71,22 @@ Bytecode_Program bytecode_get_program(Bytecode_Builder *builder)
     return result;
 }
 
+Bytecode_Function_Handle bytecode_find_entry(Bytecode_Program program)
+{
+    assert(program.entry_handle == -1);
+
+    for (s64 i = 0; i < program.functions.count; i++) {
+
+        auto fn = &program.functions[i];
+        if (fn->name == "main") {
+            return (Bytecode_Function_Handle)i;
+        }
+    }
+
+    assert_msg(false, "Entry point not found");
+    return -1;
+}
+
 Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, const char* cstr_fn_name, Type *fn_type, BC_Function_Flag flags/*=BC_FUNCTION_FLAG_NONE*/)
 {
     Atom atom = atom_get(&builder->zodiac_context->atoms, cstr_fn_name);

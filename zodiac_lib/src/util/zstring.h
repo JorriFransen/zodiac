@@ -5,7 +5,6 @@
 #include <string.h>
 
 #include "asserts.h"
-#include "atom.h"
 #include "common.h"
 #include "defines.h"
 
@@ -13,6 +12,7 @@ namespace Zodiac
 {
 
 struct Allocator;
+struct Atom;
 
 #define ZSTRING_FORMAT_STACK_BUFFER_SIZE 32000
 
@@ -54,7 +54,7 @@ struct String_Ref
     String_Ref(const char *cstr, s64 length) : data(cstr), length(length) {}
     String_Ref(const std::string &std_str) : data(std_str.c_str()), length((s64)std_str.length()) {}
     String_Ref(const String &zstr) : data(zstr.data), length(zstr.length) {}
-    String_Ref(const Atom &atom) : data(atom.data), length(atom.length) {}
+    String_Ref(const Atom *atom);
 
     const char &operator[](s64 index) const {
         assert(index < this->length);

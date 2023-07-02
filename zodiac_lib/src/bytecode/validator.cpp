@@ -1516,9 +1516,6 @@ Array_Ref<Graph_Node> validator_build_block_graph(Bytecode_Function *func)
                     current_node->returns = true;
                 }
 
-            } else if (i < func->blocks.count - 1) {
-                // Not the last block, falltrough to the next block
-                current_node->a = &nodes[i + 1];
             }
         }
     }

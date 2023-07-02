@@ -3,11 +3,15 @@
 foo : s64 = 33;
 bar : s64;
 
+add :: () {
+}
+
 main :: () -> s64 {
     a : s64 = 10;
     z :: 19;
     b : s64 = z + x + y + foo;
     print(b);
+    print(a + b);
     return a + b;
 }
 

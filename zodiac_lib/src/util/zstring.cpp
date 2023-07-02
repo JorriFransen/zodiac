@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "asserts.h"
+#include "atom.h"
 #include "defines.h"
 #include "memory/allocator.h"
 #include "memory/zmemory.h"
@@ -27,6 +28,9 @@ void String::init(Allocator * allocator, char *cstr, s64 len)
 
     this->data[len] = '\0';
 }
+
+String_Ref::String_Ref(const Atom *atom) : data(atom->data), length(atom->length) {}
+
 
 #ifdef ZPLATFORM_WINDOWS
 

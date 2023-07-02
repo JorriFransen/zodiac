@@ -2,6 +2,7 @@
 
 #include "defines.h"
 #include "util/asserts.h"
+#include "util/zstring.h"
 
 namespace Zodiac
 {
@@ -10,8 +11,6 @@ struct Allocator;
 
 #define ATOM_TABLE_INITIAL_CAPACITY 64
 #define ATOM_TABLE_INITIAL_BLOCK_SIZE 1024
-
-struct String_Ref;
 
 struct Atom
 {
@@ -38,6 +37,10 @@ inline bool operator==(const Atom &lhs, const Atom &rhs)
     #else
         return lhs.data == rhs.data;
     #endif
+}
+
+ZINLINE bool operator==(const Atom &lhs, const char *cstr) {
+    return string_equal(&lhs, cstr);
 }
 
 inline bool operator !=(const Atom &lhs, const Atom &rhs)

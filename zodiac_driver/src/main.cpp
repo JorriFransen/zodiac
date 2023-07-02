@@ -1,8 +1,11 @@
+
 #include "ast.h"
 #include "atom.h"
 #include "bytecode/bytecode.h"
+#include "bytecode/interpreter.h"
 #include "bytecode/printer.h"
 #include "bytecode/validator.h"
+#include "common.h"
 #include "containers/dynamic_array.h"
 #include "containers/hash_table.h"
 #include "defines.h"
@@ -16,13 +19,12 @@
 #include "resolve.h"
 #include "scope.h"
 #include "source_pos.h"
+#include <stdio.h>
 #include "type.h"
 #include "util/asserts.h"
 #include "util/logger.h"
 #include "util/zstring.h"
 #include "zodiac_context.h"
-
-#include <stdio.h>
 
 using namespace Zodiac;
 using namespace Bytecode;
@@ -112,13 +114,27 @@ int main() {
     bytecode_print(&bb, temp_allocator_allocator());
 
     Bytecode_Validator validator = {};
-    bytecode_validator_init(&c, &c.bytecode_allocator, &validator, bb.functions, nullptr);
+    bytecode_validator_init(&c, temp_allocator_allocator(), &validator, bb.functions, nullptr);
     bool bytecode_valid = validate_bytecode(&validator);
 
     if (!bytecode_valid) {
         assert(validator.errors.count);
 
         bytecode_validator_print_errors(&validator);
+        return 1;
+    }
+
+    Interpreter interp = interpreter_create(c_allocator(), &c);
+    auto program = bytecode_get_program(bc.builder);
+
+    assert(program.entry_handle == -1);
+    program.entry_handle= bytecode_find_entry(program);
+
+    Interpreter_Register result_reg = interpreter_start(&interp, program);
+    if (result_reg.type->kind == Type_Kind::INTEGER) {
+        printf("Entry point returned: %lli\n", result_reg.value.integer.s64);
+    } else {
+        assert_msg(false, "Unexpected return type from entry point")
     }
 
     return 0;
@@ -292,6 +308,8 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
         if (has_inits) {
             Bytecode_Block_Handle inits_block_handle = bytecode_append_block(bc->builder, fn_handle, "inits");
+            bytecode_emit_jmp(bc->builder, inits_block_handle);
+
             bytecode_set_insert_point(bc->builder, fn_handle, inits_block_handle);
 
             for (s64 i = 0; i < decl->function.variables.count; i++) {
@@ -309,6 +327,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             }
         }
         Bytecode_Block_Handle start_block_handle = bytecode_append_block(bc->builder, fn_handle, "start");
+        bytecode_emit_jmp(bc->builder, start_block_handle);
         bytecode_set_insert_point(bc->builder, fn_handle, start_block_handle);
     } else {
         Bytecode_Block_Handle entry_block_handle = bytecode_append_block(bc->builder, fn_handle, "entry");
@@ -318,6 +337,28 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     for (s64 i = 0; i < decl->function.body.count; i++) {
         AST_Statement *stmt = decl->function.body[i];
         ast_stmt_to_bytecode(bc, stmt);
+    }
+
+    auto fn = bc->builder->functions[fn_handle];
+    auto block = &fn.blocks[bc->builder->insert_block_index];
+
+    if (fn.type->function.return_type->kind == Type_Kind::VOID) {
+        bool emit_void_return = false;
+        if (block->instructions.count) {
+            auto last_op = block->instructions[block->instructions.count - 1];
+
+            if (last_op.op != Bytecode_Opcode::RETURN &&
+                last_op.op != Bytecode_Opcode::RETURN_VOID) {
+
+                emit_void_return = true;
+            }
+        } else {
+            emit_void_return = true;
+        }
+
+        if (emit_void_return) {
+            bytecode_emit_return(bc->builder);
+        }
     }
 }
 

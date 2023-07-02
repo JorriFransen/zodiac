@@ -380,7 +380,7 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
         case AST_Expression_Kind::UNARY: assert(false);
 
         case AST_Expression_Kind::BINARY: {
-            assert(infer_type_from);
+            // assert(infer_type_from);
             flatten_expression(expr->binary.lhs, scope, dest, infer_type_from);
             flatten_expression(expr->binary.rhs, scope, dest, infer_type_from);
             expr->infer_type_from = infer_type_from;
@@ -835,7 +835,12 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
                 assert(param_field->type_spec->resolved_type);
             }
 
-            func_decl->function.type = get_function_type(func_decl->function.return_ts->resolved_type, param_types, &ctx->ast_allocator);
+            Type *return_type = nullptr;
+            if (func_decl->function.return_ts) {
+                assert(func_decl->function.return_ts->resolved_type)
+                return_type = func_decl->function.return_ts->resolved_type;
+            }
+            func_decl->function.type = get_function_type(return_type, param_types, &ctx->ast_allocator);
 
             temporary_allocator_reset(&ctx->temp_allocator_state, mark);
             return true;
