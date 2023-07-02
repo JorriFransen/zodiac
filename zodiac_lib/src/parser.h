@@ -4,7 +4,6 @@
 #include <stdarg.h>
 
 #include "ast.h"
-#include "atom.h"
 #include "containers/queue.h"
 #include "lexer.h"
 #include "util/zstring.h"
@@ -12,6 +11,7 @@
 namespace Zodiac
 {
 
+struct Atom;
 struct Zodiac_Context;
 
 struct Parser
@@ -51,28 +51,6 @@ ZAPI AST_Statement *parse_statement(Parser *parser);
 ZAPI AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident);
 ZAPI AST_Declaration *parse_aggregate_decl(Parser *parser, AST_Identifier ident);
 ZAPI AST_Declaration *parse_declaration(Parser *parser);
-
-#define ZODIAC_BUILTIN_TYPES         \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 64)   \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 64)   \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 32)   \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 32)   \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 16)   \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 16)   \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 8)    \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 8)    \
-    ZODIAC_NUMERIC_TYPE_DEF(r, 32)   \
-    ZODIAC_NUMERIC_TYPE_DEF(r, 64)   \
-    ZODIAC_NAME_TYPE_DEF(String)     \
-
-// Builtin type atoms
-#define ZODIAC_NUMERIC_TYPE_DEF(type, size) ZAPI extern Atom atom_##type##size;
-#define ZODIAC_NAME_TYPE_DEF(name) ZAPI extern Atom atom_##name;
-ZODIAC_BUILTIN_TYPES
-#undef ZODIAC_NAME_TYPE_DEF
-#undef ZODIAC_NUMERIC_TYPE_DEF
-
-
 
 ZAPI AST_Type_Spec *parse_type_spec(Parser *parser);
 

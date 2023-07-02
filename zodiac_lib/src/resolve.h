@@ -57,6 +57,7 @@ struct Resolver
 };
 
 ZAPI void resolver_create(Resolver *resolver, Zodiac_Context *ctx, Scope *global_scope);
+ZAPI void resolve_file(Resolver *resolver, AST_File *file);
 ZAPI void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Declaration *decl);
 ZAPI bool resolve_names(Resolver *resolver);
 ZAPI bool resolve_types(Resolver *resolver);

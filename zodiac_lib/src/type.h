@@ -13,6 +13,26 @@ struct AST_Declaration;
 struct String_Builder;
 struct Zodiac_Context;
 
+#define ZODIAC_BUILTIN_TYPES         \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 64)   \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 64)   \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 32)   \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 32)   \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 16)   \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 16)   \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 8)    \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 8)    \
+    ZODIAC_NUMERIC_TYPE_DEF(r, 32)   \
+    ZODIAC_NUMERIC_TYPE_DEF(r, 64)   \
+    ZODIAC_NAME_TYPE_DEF(String)     \
+
+// Builtin type atoms
+#define ZODIAC_NUMERIC_TYPE_DEF(type, size) ZAPI extern Atom atom_##type##size;
+#define ZODIAC_NAME_TYPE_DEF(name) ZAPI extern Atom atom_##name;
+ZODIAC_BUILTIN_TYPES
+#undef ZODIAC_NAME_TYPE_DEF
+#undef ZODIAC_NUMERIC_TYPE_DEF
+
 enum class Type_Kind
 {
     INVALID,
@@ -101,7 +121,7 @@ ZAPI extern Type builtin_type_String;
 ZAPI extern Dynamic_Array<Type *> function_types;
 ZAPI extern Dynamic_Array<Type *> static_array_types;
 
-ZAPI bool type_system_initialize();
+ZAPI bool type_system_initialize(Zodiac_Context *ctx);
 
 ZAPI void create_type(Type *type, Type_Kind kind, u64 bit_size, Type_Flags flags = TYPE_FLAG_NONE);
 ZAPI void create_integer_type(Type *type, u64 bit_size, bool sign);

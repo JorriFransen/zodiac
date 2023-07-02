@@ -27,6 +27,41 @@ void resolver_create(Resolver *resolver, Zodiac_Context *ctx, Scope *global_scop
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_emit_bytecode);
 }
 
+#define add_builtin_type_symbol(type) { \
+    auto sym = add_resolved_symbol(resolver->ctx, resolver->global_scope, Symbol_Kind::TYPE, (SYM_FLAG_BUILTIN), atom_##type, nullptr); \
+    sym->builtin_type = &builtin_type_##type; \
+}
+
+void resolve_file(Resolver *resolver, AST_File *file)
+{
+    assert(file);
+
+    add_builtin_type_symbol(u64);
+    add_builtin_type_symbol(s64);
+    add_builtin_type_symbol(u32);
+    add_builtin_type_symbol(s32);
+    add_builtin_type_symbol(u16);
+    add_builtin_type_symbol(s16);
+    add_builtin_type_symbol(u8);
+    add_builtin_type_symbol(s8);
+
+    add_builtin_type_symbol(r32);
+    add_builtin_type_symbol(r64);
+
+    add_builtin_type_symbol(String);
+
+    for (s64 i = 0; i < file->declarations.count; i++) {
+        resolver_add_declaration(resolver->ctx, resolver, file->declarations[i]);
+    }
+
+    bool names_done = resolve_names(resolver);
+
+    bool types_done = false;
+    if (names_done) types_done = resolve_types(resolver);
+
+    if (names_done && types_done) assert(resolver->ctx->errors.count == 0);
+}
+
 void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Declaration *decl)
 {
     assert(resolver);

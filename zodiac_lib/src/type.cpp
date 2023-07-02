@@ -10,6 +10,13 @@
 namespace Zodiac
 {
 
+// Builtin type atoms
+#define ZODIAC_NUMERIC_TYPE_DEF(type, size) Atom atom_##type##size;
+#define ZODIAC_NAME_TYPE_DEF(name) Atom atom_##name;
+ZODIAC_BUILTIN_TYPES
+#undef ZODIAC_NAME_TYPE_DEF
+#undef ZODIAC_NUMERIC_TYPE_DEF
+
 bool type_system_initialized = false;
 
 Type builtin_type_unsized_integer;
@@ -33,9 +40,19 @@ Type builtin_type_String;
 Dynamic_Array<Type *> function_types;
 Dynamic_Array<Type *> static_array_types;
 
-bool type_system_initialize()
+bool type_system_initialize(Zodiac_Context *ctx)
 {
+    assert(ctx);
     assert(!type_system_initialized);
+
+    auto at = &ctx->atoms;
+
+    // Initialize atoms
+#define ZODIAC_NUMERIC_TYPE_DEF(sign, size) atom_##sign##size = atom_get(at, #sign#size);
+#define ZODIAC_NAME_TYPE_DEF(name) atom_##name = atom_get(at, #name);
+ZODIAC_BUILTIN_TYPES
+#undef ZODIAC_NAME_TYPE_DEF
+#undef ZODIAC_NUMERIC_TYPE_DEF
 
     dynamic_array_create(&dynamic_allocator, &function_types);
     dynamic_array_create(&dynamic_allocator, &static_array_types);

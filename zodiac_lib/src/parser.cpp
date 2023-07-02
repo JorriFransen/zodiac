@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 
+#include "atom.h"
 #include "containers/dynamic_array.h"
 #include "defines.h"
 #include "memory/temporary_allocator.h"
@@ -14,37 +15,12 @@
 namespace Zodiac
 {
 
-// Builtin type atoms
-#define ZODIAC_NUMERIC_TYPE_DEF(type, size) Atom atom_##type##size;
-#define ZODIAC_NAME_TYPE_DEF(name) Atom atom_##name;
-ZODIAC_BUILTIN_TYPES
-#undef ZODIAC_NAME_TYPE_DEF
-#undef ZODIAC_NUMERIC_TYPE_DEF
-
-file_local bool builtin_types_initialized = false;
-
 template <typename T>
 struct Temp_Array
 {
     Temporary_Allocator_Mark mark;
     Dynamic_Array<T> array;
 };
-
-file_local void initialize_builtin_types(Zodiac_Context *ctx)
-{
-    assert(!builtin_types_initialized);
-
-    auto at = &ctx->atoms;
-
-#define ZODIAC_NUMERIC_TYPE_DEF(sign, size) atom_##sign##size = atom_get(at, #sign#size);
-#define ZODIAC_NAME_TYPE_DEF(name) atom_##name = atom_get(at, #name);
-ZODIAC_BUILTIN_TYPES
-#undef ZODIAC_NAME_TYPE_DEF
-#undef ZODIAC_NUMERIC_TYPE_DEF
-
-
-    builtin_types_initialized = true;
-}
 
 template <typename T>
 file_local Temp_Array<T> temp_array_create(Parser *parser)
@@ -79,8 +55,6 @@ void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser)
     out_parser->lxr = lxr;
     out_parser->error = false;
     queue_create(&dynamic_allocator, &out_parser->peeked_tokens);
-
-    if (!builtin_types_initialized) initialize_builtin_types(ctx);
 }
 
 AST_Identifier parse_identifier(Parser *parser)
