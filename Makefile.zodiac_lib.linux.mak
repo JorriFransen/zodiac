@@ -10,9 +10,9 @@ SUPPORT_SRC_DIR := $(BASE_DIR)/support
 SUPPORT_ASSEMBLY := libzrs
 SUPPORT_EXTENSION := .so
 
-# LLVM_LIBS := $(shell llvm-config --libs codegen)
-# LLVM_CXX_FLAGS := $(shell llvm-config --cxxflags)
-# LLVM_LD_FLAGS := $(shell llvm-config --ldflags)
+LLVM_LIBS := $(shell llvm-config --libs codegen)
+LLVM_CXX_FLAGS := $(shell llvm-config --cxxflags)
+LLVM_LD_FLAGS := $(shell llvm-config --ldflags)
 
 include Makefile.dyncall_vars.linux.mak
 
