@@ -3,6 +3,7 @@
 #include "common.h"
 #include "defines.h"
 #include "memory/allocator.h"
+#include "memory/zmemory.h"
 #include "util/asserts.h"
 
 namespace Zodiac {
@@ -58,7 +59,7 @@ void hash_table_create(Allocator *allocator, Hash_Table<Key_Type, Value_Type> *h
     hash_table->keys = (Key_Type*)(&mem[hashes_size]);
     hash_table->values = (Value_Type*)(&mem[hashes_size + keys_size]);
 
-    memset(hash_table->hashes, 0, hashes_size);
+    zmemset(hash_table->hashes, 0, hashes_size);
 
     hash_table->capacity = HASH_TABLE_INITIAL_CAPACITY;
     hash_table->keys_equal = keys_equal;
@@ -130,7 +131,7 @@ void hash_table_grow(Hash_Table<Key_Type, Value_Type> *ht)
     ht->keys = (Key_Type*)(&new_mem[new_hashes_size]);
     ht->values = (Value_Type*)(&new_mem[new_hashes_size + new_keys_size]);
 
-    memset(ht->hashes, 0, new_hashes_size);
+    zmemset(ht->hashes, 0, new_hashes_size);
 
     for (s64 i = 0; i < old_cap; i++) {
         if (old_hashes[i]) {
@@ -187,7 +188,7 @@ bool hash_table_find_key(Hash_Table<Key_Type, Value_Type> *ht, Value_Type value,
 template <typename Key_Type, typename Value_Type>
 void hash_table_reset(Hash_Table<Key_Type, Value_Type> *ht)
 {
-    memset(ht->hashes, 0, ht->capacity * sizeof(ht->hashes[0]));
+    zmemset(ht->hashes, 0, ht->capacity * sizeof(ht->hashes[0]));
 }
 
 template <typename Key_Type, typename Value_Type>
