@@ -21,21 +21,21 @@ struct String
     char* data = nullptr;
     s64 length = 0;
 
-    String() {}
-    String(char* data, s64 length) : data(data), length(length) {}
-    String(Allocator* allocator, char *cstr, s64 length) { init(allocator, cstr, length); }
-    String(Allocator* allocator, const char *cstr, s64 length) { init(allocator, (char *)cstr, length); }
-    String(Allocator *allocator, const char *cstr) { init(allocator, (char *)cstr, strlen(cstr)); }
+    ZAPI String() {}
+    ZAPI String(char* data, s64 length) : data(data), length(length) {}
+    ZAPI String(Allocator* allocator, char *cstr, s64 length) { init(allocator, cstr, length); }
+    ZAPI String(Allocator* allocator, const char *cstr, s64 length) { init(allocator, (char *)cstr, length); }
+    ZAPI String(Allocator *allocator, const char *cstr) { init(allocator, (char *)cstr, strlen(cstr)); }
 
-    void init(Allocator * allocator, char *cstr, s64 length);
+    ZAPI void init(Allocator * allocator, char *cstr, s64 length);
 
 #ifdef ZPLATFORM_WINDOWS
-    String(Allocator* allocator, wchar_t *wstr, s64 length) { init(allocator, wstr, length); }
-    String(Allocator* allocator, const wchar_t *wstr, s64 length) { init(allocator, (wchar_t *)wstr, length); }
-    void init(Allocator * allocator, wchar_t *wstr, s64 length);
+    ZAPI String(Allocator* allocator, wchar_t *wstr, s64 length) { init(allocator, wstr, length); }
+    ZAPI String(Allocator* allocator, const wchar_t *wstr, s64 length) { init(allocator, (wchar_t *)wstr, length); }
+    ZAPI void init(Allocator * allocator, wchar_t *wstr, s64 length);
 #endif //ZPLATFORM_WINDOWS
 
-    char &operator[](s64 index)
+    ZAPI char &operator[](s64 index)
     {
         assert(index >= 0 && index <= length);
         return data[index];
@@ -48,20 +48,20 @@ struct String_Ref
     const char *data = nullptr;
     s64 length = 0;
 
-    String_Ref() : data(nullptr), length(0) {}
+    ZAPI String_Ref() : data(nullptr), length(0) {}
 
-    String_Ref(const char *cstr) : data(cstr), length((s64)strlen(cstr)) {}
-    String_Ref(const char *cstr, s64 length) : data(cstr), length(length) {}
-    String_Ref(const std::string &std_str) : data(std_str.c_str()), length((s64)std_str.length()) {}
-    String_Ref(const String &zstr) : data(zstr.data), length(zstr.length) {}
-    String_Ref(const Atom *atom);
+    ZAPI String_Ref(const char *cstr) : data(cstr), length((s64)strlen(cstr)) {}
+    ZAPI String_Ref(const char *cstr, s64 length) : data(cstr), length(length) {}
+    ZAPI String_Ref(const std::string &std_str) : data(std_str.c_str()), length((s64)std_str.length()) {}
+    ZAPI String_Ref(const String &zstr) : data(zstr.data), length(zstr.length) {}
+    ZAPI String_Ref(const Atom *atom);
 
-    const char &operator[](s64 index) const {
+    ZAPI const char &operator[](s64 index) const {
         assert(index < this->length);
         return data[index];
     }
 
-    bool operator==(const String_Ref &rhs) const {
+    ZAPI bool operator==(const String_Ref &rhs) const {
         return data == rhs.data && length == rhs.length;
     }
 };
@@ -73,8 +73,8 @@ struct Wide_String_Ref
     const wchar_t *data;
     s64 length;
 
-    Wide_String_Ref() : data(nullptr), length(0) {}
-    Wide_String_Ref(const wchar_t *wcstr) : data(wcstr), length(wcslen(wcstr)) {}
+    ZAPI Wide_String_Ref() : data(nullptr), length(0) {}
+    ZAPI Wide_String_Ref(const wchar_t *wcstr) : data(wcstr), length(wcslen(wcstr)) {}
 };
 
 struct Wide_String
@@ -82,9 +82,9 @@ struct Wide_String
     wchar_t *data;
     s64 length;
 
-    Wide_String() : data(nullptr), length(0) {}
-    Wide_String(wchar_t *data, s64 length) : data(data), length(length) {}
-    Wide_String(Allocator *allocator, const String_Ref str_ref);
+    ZAPI Wide_String() : data(nullptr), length(0) {}
+    ZAPI Wide_String(wchar_t *data, s64 length) : data(data), length(length) {}
+    ZAPI Wide_String(Allocator *allocator, const String_Ref str_ref);
 };
 
 #endif //ZPLATFORM_WINDOWS
