@@ -14,6 +14,7 @@ jobs:
   - !BranchUpdateTrigger
     branches: main
     projects: zodiac
+  - !BranchUpdateTrigger {}
   retryCondition: never
   maxRetries: 3
   retryDelay: 30
