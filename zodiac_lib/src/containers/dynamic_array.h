@@ -10,10 +10,10 @@ namespace Zodiac
 template <typename Element_Type>
 struct Dynamic_Array
 {
-    Element_Type *data;
-    s64 count;
-    s64 capacity;
-    Allocator* backing_allocator;
+    Element_Type *data = nullptr;
+    s64 count = 0;
+    s64 capacity = 0;
+    Allocator* backing_allocator = nullptr;
 
     Element_Type& operator[](s64 index) {
         assert(index >= 0 && index < count);

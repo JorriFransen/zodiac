@@ -513,7 +513,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
             Type *print_func_arg_type = get_pointer_type(&builtin_type_u8, ast_allocator);
             Type *print_func_arg_types[] = { print_func_arg_type };
-            Type *print_func_type = get_function_type(&builtin_type_s32, print_func_arg_types, ast_allocator);
+            Type *print_func_type = get_function_type(&builtin_type_s32, print_func_arg_types, ast_allocator, true);
 
             auto printf_func = llvm_get_intrinsic(builder, print_func_type, "printf");
             assert(printf_func);

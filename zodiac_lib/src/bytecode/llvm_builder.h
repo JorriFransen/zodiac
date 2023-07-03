@@ -34,7 +34,6 @@ __pragma(warning(disable:26439)) \
 zodiac_disable_msvc_llvm_warnings()
 #endif // _MSC_VER
 
- 
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif // _MSC_VER
@@ -98,10 +97,6 @@ struct LLVM_Builder
     String target_triple = {};
 
     Platform_Info platform_info = {};
-
-#if ZPLATFORM_WINDOWS
-    Windows_SDK_Info sdk_info = {};
-#endif
 
     String_Ref out_file_name = {};
 

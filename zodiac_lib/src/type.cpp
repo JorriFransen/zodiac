@@ -157,7 +157,7 @@ void create_static_array_type(Type *type, Type *element_type, u64 count)
     type->static_array.count = count;
 }
 
-void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types)
+void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types, bool vararg/*false*/)
 {
     assert(type);
 
@@ -165,7 +165,7 @@ void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> p
 
     type->function.return_type = return_type;
     type->function.parameter_types = param_types;
-    type->function.is_vararg = false;
+    type->function.is_vararg = vararg;
 }
 
 Type *get_pointer_type(Type *base, Allocator *allocator)
@@ -222,7 +222,7 @@ Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator)
     return result;
 }
 
-Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Allocator *allocator)
+Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Allocator *allocator, bool vararg/*=false*/)
 {
     assert(allocator);
 
@@ -235,6 +235,7 @@ Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Al
         auto ex_type = function_types[i];
         if (ex_type->function.return_type != return_type) continue;
         if (ex_type->function.parameter_types.count != parameter_types.count) continue;
+        if (ex_type->function.is_vararg != vararg) continue;
 
         bool param_match = true;
         for (u64 j = 0; j < parameter_types.count; j++) {
@@ -250,7 +251,7 @@ Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Al
     auto params_copy = dynamic_array_copy(parameter_types, allocator);
 
     Type *result = alloc<Type>(allocator);
-    create_function_type(result, return_type, params_copy);
+    create_function_type(result, return_type, params_copy, vararg);
 
     return result;
 }

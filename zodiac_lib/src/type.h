@@ -96,6 +96,8 @@ struct Type
         } function;
 
     };
+
+    Type() {}
 };
 
 ZAPI extern bool type_system_initialized;
@@ -129,13 +131,13 @@ ZAPI void create_float_type(Type *type, u64 bit_size);
 ZAPI void create_pointer_type(Type *type, Type *base_type);
 ZAPI void create_struct_type(Type *type, Dynamic_Array<Type *> member_types, Atom name);
 ZAPI void create_static_array_type(Type *type, Type *element_type, u64 count);
-ZAPI void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types);
+ZAPI void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types, bool vararg = false);
 
 ZAPI Type *get_pointer_type(Type *base, Allocator *allocator);
 ZAPI Type *get_struct_type(Zodiac_Context *zc, Array_Ref<Type *> member_types, const char *cstr_name, Allocator *allocator);
 ZAPI Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allocator);
 ZAPI Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator);
-ZAPI Type *get_function_type(Type *return_type, Array_Ref<Type *> param_types, Allocator *allocator);
+ZAPI Type *get_function_type(Type *return_type, Array_Ref<Type *> param_types, Allocator *allocator, bool vararg = false);
 
 ZAPI Type *decl_type(AST_Declaration *decl);
 

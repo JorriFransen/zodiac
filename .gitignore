@@ -8,3 +8,6 @@ compile_commands.json
 console.log
 .vs
 .vimspector.json
+
+a.out
+*.o
