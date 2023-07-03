@@ -2,6 +2,15 @@
 
 #ifdef ZPLATFORM_LINUX
 
+#include "common.h"
+#include "defines.h"
+#include "memory/temporary_allocator.h"
+#include "platform/filesystem.h"
+#include "util/asserts.h"
+#include "util/logger.h"
+#include "util/zstring.h"
+
+
 #include <cmath>
 #include <libgen.h>
 #include <limits.h>
@@ -10,17 +19,121 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "common.h"
-#include "defines.h"
-#include "platform/filesystem.h"
-#include "util/asserts.h"
-#include "util/zstring.h"
-#include "memory/temporary_allocator.h"
-
 namespace Zodiac
 {
 
 struct Allocator;
+
+OS_Release_Info os_release_info(Allocator *allocator)
+{
+    OS_Release_Info result = {};
+
+    auto os_release_path = "/etc/os-release";
+
+    if (!filesystem_exists(os_release_path)) {
+        result.found = false;
+        return result;
+    }
+
+    result.found = true;
+
+    String os_release_content;
+    bool read_res = filesystem_read_entire_file(temp_allocator_allocator(), os_release_path, &os_release_content);
+    assert(read_res);
+
+    int line_begin = 0;
+    for (s64 i = 0; i < os_release_content.length; i++) {
+
+        if (os_release_content[i] == '\n') {
+            String_Ref line(&os_release_content[line_begin], i - line_begin);
+
+#define MATCH_LINE_IF_(start, prop) \
+    if (string_starts_with(line, (start))) { \
+        String_Ref _start((start)); \
+        result.prop = string_copy(allocator, &(line)[_start.length], (line).length - _start.length); \
+    }
+
+#define MATCH_LINE_IF_ELSE_(start, prop) \
+    MATCH_LINE_IF_(start, prop) else
+
+            MATCH_LINE_IF_ELSE_("NAME=", name)
+            MATCH_LINE_IF_("ID=", id)
+
+#undef MATCH_LINE_IF_
+#undef MATCH_LINE_IF_ELSE_
+
+            line_begin = i + 1;
+        }
+
+    }
+
+
+    return result;
+}
+
+bool platform_info_generic(Allocator *allocator, Platform_Info *info)
+{
+    assert(allocator);
+    assert(info);
+    assert(info->allocator == nullptr);
+    info->allocator = allocator;
+
+    const char *candidate_paths[] = {
+        "/usr/lib/",
+        "/usr/lib64/",
+        "/usr/lib/x86_64-linux-gnu/",
+    };
+
+    bool crt_found = false;
+
+    const s64 candidate_count = sizeof(candidate_paths) / sizeof(candidate_paths[0]);
+    for (s64 i = 0; i < candidate_count; i++) {
+        auto path = String_Ref(candidate_paths[i]);
+
+        if (!filesystem_is_link(path)) {
+            auto scrt1_path = string_append(temp_allocator_allocator(), path, "Scrt1.o");
+
+            if (filesystem_is_regular(scrt1_path)) {
+                info->crt_path = string_copy(allocator, path);
+                crt_found = true;
+                break;
+            }
+        }
+    }
+
+    if (!crt_found) {
+        info->err = "Failed to find crt path, required for linking with the c standard library.";
+        return false;
+    }
+
+    auto dynamic_linker_path = "/lib64/ld-linux-x86-64.so.2";
+    assert(filesystem_is_regular(dynamic_linker_path));
+    info->dynamic_linker_path = string_copy(allocator, dynamic_linker_path);
+    return true;
+}
+
+bool platform_info(Allocator *allocator, Platform_Info *info)
+{
+    assert(allocator);
+    assert(info);
+    assert(info->allocator == nullptr);
+
+    if (getenv("ZODIAC_NIX_SHELL")) {
+        assert_msg(false, "nixos_platform_info not implemented");
+        // return nixos_find_crt_path(allocator, dest);
+    }
+
+    OS_Release_Info ori = os_release_info(temp_allocator_allocator());
+    assert(ori.found);
+
+    if (string_equal(ori.id, "nixos")) {
+        assert_msg(false, "nixos_platform_info not implemented");
+        // return nixos_find_crt_path(allocator, dest);
+    }
+
+    ZTRACE( "[platform_info()] Unsupported os '%s', falling back on platform_info_generic()\n", ori.id.data);
+    return platform_info_generic(allocator, info);
+}
 
 struct Linear_Alloc_Header
 {

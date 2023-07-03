@@ -3,7 +3,8 @@
 #include "bytecode/bytecode.h"
 #include "containers/hash_table.h"
 #include "containers/stack.h"
-#include "memory/allocator.h"
+#include "defines.h"
+#include "platform/platform.h"
 #include "util/zstring.h"
 
 #define zodiac_disable_msvc_llvm_warnings() \
@@ -33,9 +34,7 @@ __pragma(warning(disable:26439)) \
 zodiac_disable_msvc_llvm_warnings()
 #endif // _MSC_VER
 
-#include <llvm/IR/Function.h>
-#include <llvm/IR/IRBuilder.h>
-
+ 
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif // _MSC_VER
@@ -44,7 +43,38 @@ zodiac_disable_msvc_llvm_warnings()
 #include <microsoft_craziness.h>
 #endif
 
-namespace Zodiac { namespace Bytecode {
+namespace llvm {
+
+class Constant;
+class Function;
+class GlobalVariable;
+class LLVMContext;
+class Module;
+class StructType;
+class Type;
+class Value;
+
+class ConstantFolder;
+class IRBuilderDefaultInserter;
+
+template <typename FolderTy,
+          typename InserterTy>
+class IRBuilder;
+
+}
+
+namespace Zodiac {
+
+struct Allocator;
+struct Atom;
+struct Real_Value;
+struct Type;
+struct Zodiac_Context;
+union Integer_Value;
+
+namespace Bytecode {
+
+struct LLVM_Builder;
 
 enum class LLVM_Target_Platform
 {
@@ -53,8 +83,7 @@ enum class LLVM_Target_Platform
     WINDOWS,
 };
 
-struct LLVM_Builder;
-void llvm_builder_init(LLVM_Builder *builder, Allocator *allocator, Bytecode_Builder *bytecode_builder);
+ZAPI void llvm_builder_init(LLVM_Builder *builder, Allocator *allocator, Bytecode_Builder *bytecode_builder);
 
 struct LLVM_Builder
 {
@@ -65,10 +94,12 @@ struct LLVM_Builder
     LLVM_Target_Platform target_platform = LLVM_Target_Platform::INVALID;
     llvm::LLVMContext *llvm_context = nullptr;
     llvm::Module *llvm_module = nullptr;
-    llvm::IRBuilder<> *ir_builder = nullptr;
+    llvm::IRBuilder<llvm::ConstantFolder, llvm::IRBuilderDefaultInserter> *ir_builder = nullptr;
     String target_triple = {};
 
-#if _WIN32
+    Platform_Info platform_info = {};
+
+#if ZPLATFORM_WINDOWS
     Windows_SDK_Info sdk_info = {};
 #endif
 
@@ -91,30 +122,30 @@ struct LLVM_Builder
     }
 };
 
-LLVM_Builder llvm_builder_create(Allocator *allocator, Bytecode_Builder *bytecode_builder);
-void llvm_builder_free(LLVM_Builder *builder);
+ZAPI LLVM_Builder llvm_builder_create(Allocator *allocator, Bytecode_Builder *bytecode_builder);
+ZAPI void llvm_builder_free(LLVM_Builder *builder);
 
-void llvm_builder_emit_global(LLVM_Builder *builder, Bytecode_Global_Handle glob_handle);
-void llvm_builder_register_function(LLVM_Builder *builder, Bytecode_Function_Handle fn_handle);
-bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle fn_handle);
+ZAPI void llvm_builder_emit_global(LLVM_Builder *builder, Bytecode_Global_Handle glob_handle);
+ZAPI void llvm_builder_register_function(LLVM_Builder *builder, Bytecode_Function_Handle fn_handle);
+ZAPI bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle fn_handle);
 
-bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruction &bc_inst);
+ZAPI bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruction &bc_inst);
 
-llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Register &bc_reg);
-llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode_Register &bc_reg);
-llvm::Constant *llvm_builder_emit_integer_literal(LLVM_Builder *builder, Type *type, Integer_Value integer);
-llvm::Constant *llvm_builder_emit_float_literal(LLVM_Builder *builder, Type *type, Real_Value real);
-llvm::Constant *llvm_builder_emit_bool_literal(LLVM_Builder *builder, Type *type, bool value);
-llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_Ref str);
-void llvm_builder_store_result(LLVM_Builder *builder, const Bytecode_Register &bc_dest_reg, llvm::Value *result_val);
+ZAPI llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Register &bc_reg);
+ZAPI llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode_Register &bc_reg);
+ZAPI llvm::Constant *llvm_builder_emit_integer_literal(LLVM_Builder *builder, Type *type, Integer_Value integer);
+ZAPI llvm::Constant *llvm_builder_emit_float_literal(LLVM_Builder *builder, Type *type, Real_Value real);
+ZAPI llvm::Constant *llvm_builder_emit_bool_literal(LLVM_Builder *builder, Type *type, bool value);
+ZAPI llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_Ref str);
+ZAPI void llvm_builder_store_result(LLVM_Builder *builder, const Bytecode_Register &bc_dest_reg, llvm::Value *result_val);
 
-llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type);
+ZAPI llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type);
 
-llvm::Function *llvm_get_intrinsic(LLVM_Builder *builder, Type *fn_type, const char *name);
+ZAPI llvm::Function *llvm_get_intrinsic(LLVM_Builder *builder, Type *fn_type, const char *name);
 
-void llvm_builder_emit_binary(LLVM_Builder *builder);
-bool llvm_builder_run_linker(LLVM_Builder *builder);
+ZAPI void llvm_builder_emit_binary(LLVM_Builder *builder);
+ZAPI bool llvm_builder_run_linker(LLVM_Builder *builder);
 
-void llvm_builder_print(LLVM_Builder *builder);
+ZAPI void llvm_builder_print(LLVM_Builder *builder);
 
 } }

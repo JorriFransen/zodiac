@@ -3,10 +3,19 @@
 #include "defines.h"
 #include "util/zstring.h"
 
+#if ZPLATFORM_LINUX
+#include "platform/platform_linux.h" // IWYU pragma: export
+#elif ZPLATFORM_WINDOWS
+#include "platform/platform_windows.h" // IWYU pragma: export
+#endif
+
 namespace Zodiac
 {
 
 struct File_Handle;
+struct Platform_Info;
+
+ZAPI bool platform_info(Allocator *allocator, Platform_Info *info);
 
 ZAPI void *platform_allocate(u64 size, u64 alignment = 1);
 ZAPI void platform_free(void *memory);

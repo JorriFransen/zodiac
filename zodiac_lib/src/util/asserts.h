@@ -1,4 +1,3 @@
-#pragma once
 
 #include <defines.h>
 
@@ -32,6 +31,8 @@ namespace Zodiac
 
 
 ZAPI void report_assert_fail(const char* expression, const char* message, const char *file, i64 line);
+
+#undef assert
 
 #define assert(expr)                                       \
 {                                                          \

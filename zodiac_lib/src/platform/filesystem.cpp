@@ -1,13 +1,13 @@
 #include "filesystem.h"
 
-#include <stdio.h>
-#include <sys/stat.h>
-
 #include "defines.h"
 #include "memory/allocator.h"
 #include "platform.h"
 #include "util/asserts.h"
 #include "util/logger.h"
+
+#include <stdio.h>
+#include <sys/stat.h>
 
 namespace Zodiac
 {
@@ -21,6 +21,36 @@ bool filesystem_exists(const String_Ref path)
     int stat_res = stat(path.data, &statbuf);
 
     return stat_res == 0;
+}
+
+ZAPI bool filesystem_is_link(const String_Ref path)
+{
+    assert(path.data[path.length] == '\0');
+
+    struct stat statbuf;
+
+    int stat_res = lstat(path.data, &statbuf);
+
+    if (stat_res != 0) return false;
+
+    auto mode = statbuf.st_mode;
+
+    return S_ISLNK(mode);
+}
+
+ZAPI bool filesystem_is_regular(const String_Ref path)
+{
+    assert(path.data[path.length] == '\0');
+
+    struct stat statbuf;
+
+    int stat_res = lstat(path.data, &statbuf);
+
+    if (stat_res != 0) return false;
+
+    auto mode = statbuf.st_mode;
+
+    return S_ISREG(mode);
 }
 
 bool filesystem_open(const String_Ref path, File_Mode mode, File_Handle *out_handle)

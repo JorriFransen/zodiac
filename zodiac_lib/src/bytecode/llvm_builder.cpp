@@ -1,18 +1,47 @@
 #include "bytecode/llvm_builder.h"
 
+#include "atom.h"
+#include "common.h"
+#include "containers/dynamic_array.h"
+#include "defines.h"
+#include "memory/allocator.h"
+#include "memory/temporary_allocator.h"
 #include "type.h"
+#include "util/logger.h"
+#include "util/string_builder.h"
 #include "zodiac_context.h"
 
 #ifdef _MSC_VER
 zodiac_disable_msvc_llvm_warnings()
 #endif // _MSC_VER
+#include <llvm/ADT/ilist_iterator.h>
+#include <llvm/ADT/Optional.h>
+#include <llvm/ADT/StringRef.h>
+#include <llvm/ADT/Twine.h>
+#include <llvm/IR/Argument.h>
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Constant.h>
+#include <llvm/IR/Constants.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/GlobalObject.h>
+#include <llvm/IR/GlobalValue.h>
+#include <llvm/IR/GlobalVariable.h>
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/Type.h>
+#include <llvm/IR/Value.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/MC/TargetRegistry.h>
+#include <llvm/Support/Alignment.h>
 #include <llvm/Support/Casting.h>
+#include <llvm/Support/CodeGen.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Host.h>
+#include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
@@ -20,7 +49,13 @@ zodiac_disable_msvc_llvm_warnings()
 #pragma warning(pop)
 #endif // _MSC_VER
 
-#ifdef _WIN32
+#include <iterator>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string>
+#include <system_error>
+
+#ifdef ZPLATFORM_WINDOWS
 #define MICROSOFT_CRAZINESS_IMPLEMENTATION
 #pragma warning(push)
 #pragma warning(disable:4189)
@@ -29,6 +64,9 @@ zodiac_disable_msvc_llvm_warnings()
 #undef VOID
 #pragma warning(pop)
 #endif
+
+// Override c's assert again...
+#include "util/asserts.h"
 
 namespace Zodiac { namespace Bytecode {
 
@@ -70,7 +108,13 @@ void llvm_builder_init(LLVM_Builder *builder, Allocator *allocator, Bytecode_Bui
     builder->llvm_module = new llvm::Module("root_module", *builder->llvm_context);
     builder->ir_builder = new llvm::IRBuilder<>(*builder->llvm_context);
 
-#ifdef _WIN32
+#ifdef ZPLATFORM_LINUX
+    bool platform_info_found = platform_info(allocator, &builder->platform_info);
+    if (!platform_info_found) {
+        assert(builder->platform_info.err);
+        assert_msg(false, "Failed to get platform info");
+    }
+#elif ZPLATFORM_WINDOWS
     builder->sdk_info = find_visual_studio_and_windows_sdk();
 #endif
 
@@ -102,7 +146,7 @@ void llvm_builder_free(LLVM_Builder *builder)
 
     stack_free(&builder->arg_stack);
 
-#if _WIN32
+#if ZPLATFORM_WINDOWS
     free_resources(&builder->sdk_info);
 #endif
 
@@ -174,7 +218,7 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
 
     assert(stack_count(&builder->arg_stack) == 0);
 
-    for (int64_t block_index = 0; block_index < bc_func->blocks.count; block_index++) {
+    for (s64 block_index = 0; block_index < bc_func->blocks.count; block_index++) {
         Bytecode_Block *bc_block = &bc_func->blocks[block_index];
 
         llvm::StringRef block_name(bc_block->name.data, bc_block->name.length);
@@ -185,21 +229,20 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
 
     bool result = true;
 
-    for (int64_t block_index = 0; block_index < bc_func->blocks.count; block_index++, llvm_block_it++) {
+    for (s64 block_index = 0; block_index < bc_func->blocks.count; block_index++, llvm_block_it++) {
         Bytecode_Block *bc_block = &bc_func->blocks[block_index];
         llvm::BasicBlock *llvm_block = &*llvm_block_it;
         builder->ir_builder->SetInsertPoint(llvm_block);
 
         bool block_result = true;
 
-        for (int64_t inst_index = 0; inst_index < bc_block->instructions.count; inst_index++) {
+        for (s64 inst_index = 0; inst_index < bc_block->instructions.count; inst_index++) {
             Bytecode_Instruction &bc_inst = bc_block->instructions[inst_index];
 
             bool inst_result = llvm_builder_emit_instruction(builder, bc_inst);
             assert(inst_result);
             if (!inst_result) {
-                fprintf(stderr,
-                        "[llvm_builder] Unable to emit instruction (index '%" PRId64 "') from function '%.*s'\n",
+                ZERROR("[llvm_builder] Unable to emit instruction (index '%lli') from function '%.*s'\n",
                         inst_index,
                         (int)bc_block->name.length, bc_block->name.data);
                 block_result = false;
@@ -207,8 +250,7 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
         }
 
         if (!block_result) {
-            fprintf(stderr,
-                    "[llvm_builder] Errors while emitting block '%.*s' from function '%.*s'\n",
+            ZERROR("[llvm_builder] Errors while emitting block '%.*s' from function '%.*s'\n",
                     (int)bc_block->name.length, bc_block->name.data,
                     (int)bc_func->name.length, bc_func->name.data);
             result = false;
@@ -419,18 +461,18 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
                     if (bc_inst.a.type->integer.sign) {
                         switch (bc_inst.a.type->bit_size) {
                             default: assert(false); break;
-                            case 8: fmt_str = "%" PRId8 "\n"; break;
-                            case 16: fmt_str = "%" PRId16 "\n"; break;
-                            case 32: fmt_str = "%" PRId32 "\n"; break;
-                            case 64: fmt_str = "%" PRId64 "\n"; break;
+                            case 8: fmt_str = "%i\n"; break;
+                            case 16: fmt_str = "%i\n"; break;
+                            case 32: fmt_str = "%i\n"; break;
+                            case 64: fmt_str = "%i\n"; break;
                         }
                     } else {
                         switch (bc_inst.a.type->bit_size) {
                             default: assert(false); break;
-                            case 8: fmt_str = "%" PRIu8 "\n"; break;
-                            case 16: fmt_str = "%" PRIu16 "\n"; break;
-                            case 32: fmt_str = "%" PRIu32 "\n"; break;
-                            case 64: fmt_str = "%" PRIu64 "\n"; break;
+                            case 8: fmt_str = "%u\n"; break;
+                            case 16: fmt_str = "%u\n"; break;
+                            case 32: fmt_str = "%u\n"; break;
+                            case 64: fmt_str = "%u\n"; break;
                         }
 
                     }
@@ -494,7 +536,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             assert(bc_inst.b.flags & BC_REGISTER_FLAG_LITERAL);
             assert(bc_inst.b.type == &builtin_type_s64);
 
-            int64_t arg_count = bc_inst.b.value.integer.s64;
+            s64 arg_count = bc_inst.b.value.integer.s64;
 
             llvm::Function *llvm_func = nullptr;
 
@@ -502,7 +544,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
                 bool found = hash_table_find(&builder->functions, bc_inst.a.value.function_handle, &llvm_func);
                 assert(found);
                 if (!found) {
-                    fprintf(stderr, "[llvm_builder] Unable to find function with handle '%lli' for CALL instruction\n",
+                    ZERROR("[llvm_builder] Unable to find function with handle '%lli' for CALL instruction\n",
                             bc_inst.a.value.function_handle);
                     return false;
                 }
@@ -519,7 +561,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             Dynamic_Array<llvm::Value *> llvm_args;
             dynamic_array_create(temp_allocator_allocator(), &llvm_args, arg_count);
 
-            for (int64_t i = 0; i < arg_count; i++) {
+            for (s64 i = 0; i < arg_count; i++) {
                 dynamic_array_append(&llvm_args, stack_peek(&builder->arg_stack, (arg_count - 1) - i));
             }
 
@@ -862,7 +904,7 @@ llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Re
 
 #ifndef NDEBUG
                 auto arg_count = builder->current_function->arg_size();
-                assert(bc_reg.index >= 0 && bc_reg.index < (int64_t)arg_count);
+                assert(bc_reg.index >= 0 && bc_reg.index < (s64)arg_count);
 #endif
 
                 return builder->current_function->getArg((unsigned)bc_reg.index);
@@ -876,8 +918,8 @@ llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Re
                 assert(found);
                 assert(result);
                 if (!found) {
-                    fprintf(stderr, "[llvm_builder] Unable to find temporary register with index '%lli'\n", bc_reg.index);
-                    exit(42);
+                    ZFATAL("[llvm_builder] Unable to find temporary register with index '%lli'\n",
+                            bc_reg.index);
                 }
                 return result;
             }
@@ -902,8 +944,7 @@ llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Re
             assert(found);
             assert(llvm_alloca_value);
             if (!found) {
-                fprintf(stderr, "[llvm_builder] Unable to find ALLOC register with index '%lli'\n", bc_reg.index);
-                exit(42);
+                ZFATAL("[llvm_builder] Unable to find ALLOC register with index '%lli'\n", bc_reg.index);
             }
             llvm::AllocaInst *llvm_alloca = llvm::dyn_cast<llvm::AllocaInst>(llvm_alloca_value);
             assert(llvm_alloca);
@@ -920,8 +961,7 @@ llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Re
             assert(found);
             assert(llvm_glob_var);
             if (!found) {
-                fprintf(stderr, "[llvm_builder] Unable to find GLOBAL register with index '%lli'\n", bc_reg.index);
-                exit(42);
+                ZFATAL("[llvm_builder] Unable to find GLOBAL register with index '%lli'\n", bc_reg.index);
             }
             return llvm_glob_var;
             break;
@@ -946,8 +986,8 @@ llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Re
     }
 
     assert(false);
-    fprintf(stderr, "[llvm_builder] Unhandled case in lvm_builder_emit_register\n");
-    exit(42);
+    ZFATAL("[llvm_builder] Unhandled case in lvm_builder_emit_register\n");
+    return nullptr;
 }
 
 llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode_Register &bc_reg)
@@ -1109,6 +1149,7 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
 
     switch (ast_type->kind) {
         case Type_Kind::INVALID: assert(false); break;
+        case Type_Kind::UNSIZED_INTEGER: assert(false); break;
 
         case Type_Kind::VOID: {
             return llvm::Type::getVoidTy(*builder->llvm_context);
@@ -1146,7 +1187,7 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
                 dynamic_array_create(ast_allocator, &llvm_param_types, ast_type->function.parameter_types.count);
             }
 
-            for (int64_t i = 0; i < ast_type->function.parameter_types.count; i++) {
+            for (s64 i = 0; i < ast_type->function.parameter_types.count; i++) {
                 llvm::Type *param_type = llvm_type_from_ast_type(builder, ast_type->function.parameter_types[i]);
                 dynamic_array_append(&llvm_param_types, param_type);
             }
@@ -1170,13 +1211,16 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
         case Type_Kind::STRUCTURE: {
             llvm::StructType *result = nullptr;
             if (!hash_table_find(&builder->struct_types, ast_type, &result)) {
-                llvm::StringRef struct_name(ast_type->atom.data, ast_type->atom.length);
-                result = llvm::StructType::create(*builder->llvm_context, struct_name);
+                auto struct_name = ast_type->structure.name;
+                llvm::StringRef struct_name_ref(struct_name.data, struct_name.length);
+                result = llvm::StructType::create(*builder->llvm_context, struct_name_ref);
 
-                auto mem_types = array_create<llvm::Type *>(temp_allocator(), ast_type->structure.member_types.count);
-                for (int64_t i = 0; i < ast_type->structure.member_types.count; i++) {
+                Dynamic_Array<llvm::Type *> mem_types;
+                dynamic_array_create(temp_allocator_allocator(), &mem_types, ast_type->structure.member_types.count);
+
+                for (s64 i = 0; i < ast_type->structure.member_types.count; i++) {
                     llvm::Type *llvm_mem_type = llvm_type_from_ast_type(builder, ast_type->structure.member_types[i]);
-                    array_append(&mem_types, llvm_mem_type);
+                    dynamic_array_append(&mem_types, llvm_mem_type);
                 }
                 result->setBody( { mem_types.data, (size_t)mem_types.count }, false);
 
@@ -1195,8 +1239,8 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
     }
 
     assert(false);
-    fprintf(stderr, "[llvm_builder] Unhandled case in llvm_type_from_ast_type\n");
-    exit(42);
+    ZFATAL("[llvm_builder] Unhandled case in llvm_type_from_ast_type\n");
+    return nullptr;
 }
 
 llvm::Function *llvm_get_intrinsic(LLVM_Builder *builder, Type *fn_type, const char *name)
@@ -1243,7 +1287,7 @@ void llvm_builder_emit_binary(LLVM_Builder *builder)
 
     String_Builder _sb;
     String_Builder* sb = &_sb;
-    string_builder_init(sb, temp_allocator());
+    string_builder_create(sb, temp_allocator_allocator());
 
     String_Ref ext;
     switch (builder->target_platform) {
@@ -1251,25 +1295,23 @@ void llvm_builder_emit_binary(LLVM_Builder *builder)
         case LLVM_Target_Platform::WINDOWS: ext = "obj"; break;
         case LLVM_Target_Platform::LINUX: ext  = "o"; break;
     }
-    string_builder_appendf(sb, "% .*s.%.*s", (int)builder->out_file_name.length, builder->out_file_name.data,
+    string_builder_append(sb, "% .*s.%.*s", (int)builder->out_file_name.length, builder->out_file_name.data,
                            (int)ext.length, ext.data);
 
-    auto obj_file_name = string_builder_to_string(sb, temp_allocator());
+    String obj_file_name = string_builder_to_string(sb);
 
     std::error_code err_code;
     llvm::raw_fd_ostream dest(obj_file_name.data, err_code, llvm::sys::fs::OF_None);
     if (err_code) {
-        fprintf(stderr, "Could not open file: %s\n", obj_file_name.data);
+        ZFATAL("Could not open file: %s\n", obj_file_name.data);
         assert(false);
-        exit(42);
     }
 
     llvm::legacy::PassManager pass;
     auto filetype = llvm::CGFT_ObjectFile;
     if (llvm_target_machine->addPassesToEmitFile(pass, dest, nullptr, filetype)) {
-        fprintf(stderr, "TargetMachine can't emit file of this type...");
+        ZFATAL("TargetMachine can't emit file of this type...");
         assert(false);
-        exit(43);
     }
 
     pass.run(*builder->llvm_module);
@@ -1281,8 +1323,7 @@ void llvm_builder_emit_binary(LLVM_Builder *builder)
     bool linker_result = llvm_builder_run_linker(builder);
     assert(linker_result);
     if (!linker_result) {
-        fprintf(stderr, "Lining failed...");
-        exit(41);
+        ZFATAL("Linking failed...");
     }
 }
 
@@ -1291,33 +1332,27 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     String_Builder _sb = {};
     auto sb = &_sb;
 
-    string_builder_init(sb, temp_allocator());
+    string_builder_create(sb, temp_allocator_allocator());
 
-#if linux
-    CRT_Info crt_info = {};
-    bool crt_found = linux_find_crt_path(builder->allocator, &crt_info);
-    if (!crt_found) {
-        assert(crt_info.err);
-        fprintf(stderr, "[linux_find_crt_path] %s\n", crt_info.err);
-        fprintf(stderr, "[llvm_builder][llvm_builder_run_linker] Could not find crt path!\n");
-        return false;
-    }
+#if ZPLATFORM_LINUX
 
-    string_builder_appendf(sb, "ld --dynamic-linker %.*s ", (int)crt_info.dynamic_linker_path.length, crt_info.dynamic_linker_path.data);;
+    auto pi = builder->platform_info;
+    assert(!pi.err);
 
-    string_builder_append(sb, crt_info.crt_path);
+    string_builder_append(sb, "ld --dynamic-linker %.*s ", (int)pi.dynamic_linker_path.length, pi.dynamic_linker_path.data);;
+
+    string_builder_append(sb, pi.crt_path);
     string_builder_append(sb, "crt1.o ");
-    string_builder_append(sb, crt_info.crt_path);
+    string_builder_append(sb, pi.crt_path);
     string_builder_append(sb, "crti.o ");
 
-    string_builder_appendf(sb, "-lc %.*s.o ", (int)builder->out_file_name.length, builder->out_file_name.data);
-    string_builder_appendf(sb, "-R %.*s ", (int)builder->zodiac_context->compiler_exe_dir.length, builder->zodiac_context->compiler_exe_dir.data);
-    string_builder_appendf(sb, "-L %.*s -lzrs ", (int)builder->zodiac_context->compiler_exe_dir.length, builder->zodiac_context->compiler_exe_dir.data);
-    string_builder_append(sb, crt_info.crt_path);
+    string_builder_append(sb, "-lc %.*s.o ", (int)builder->out_file_name.length, builder->out_file_name.data);
+    string_builder_append(sb, "-R %.*s ", (int)builder->zodiac_context->compiler_exe_dir.length, builder->zodiac_context->compiler_exe_dir.data);
+    string_builder_append(sb, "-L %.*s -lzrs ", (int)builder->zodiac_context->compiler_exe_dir.length, builder->zodiac_context->compiler_exe_dir.data);
+    string_builder_append(sb, pi.crt_path);
     string_builder_append(sb, "crtn.o ");
 
-    auto link_cmd = string_builder_to_string(sb, temp_allocator());
-    free_crt_info(&crt_info);
+    auto link_cmd = string_builder_to_string(sb);
     printf("Running linker: %s\n", link_cmd.data);
 
     char out_buf[1024];
@@ -1325,7 +1360,7 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     assert(link_proc_handle);
 
     while (fgets(out_buf, sizeof(out_buf), link_proc_handle) != nullptr) {
-        fprintf(stderr, "%s", out_buf);
+        ZERROR("%s", out_buf);
     }
     assert(feof(link_proc_handle));
 
@@ -1334,11 +1369,10 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     assert(close_ret >= 0);
 
     if (close_ret != 0) {
-        fprintf(stderr, "Link command failed with exit code: %d\n", close_ret);
-        exit(44);
+        ZFATAL("Link command failed with exit code: %d\n", close_ret);
     }
 
-#elif _WIN32
+#elif ZPLATFORM_WINDOWS
 
     assert(builder);
 
@@ -1388,14 +1422,12 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     auto result = execute_process({}, arg_str);
 
     if (!result.success) {
-        fprintf(stderr, "[llvm_builder] execute_process() failed...");
-        exit(41);
+        ZFATAL("[llvm_builder] execute_process() failed...");
     }
 
 #else
     assert(false);
-    fprintf(stderr, "[llvm_builder] Trying to run linker on unsupported platform!");
-    exit(42);
+    ZFATAL("[llvm_builder] Trying to run linker on unsupported platform!");
 #endif
 
     return true;

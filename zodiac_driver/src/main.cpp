@@ -1,6 +1,7 @@
 #include "bytecode/bytecode.h"
 #include "bytecode/converter.h"
 #include "bytecode/interpreter.h"
+#include "bytecode/llvm_builder.h"
 #include "bytecode/printer.h"
 #include "bytecode/validator.h"
 #include "common.h"
@@ -32,7 +33,6 @@ using namespace Zodiac;
 using namespace Bytecode;
 
 int main() {
-
     if (!Zodiac::logging_system_initialize()) return 1;
     if (!Zodiac::memory_system_initialize()) return 1;
 
@@ -114,6 +114,12 @@ int main() {
     } else {
         assert_msg(false, "Unexpected return type from entry point")
     }
+
+    LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
+
+
+
+    llvm_builder_free(&llvm_builder);
 
     return 0;
 }
