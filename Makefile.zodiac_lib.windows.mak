@@ -12,16 +12,16 @@ SUPPORT_SRC_DIR := $(BASE_DIR)\support
 SUPPORT_ASSEMBLY := libzrs
 SUPPORT_EXTENSION := .dll
 
-# LLVM_VERSION := 15.0.2
-# LLVM_SRC_DIR := $(DIR)\$(BUILD_DIR)\llvm-$(LLVM_VERSION).src
-# LLVM_DEBUG_BUILD_DIR := "$(DIR)\$(BUILD_DIR)\llvm_build_debug"
-# LLVM_DEBUG_INSTALL_DIR := "$(DIR)\$(BUILD_DIR)\llvm_install_debug"
+LLVM_VERSION := 15.0.2
+LLVM_SRC_DIR := $(DIR)\$(BUILD_DIR)\llvm-$(LLVM_VERSION).src
+LLVM_DEBUG_BUILD_DIR := "$(DIR)\$(BUILD_DIR)\llvm_build_debug"
+LLVM_DEBUG_INSTALL_DIR := "$(DIR)\$(BUILD_DIR)\llvm_install_debug"
 
 include Makefile.dyncall_vars.windows.mak
 
 COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wno-c99-designator -Wvla -fdeclspec
 INCLUDE_FLAGS := -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
-LINKER_FLAGS := -g -shared -lmsvcrt -Wl,-nodefaultlib:libcmt $(DYNCALL_LINK_FLAGS)
+LINKER_FLAGS := -g -shared -loleaut32 -lmsvcrtd -Wl,-nodefaultlib:libcmt $(DYNCALL_LINK_FLAGS)
 DEFINES := -D_DEBUG -DZEXPORT -D_DLL -D_CRT_SECURE_NO_WARNINGS
 
 # Make does not offer a recursive wildcard function, so here's one:
@@ -71,45 +71,50 @@ $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 
 .PHONY: llvm
 llvm:
-#	@if not exist $(LLVM_DEBUG_INSTALL_DIR) (\
-#	     echo Extracting llvm... && \
-#	    powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('$(BASE_DIR)\llvm\llvm-$(LLVM_VERSION).src.zip', '$(LLVM_SRC_DIR)'); }" &&\
-#	     echo Configuring llvm... &&\
-#	    mkdir $(LLVM_DEBUG_BUILD_DIR) &&\
-#	    pushd $(LLVM_DEBUG_BUILD_DIR) &&\
-#	    cmake.exe $(LLVM_SRC_DIR)\llvm -DCMAKE_INSTALL_PREFIX=$(LLVM_DEBUG_INSTALL_DIR) -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Debug -T ClangCl &&\
-#	     echo Building and installing llvm... &&\
-#	    mkdir $(LLVM_DEBUG_INSTALL_DIR) &&\
-#	    pushd $(LLVM_DEBUG_BUILD_DIR) &&\
-#	    cmake.exe --build . --target install --config Debug &&\
-#	    popd )
-#	@if exist $(LLVM_SRC_DIR) (\
-#	    @echo Removing llvm source dir after instal... &&\
-#	    rmdir /s /q $(LLVM_SRC_DIR) )
-#	@if exist $(LLVM_DEBUG_BUILD_DIR) (\
-#	     echo Removing llvm debug build dir after install &&\
-#	    rmdir /s /q $(LLVM_DEBUG_BUILD_DIR) )
+	@if not exist $(LLVM_DEBUG_INSTALL_DIR) (\
+	     echo Extracting llvm... && \
+	    powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('$(BASE_DIR)\llvm\llvm-$(LLVM_VERSION).src.zip', '$(LLVM_SRC_DIR)'); }" &&\
+	     echo Configuring llvm... &&\
+	    mkdir $(LLVM_DEBUG_BUILD_DIR) &&\
+	    pushd $(LLVM_DEBUG_BUILD_DIR) &&\
+	    cmake.exe $(LLVM_SRC_DIR)\llvm -DCMAKE_INSTALL_PREFIX=$(LLVM_DEBUG_INSTALL_DIR) -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Debug -T ClangCl &&\
+	     echo Building and installing llvm... &&\
+	    mkdir $(LLVM_DEBUG_INSTALL_DIR) &&\
+	    pushd $(LLVM_DEBUG_BUILD_DIR) &&\
+	    cmake.exe --build . --target install --config Debug &&\
+	    popd )
+	@if exist $(LLVM_SRC_DIR) (\
+	    @echo Removing llvm source dir after instal... &&\
+	    rmdir /s /q $(LLVM_SRC_DIR) )
+	@if exist $(LLVM_DEBUG_BUILD_DIR) (\
+	     echo Removing llvm debug build dir after install &&\
+	    rmdir /s /q $(LLVM_DEBUG_BUILD_DIR) )
 
 llvm_vars:
-#	$(eval LLVM_CONFIG = $(LLVM_DEBUG_INSTALL_DIR)\bin\llvm-config.exe)
-#	$(eval LLVM_INCLUDE_DIR = $(shell $(LLVM_CONFIG) --includedir))
-#	$(eval LLVM_LIBS = $(shell $(LLVM_CONFIG) --libs codegen))
-#	$(eval INCLUDE_FLAGS += -I$(LLVM_INCLUDE_DIR))
-#	$(eval LINKER_FLAGS += $(LLVM_LIBS))
+	$(eval LLVM_CONFIG = $(LLVM_DEBUG_INSTALL_DIR)\bin\llvm-config.exe)
+	$(eval LLVM_INCLUDE_DIR = $(shell $(LLVM_CONFIG) --includedir))
+	$(eval LLVM_LIBS = $(shell $(LLVM_CONFIG) --libs codegen x86))
+	$(eval INCLUDE_FLAGS += -I$(LLVM_INCLUDE_DIR))
+	$(eval LINKER_FLAGS += $(LLVM_LIBS))
 
 .PHONY: clean_llvm
 clean_llvm:
 	if exist $(LLVM_SRC_DIR) rmdir /s /q $(LLVM_SRC_DIR)
 	if exist $(LLVM_DEBUG_BUILD_DIR) rmdir /s /q $(LLVM_DEBUG_BUILD_DIR)
-	if exist $(LLVM_DEBUG_INSTALL_DIR) rmdir /s /q $(LLVM_DEBUG_INSTALL_DIR)
+	REM if exist $(LLVM_DEBUG_INSTALL_DIR) rmdir /s /q $(LLVM_DEBUG_INSTALL_DIR)
 
 .PHONY: clean
-clean:
+clean: clean_llvm
 	if exist $(BUILD_DIR)\$(ASSEMBLY)$(EXTENSION) del $(BUILD_DIR)\$(ASSEMBLY)$(EXTENSION)
 	if exist $(BUILD_DIR)\$(ASSEMBLY).ilk del $(BUILD_DIR)\$(ASSEMBLY).ilk
 	if exist $(BUILD_DIR)\$(ASSEMBLY).pdb del $(BUILD_DIR)\$(ASSEMBLY).pdb
 	if exist $(BUILD_DIR)\$(ASSEMBLY).exp del $(BUILD_DIR)\$(ASSEMBLY).exp
 	if exist $(BUILD_DIR)\$(ASSEMBLY).lib del $(BUILD_DIR)\$(ASSEMBLY).lib
 	if exist $(OBJ_DIR)\$(BASE_DIR) rmdir /s /q $(OBJ_DIR)\$(BASE_DIR)
+	if exist $(BUILD_DIR)\$(SUPPORT_ASSEMBLY)$(SUPPORT_EXTENSION) del $(BUILD_DIR)\$(SUPPORT_ASSEMBLY)$(SUPPORT_EXTENSION)
+	if exist $(BUILD_DIR)\$(SUPPORT_ASSEMBLY).exp del $(BUILD_DIR)\$(SUPPORT_ASSEMBLY).exp
+	if exist $(BUILD_DIR)\$(SUPPORT_ASSEMBLY).ilk del $(BUILD_DIR)\$(SUPPORT_ASSEMBLY).ilk
+	if exist $(BUILD_DIR)\$(SUPPORT_ASSEMBLY).lib del $(BUILD_DIR)\$(SUPPORT_ASSEMBLY).lib
+	if exist $(BUILD_DIR)\$(SUPPORT_ASSEMBLY).pdb del $(BUILD_DIR)\$(SUPPORT_ASSEMBLY).pdb
 
 -include $(OBJ_FILES:.o=.d)

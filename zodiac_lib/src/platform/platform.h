@@ -15,7 +15,27 @@ namespace Zodiac
 struct File_Handle;
 struct Platform_Info;
 
+enum class Platform_Console_Color
+{
+    Blue,
+    Green,
+    Red,
+    Fatal_Red,
+    Yellow,
+    Grey,
+};
+
+struct Process_Result
+{
+    int64_t exit_code = 0;
+    bool success = false;
+
+    String result_string = {};
+    String error_string = {};
+};
+
 ZAPI bool platform_info(Allocator *allocator, Platform_Info *info);
+ZAPI void free_platform_info(Platform_Info *info);
 
 ZAPI void *platform_allocate(u64 size, u64 alignment = 1);
 ZAPI void platform_free(void *memory);
@@ -26,15 +46,7 @@ ZAPI i64 platform_memcmp(const void *a, const void *b, u64 num);
 
 ZAPI double platform_sqrt(double x);
 
-enum class Platform_Console_Color
-{
-    Blue,
-    Green,
-    Red,
-    Fatal_Red,
-    Yellow,
-    Grey,
-};
+ZAPI Process_Result platform_execute_process(const String_Ref &command, const String_Ref &args);
 
 ZAPI void platform_temp_file(File_Handle *out_file);
 

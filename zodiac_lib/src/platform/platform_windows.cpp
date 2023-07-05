@@ -10,8 +10,35 @@
 #include "filesystem.h"
 #include "memory/temporary_allocator.h"
 
+#define MICROSOFT_CRAZINESS_IMPLEMENTATION
+#pragma warning(push)
+#pragma warning(disable:4189)
+#pragma warning(disable:4456)
+#include "platform/microsoft_craziness.h"
+#undef VOID
+#pragma warning(pop)
+
 namespace Zodiac
 {
+
+bool platform_info(Allocator *allocator, Platform_Info *info)
+{
+    assert(allocator);
+    assert(info);
+
+    auto sdk = find_visual_studio_and_windows_sdk();
+    assert(sdk.windows_sdk_root);
+    info->sdk_info = sdk;
+
+    return true;
+}
+
+void free_platform_info(Platform_Info *info)
+{
+    assert(info);
+
+    free_resources(&info->sdk_info);
+}
 
 struct Alloc_Header
 {
@@ -72,6 +99,62 @@ i64 platform_memcmp(const void *a, const void *b, u64 num)
 double platform_sqrt(double x)
 {
     return sqrt(x);
+}
+
+Process_Result platform_execute_process(const String_Ref &command, const String_Ref &args)
+{
+    Process_Result result = {};
+
+    PROCESS_INFORMATION process_info;
+    STARTUPINFOW startup_info;
+    ZeroMemory(&startup_info, sizeof(startup_info));
+    ZeroMemory(&process_info, sizeof(process_info));
+    startup_info.cb = sizeof(startup_info);
+
+    auto ta = temp_allocator_allocator();
+
+    Wide_String cmd_str(ta, command);
+    Wide_String arg_str(ta, args);
+
+    bool proc_res = CreateProcessW(cmd_str.data, (LPWSTR)arg_str.data,
+        nullptr, nullptr, true, 0, nullptr,
+        nullptr, &startup_info, &process_info);
+
+    if (!proc_res) {
+        auto err = GetLastError();
+        LPSTR message_buf = nullptr;
+        size_t size = FormatMessageA((FORMAT_MESSAGE_ALLOCATE_BUFFER |
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS),
+            nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPSTR)&message_buf, 0, nullptr);
+
+        fprintf(stderr, "%.*s", (int)size, message_buf);
+        LocalFree(message_buf);
+
+        result.success = false;
+
+    }
+    else {
+        WaitForSingleObject(process_info.hProcess, INFINITE);
+
+        DWORD exit_code;
+        GetExitCodeProcess(process_info.hProcess, &exit_code);
+
+        CloseHandle(process_info.hProcess);
+        CloseHandle(process_info.hThread);
+
+        result.exit_code = exit_code;
+        if (exit_code == 0) {
+            result.success = true;
+        }
+        else {
+            result.success = false;
+        }
+    }
+
+
+    return result;
 }
 
 void platform_temp_file(File_Handle *out_file)

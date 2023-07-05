@@ -34,13 +34,15 @@ __pragma(warning(disable:26439)) \
 zodiac_disable_msvc_llvm_warnings()
 #endif // _MSC_VER
 
+//  llvm includes should go here
+
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif // _MSC_VER
 
-#ifdef _WIN32
-#include <microsoft_craziness.h>
-#endif
+// #ifdef ZPLATFORM_WINDOWS
+// #include "platform/microsoft_craziness.h"
+// #endif
 
 namespace llvm {
 

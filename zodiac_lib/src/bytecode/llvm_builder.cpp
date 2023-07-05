@@ -55,16 +55,6 @@ zodiac_disable_msvc_llvm_warnings()
 #include <string>
 #include <system_error>
 
-#ifdef ZPLATFORM_WINDOWS
-#define MICROSOFT_CRAZINESS_IMPLEMENTATION
-#pragma warning(push)
-#pragma warning(disable:4189)
-#pragma warning(disable:4456)
-#include <microsoft_craziness.h>
-#undef VOID
-#pragma warning(pop)
-#endif
-
 // Override c's assert again...
 #include "util/asserts.h"
 
@@ -108,15 +98,11 @@ void llvm_builder_init(LLVM_Builder *builder, Allocator *allocator, Bytecode_Bui
     builder->llvm_module = new llvm::Module("root_module", *builder->llvm_context);
     builder->ir_builder = new llvm::IRBuilder<>(*builder->llvm_context);
 
-#ifdef ZPLATFORM_LINUX
     bool platform_info_found = platform_info(allocator, &builder->platform_info);
     if (!platform_info_found) {
         assert(builder->platform_info.err);
         assert_msg(false, "Failed to get platform info");
     }
-#elif ZPLATFORM_WINDOWS
-    builder->sdk_info = find_visual_studio_and_windows_sdk();
-#endif
 
     builder->out_file_name = "out";
 
@@ -146,10 +132,7 @@ void llvm_builder_free(LLVM_Builder *builder)
 
     stack_free(&builder->arg_stack);
 
-#if ZPLATFORM_WINDOWS
-    free_resources(&builder->sdk_info);
-#endif
-
+    free_platform_info(&builder->platform_info);
 }
 
 void llvm_builder_emit_global(LLVM_Builder *builder, Bytecode_Global_Handle glob_handle)
@@ -1376,35 +1359,35 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
 
     assert(builder);
 
-    auto &sdk_info = builder->sdk_info;
+    auto &sdk_info = builder->platform_info.sdk_info;
     auto vs_exe_path = Wide_String_Ref(sdk_info.vs_exe_path);
-    auto wide_linker_path = string_append(temp_allocator(), vs_exe_path, L"\\link.exe");
-    auto linker_path = String(temp_allocator(), wide_linker_path.data, wide_linker_path.length);
+    auto wide_linker_path = string_append(temp_allocator_allocator(), vs_exe_path, L"\\link.exe");
+    auto linker_path = String(temp_allocator_allocator(), wide_linker_path.data, wide_linker_path.length);
 
     string_builder_append(sb, linker_path.data);
     string_builder_append(sb, " /nologo /wx /subsystem:CONSOLE /nodefaultlib");
 
     auto wide_um_lib_path = Wide_String_Ref(sdk_info.windows_sdk_um_library_path);
-    auto um_lib_path = String(temp_allocator(), wide_um_lib_path.data, wide_um_lib_path.length);
+    auto um_lib_path = String(temp_allocator_allocator(), wide_um_lib_path.data, wide_um_lib_path.length);
 
     assert(um_lib_path.length == (signed)strlen(um_lib_path.data));
-    string_builder_appendf(sb, " /libpath:\"%.*s\"", (int)um_lib_path.length, um_lib_path.data);
+    string_builder_append(sb, " /libpath:\"%.*s\"", (int)um_lib_path.length, um_lib_path.data);
 
     auto wide_ucrt_lib_path = Wide_String_Ref(sdk_info.windows_sdk_ucrt_library_path);
-    auto ucrt_lib_path = String(temp_allocator(), wide_ucrt_lib_path.data, wide_ucrt_lib_path.length);
+    auto ucrt_lib_path = String(temp_allocator_allocator(), wide_ucrt_lib_path.data, wide_ucrt_lib_path.length);
     assert(ucrt_lib_path.length == (signed)(strlen(ucrt_lib_path.data)));
-    string_builder_appendf(sb, " /libpath:\"%.*s\"", (int)ucrt_lib_path.length, ucrt_lib_path.data);
+    string_builder_append(sb, " /libpath:\"%.*s\"", (int)ucrt_lib_path.length, ucrt_lib_path.data);
 
     auto wide_vs_lib_path = Wide_String_Ref(sdk_info.vs_library_path);
-    auto vs_lib_path = String(temp_allocator(), wide_vs_lib_path.data, wide_vs_lib_path.length);
+    auto vs_lib_path = String(temp_allocator_allocator(), wide_vs_lib_path.data, wide_vs_lib_path.length);
     assert(vs_lib_path.length == (signed)strlen(vs_lib_path.data));
-    string_builder_appendf(sb, " /libpath:\"%.*s\"", (int)vs_lib_path.length, vs_lib_path.data);
+    string_builder_append(sb, " /libpath:\"%.*s\"", (int)vs_lib_path.length, vs_lib_path.data);
 
     string_builder_append(sb, " kernel32.lib");
     string_builder_append(sb, " ucrt.lib");
     string_builder_append(sb, " msvcrt.lib");
 
-    string_builder_appendf(sb, " %s.obj", builder->out_file_name.data);
+    string_builder_append(sb, " %s.obj", builder->out_file_name.data);
 
     bool link_c = true;
     if (link_c) {
@@ -1414,12 +1397,12 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     }
 
     String_Ref zrs_s_lib_path = builder->zodiac_context->support_lib_static_path;
-    string_builder_appendf(sb, " %.*s", (int)zrs_s_lib_path.length, zrs_s_lib_path.data);
+    string_builder_append(sb, " %.*s", (int)zrs_s_lib_path.length, zrs_s_lib_path.data);
 
-    auto arg_str = string_builder_to_string(sb, temp_allocator());
+    auto arg_str = string_builder_to_string(sb);
     printf("Running link command: %.*s\n", (int)arg_str.length, arg_str.data);
 
-    auto result = execute_process({}, arg_str);
+    auto result = platform_execute_process({}, arg_str);
 
     if (!result.success) {
         ZFATAL("[llvm_builder] execute_process() failed...");

@@ -43,13 +43,13 @@ ZAPI void report_assert_fail(const char* expression, const char* message, const 
     }                                                      \
 }
 
-#define assert_msg(expr, msg)                               \
-{                                                           \
-    if (expr) {                                             \
-    } else {                                                \
-        report_assert_fail(#expr, msg, __FILE__, __LINE__); \
-        ZODIAC_ABORT();                                     \
-    }                                                       \
+#define assert_msg(expr, msg)                                       \
+{                                                                   \
+    if (expr) {                                                     \
+    } else {                                                        \
+        Zodiac::report_assert_fail(#expr, msg, __FILE__, __LINE__); \
+        ZODIAC_ABORT();                                             \
+    }                                                               \
 }
 
 #ifdef _DEBUG

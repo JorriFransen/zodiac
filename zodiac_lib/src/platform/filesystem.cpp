@@ -8,6 +8,25 @@
 
 #include <stdio.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+
+#ifdef ZPLATFORM_WINDOWS
+
+#define lstat stat
+
+#ifndef S_ISREG
+#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
+#endif // S_ISREG
+
+#ifdef S_IFLNK
+#ifndef S_ISLNK
+#define S_ISLNK(m) (((m) & S_IFMT) == S_IFLNK)
+#endif // S_ISLNK
+#else
+#define S_ISLNK(m) (0 && (m))
+#endif // S_IFLNK
+
+#endif // ZPLATFORM_WINDOWS
 
 namespace Zodiac
 {
