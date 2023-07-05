@@ -73,7 +73,7 @@ ZAPI Flat_Node to_flat_node(AST_Expression *expr, Scope *scope);
 ZAPI Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope);
 ZAPI Flat_Node to_flat_node(AST_Field_Declaration *param, Scope *scope);
 
-ZAPI Flat_Node to_flat_proto(AST_Declaration *decl);
+ZAPI Flat_Node to_flat_proto(AST_Declaration *decl, Scope *scope);
 
 ZAPI bool name_resolve_node(Resolver *resolver, Flat_Node *node);
 ZAPI bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope);

@@ -281,7 +281,7 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
                 flatten_type_spec(decl->function.return_ts, scope, dest);
             }
 
-            Flat_Node proto_node = to_flat_proto(decl);
+            Flat_Node proto_node = to_flat_proto(decl, parameter_scope);
             dynamic_array_append(dest, proto_node);
 
             for (u64 i = 0; i < decl->function.body.count; i++) {
@@ -510,14 +510,15 @@ Flat_Node to_flat_node(AST_Field_Declaration *param, Scope *scope)
     return result;
 }
 
-Flat_Node to_flat_proto(AST_Declaration *decl)
+Flat_Node to_flat_proto(AST_Declaration *decl, Scope *scope)
 {
-    assert(decl);
-    assert(decl->kind == AST_Declaration_Kind::FUNCTION);
+    assert(decl && decl->kind == AST_Declaration_Kind::FUNCTION);
+    assert(scope && scope->kind == Scope_Kind::FUNCTION_PARAMETER);
 
     Flat_Node result = {};
     result.kind = Flat_Node_Kind::FUNCTION_PROTO;
     result.decl = decl;
+    result.scope = scope;
 
     return result;
 }
@@ -892,6 +893,11 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
             func_decl->function.type = get_function_type(return_type, param_types, &ctx->ast_allocator);
 
             temporary_allocator_reset(&ctx->temp_allocator_state, mark);
+
+            auto sym = scope_get_symbol(node->scope, node->decl->identifier.name);
+            assert(sym && sym->kind == Symbol_Kind::FUNC);
+            assert(sym->state == Symbol_State::RESOLVED);
+            sym->state = Symbol_State::TYPED;
             return true;
         }
 
@@ -1083,7 +1089,29 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
         case AST_Expression_Kind::MEMBER: assert(false);
         case AST_Expression_Kind::INDEX: assert(false);
-        case AST_Expression_Kind::CALL: assert(false);
+
+        case AST_Expression_Kind::CALL: {
+
+            // TODO: Resolve arguments, match types against parameters
+            assert(false);
+
+            auto ident_expr = expr->call.base;
+
+            auto func_sym = scope_get_symbol(ident_expr->identifier.scope, ident_expr->identifier.name);
+            assert(func_sym && func_sym->kind == Symbol_Kind::FUNC);
+            assert(func_sym->state == Symbol_State::TYPED);
+
+            auto func_decl = func_sym->decl;
+            assert(func_decl && func_decl->kind == AST_Declaration_Kind::FUNCTION);
+            assert(func_decl->function.type && func_decl->function.type->kind == Type_Kind::FUNCTION);
+
+            auto return_type = func_decl->function.type->function.return_type;
+            assert(return_type);
+
+            expr->resolved_type = return_type;
+            break;
+        }
+
         case AST_Expression_Kind::UNARY: assert(false);
 
         case AST_Expression_Kind::BINARY: {

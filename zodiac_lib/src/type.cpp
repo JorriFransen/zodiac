@@ -290,10 +290,13 @@ Type *sym_decl_type(Symbol *sym)
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
             assert(decl->variable.resolved_type);
             return decl->variable.resolved_type;
-            break;
         }
 
-        case AST_Declaration_Kind::FUNCTION: assert(false);
+        case AST_Declaration_Kind::FUNCTION: {
+            assert(decl->function.type && decl->function.type->kind == Type_Kind::FUNCTION);
+            return decl->function.type;
+        }
+
         case AST_Declaration_Kind::STRUCT: assert(false);
         case AST_Declaration_Kind::UNION: assert(false);
     }

@@ -18,6 +18,7 @@ Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Contex
     result.context = context;
     result.builder = bb;
 
+    hash_table_create(allocator, &result.functions);
     hash_table_create(allocator, &result.allocations);
     hash_table_create(allocator, &result.globals);
 
@@ -117,6 +118,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     assert(decl->identifier.name.data);
 
     Bytecode_Function_Handle fn_handle = bytecode_function_create(bc->builder, decl->identifier.name, decl->function.type);
+    hash_table_add(&bc->functions, decl, fn_handle);
 
     if (decl->function.variables.count) {
 
@@ -340,7 +342,34 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
         case AST_Expression_Kind::MEMBER: assert(false); break;
         case AST_Expression_Kind::INDEX: assert(false); break;
-        case AST_Expression_Kind::CALL: assert(false); break;
+
+        case AST_Expression_Kind::CALL: {
+
+            AST_Expression *base = expr->call.base;
+            assert(base->kind == AST_Expression_Kind::IDENTIFIER);
+
+            Symbol *sym = scope_get_symbol(base->identifier.scope, base->identifier.name);
+            assert(sym && sym->kind == Symbol_Kind::FUNC);
+            assert(sym->decl && sym->decl->kind == AST_Declaration_Kind::FUNCTION);
+
+
+            Bytecode_Function_Handle fn_handle;
+            bool found = hash_table_find(&bc->functions, sym->decl, &fn_handle);
+            assert(found);
+
+            auto arg_count = expr->call.args.count;
+
+            assert(false);
+            // for (s64 i = 0; i < expr->call.args.count; i++) {
+            //     auto arg_expr = expr->call.args[i];
+            //     Bytecode_Register arg_reg = ast_expr_to_bytecode(bc, arg_expr);
+            //     bytecode_emit_push_arg(bc->builder, arg_reg);
+            // }
+
+            return bytecode_emit_call(bc->builder, fn_handle, arg_count);
+            break;
+        }
+
         case AST_Expression_Kind::UNARY: assert(false); break;
 
         case AST_Expression_Kind::BINARY: {

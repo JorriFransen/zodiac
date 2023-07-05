@@ -22,6 +22,8 @@ struct Bytecode_Converter
     Zodiac_Context *context;
     Bytecode_Builder *builder;
 
+    Hash_Table<AST_Declaration *, Bytecode_Function_Handle> functions;
+
     // TODO: should these be separated per function?
     Hash_Table<AST_Declaration *, Bytecode_Register> allocations;
 
