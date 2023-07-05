@@ -1348,7 +1348,7 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
 
     string_builder_append(sb, "-lc %.*s.o ", (int)builder->out_file_name.length, builder->out_file_name.data);
     string_builder_append(sb, "-R %.*s ", (int)builder->zodiac_context->compiler_exe_dir.length, builder->zodiac_context->compiler_exe_dir.data);
-    string_builder_append(sb, "-L %.*s -lzrs ", (int)builder->zodiac_context->compiler_exe_dir.length, builder->zodiac_context->compiler_exe_dir.data);
+    string_builder_append(sb, "-L %.*s -lzrs_s ", (int)builder->zodiac_context->compiler_exe_dir.length, builder->zodiac_context->compiler_exe_dir.data);
     string_builder_append(sb, pi.crt_path);
     string_builder_append(sb, "crtn.o ");
 

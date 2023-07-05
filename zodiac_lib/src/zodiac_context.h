@@ -35,6 +35,7 @@ struct Zodiac_Context
     String compiler_exe_path;
     String compiler_exe_dir;
     String support_lib_dynamic_path;
+    String support_lib_static_path;
 };
 
 ZAPI void zodiac_context_create(Zodiac_Context *out_context);
