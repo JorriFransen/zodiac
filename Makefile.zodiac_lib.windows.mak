@@ -21,9 +21,11 @@ LLVM_DEBUG_INSTALL_DIR := "$(DIR)\$(BUILD_DIR)\llvm_install_debug"
 
 include Makefile.dyncall_vars.windows.mak
 
+COMMON_LINKER_FLAGS := -g -lmsvcrtd -Wl,-nodefaultlib:libcmt
+
 COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wno-c99-designator -Wvla -fdeclspec
 INCLUDE_FLAGS := -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
-LINKER_FLAGS := -g -shared -loleaut32 -lmsvcrtd -Wl,-nodefaultlib:libcmt $(DYNCALL_LINK_FLAGS)
+LINKER_FLAGS := $(COMMON_LINKER_FLAGS) -shared -loleaut32 $(DYNCALL_LINK_FLAGS)
 DEFINES := -D_DEBUG -DZEXPORT -D_DLL -D_CRT_SECURE_NO_WARNINGS
 
 # Make does not offer a recursive wildcard function, so here's one:
@@ -65,11 +67,11 @@ $(OBJ_DIR)\\%.cpp.o: %.cpp
 link: llvm_vars $(FULL_ASSEMBLY_PATH) $(SUPPORT_ASSEMBLY_DYN_PATH) $(SUPPORT_ASSEMBLY_STAT_PATH)
 
 $(SUPPORT_ASSEMBLY_DYN_PATH): $(SUPPORT_OBJ_FILES)
-	@echo Linking $(SUPPORT_ASSEMBLY_DYN)
-	clang $(SUPPORT_OBJ_FILES) -o $@ $(DEFINES) $(LINKER_FLAGS)
+	@echo Linking $(SUPPORT_ASSEMBLY_DYN_PATH)
+	clang $(SUPPORT_OBJ_FILES) -o $@ $(DEFINES) $(COMMON_LINKER_FLAGS) -shared
 
 $(SUPPORT_ASSEMBLY_STAT_PATH): $(SUPPORT_OBJ_FILES)
-	@echo Linking $(SUPPORT_ASSEMBLY_STAT)
+	@echo Linking $(SUPPORT_ASSEMBLY_STAT_PATH)
 	lib /nologo /out:$@ $(SUPPORT_OBJ_FILES)
 
 $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
