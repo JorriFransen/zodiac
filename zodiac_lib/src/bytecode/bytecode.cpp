@@ -356,7 +356,7 @@ Bytecode_Phi_Args_Handle bytecode_phi_arg_create(Bytecode_Builder *builder, Byte
     return handle;
 }
 
-Bytecode_Register bytecode_load_argument(Bytecode_Builder *builder, s64 index)
+Bytecode_Register bytecode_emit_load_argument(Bytecode_Builder *builder, s64 index)
 {
     auto fn_handle = builder->insert_fn_index;
     assert(fn_handle >= 0 && fn_handle < builder->functions.count);

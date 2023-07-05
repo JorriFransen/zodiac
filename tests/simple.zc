@@ -3,7 +3,8 @@
 foo : s64 = 33;
 bar : s64;
 
-add :: () {
+same :: (x: s64) -> s64 {
+    return x;
 }
 
 main :: () -> s64 {
@@ -12,6 +13,7 @@ main :: () -> s64 {
     b : s64 = z + x + y + foo;
     print(b);
     print(a + b);
+    // print(add(a + b));
     return a + b;
 }
 

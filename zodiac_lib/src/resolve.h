@@ -35,7 +35,7 @@ struct Flat_Node
         AST_Expression *expr;
         AST_Type_Spec *ts;
 
-        AST_Field_Declaration param, field;
+        AST_Field_Declaration * param, field;
     };
 };
 
@@ -71,7 +71,7 @@ ZAPI Flat_Node to_flat_node(AST_Declaration *decl, Scope *scope);
 ZAPI Flat_Node to_flat_node(AST_Statement *stmt, Scope *scope);
 ZAPI Flat_Node to_flat_node(AST_Expression *expr, Scope *scope);
 ZAPI Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope);
-ZAPI Flat_Node to_flat_node(const AST_Field_Declaration param, Scope *scope);
+ZAPI Flat_Node to_flat_node(AST_Field_Declaration *param, Scope *scope);
 
 ZAPI Flat_Node to_flat_proto(AST_Declaration *decl);
 

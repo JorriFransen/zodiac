@@ -309,7 +309,28 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     return ast_expr_to_bytecode(bc, ident_decl->variable.value, type);
                 }
 
-                case AST_Declaration_Kind::FUNCTION: assert(false); break;
+                case AST_Declaration_Kind::FUNCTION: {
+                    // At this point this must a function paramter
+                    // TODO: Fix this, paramter symbols should point to a parameter declaration?
+                    assert(ident_sym->kind == Symbol_Kind::PARAM);
+
+                    auto func_decl = enclosing_function(expr->identifier.scope);
+                    assert(func_decl);
+                    assert(func_decl->kind == AST_Declaration_Kind::FUNCTION);
+
+                    s64 param_index = -1;
+                    for (s64 i = 0; i < func_decl->function.params.count; i++) {
+                        if (func_decl->function.params[i].identifier.name == expr->identifier.name) {
+                            param_index = i;
+                            break;
+                        }
+                    }
+
+                    assert(param_index >= 0);
+
+                    return bytecode_emit_load_argument(bc->builder, param_index);
+                }
+
                 case AST_Declaration_Kind::STRUCT: assert(false); break;
                 case AST_Declaration_Kind::UNION: assert(false); break;
             }

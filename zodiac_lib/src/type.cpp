@@ -3,6 +3,7 @@
 #include "ast.h"
 #include "memory/allocator.h"
 #include "memory/zmemory.h"
+#include "scope.h"
 #include "util/asserts.h"
 #include "util/string_builder.h"
 #include "zodiac_context.h"
@@ -256,8 +257,32 @@ Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Al
     return result;
 }
 
-Type *decl_type(AST_Declaration *decl)
+Type *sym_decl_type(Symbol *sym)
 {
+    assert(sym);
+    assert(sym->decl);
+
+    // Special case, parameter symbols store their function declaration
+    if (sym->kind == Symbol_Kind::PARAM) {
+        auto func_decl = sym->decl;
+        assert(func_decl->kind == AST_Declaration_Kind::FUNCTION);
+
+        bool found = false;
+        for (s64 i = 0; i < func_decl->function.params.count; i++) {
+            auto param = &func_decl->function.params[i];
+
+            if (param->identifier.name == sym->name) {
+                found = true;
+                assert(param->resolved_type);
+                return param->resolved_type;
+            }
+        }
+
+        assert_msg(found, "[sym_decl_type()] Did not find expected parameter in function declaration");
+    }
+
+    auto decl = sym->decl;
+
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
 

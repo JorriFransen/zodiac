@@ -270,9 +270,9 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
 
             for (u64 i = 0; i < decl->function.params.count; i++) {
 
-                auto field = decl->function.params[i];
+                auto field = &decl->function.params[i];
 
-                flatten_type_spec(field.type_spec, scope, dest);
+                flatten_type_spec(field->type_spec, scope, dest);
                 Flat_Node param_node = to_flat_node(field, parameter_scope);
                 dynamic_array_append(dest, param_node);
             }
@@ -295,9 +295,9 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
         case AST_Declaration_Kind::UNION: {
             assert(aggregate_scope);
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
-                auto field = decl->aggregate.fields[i];
+                auto field = &decl->aggregate.fields[i];
 
-                flatten_type_spec(field.type_spec, scope, dest);
+                flatten_type_spec(field->type_spec, scope, dest);
                 Flat_Node member_node = to_flat_node(field, aggregate_scope);
                 dynamic_array_append(dest, member_node);
             }
@@ -357,7 +357,7 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
                     // We need a known return type to infer from in this case
                     assert(func_decl->function.return_ts || func_decl->function.type);
                 }
-                assert(infer_from);
+                // assert(infer_from);
 
                 stmt->return_stmt.scope = scope;
 
@@ -493,7 +493,7 @@ Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope)
     return result;
 }
 
-Flat_Node to_flat_node(const AST_Field_Declaration param, Scope *scope)
+Flat_Node to_flat_node(AST_Field_Declaration *param, Scope *scope)
 {
     assert(scope);
     assert(scope->kind == Scope_Kind::FUNCTION_PARAMETER ||
@@ -545,7 +545,7 @@ bool name_resolve_node(Resolver *resolver, Flat_Node *node)
         }
 
         case Flat_Node_Kind::PARAM_DECL: {
-            Symbol *param_sym = scope_get_symbol(node->scope, node->param.identifier);
+            Symbol *param_sym = scope_get_symbol(node->scope, node->param->identifier);
             assert(param_sym);
             assert(param_sym->decl->kind == AST_Declaration_Kind::FUNCTION);
 
@@ -847,7 +847,21 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
             return type_resolve_ts(node->ts, node->scope);
         }
 
-        case Flat_Node_Kind::PARAM_DECL: assert(false);
+        case Flat_Node_Kind::PARAM_DECL: {
+            assert(node->param->type_spec);
+            assert(node->param->type_spec->resolved_type);
+
+            assert(node->param->resolved_type == nullptr);
+            node->param->resolved_type = node->param->type_spec->resolved_type;
+
+            auto sym = scope_get_symbol(node->scope, node->param->identifier.name);
+            assert(sym);
+            assert(sym->kind == Symbol_Kind::PARAM);
+            assert(sym->state == Symbol_State::RESOLVED);
+            sym->state = Symbol_State::TYPED;
+            return true;
+        }
+
         case Flat_Node_Kind::FIELD_DECL: assert(false);
 
         case Flat_Node_Kind::FUNCTION_PROTO: {
@@ -866,8 +880,8 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
             for (u64 i = 0; i < func_decl->function.params.count; i++) {
                 AST_Field_Declaration *param_field = &func_decl->function.params[i];
 
-                assert(param_field->type_spec);
-                assert(param_field->type_spec->resolved_type);
+                assert(param_field->resolved_type);
+                dynamic_array_append(&param_types, param_field->resolved_type);
             }
 
             Type *return_type = nullptr;
@@ -1062,7 +1076,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                 return false;
             }
 
-            expr->resolved_type = decl_type(sym->decl);
+            expr->resolved_type = sym_decl_type(sym);
 
             break;
         }

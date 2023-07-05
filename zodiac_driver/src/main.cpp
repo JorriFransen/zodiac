@@ -65,6 +65,8 @@ int main() {
 
     resolve_file(&resolver, file);
 
+    bool exit = false;
+
     for (s64 i = 0; i < c.errors.count; i++) {
 
         auto err = c.errors[i];
@@ -76,7 +78,12 @@ int main() {
         if (print) {
             auto start = err.source_range.start;
             printf("%s:%llu:%llu: error: %s\n", start.name.data, start.line, start.index_in_line, err.message.data);
+            exit = true;
         }
+    }
+
+    if (exit) {
+        return 42;
     }
 
     free(&dynamic_allocator, stream.data);

@@ -258,7 +258,7 @@ ZAPI Bytecode_Register bytecode_type_value(Bytecode_Builder *builder, Type *type
 ZAPI Bytecode_Register bytecode_register_create(Bytecode_Builder *builder, Bytecode_Register_Kind kind, Type *type, Bytecode_Register_Flags flags = BC_REGISTER_FLAG_NONE);
 ZAPI Bytecode_Phi_Args_Handle bytecode_phi_arg_create(Bytecode_Builder *builder, Bytecode_Register true_val, Bytecode_Block_Handle true_block, Bytecode_Register false_val, Bytecode_Block_Handle false_block);
 
-ZAPI Bytecode_Register bytecode_load_argument(Bytecode_Builder *builder, s64 index);
+ZAPI Bytecode_Register bytecode_emit_load_argument(Bytecode_Builder *builder, s64 index);
 
 ZAPI Bytecode_Register bytecode_emit_add(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b);
 ZAPI Bytecode_Register bytecode_emit_sub(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b);

@@ -166,8 +166,8 @@ file_local MunitResult Arguments_And_Return_Values(const MunitParameter params[]
         auto add_fn_entry_handle = bytecode_append_block(&bb, add_fn_handle, "entry");
 
         bytecode_set_insert_point(&bb, add_fn_handle, add_fn_entry_handle);
-        auto a1 = bytecode_load_argument(&bb, 0);
-        auto a2 = bytecode_load_argument(&bb, 1);
+        auto a1 = bytecode_emit_load_argument(&bb, 0);
+        auto a2 = bytecode_emit_load_argument(&bb, 1);
         auto add_result = bytecode_emit_add(&bb, a1, a2);
         bytecode_emit_print(&bb, add_result);
         bytecode_emit_return(&bb, add_result);
@@ -247,7 +247,7 @@ file_local MunitResult Recursion_And_Jumps(const MunitParameter params[], void* 
 
         bytecode_set_insert_point(&bb, recursive_fn_handle, add_fn_entry_handle);
 
-        auto a1 = bytecode_load_argument(&bb, 0);
+        auto a1 = bytecode_emit_load_argument(&bb, 0);
         auto cond = bytecode_emit_gt(&bb, a1, bytecode_integer_literal(&bb, &builtin_type_s64, 0));
         bytecode_emit_print(&bb, cond);
         bytecode_emit_jmp_if(&bb, cond, recurse_block, return_block);
@@ -578,7 +578,7 @@ file_local MunitResult Struct_Arguments(const MunitParameter params[], void *use
     auto vec2_len_entry_block = bytecode_append_block(&bb, vec2_len_fn, "entry");
     bytecode_set_insert_point(&bb, vec2_len_fn, vec2_len_entry_block);
     {
-        auto vec = bytecode_load_argument(&bb, 0);
+        auto vec = bytecode_emit_load_argument(&bb, 0);
         auto x = bytecode_emit_extract_value(&bb, vec, 0);
         auto y = bytecode_emit_extract_value(&bb, vec, 1);
         x = bytecode_emit_mul(&bb, x, x);
@@ -597,7 +597,7 @@ file_local MunitResult Struct_Arguments(const MunitParameter params[], void *use
     auto print_vec2_entry_block = bytecode_append_block(&bb, print_vec2_fn, "entry");
     bytecode_set_insert_point(&bb, print_vec2_fn, print_vec2_entry_block);
     {
-        auto vec = bytecode_load_argument(&bb, 0);
+        auto vec = bytecode_emit_load_argument(&bb, 0);
         auto x = bytecode_emit_extract_value(&bb, vec, 0);
         auto y = bytecode_emit_extract_value(&bb, vec, 1);
         bytecode_emit_print(&bb, x);
@@ -1183,8 +1183,8 @@ file_local MunitResult Calling_Function_Pointers(const MunitParameter params[], 
     auto add_entry_block = bytecode_append_block(&bb, add_fn, "entry");
     bytecode_set_insert_point(&bb, add_fn, add_entry_block);
     {
-        auto a = bytecode_load_argument(&bb, 0);
-        auto b = bytecode_load_argument(&bb, 1);
+        auto a = bytecode_emit_load_argument(&bb, 0);
+        auto b = bytecode_emit_load_argument(&bb, 1);
 
         auto r = bytecode_emit_add(&bb, a, b);
         bytecode_emit_return(&bb, r);
@@ -1196,8 +1196,8 @@ file_local MunitResult Calling_Function_Pointers(const MunitParameter params[], 
     auto add32_entry_block = bytecode_append_block(&bb, add32_fn, "entry");
     bytecode_set_insert_point(&bb, add32_fn, add32_entry_block);
     {
-        auto a = bytecode_load_argument(&bb, 0);
-        auto b = bytecode_load_argument(&bb, 1);
+        auto a = bytecode_emit_load_argument(&bb, 0);
+        auto b = bytecode_emit_load_argument(&bb, 1);
 
         auto r = bytecode_emit_add(&bb, a, b);
         bytecode_emit_return(&bb, r);
@@ -1307,8 +1307,8 @@ file_local MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[
     auto make_vec2_entry_block = bytecode_append_block(&bb, make_vec2_fn, "entry");
     bytecode_set_insert_point(&bb, make_vec2_fn, make_vec2_entry_block);
     {
-        auto a = bytecode_load_argument(&bb, 0);
-        auto b = bytecode_load_argument(&bb, 1);
+        auto a = bytecode_emit_load_argument(&bb, 0);
+        auto b = bytecode_emit_load_argument(&bb, 1);
 
         auto result = bytecode_emit_insert_value(&bb, {}, a, vec2_type, 0);
         result = bytecode_emit_insert_value(&bb, result, b, vec2_type, 1);
@@ -1322,7 +1322,7 @@ file_local MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[
     auto print_vec2_entry_block = bytecode_append_block(&bb, print_vec2_fn, "entry");
     bytecode_set_insert_point(&bb, print_vec2_fn, print_vec2_entry_block);
     {
-        auto vec = bytecode_load_argument(&bb, 0);
+        auto vec = bytecode_emit_load_argument(&bb, 0);
 
         auto x = bytecode_emit_extract_value(&bb, vec, 0);
         auto y = bytecode_emit_extract_value(&bb, vec, 1);
@@ -1444,8 +1444,8 @@ file_local MunitResult BC_Callback_From_C(const MunitParameter params[], void *u
     auto add_entry_block = bytecode_append_block(&bb, add_fn, "entry");
     bytecode_set_insert_point(&bb, add_fn, add_entry_block);
     {
-        auto a = bytecode_load_argument(&bb, 0);
-        auto b = bytecode_load_argument(&bb, 1);
+        auto a = bytecode_emit_load_argument(&bb, 0);
+        auto b = bytecode_emit_load_argument(&bb, 1);
 
         auto r = bytecode_emit_add(&bb, a, b);
         bytecode_emit_return(&bb, r);

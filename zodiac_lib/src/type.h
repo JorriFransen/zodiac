@@ -1,15 +1,15 @@
 #pragma once
 
-#include "util/zstring.h"
 #include "atom.h"
 #include "containers/dynamic_array.h"
 #include "defines.h"
+#include "util/zstring.h"
 
 namespace Zodiac
 {
 
+struct Symbol;
 struct Allocator;
-struct AST_Declaration;
 struct String_Builder;
 struct Zodiac_Context;
 
@@ -139,7 +139,7 @@ ZAPI Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator 
 ZAPI Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator);
 ZAPI Type *get_function_type(Type *return_type, Array_Ref<Type *> param_types, Allocator *allocator, bool vararg = false);
 
-ZAPI Type *decl_type(AST_Declaration *decl);
+ZAPI Type *sym_decl_type(Symbol *sym);
 
 ZAPI bool valid_static_type_conversion(Type *from, Type *to);
 

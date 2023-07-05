@@ -246,6 +246,8 @@ struct AST_Field_Declaration
 {
     AST_Identifier identifier;
     AST_Type_Spec *type_spec;
+
+    Type *resolved_type;
 };
 
 struct AST_Function_Declaration
