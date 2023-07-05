@@ -4,6 +4,7 @@
 
 #include "common.h"
 #include "defines.h"
+#include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
 #include "platform/filesystem.h"
 #include "util/asserts.h"
@@ -22,11 +23,12 @@
 namespace Zodiac
 {
 
-struct Allocator;
-
 OS_Release_Info os_release_info(Allocator *allocator)
 {
+    assert(allocator);
+
     OS_Release_Info result = {};
+    result.allocator = allocator;
 
     auto os_release_path = "/etc/os-release";
 
@@ -121,7 +123,7 @@ bool platform_info_generic(Allocator *allocator, Platform_Info *info)
             }
         }
     }
-    
+
     if (!dynamic_linker_found) {
         info->err = "Failed to find dynamic linker path, required for linking with c standard library.";
         return false;
@@ -151,6 +153,15 @@ bool platform_info(Allocator *allocator, Platform_Info *info)
 
     ZTRACE( "[platform_info()] Unsupported os '%s', falling back on platform_info_generic()\n", ori.id.data);
     return platform_info_generic(allocator, info);
+}
+
+void free_platform_info(Platform_Info *info)
+{
+    assert(info);
+    assert(info->allocator);
+
+    free(info->allocator, info->crt_path.data);
+    free(info->allocator, info->dynamic_linker_path.data);
 }
 
 struct Linear_Alloc_Header

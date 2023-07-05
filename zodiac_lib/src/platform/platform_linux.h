@@ -18,6 +18,7 @@ struct Platform_Info
 
 struct OS_Release_Info
 {
+    Allocator *allocator;
     bool found = false;
     String name = {};
     String id = {};
