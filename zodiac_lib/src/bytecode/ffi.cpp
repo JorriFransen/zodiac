@@ -36,7 +36,7 @@ FFI_Context ffi_create(Allocator *allocator, Zodiac_Context *zc, bool link_c, FF
     assert(this_exe_lib);
     dynamic_array_append(&result.libs, this_exe_lib);
 
-#if _WIN32
+#if ZPLATFORM_WINDOWS
     DLLib *kernel32_lib = dlLoadLibrary("kernel32.dll");
     assert(kernel32_lib);
     dynamic_array_append(&result.libs, kernel32_lib);
@@ -53,7 +53,14 @@ FFI_Context ffi_create(Allocator *allocator, Zodiac_Context *zc, bool link_c, FF
 
 #endif
 
-    DLLib *rt_support_lib = dlLoadLibrary(zc->support_lib_dynamic_path.data);
+
+    DLLib *rt_support_lib = nullptr;
+
+#ifdef ZPLATFORM_WINDOWS
+    rt_support_lib = dlLoadLibrary(zc->support_dll_dynamic_path.data);
+#else
+    rt_support_lib = dlLoadLibrary(zc->support_lib_dynamic_path.data);
+#endif
     assert(rt_support_lib);
     dynamic_array_append(&result.libs, rt_support_lib);
 

@@ -1399,6 +1399,9 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     String_Ref zrs_s_lib_path = builder->zodiac_context->support_lib_static_path;
     string_builder_append(sb, " %.*s", (int)zrs_s_lib_path.length, zrs_s_lib_path.data);
 
+    // String_Ref zrs_lib_path = builder->zodiac_context->support_lib_dynamic_path;
+    // string_builder_append(sb, " %.*s", (int)zrs_lib_path.length, zrs_lib_path.data);
+
     auto arg_str = string_builder_to_string(sb);
     printf("Running link command: %.*s\n", (int)arg_str.length, arg_str.data);
 

@@ -49,16 +49,21 @@ void zodiac_context_create(Zodiac_Context *out_context)
     auto dynamic_support_lib_name = "/libzrs.so";
     auto static_support_lib_name = "/libzrs_s.a";
 
-    out_context->support_lib_static_path = string_append(c_allocator(), out_context->compiler_exe_dir, static_support_lib_name);
-    assert(filesystem_exists(out_context->support_lib_static_path));
-
 #elif ZPLATFORM_WINDOWS
-    auto dynamic_support_lib_name = "\\libzrs.dll";
-    // auto static_support_lib_name = "\\libzrs_s.lib";
+    auto dynamic_support_lib_name = "\\libzrs.lib";
+    auto dynamic_support_dll_name = "\\libzrs.dll";
+    auto static_support_lib_name = "\\libzrs_s.lib";
+
+    out_context->support_dll_dynamic_path = string_append(c_allocator(), out_context->compiler_exe_dir, dynamic_support_dll_name);
+    assert(filesystem_exists(out_context->support_dll_dynamic_path));
+
 #endif
 
     out_context->support_lib_dynamic_path = string_append(c_allocator(), out_context->compiler_exe_dir, dynamic_support_lib_name);
     assert(filesystem_exists(out_context->support_lib_dynamic_path));
+
+    out_context->support_lib_static_path = string_append(c_allocator(), out_context->compiler_exe_dir, static_support_lib_name);
+    assert(filesystem_exists(out_context->support_lib_static_path));
 
 }
 

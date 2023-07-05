@@ -34,7 +34,11 @@ struct Zodiac_Context
 
     String compiler_exe_path;
     String compiler_exe_dir;
+
     String support_lib_dynamic_path;
+#ifdef ZPLATFORM_WINDOWS
+    String support_dll_dynamic_path;
+#endif
     String support_lib_static_path;
 };
 
