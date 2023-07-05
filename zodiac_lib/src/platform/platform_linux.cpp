@@ -106,9 +106,27 @@ bool platform_info_generic(Allocator *allocator, Platform_Info *info)
         return false;
     }
 
-    auto dynamic_linker_path = "/lib64/ld-linux-x86-64.so.2";
-    assert(filesystem_is_regular(dynamic_linker_path));
-    info->dynamic_linker_path = string_copy(allocator, dynamic_linker_path);
+    bool dynamic_linker_found = false;
+
+    for (s64 i = 0; i < candidate_count; i++) {
+        auto path = String_Ref(candidate_paths[i]);
+
+        if (!filesystem_is_link(path)) {
+            auto dynamic_linker_path = string_append(temp_allocator_allocator(), path, "ld-linux-x86-64.so.2");
+
+            if (filesystem_is_regular(dynamic_linker_path)) {
+                info->dynamic_linker_path = string_copy(allocator, dynamic_linker_path);
+                dynamic_linker_found = true;
+                break;
+            }
+        }
+    }
+    
+    if (!dynamic_linker_found) {
+        info->err = "Failed to find dynamic linker path, required for linking with c standard library.";
+        return false;
+    }
+
     return true;
 }
 
