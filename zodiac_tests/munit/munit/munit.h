@@ -22,6 +22,9 @@
  * SOFTWARE.
  */
 
+// IWYU pragma: no_forward_declare MunitArgument_
+// IWYU pragma: no_forward_declare MunitSuite_
+
 #if !defined(MUNIT_H)
 #define MUNIT_H
 
