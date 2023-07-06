@@ -5,19 +5,19 @@ bar : s64;
 
 
 add :: (a: s64, b: s64) -> s64 {
-    xx : s64 = a + b;
+    xx := a + b;
     return xx;
 }
 
 main :: () -> s64 {
-    a : s64 = 10;
+    a := 10;
     z :: 19;
-    b : s64 = z + x + y + foo;
+    b := z + x + y + foo;
     print(b);
     print(a + b);
     print(add(40, 2));
     return a + b;
 }
 
-x : s64 : 21;
+x :: 21;
 y :: 2;

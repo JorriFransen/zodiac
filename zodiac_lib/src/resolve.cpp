@@ -938,6 +938,10 @@ bool type_resolve_declaration(AST_Declaration *decl, Scope *scope)
 
                     // TODO: Check if this fits
                     decl->variable.resolved_type = &builtin_type_s64;
+                } else {
+
+                    assert(decl->variable.value->resolved_type);
+                    decl->variable.resolved_type = decl->variable.value->resolved_type;
                 }
 
             } else {
@@ -1180,11 +1184,15 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                             rhs->resolved_type->kind == Type_Kind::INTEGER) {
                     assert(lhs->resolved_type == rhs->resolved_type);
                     expr->resolved_type = lhs->resolved_type;
-                } else {
+                } else if (expr->infer_type_from){
                     assert(expr->infer_type_from);
                     assert(expr->infer_type_from->resolved_type);
                     assert(expr->infer_type_from->resolved_type->kind == Type_Kind::INTEGER);
                     expr->resolved_type = expr->infer_type_from->resolved_type;
+                } else {
+                    assert(lhs->resolved_type == &builtin_type_unsized_integer);
+                    assert(rhs->resolved_type == &builtin_type_unsized_integer);
+                    expr->resolved_type = &builtin_type_s64;
                 }
             } else {
                 assert(false);
