@@ -226,11 +226,8 @@ Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator)
 
 Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Allocator *allocator, bool vararg/*=false*/)
 {
+    assert(return_type);
     assert(allocator);
-
-    if (!return_type) {
-        return_type = &builtin_type_void;
-    }
 
     for (u64 i = 0; i < function_types.count; i++) {
 

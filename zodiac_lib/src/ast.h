@@ -260,6 +260,7 @@ struct AST_Function_Declaration
     Dynamic_Array<AST_Statement *> body;
 
     Type *type;
+    Type *inferred_return_type;
 
     Scope *parameter_scope;
     Scope *local_scope;

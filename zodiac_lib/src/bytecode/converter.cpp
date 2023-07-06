@@ -47,7 +47,8 @@ void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
             case Flat_Node_Kind::TS: assert(false); break;
             case Flat_Node_Kind::PARAM_DECL: assert(false); break;
             case Flat_Node_Kind::FIELD_DECL: assert(false); break;
-            case Flat_Node_Kind::FUNCTION_PROTO: assert(false); break;
+
+            case Flat_Node_Kind::FUNCTION_PROTO: break;
         }
     }
 }

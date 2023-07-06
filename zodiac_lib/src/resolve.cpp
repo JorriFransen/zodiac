@@ -52,8 +52,7 @@ void resolve_file(Resolver *resolver, AST_File *file)
 
     // Register all top level symbols first
     for (s64 i = 0; i < file->declarations.count; i++) {
-        if (!add_unresolved_decl_symbol(resolver->ctx, resolver->global_scope, file->declarations[i], true))
-        {
+        if (!add_unresolved_decl_symbol(resolver->ctx, resolver->global_scope, file->declarations[i], true)) {
             assert(resolver->ctx->fatal_resolve_error);
             assert(false);
             return;
@@ -62,21 +61,36 @@ void resolve_file(Resolver *resolver, AST_File *file)
 
     // Flatten all top level declarations, registering all nested symbols in the process
     for (s64 i = 0; i < file->declarations.count; i++) {
-        resolver_add_declaration(resolver->ctx, resolver, file->declarations[i]);
+        resolver_add_declaration(resolver->ctx, resolver, file->declarations[i], resolver->global_scope);
     }
 
-    bool names_done = resolve_names(resolver);
+    bool done = false;
 
-    bool types_done = false;
-    if (names_done) types_done = resolve_types(resolver);
+    while (!done) {
 
-    if (names_done && types_done) assert(resolver->ctx->errors.count == 0);
+        bool names_done = resolve_names(resolver);
+
+        if (resolver->ctx->fatal_resolve_error) break;
+
+        bool types_done = resolve_types(resolver);
+
+        if (resolver->ctx->fatal_resolve_error) break;
+
+        if (names_done && types_done) {
+            done = true;
+        }
+
+        if (done) assert(resolver->ctx->errors.count == 0);
+    }
+
+
 }
 
-void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Declaration *decl)
+void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Declaration *decl, Scope *scope)
 {
     assert(resolver);
     assert(decl);
+    assert(scope);
 
     Flat_Root_Node node = {};
     node.root.kind = Flat_Node_Kind::DECL;
@@ -84,6 +98,29 @@ void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Decla
     node.current_index  = 0;
 
     dynamic_array_create(&dynamic_allocator, &node.nodes);
+
+    if (decl->kind == AST_Declaration_Kind::FUNCTION) {
+        Flat_Root_Node proto_node = {};
+        proto_node.root.kind = Flat_Node_Kind::FUNCTION_PROTO;
+        proto_node.root.decl = decl;
+        proto_node.current_index = 0;
+
+        dynamic_array_create(&dynamic_allocator, &proto_node.nodes);
+
+        for (s64 i = 0; i < decl->function.params.count; i++) {
+            auto field = &decl->function.params[i];
+            flatten_type_spec(field->type_spec, scope, &proto_node.nodes);
+        }
+
+        if (decl->function.return_ts) {
+            flatten_type_spec(decl->function.return_ts, scope, &proto_node.nodes);
+        }
+
+        Flat_Node flat_decl = to_flat_proto(decl, scope);
+        dynamic_array_append(&proto_node.nodes, flat_decl);
+
+        dynamic_array_append(&resolver->nodes_to_name_resolve, proto_node);
+    }
 
     flatten_declaration(ctx, decl, resolver->global_scope, &node.nodes);
 
@@ -286,9 +323,6 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
                 flatten_type_spec(decl->function.return_ts, scope, dest);
             }
 
-            Flat_Node proto_node = to_flat_proto(decl, parameter_scope);
-            dynamic_array_append(dest, proto_node);
-
             for (u64 i = 0; i < decl->function.body.count; i++) {
                 flatten_statement(ctx, decl->function.body[i], local_scope, dest);
             }
@@ -357,12 +391,11 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
                 AST_Declaration *func_decl = enclosing_function(scope);
                 assert(func_decl);
 
-                AST_Type_Spec *infer_from = func_decl->function.return_ts;
-                if (stmt->return_stmt.value->kind == AST_Expression_Kind::INTEGER_LITERAL) {
-                    // We need a known return type to infer from in this case
-                    assert(func_decl->function.return_ts || func_decl->function.type);
+                AST_Type_Spec *infer_from = nullptr;
+
+                if (func_decl->function.return_ts) {
+                    infer_from = func_decl->function.return_ts;
                 }
-                // assert(infer_from);
 
                 stmt->return_stmt.scope = scope;
 
@@ -518,7 +551,7 @@ Flat_Node to_flat_node(AST_Field_Declaration *param, Scope *scope)
 Flat_Node to_flat_proto(AST_Declaration *decl, Scope *scope)
 {
     assert(decl && decl->kind == AST_Declaration_Kind::FUNCTION);
-    assert(scope && scope->kind == Scope_Kind::FUNCTION_PARAMETER);
+    assert(scope && scope->kind == Scope_Kind::GLOBAL);
 
     Flat_Node result = {};
     result.kind = Flat_Node_Kind::FUNCTION_PROTO;
@@ -572,8 +605,16 @@ bool name_resolve_node(Resolver *resolver, Flat_Node *node)
         }
 
         case Flat_Node_Kind::FUNCTION_PROTO: {
-            // The types and function name have been handled before
-            return true;
+            if (node->decl->function.return_ts) {
+                return true;
+            } else {
+                // We need to infer the return type from the body, so wait for it to be resolved
+                if (node->decl->function.inferred_return_type) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
         }
     }
 
@@ -875,10 +916,6 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
             assert(func_decl->kind == AST_Declaration_Kind::FUNCTION);
             assert(func_decl->function.type == nullptr);
 
-            if (func_decl->function.return_ts) {
-                assert(func_decl->function.return_ts->resolved_type);
-            }
-
             Dynamic_Array<Type *> param_types;
             dynamic_array_create(&ctx->temp_allocator, &param_types, func_decl->function.params.count);
             auto mark = temporary_allocator_get_mark(&ctx->temp_allocator_state);
@@ -895,6 +932,16 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
                 assert(func_decl->function.return_ts->resolved_type)
                 return_type = func_decl->function.return_ts->resolved_type;
             }
+
+            if (func_decl->function.inferred_return_type) {
+                return_type = func_decl->function.inferred_return_type;
+            }
+
+            if (!return_type) {
+                fatal_resolve_error(ctx, func_decl, "Could not infer return type");
+                return false;
+            }
+
             func_decl->function.type = get_function_type(return_type, param_types, &ctx->ast_allocator);
 
             temporary_allocator_reset(&ctx->temp_allocator_state, mark);
@@ -980,9 +1027,9 @@ bool type_resolve_declaration(AST_Declaration *decl, Scope *scope)
         }
 
         case AST_Declaration_Kind::FUNCTION: {
-            assert(decl->function.type);
-            assert(decl->function.type->kind == Type_Kind::FUNCTION);
-            return true;
+            assert(decl->function.type || decl->function.inferred_return_type);
+            if (decl->function.type) assert(decl->function.type->kind == Type_Kind::FUNCTION);
+            return decl->function.type != nullptr;
         }
 
         case AST_Declaration_Kind::STRUCT: assert(false);
@@ -1017,23 +1064,38 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
             assert(fn_decl && fn_decl->kind == AST_Declaration_Kind::FUNCTION);
 
             //TODO: Use the function proto here
-            // This should be set when the function proto is resolved/typed
-            assert(fn_decl->function.type);
-            assert(fn_decl->function.type->kind == Type_Kind::FUNCTION);
+            // assert(fn_decl->function.type->kind == Type_Kind::FUNCTION);
+
+            if (fn_decl->function.return_ts && !fn_decl->function.type) {
+                assert(false); // Wait for this to be resolved first!
+            }
+
+            Type *fn_type = fn_decl->function.type;
+            if (fn_type) assert(fn_type->kind == Type_Kind::FUNCTION);
 
             if (stmt->return_stmt.value) {
 
                 auto actual_type = stmt->return_stmt.value->resolved_type;
-                auto expected_type = fn_decl->function.return_ts->resolved_type;
 
-                assert(actual_type && expected_type);
+                if (fn_type) {
+                    auto expected_type = fn_type->function.return_type;
 
-                if (actual_type == expected_type) return true;
+                    assert(actual_type && expected_type);
 
-                bool valid_conversion = valid_static_type_conversion(actual_type, expected_type);
-                if (!valid_conversion) {
-                    assert(false); // report error
-                    return false;
+                    if (actual_type == expected_type) return true;
+
+                    bool valid_conversion = valid_static_type_conversion(actual_type, expected_type);
+                    if (!valid_conversion) {
+                        assert(false); // report error
+                        return false;
+                    }
+                } else {
+
+                    if (actual_type == &builtin_type_unsized_integer) {
+                        actual_type = &builtin_type_s64;
+                    }
+
+                    fn_decl->function.inferred_return_type = actual_type;
                 }
 
             } else {
