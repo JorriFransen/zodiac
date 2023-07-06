@@ -871,7 +871,7 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
     switch (node->kind) {
 
         case Flat_Node_Kind::DECL: {
-            return type_resolve_declaration(node->decl, node->scope);
+            return type_resolve_declaration(ctx, node->decl, node->scope);
             break;
         }
 
@@ -908,48 +908,56 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
 
         case Flat_Node_Kind::FUNCTION_PROTO: {
 
-            if (!node->decl->function.return_ts &&
-                !node->decl->function.inferred_return_type)
-            {
-                resolve_error(ctx, node->decl, "Could not infer return type");
-                return false;
-            }
-
             AST_Declaration *func_decl = node->decl;
             assert(func_decl->kind == AST_Declaration_Kind::FUNCTION);
-            assert(func_decl->function.type == nullptr);
 
-            Dynamic_Array<Type *> param_types;
-            dynamic_array_create(&ctx->temp_allocator, &param_types, func_decl->function.params.count);
-            auto mark = temporary_allocator_get_mark(&ctx->temp_allocator_state);
+            if (func_decl->function.type) {
+                if (func_decl->function.return_ts) {
+                    assert(func_decl->function.return_ts->resolved_type);
+                    assert(func_decl->function.type->function.return_type == func_decl->function.return_ts->resolved_type) ;
+                }
+            } else {
 
-            for (u64 i = 0; i < func_decl->function.params.count; i++) {
+                if (!func_decl->function.return_ts &&
+                    !func_decl->function.inferred_return_type)
+                {
+                    resolve_error(ctx, node->decl, "Could not infer return type");
+                    return false;
+                }
 
-                // Only use the typespec here, the actual fields are not resolved as part of the prototype
-                auto param_ts = func_decl->function.params[i]->type_spec;
-                assert(param_ts && param_ts->resolved_type);
 
-                dynamic_array_append(&param_types, param_ts->resolved_type);
+                Dynamic_Array<Type *> param_types;
+                dynamic_array_create(&ctx->temp_allocator, &param_types, func_decl->function.params.count);
+                auto mark = temporary_allocator_get_mark(&ctx->temp_allocator_state);
+
+                for (u64 i = 0; i < func_decl->function.params.count; i++) {
+
+                    // Only use the typespec here, the actual fields are not resolved as part of the prototype
+                    auto param_ts = func_decl->function.params[i]->type_spec;
+                    assert(param_ts && param_ts->resolved_type);
+
+                    dynamic_array_append(&param_types, param_ts->resolved_type);
+                }
+
+                Type *return_type = nullptr;
+                if (func_decl->function.return_ts) {
+                    assert(func_decl->function.return_ts->resolved_type)
+                    return_type = func_decl->function.return_ts->resolved_type;
+                }
+
+                if (func_decl->function.inferred_return_type) {
+                    return_type = func_decl->function.inferred_return_type;
+                }
+
+                if (!return_type) {
+                    fatal_resolve_error(ctx, func_decl, "Could not infer return type");
+                    return false;
+                }
+
+                func_decl->function.type = get_function_type(return_type, param_types, &ctx->ast_allocator);
+
+                temporary_allocator_reset(&ctx->temp_allocator_state, mark);
             }
-
-            Type *return_type = nullptr;
-            if (func_decl->function.return_ts) {
-                assert(func_decl->function.return_ts->resolved_type)
-                return_type = func_decl->function.return_ts->resolved_type;
-            }
-
-            if (func_decl->function.inferred_return_type) {
-                return_type = func_decl->function.inferred_return_type;
-            }
-
-            if (!return_type) {
-                fatal_resolve_error(ctx, func_decl, "Could not infer return type");
-                return false;
-            }
-
-            func_decl->function.type = get_function_type(return_type, param_types, &ctx->ast_allocator);
-
-            temporary_allocator_reset(&ctx->temp_allocator_state, mark);
 
             auto sym = scope_get_symbol(node->scope, node->decl->identifier.name);
             assert(sym && sym->kind == Symbol_Kind::FUNC);
@@ -964,7 +972,7 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
     return false;
 }
 
-bool type_resolve_declaration(AST_Declaration *decl, Scope *scope)
+bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope)
 {
     assert(decl);
     assert(scope);
@@ -1032,7 +1040,17 @@ bool type_resolve_declaration(AST_Declaration *decl, Scope *scope)
         }
 
         case AST_Declaration_Kind::FUNCTION: {
-            assert(decl->function.type || decl->function.inferred_return_type);
+
+            // Only implicitly infer a void return type from the body when there is no return type_spec
+            if (!decl->function.type && !decl->function.inferred_return_type) {
+                if (!decl->function.return_ts) {
+                    decl->function.type = get_function_type(&builtin_type_void, {}, &ctx->ast_allocator);
+                    decl->function.inferred_return_type = decl->function.type->function.return_type;
+                } else {
+                    assert(false);
+                }
+            }
+
             if (decl->function.type) assert(decl->function.type->kind == Type_Kind::FUNCTION);
             return decl->function.type;
         }
@@ -1100,7 +1118,11 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
                         actual_type = &builtin_type_s64;
                     }
 
-                    fn_decl->function.inferred_return_type = actual_type;
+                    if (fn_decl->function.inferred_return_type) {
+                        assert(fn_decl->function.inferred_return_type == actual_type);
+                    } else {
+                        fn_decl->function.inferred_return_type = actual_type;
+                    }
                 }
 
             } else {

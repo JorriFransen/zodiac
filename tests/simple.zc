@@ -7,8 +7,12 @@ add :: (a: s64, b: s64) {
     return a + b;
 }
 
-test :: () {
+infer_void_return1 :: () {
     return;
+}
+
+infer_void_return2 :: () {
+
 }
 
 main :: () -> s64 {
