@@ -48,6 +48,7 @@ void resolve_file(Resolver *resolver, AST_File *file)
     add_builtin_type_symbol(r32);
     add_builtin_type_symbol(r64);
 
+    add_builtin_type_symbol(void);
     add_builtin_type_symbol(String);
 
     // Register all top level symbols first

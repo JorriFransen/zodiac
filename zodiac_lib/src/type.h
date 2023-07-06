@@ -24,6 +24,7 @@ struct Zodiac_Context;
     ZODIAC_NUMERIC_TYPE_DEF(s, 8)    \
     ZODIAC_NUMERIC_TYPE_DEF(r, 32)   \
     ZODIAC_NUMERIC_TYPE_DEF(r, 64)   \
+    ZODIAC_NAME_TYPE_DEF(void)       \
     ZODIAC_NAME_TYPE_DEF(String)     \
 
 // Builtin type atoms

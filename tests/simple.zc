@@ -15,6 +15,10 @@ infer_void_return2 :: () {
 
 }
 
+void_return_ts :: () -> void {
+
+}
+
 main :: () -> s64 {
     a := 10;
     z :: 19;
