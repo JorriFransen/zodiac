@@ -96,6 +96,16 @@ int main() {
 
     emit_bytecode(&resolver, &bc);
 
+    for (s64 i = 0; i < c.errors.count; i++) {
+        auto err = c.errors[i];
+        auto start = err.source_range.start;
+        printf("%s:%llu:%llu: error: %s\n", start.name.data, start.line, start.index_in_line, err.message.data);
+    }
+
+    if (c.errors.count) {
+        return 42;
+    }
+
     bytecode_print(&bb, temp_allocator_allocator());
 
     Bytecode_Validator validator = {};

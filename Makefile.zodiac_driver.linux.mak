@@ -48,5 +48,6 @@ $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 clean:
 	rm -rf $(BUILD_DIR)/$(ASSEMBLY)$(EXTENSION)
 	rm -rf $(OBJ_DIR)/$(BASE_DIR)
+	rm -rf {a.out,out.o}
 
 -include $(OBJ_FILES:.o=.d)

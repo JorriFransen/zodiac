@@ -1,22 +1,21 @@
 //test
 
-// foo : s64 = 33;
-// bar : s64;
+foo : s64 = 33;
+bar : s64;
 
-same :: (x: s64) -> s64 {
-    return x;
+add :: (a: s64, b: s64) -> s64 {
+    return a + b;
 }
 
 main :: () -> s64 {
-    // a : s64 = 10;
-    // z :: 19;
-    // b : s64 = z + x + y + foo;
+    a : s64 = 10;
+    z :: 19;
+    b : s64 = z + x + y + foo;
     // print(b);
     // print(a + b);
-    print(same(42));
-    // return a + b;
-    return 42;
+    print(add(40, 2));
+    return a + b;
 }
 
-// x :: 21;
-// y :: 2;
+x :: 21;
+y :: 2;

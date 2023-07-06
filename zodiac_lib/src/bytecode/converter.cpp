@@ -3,6 +3,7 @@
 #include "ast.h"
 #include "atom.h"
 #include "containers/dynamic_array.h"
+#include "error.h"
 #include "resolve.h"
 #include "scope.h"
 #include "type.h"
@@ -171,7 +172,15 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     }
 
     for (s64 i = 0; i < decl->function.body.count; i++) {
+
         AST_Statement *stmt = decl->function.body[i];
+
+        Bytecode_Block *current_block = bytecode_get_insert_block(bc->builder);
+        if (bytecode_block_is_terminated(current_block)) {
+            zodiac_report_error(bc->context, Zodiac_Error_Kind::ZODIAC_BC_CONVERSION_ERROR, stmt, "Unreachable code detected");
+            return;
+        }
+
         ast_stmt_to_bytecode(bc, stmt);
     }
 
@@ -359,12 +368,11 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
             auto arg_count = expr->call.args.count;
 
-            assert(false);
-            // for (s64 i = 0; i < expr->call.args.count; i++) {
-            //     auto arg_expr = expr->call.args[i];
-            //     Bytecode_Register arg_reg = ast_expr_to_bytecode(bc, arg_expr);
-            //     bytecode_emit_push_arg(bc->builder, arg_reg);
-            // }
+            for (s64 i = 0; i < expr->call.args.count; i++) {
+                auto arg_expr = expr->call.args[i];
+                Bytecode_Register arg_reg = ast_expr_to_bytecode(bc, arg_expr);
+                bytecode_emit_push_arg(bc->builder, arg_reg);
+            }
 
             return bytecode_emit_call(bc->builder, fn_handle, arg_count);
             break;

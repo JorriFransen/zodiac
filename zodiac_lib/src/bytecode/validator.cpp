@@ -133,6 +133,24 @@ bool validate_function(Bytecode_Validator *validator, Bytecode_Function_Handle f
         return true;
     }
 
+    for (s64 bi = 0; bi < function->blocks.count; bi++) {
+        auto block = &function->blocks[bi];
+        bool terminates = false;
+
+        for (s64 ii = 0; ii < block->instructions.count; ii++) {
+            auto inst = &block->instructions[ii];
+
+            if (terminates) {
+                Bytecode_Instruction_Handle i_handle = { .fn_index = fn_handle, .block_index = bi, .instruction_index = ii };
+                bytecode_validator_report_error(validator, i_handle, "Terminator found in middle of block");
+                return false;
+                break;
+            }
+
+            terminates = bytecode_instruction_is_terminator(inst);
+        }
+    }
+
     auto nodes = validator_build_block_graph(function);
 
     // auto dot = block_graph_to_dot(nodes, function, temp_allocator_allocator());

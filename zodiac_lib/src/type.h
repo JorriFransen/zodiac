@@ -145,5 +145,6 @@ ZAPI bool valid_static_type_conversion(Type *from, Type *to);
 
 ZAPI void type_to_string(Type *type, String_Builder *sb);
 ZAPI String type_to_string(Allocator *allocator, Type *type);
+ZAPI String temp_type_string(Type *type);
 
 }

@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include "memory/allocator.h"
+#include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 #include "scope.h"
 #include "util/asserts.h"
@@ -361,7 +362,10 @@ void type_to_string(Type *type, String_Builder *sb)
             break;
         }
 
-        case Type_Kind::UNSIZED_INTEGER: assert(false); break;
+        case Type_Kind::UNSIZED_INTEGER: {
+            string_builder_append(sb, "UNSIZED_INTEGER");
+            break;
+        }
 
         case Type_Kind::INTEGER: {
             char sign_char = type->integer.sign ? 's' : 'u';
@@ -414,6 +418,13 @@ String type_to_string(Allocator *allocator, Type *type)
     string_builder_destroy(&sb);
 
     return result;
+}
+
+String temp_type_string(Type *type)
+{
+    assert(type);
+
+    return type_to_string(temp_allocator_allocator(), type);
 }
 
 }

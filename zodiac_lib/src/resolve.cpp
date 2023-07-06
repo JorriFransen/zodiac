@@ -1092,9 +1092,6 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
         case AST_Expression_Kind::CALL: {
 
-            // TODO: Resolve arguments, match types against parameters
-            assert(false);
-
             auto ident_expr = expr->call.base;
 
             auto func_sym = scope_get_symbol(ident_expr->identifier.scope, ident_expr->identifier.name);
@@ -1104,6 +1101,34 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             auto func_decl = func_sym->decl;
             assert(func_decl && func_decl->kind == AST_Declaration_Kind::FUNCTION);
             assert(func_decl->function.type && func_decl->function.type->kind == Type_Kind::FUNCTION);
+
+            if (expr->call.args.count != func_decl->function.params.count) {
+                resolve_error(ctx, expr, "Expected %i arguments, got %i", func_decl->function.params.count, expr->call.args.count);
+                return false;
+            }
+
+            for (s64 i = 0; i < expr->call.args.count; i++) {
+                AST_Expression *arg_expr = expr->call.args[i];
+                Type *arg_type = arg_expr->resolved_type;
+                Type *param_type = func_decl->function.params[i].resolved_type;
+
+                bool match = true;
+
+                if (arg_type != param_type) {
+                    if (valid_static_type_conversion(arg_type, param_type)) {
+                        arg_expr->resolved_type = param_type;
+                    } else {
+                        match = false;
+                    }
+                }
+
+                if (!match) {
+                    resolve_error(ctx, arg_expr, "Mismatching type for argument %i", i + 1);
+                    resolve_error(ctx, arg_expr, "    Expected: %s", temp_type_string(param_type));
+                    resolve_error(ctx, arg_expr, "    Got: %s", temp_type_string(arg_type));
+                    return false;
+                }
+            }
 
             auto return_type = func_decl->function.type->function.return_type;
             assert(return_type);

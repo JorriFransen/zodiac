@@ -87,6 +87,29 @@ Bytecode_Function_Handle bytecode_find_entry(Bytecode_Program program)
     return -1;
 }
 
+bool bytecode_instruction_is_terminator(Bytecode_Instruction *inst)
+{
+    assert(inst);
+
+    auto op = inst->op;
+
+    return op == Bytecode_Opcode::RETURN      ||
+           op == Bytecode_Opcode::RETURN_VOID ||
+           op == Bytecode_Opcode::JMP         ||
+           op == Bytecode_Opcode::JMP_IF;
+}
+
+bool bytecode_block_is_terminated(Bytecode_Block *block)
+{
+    assert(block);
+
+    if (block->instructions.count) {
+        return block->terminated;
+    }
+
+    return false;
+}
+
 Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, const char* cstr_fn_name, Type *fn_type, BC_Function_Flag flags/*=BC_FUNCTION_FLAG_NONE*/)
 {
     Atom atom = atom_get(&builder->zodiac_context->atoms, cstr_fn_name);
@@ -227,6 +250,7 @@ Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_
 
     Bytecode_Block block = {
         .name = name,
+        .terminated = false,
     };
 
     dynamic_array_create(builder->allocator, &block.instructions);
@@ -246,6 +270,19 @@ void bytecode_set_insert_point(Bytecode_Builder *builder, Bytecode_Function_Hand
 
     builder->insert_fn_index = fn_handle;
     builder->insert_block_index = block_handle;
+}
+
+Bytecode_Block *bytecode_get_insert_block(Bytecode_Builder *builder)
+{
+    assert(builder);
+
+    assert(builder->insert_fn_index >= 0 && builder->insert_fn_index < builder->functions.count);
+
+    auto func = builder->functions[builder->insert_fn_index];
+
+    assert(builder->insert_block_index >= 0 && builder->insert_block_index < func.blocks.count);
+
+    return &func.blocks[builder->insert_block_index];
 }
 
 Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type, s64 value)
@@ -1006,7 +1043,8 @@ Bytecode_Instruction_Handle bytecode_emit_instruction(Bytecode_Builder *builder,
         .additional_index = 0,
     };
 
-    auto instructions = &fn->blocks[builder->insert_block_index].instructions;
+    auto block = &fn->blocks[builder->insert_block_index];
+    auto instructions = &block->instructions;
 
     Bytecode_Instruction_Handle handle = {
         .fn_index = builder->insert_fn_index,
@@ -1015,6 +1053,10 @@ Bytecode_Instruction_Handle bytecode_emit_instruction(Bytecode_Builder *builder,
     };
 
     dynamic_array_append(instructions, instruction);
+
+    if (bytecode_instruction_is_terminator(&instruction)) {
+        block->terminated = true;
+    }
 
     return handle;
 }

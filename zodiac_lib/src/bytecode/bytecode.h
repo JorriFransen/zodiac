@@ -146,6 +146,8 @@ struct Bytecode_Block
 {
     Atom name = {};
     Dynamic_Array<Bytecode_Instruction> instructions = {};
+
+    bool terminated = false;
 };
 
 struct Bytecode_Instruction_Handle
@@ -233,6 +235,8 @@ ZAPI void bytecode_builder_free(Bytecode_Builder *bb);
 
 ZAPI Bytecode_Program bytecode_get_program(Bytecode_Builder *builder);
 ZAPI Bytecode_Function_Handle bytecode_find_entry(Bytecode_Program program);
+ZAPI bool bytecode_instruction_is_terminator(Bytecode_Instruction *inst);
+ZAPI bool bytecode_block_is_terminated(Bytecode_Block *block);
 
 ZAPI Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, const char* cstr_fn_name, Type *fn_type, BC_Function_Flag flags = BC_FUNCTION_FLAG_NONE);
 ZAPI Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Atom fn_name, Type *fn_type, BC_Function_Flag flags = BC_FUNCTION_FLAG_NONE);
@@ -247,6 +251,7 @@ ZAPI Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Byte
 ZAPI Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Atom name);
 
 ZAPI void bytecode_set_insert_point(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Bytecode_Block_Handle block_handle);
+ZAPI Bytecode_Block *bytecode_get_insert_block(Bytecode_Builder *builder);
 
 ZAPI Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type, s64 value);
 ZAPI Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type, Integer_Value iv);
