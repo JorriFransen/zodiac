@@ -30,7 +30,7 @@
             "program": "${workspaceFolder}/bin/zodiac",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/bin",
+            "cwd": "${workspaceFolder}",
             "environment": [],
         },
         {

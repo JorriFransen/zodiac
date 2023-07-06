@@ -332,7 +332,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
                     s64 param_index = -1;
                     for (s64 i = 0; i < func_decl->function.params.count; i++) {
-                        if (func_decl->function.params[i].identifier.name == expr->identifier.name) {
+                        if (func_decl->function.params[i]->identifier.name == expr->identifier.name) {
                             param_index = i;
                             break;
                         }

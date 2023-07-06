@@ -31,11 +31,12 @@ enum class Symbol_Kind : u16
 
 enum class Symbol_State : u16
 {
-    UNRESOLVED,
-    RESOLVING,
-    RESOLVED,
+    UNRESOLVED = 1,
 
-    TYPED,
+    RESOLVING  = 2,
+    RESOLVED   = 3,
+
+    TYPED      = 4,
 };
 
 typedef u32 Symbol_Flags;

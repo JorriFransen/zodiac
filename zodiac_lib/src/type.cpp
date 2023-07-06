@@ -267,7 +267,7 @@ Type *sym_decl_type(Symbol *sym)
 
         bool found = false;
         for (s64 i = 0; i < func_decl->function.params.count; i++) {
-            auto param = &func_decl->function.params[i];
+            auto param = func_decl->function.params[i];
 
             if (param->identifier.name == sym->name) {
                 found = true;

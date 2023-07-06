@@ -145,7 +145,7 @@ Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declar
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
 
-                auto param_sym = add_unresolved_symbol(ctx, parameter_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param.identifier.name, decl, param.identifier.range);
+                auto param_sym = add_unresolved_symbol(ctx, parameter_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param->identifier.name, decl, param->identifier.range);
                 if (!param_sym) {
                     return nullptr;
                 }
@@ -163,7 +163,7 @@ Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declar
 
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
-                auto mem_sym = add_unresolved_symbol(ctx, aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field.identifier.name, decl, field.identifier.range);
+                auto mem_sym = add_unresolved_symbol(ctx, aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field->identifier.name, decl, field->identifier.range);
                 if (!mem_sym) {
                     return nullptr;
                 }

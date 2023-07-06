@@ -242,17 +242,19 @@ struct AST_Variable_Declaration
     Type *resolved_type;
 };
 
-struct AST_Field_Declaration
+ struct AST_Field_Declaration
 {
     AST_Identifier identifier;
     AST_Type_Spec *type_spec;
 
     Type *resolved_type;
+
+    Source_Range range;
 };
 
 struct AST_Function_Declaration
 {
-    Dynamic_Array<AST_Field_Declaration> params;
+    Dynamic_Array<AST_Field_Declaration *> params;
     Dynamic_Array<AST_Declaration *> variables;
 
     AST_Type_Spec *return_ts;
@@ -268,7 +270,7 @@ struct AST_Function_Declaration
 
 struct AST_Aggregate_Declaration
 {
-    Dynamic_Array<AST_Field_Declaration> fields;
+    Dynamic_Array<AST_Field_Declaration *> fields;
 };
 
 enum class AST_Declaration_Kind
@@ -363,8 +365,9 @@ ZAPI void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
 
 ZAPI void ast_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
 ZAPI void ast_constant_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
-ZAPI void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl);
-ZAPI void ast_aggregate_decl_create(AST_Identifier *ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields, AST_Declaration *out_decl);
+ZAPI void ast_field_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range range, AST_Field_Declaration *out_decl);
+ZAPI void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynamic_Array<AST_Field_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl);
+ZAPI void ast_aggregate_decl_create(AST_Identifier *ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration *> fields, AST_Declaration *out_decl);
 ZAPI void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl);
 
 ZAPI void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts);
@@ -396,8 +399,9 @@ ZAPI AST_Statement *ast_statement_new(Zodiac_Context *ctx, Source_Range range);
 
 ZAPI AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value);
 ZAPI AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value);
-ZAPI AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body);
-ZAPI AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields);
+ZAPI AST_Field_Declaration *ast_field_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts);
+ZAPI AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, Dynamic_Array<AST_Field_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body);
+ZAPI AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration *> fields);
 ZAPI AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Range range);
 
 ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident);

@@ -230,7 +230,17 @@ void ast_constant_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, 
     out_decl->variable.resolved_type = nullptr;
 }
 
-void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl)
+void ast_field_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range range, AST_Field_Declaration *out_decl)
+{
+    assert(out_decl);
+
+    out_decl->identifier = ident;
+    out_decl->type_spec = ts;
+    out_decl->resolved_type = nullptr;
+    out_decl->range = range;
+}
+
+void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynamic_Array<AST_Field_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl)
 {
     assert(out_decl);
 
@@ -247,7 +257,7 @@ void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynami
     out_decl->function.local_scope = nullptr;
 }
 
-void ast_aggregate_decl_create(AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields, AST_Declaration *out_decl)
+void ast_aggregate_decl_create(AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration *> fields, AST_Declaration *out_decl)
 {
     assert(out_decl);
     assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
@@ -489,7 +499,17 @@ AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, Source_Rang
     return decl;
 }
 
-AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, Dynamic_Array<AST_Field_Declaration> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body)
+AST_Field_Declaration *ast_field_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts)
+{
+    assert(ctx && ts);
+
+    auto decl = alloc<AST_Field_Declaration>(&ctx->ast_allocator);
+    ast_field_decl_create(ident, ts, range, decl);
+
+    return decl;
+}
+
+AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, Dynamic_Array<AST_Field_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body)
 {
     assert(ctx);
 
@@ -498,7 +518,7 @@ AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range range, 
     return decl;
 }
 
-AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration> fields)
+AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Field_Declaration *> fields)
 {
     assert(ctx);
     assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
@@ -812,8 +832,8 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
             string_builder_append(sb, "%s :: (", decl->identifier.name.data);
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 if (i > 0) string_builder_append(sb, ", ");
-                string_builder_append(sb, "%s: ", decl->function.params[i].identifier.name.data);
-                ast_print_type_spec(sb, decl->function.params[i].type_spec);
+                string_builder_append(sb, "%s: ", decl->function.params[i]->identifier.name.data);
+                ast_print_type_spec(sb, decl->function.params[i]->type_spec);
             }
             string_builder_append(sb, ") -> ");
             if (decl->function.return_ts) {
@@ -841,8 +861,8 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
             }
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
                 ast_print_indent(sb, indent + 1);
-                string_builder_append(sb, "%s: ", decl->aggregate.fields[i].identifier.name.data);
-                ast_print_type_spec(sb, decl->aggregate.fields[i].type_spec);
+                string_builder_append(sb, "%s: ", decl->aggregate.fields[i]->identifier.name.data);
+                ast_print_type_spec(sb, decl->aggregate.fields[i]->type_spec);
                 string_builder_append(sb, ";\n");
             }
             string_builder_append(sb, "}");

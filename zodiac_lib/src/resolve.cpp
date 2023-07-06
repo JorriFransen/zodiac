@@ -108,7 +108,7 @@ void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Decla
         dynamic_array_create(&dynamic_allocator, &proto_node.nodes);
 
         for (s64 i = 0; i < decl->function.params.count; i++) {
-            auto field = &decl->function.params[i];
+            auto field = decl->function.params[i];
             flatten_type_spec(field->type_spec, scope, &proto_node.nodes);
         }
 
@@ -129,55 +129,54 @@ void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Decla
 
 bool resolve_names(Resolver *resolver)
 {
-    bool progress = true;
-    bool done = false;
+    bool progress = false;
+    bool done = true;
 
-    while (progress && !done && !resolver->ctx->fatal_resolve_error) {
-        progress = false;
-        done = true;
+    for (u64 flat_index = 0; flat_index < resolver->nodes_to_name_resolve.count; flat_index++)
+    {
 
-        for (u64 flat_index = 0; flat_index < resolver->nodes_to_name_resolve.count; flat_index++) {
+        Flat_Root_Node *node = &resolver->nodes_to_name_resolve[flat_index];
 
-            Flat_Root_Node *node = &resolver->nodes_to_name_resolve[flat_index];
+        for (u64 i = node->current_index; i < node->nodes.count; i++)
+        {
 
-            for (u64 i = node->current_index; i < node->nodes.count; i++) {
+            node->current_index = i;
+            bool result = name_resolve_node(resolver, &node->nodes[i]);
 
-                node->current_index = i;
-                bool result = name_resolve_node(resolver, &node->nodes[i]);
-
-                if (!result) {
-                    done = false;
-                    break;
-                } else {
-                    node->current_index += 1;
-                    progress = true;
-                }
+            if (!result)
+            {
+                done = false;
+                break;
             }
-
-            if (node->current_index >= node->nodes.count) {
-                // Done name resolving, move to type resolving
-                node->current_index = 0;
-
-                auto node_copy = *node;
-
-                // Because we remove unordered, reuse the current index
-                dynamic_array_remove_unordered(&resolver->nodes_to_name_resolve, flat_index);
-                flat_index--;
-
-
-                dynamic_array_append(&resolver->nodes_to_type_resolve, node_copy);
+            else
+            {
+                node->current_index += 1;
+                progress = true;
             }
-
         }
 
-        if (progress && resolve_error_count(resolver->ctx)) {
-            assert(!done);
+        if (node->current_index >= node->nodes.count)
+        {
+            // Done name resolving, move to type resolving
+            node->current_index = 0;
 
-            // TODO: CLEANUP: Is it actually ok to clear all errors here?
-            resolver->ctx->errors.count = 0;
+            auto node_copy = *node;
 
-            temporary_allocator_reset(&resolver->ctx->error_allocator_state);
+            dynamic_array_remove_ordered(&resolver->nodes_to_name_resolve, flat_index);
+            flat_index -= 1;
+
+            dynamic_array_append(&resolver->nodes_to_type_resolve, node_copy);
         }
+    }
+
+    if (progress && resolve_error_count(resolver->ctx))
+    {
+        assert(!done);
+
+        // TODO: CLEANUP: Is it actually ok to clear all errors here?
+        resolver->ctx->errors.count = 0;
+
+        temporary_allocator_reset(&resolver->ctx->error_allocator_state);
     }
 
     return done;
@@ -185,54 +184,54 @@ bool resolve_names(Resolver *resolver)
 
 bool resolve_types(Resolver *resolver)
 {
-    bool progress = true;
-    bool done = false;
+    bool progress = false;
+    bool done = true;
 
-    while (progress && !done && !resolver->ctx->fatal_resolve_error) {
-        progress = false;
-        done = true;
+    for (u64 flat_index = 0; flat_index < resolver->nodes_to_type_resolve.count; flat_index++)
+    {
 
-        for (u64 flat_index = 0; flat_index < resolver->nodes_to_type_resolve.count; flat_index++) {
+        Flat_Root_Node *node = &resolver->nodes_to_type_resolve[flat_index];
 
-            Flat_Root_Node *node = &resolver->nodes_to_type_resolve[flat_index];
+        for (u64 i = node->current_index; i < node->nodes.count; i++)
+        {
 
-            for (u64 i = node->current_index; i < node->nodes.count; i++) {
+            node->current_index = i;
+            bool result = type_resolve_node(resolver->ctx, &node->nodes[i]);
 
-                node->current_index = i;
-                bool result = type_resolve_node(resolver->ctx, &node->nodes[i]);
-
-                if (!result) {
-                    done = false;
-                    break;
-                } else {
-                    node->current_index += 1;
-                    progress = true;
-                }
+            if (!result)
+            {
+                done = false;
+                break;
             }
-
-            if (node->current_index >= node->nodes.count) {
-                // Done type resolving, move to bytecode emit
-                node->current_index = 0;
-
-                auto node_copy = *node;
-
-                // TODO: This needs to be ordered removal for correctness!!!
-                // Because we remove unordered, reuse the current index
-                dynamic_array_remove_unordered(&resolver->nodes_to_type_resolve, flat_index);
-                flat_index--;
-
-                dynamic_array_append(&resolver->nodes_to_emit_bytecode, node_copy);
+            else
+            {
+                node->current_index += 1;
+                progress = true;
             }
         }
 
-        if (progress && resolve_error_count(resolver->ctx)) {
-            assert(!done);
+        if (node->current_index >= node->nodes.count)
+        {
+            // Done type resolving, move to bytecode emit
+            node->current_index = 0;
 
-            // TODO: CLEANUP: Is it actually ok to clear all errors here?
-            resolver->ctx->errors.count = 0;
+            auto node_copy = *node;
 
-            temporary_allocator_reset(&resolver->ctx->error_allocator_state);
+            dynamic_array_remove_ordered(&resolver->nodes_to_type_resolve, flat_index);
+            flat_index -= 1;
+
+            dynamic_array_append(&resolver->nodes_to_emit_bytecode, node_copy);
         }
+    }
+
+    if (progress && resolve_error_count(resolver->ctx))
+    {
+        assert(!done);
+
+        // TODO: CLEANUP: Is it actually ok to clear all errors here?
+        resolver->ctx->errors.count = 0;
+
+        temporary_allocator_reset(&resolver->ctx->error_allocator_state);
     }
 
     return done;
@@ -312,11 +311,11 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
 
             for (u64 i = 0; i < decl->function.params.count; i++) {
 
-                auto field = &decl->function.params[i];
+            auto field = decl->function.params[i];
 
-                flatten_type_spec(field->type_spec, scope, dest);
-                Flat_Node param_node = to_flat_node(field, parameter_scope);
-                dynamic_array_append(dest, param_node);
+            flatten_type_spec(field->type_spec, scope, dest);
+            Flat_Node param_node = to_flat_node(field, parameter_scope);
+            dynamic_array_append(dest, param_node);
             }
 
             if (decl->function.return_ts) {
@@ -334,7 +333,7 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
         case AST_Declaration_Kind::UNION: {
             assert(aggregate_scope);
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
-                auto field = &decl->aggregate.fields[i];
+                auto field = decl->aggregate.fields[i];
 
                 flatten_type_spec(field->type_spec, scope, dest);
                 Flat_Node member_node = to_flat_node(field, aggregate_scope);
@@ -605,16 +604,12 @@ bool name_resolve_node(Resolver *resolver, Flat_Node *node)
         }
 
         case Flat_Node_Kind::FUNCTION_PROTO: {
-            if (node->decl->function.return_ts) {
-                return true;
-            } else {
-                // We need to infer the return type from the body, so wait for it to be resolved
-                if (node->decl->function.inferred_return_type) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
+            // If we get here, we have name resolved all dependencies
+            Symbol *sym = scope_get_symbol(node->scope, node->decl->identifier);
+            assert(sym && sym->kind == Symbol_Kind::FUNC);
+            assert(sym->state == Symbol_State::UNRESOLVED);
+            sym->state = Symbol_State::RESOLVED;
+            return true;
         }
     }
 
@@ -655,11 +650,11 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
 
         case Symbol_State::RESOLVING: assert_msg(false, "Circular dependency");
 
-        case Symbol_State::RESOLVED: {
+        case Symbol_State::RESOLVED:
+        case Symbol_State::TYPED:
+        {
             return true;
         }
-
-        case Symbol_State::TYPED: assert(false);
     }
 
     bool result = true;
@@ -803,7 +798,7 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
                 break;
 
             } else {
-                assert(sym->state == Symbol_State::RESOLVED);
+                assert(sym->state >= Symbol_State::RESOLVED);
             }
             break;
         }
@@ -912,6 +907,14 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
         case Flat_Node_Kind::FIELD_DECL: assert(false);
 
         case Flat_Node_Kind::FUNCTION_PROTO: {
+
+            if (!node->decl->function.return_ts &&
+                !node->decl->function.inferred_return_type)
+            {
+                resolve_error(ctx, node->decl, "Could not infer return type");
+                return false;
+            }
+
             AST_Declaration *func_decl = node->decl;
             assert(func_decl->kind == AST_Declaration_Kind::FUNCTION);
             assert(func_decl->function.type == nullptr);
@@ -921,10 +924,12 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
             auto mark = temporary_allocator_get_mark(&ctx->temp_allocator_state);
 
             for (u64 i = 0; i < func_decl->function.params.count; i++) {
-                AST_Field_Declaration *param_field = &func_decl->function.params[i];
 
-                assert(param_field->resolved_type);
-                dynamic_array_append(&param_types, param_field->resolved_type);
+                // Only use the typespec here, the actual fields are not resolved as part of the prototype
+                auto param_ts = func_decl->function.params[i]->type_spec;
+                assert(param_ts && param_ts->resolved_type);
+
+                dynamic_array_append(&param_types, param_ts->resolved_type);
             }
 
             Type *return_type = nullptr;
@@ -1029,7 +1034,7 @@ bool type_resolve_declaration(AST_Declaration *decl, Scope *scope)
         case AST_Declaration_Kind::FUNCTION: {
             assert(decl->function.type || decl->function.inferred_return_type);
             if (decl->function.type) assert(decl->function.type->kind == Type_Kind::FUNCTION);
-            return decl->function.type != nullptr;
+            return decl->function.type;
         }
 
         case AST_Declaration_Kind::STRUCT: assert(false);
@@ -1181,7 +1186,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             for (s64 i = 0; i < expr->call.args.count; i++) {
                 AST_Expression *arg_expr = expr->call.args[i];
                 Type *arg_type = arg_expr->resolved_type;
-                Type *param_type = func_decl->function.params[i].resolved_type;
+                Type *param_type = func_decl->function.params[i]->resolved_type;
 
                 bool match = true;
 
