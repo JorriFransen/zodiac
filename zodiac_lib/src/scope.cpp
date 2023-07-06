@@ -89,7 +89,7 @@ Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Sy
     auto ex_sym = scope_get_symbol(scope, name);
     if (ex_sym) {
         assert(decl);
-        report_redecl(ctx, ex_sym->range, name, pos);
+        report_redecl(ctx, ex_sym->range, name, decl->identifier.range);
         return nullptr;
     }
 

@@ -50,6 +50,17 @@ void resolve_file(Resolver *resolver, AST_File *file)
 
     add_builtin_type_symbol(String);
 
+    // Register all top level symbols first
+    for (s64 i = 0; i < file->declarations.count; i++) {
+        if (!add_unresolved_decl_symbol(resolver->ctx, resolver->global_scope, file->declarations[i], true))
+        {
+            assert(resolver->ctx->fatal_resolve_error);
+            assert(false);
+            return;
+        }
+    }
+
+    // Flatten all top level declarations, registering all nested symbols in the process
     for (s64 i = 0; i < file->declarations.count; i++) {
         resolver_add_declaration(resolver->ctx, resolver, file->declarations[i]);
     }
@@ -73,12 +84,6 @@ void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Decla
     node.current_index  = 0;
 
     dynamic_array_create(&dynamic_allocator, &node.nodes);
-
-    if (!add_unresolved_decl_symbol(ctx, resolver->global_scope, decl, true)) {
-        assert(ctx->fatal_resolve_error);
-        assert(false);
-        return;
-    }
 
     flatten_declaration(ctx, decl, resolver->global_scope, &node.nodes);
 
@@ -203,7 +208,7 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
     assert(decl->identifier.name.data);
     auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
     if (decl_sym && decl_sym->decl != decl) {
-        report_redecl(ctx, decl_sym->range, decl->identifier.name, decl->identifier.pos);
+        report_redecl(ctx, decl_sym->range, decl->identifier.name, decl->identifier.range);
         return;
     }
 

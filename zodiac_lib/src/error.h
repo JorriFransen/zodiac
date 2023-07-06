@@ -60,7 +60,8 @@ ZAPI Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind
 }
 
 #define report_redecl(ctx, old_pos, name, new_pos) { \
-    zodiac_report_error(ctx, ZODIAC_RESOLVE_ERROR, (old_pos), "Redeclaration of symbol: '%s'", (name).data); \
+    auto handle = zodiac_report_error(ctx, ZODIAC_RESOLVE_ERROR, (new_pos), "Redeclaration of symbol: '%s'", (name).data); \
+    ctx->errors[handle].fatal = true; \
     fatal_resolve_error(ctx, (old_pos), "<---- Previous declaration was here");         \
 }
 
