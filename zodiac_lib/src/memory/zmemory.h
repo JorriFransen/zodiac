@@ -69,6 +69,11 @@ ZAPI ZINLINE void* zmemcpy(void *dest, const void *src, u64 num)
     return platform_memcpy(dest, src, num);
 }
 
+ZAPI ZINLINE void *zmemmove(void *dest, const void *src, u64 n)
+{
+    return platform_memmove(dest, src, n);
+}
+
 ZAPI ZINLINE u64 zmemcmp(const void *a, const void *b, u64 num)
 {
     assert(a && b);

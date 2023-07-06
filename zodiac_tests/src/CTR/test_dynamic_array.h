@@ -229,11 +229,61 @@ static MunitResult Unordered_Remove(const MunitParameter params[], void *user_da
     return MUNIT_OK;
 }
 
+static MunitResult Ordered_Remove(const MunitParameter params[], void *user_data_or_fixture)
+{
+    Dynamic_Array<i64> array;
+    dynamic_array_create(c_allocator(), &array);
+
+    for (i64 i = 0; i < 10; i++) {
+        dynamic_array_append(&array, i);
+    }
+    // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+
+
+    dynamic_array_remove_ordered(&array, 9);
+    munit_assert_int(array.count, ==, 9);
+    munit_assert_int(array[0], ==, 0);
+    munit_assert_int(array[8], ==, 8);
+    // 0, 1, 2, 3, 4, 5, 6, 7, 8
+
+
+    dynamic_array_remove_ordered(&array, 0);
+    munit_assert_int(array.count, ==, 8);
+    munit_assert_int(array[0], ==, 1);
+    munit_assert_int(array[7], ==, 8);
+    // 1, 2, 3, 4, 5, 6, 7, 8
+
+    dynamic_array_remove_ordered(&array, 4);
+    munit_assert_int(array.count, ==, 7);
+    munit_assert_int(array[0], ==, 1);
+    munit_assert_int(array[4], ==, 6);
+    munit_assert_int(array[6], ==, 8);
+    // 1, 2, 3, 4, 6, 7, 8
+
+
+    // Leave 1 element
+    for (i64 i = 0; i < 6; i++) {
+        dynamic_array_remove_ordered(&array, 0);
+    }
+    munit_assert_int(array.count, ==, 1);
+    munit_assert_int(array[0], ==, 8);
+    // 8
+
+    dynamic_array_remove_ordered(&array, 0);
+    // ... (empty)
+    munit_assert_int(array.count, ==, 0);
+
+    dynamic_array_free(&array);
+
+    return MUNIT_OK;
+}
+
 START_TESTS(dynamic_array_tests)
     DEFINE_TEST(Create_And_Free),
     DEFINE_TEST(Indexing),
     DEFINE_TEST(Growing),
     DEFINE_TEST(Unordered_Remove),
+    DEFINE_TEST(Ordered_Remove),
 END_TESTS()
 
 }}

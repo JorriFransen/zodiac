@@ -149,4 +149,22 @@ void dynamic_array_remove_unordered(Dynamic_Array<Element_Type> *array, s64 inde
     array->count -= 1;
 }
 
+template <typename Element_Type>
+void dynamic_array_remove_ordered(Dynamic_Array< Element_Type> *array, s64 index)
+{
+    assert(array && array->data && array->count);
+    assert(index >= 0 && index <= array->count);
+
+    if (index == array->count - 1) {
+        array->count -= 1;
+        return;
+    }
+
+    auto copy_size = sizeof(Element_Type) * array->count - 1;
+
+    zmemmove(&array->data[index], &array->data[index + 1], copy_size);
+
+    array->count -= 1;
+}
+
 }

@@ -214,6 +214,12 @@ void *platform_memcpy(void *dest, const void *src, u64 num)
     return memcpy(dest, src, num);
 }
 
+void *platform_memmove(void *dest, const void *src, u64 num)
+{
+    assert(dest && src);
+    return memmove(dest, src, num);
+}
+
 i64 platform_memcmp(const void *a, const void *b, u64 num)
 {
     assert(a && b);

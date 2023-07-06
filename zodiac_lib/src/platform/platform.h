@@ -42,6 +42,7 @@ ZAPI void platform_free(void *memory);
 ZAPI void *platform_memset(void *memory, i64 value, u64 size);
 ZAPI void *platform_zero_mem(void *memory, u64 num);
 ZAPI void *platform_memcpy(void *dest, const void *src, u64 num);
+ZAPI void *platform_memmove(void *dest, const void *src, u64 num);
 ZAPI i64 platform_memcmp(const void *a, const void *b, u64 num);
 
 ZAPI double platform_sqrt(double x);
