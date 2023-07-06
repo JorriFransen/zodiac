@@ -8,6 +8,8 @@
 #include "util/asserts.h"
 #include "util/zstring.h"
 
+#define ZODIAC_LOGGER_FILE_LOCATIONS
+
 namespace Zodiac
 {
 
@@ -54,14 +56,14 @@ void logging_system_set_stderr_file(File_Handle err_file)
     logging_system_state.err_file = err_file;
 }
 
-void log_message(Log_Level log_level, const String_Ref fmt, ...)
+void log_message(Log_Level log_level, const char *file, s64 line, const String_Ref fmt, ...)
 {
     assert(logging_system_initialized);
 
     u64 level_index = (u64)log_level;
     assert(level_index >= 0 && log_level <= Log_Level::TRACE);
 
-    const char *level_strings[6] = { "[FATAL]: ", "[ERROR]: ", "[WARN]: ", "[INFO]: ", "[DEBUG]: ", "[TRACE]: "};
+    const char *level_strings[6] = { "[FATAL]", "[ERROR]", "[WARN]", "[INFO]", "[DEBUG]", "[TRACE]"};
 
     const Platform_Console_Color level_colors[6] = {
         Platform_Console_Color::Fatal_Red,
@@ -86,7 +88,17 @@ void log_message(Log_Level log_level, const String_Ref fmt, ...)
         return;
     }
 
-    out_length = string_format(out_message, "%s%s\n", level_strings[level_index], out_message);
+    String_Ref out_fmt = "%s: %s\n";
+#define OUT_ARGS level_strings[level_index], out_message
+#ifdef ZODIAC_LOGGER_FILE_LOCATIONS
+    out_fmt = "%s%s:%i: %s\n";
+#undef OUT_ARGS
+#define OUT_ARGS level_strings[level_index], file, line, out_message
+#endif // ZODIAC_LOGGER_FILE_LOCATIONS
+
+    out_length = string_format(out_message, out_fmt, OUT_ARGS);
+
+#undef OUT_ARGS
 
     if (out_length + 1 > ZSTRING_FORMAT_STACK_BUFFER_SIZE) {
         assert(false && "Formatted log message does not fit in stack buffer");
@@ -115,7 +127,7 @@ file_local void write_log_file(const String_Ref message)
 
 void report_assert_fail(const char* expression, const char* message, const char *file, i64 line)
 {
-    log_message(Log_Level::FATAL, "Assertion failed: '%s', message: '%s', in: %s:%i", expression, message, file, line);
+    log_message(Log_Level::FATAL, file, line, "Assertion failed: '%s', message: '%s'", expression, message);
 }
 
 }

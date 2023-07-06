@@ -151,6 +151,11 @@ bool platform_info(Allocator *allocator, Platform_Info *info)
         // return nixos_find_crt_path(allocator, dest);
     }
 
+    if (string_equal(ori.id, "arch")) {
+        ZTRACE( "[platform_info()] using platform_info_generic for os 'arch'\n");
+        return platform_info_generic(allocator, info);
+    }
+
     ZTRACE( "[platform_info()] Unsupported os '%s', falling back on platform_info_generic()\n", ori.id.data);
     return platform_info_generic(allocator, info);
 }
