@@ -1104,7 +1104,7 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
                 }
 
             } else {
-                assert(false) // return void;
+                fn_decl->function.inferred_return_type = &builtin_type_void;
             }
 
             return true;
