@@ -383,7 +383,34 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
             break;
         }
 
-        case AST_Statement_Kind::IF: assert(false);
+        case AST_Statement_Kind::IF: {
+
+            flatten_expression(stmt->if_stmt.cond, scope, dest, nullptr);
+
+            auto then_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+            flatten_statement(ctx, stmt->if_stmt.then_stmt, then_scope, dest);
+            assert(stmt->if_stmt.then_scope == nullptr);
+            stmt->if_stmt.then_scope = then_scope;
+
+            for (s64 i = 0; i < stmt->if_stmt.else_ifs.count; i++) {
+                auto elseif = &stmt->if_stmt.else_ifs[i];
+                flatten_expression(elseif->cond, scope, dest, nullptr);
+
+                auto elif_then_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+                flatten_statement(ctx, elseif->then, elif_then_scope, dest);
+                assert(elseif->then_scope == nullptr);
+                elseif->then_scope = elif_then_scope;
+            }
+
+            if (stmt->if_stmt.else_stmt) {
+                auto else_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+                flatten_statement(ctx, stmt->if_stmt.else_stmt, else_scope, dest);
+                assert(stmt->if_stmt.else_scope == nullptr);
+                stmt->if_stmt.else_scope = else_scope;
+            }
+            break;
+        }
+
         case AST_Statement_Kind::WHILE: assert(false);
 
         case AST_Statement_Kind::RETURN: {
@@ -723,7 +750,7 @@ bool name_resolve_stmt(AST_Statement *stmt, Scope *scope)
             break;
         }
 
-        case AST_Statement_Kind::IF: assert(false);
+        case AST_Statement_Kind::IF: break; // all resolved
         case AST_Statement_Kind::WHILE: assert(false);
 
         case AST_Statement_Kind::RETURN: {
@@ -732,7 +759,7 @@ bool name_resolve_stmt(AST_Statement *stmt, Scope *scope)
         }
 
         case AST_Statement_Kind::PRINT: {
-            // Leaf, value should have ben resolved already
+            // Leaf, value should have been resolved already
             break;
         }
     }
