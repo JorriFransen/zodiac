@@ -42,4 +42,5 @@
         "type_traits": "cpp",
         "xtr1common": "cpp"
     },
+    "cmake.configureOnOpen": false,
 }

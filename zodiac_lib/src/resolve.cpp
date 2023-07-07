@@ -1098,7 +1098,11 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
 
     switch (stmt->kind) {
         case AST_Statement_Kind::INVALID: assert(false);
-        case AST_Statement_Kind::BLOCK: assert(false);
+
+        case AST_Statement_Kind::BLOCK: {
+            // leaf
+            return true;
+        }
 
         case AST_Statement_Kind::DECLARATION: {
             // This declaration should have been emitted before the statement, and therefore resolved if we got to this point.
@@ -1107,15 +1111,25 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
 
         case AST_Statement_Kind::ASSIGN: assert(false);
         case AST_Statement_Kind::CALL: assert(false);
-        case AST_Statement_Kind::IF: assert(false);
+
+        case AST_Statement_Kind::IF: {
+            assert(stmt->if_stmt.cond->resolved_type);
+            assert(stmt->if_stmt.cond->resolved_type->kind == Type_Kind::BOOLEAN);
+
+            for (s64 i = 0; i < stmt->if_stmt.else_ifs.count; i++) {
+                auto &elif = stmt->if_stmt.else_ifs[i];
+                assert(elif.cond->resolved_type);
+                assert(elif.cond->resolved_type->kind == Type_Kind::BOOLEAN);
+            }
+
+            return true;
+        }
+
         case AST_Statement_Kind::WHILE: assert(false);
 
         case AST_Statement_Kind::RETURN: {
             AST_Declaration *fn_decl = enclosing_function(scope);
             assert(fn_decl && fn_decl->kind == AST_Declaration_Kind::FUNCTION);
-
-            //TODO: Use the function proto here
-            // assert(fn_decl->function.type->kind == Type_Kind::FUNCTION);
 
             if (fn_decl->function.return_ts && !fn_decl->function.type) {
                 assert(false); // Wait for this to be resolved first!
@@ -1311,6 +1325,15 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                     assert(rhs->resolved_type == &builtin_type_unsized_integer);
                     expr->resolved_type = &builtin_type_s64;
                 }
+
+            } else if (is_binary_cmp_op(op)) {
+                assert(lhs->resolved_type == rhs->resolved_type);
+                if (lhs->resolved_type == &builtin_type_unsized_integer) {
+                    lhs->resolved_type = &builtin_type_s64;
+                    rhs->resolved_type = &builtin_type_s64;
+                }
+                expr->resolved_type = &builtin_type_boolean;
+
             } else {
                 assert(false);
             }

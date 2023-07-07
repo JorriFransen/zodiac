@@ -422,5 +422,6 @@ ZAPI void ast_print_file(String_Builder *sb, AST_File *file);
 ZAPI void ast_print_file(AST_File *file);
 
 ZAPI bool is_binary_arithmetic_op(AST_Binary_Operator op);
+ZAPI bool is_binary_cmp_op(AST_Binary_Operator op);
 
 }

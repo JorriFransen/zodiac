@@ -110,6 +110,19 @@ bool bytecode_block_is_terminated(Bytecode_Block *block)
     return false;
 }
 
+bool bytecode_block_is_terminated(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Bytecode_Block_Handle block_handle)
+{
+    assert(builder);
+
+    assert(fn_handle >= 0 && fn_handle < builder->functions.count);
+
+    auto fn = &builder->functions[fn_handle];
+
+    assert(block_handle >= 0 && block_handle < fn->blocks.count);
+
+    return bytecode_block_is_terminated(&fn->blocks[block_handle]);
+}
+
 Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, const char* cstr_fn_name, Type *fn_type, BC_Function_Flag flags/*=BC_FUNCTION_FLAG_NONE*/)
 {
     Atom atom = atom_get(&builder->zodiac_context->atoms, cstr_fn_name);

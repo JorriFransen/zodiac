@@ -185,10 +185,17 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
         ast_stmt_to_bytecode(bc, stmt);
     }
 
-    auto fn = bc->builder->functions[fn_handle];
-    auto block = &fn.blocks[bc->builder->insert_block_index];
+    auto fn = &bc->builder->functions[fn_handle];
+    auto block = &fn->blocks[bc->builder->insert_block_index];
 
-    if (fn.type->function.return_type->kind == Type_Kind::VOID) {
+    // We might sometimes be left with an empty block at the end, remove it if this is the case.
+    if (!block->instructions.count) {
+        assert(fn->blocks.count >= 2);
+        fn->blocks.count -= 1;
+        dynamic_array_free(&block->instructions);
+    }
+
+    if (fn->type->function.return_type->kind == Type_Kind::VOID) {
         bool emit_void_return = false;
         if (block->instructions.count) {
             auto last_op = block->instructions[block->instructions.count - 1];
@@ -215,7 +222,20 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
     switch (stmt->kind) {
         case AST_Statement_Kind::INVALID: assert(false); break;
-        case AST_Statement_Kind::BLOCK: assert(false); break;
+
+        case AST_Statement_Kind::BLOCK: {
+            for (s64 i = 0; i < stmt->block.statements.count; i++) {
+
+                Bytecode_Block *current_block = bytecode_get_insert_block(bc->builder);
+                if (bytecode_block_is_terminated(current_block)) {
+                    zodiac_report_error(bc->context, Zodiac_Error_Kind::ZODIAC_BC_CONVERSION_ERROR, stmt, "Unreachable code detected");
+                    return;
+                }
+
+                ast_stmt_to_bytecode(bc, stmt->block.statements[i]);
+            }
+            break;
+        }
 
         case AST_Statement_Kind::DECLARATION: {
             ast_decl_to_bytecode(bc, stmt->decl.decl);
@@ -224,7 +244,52 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
         case AST_Statement_Kind::ASSIGN: assert(false); break;
         case AST_Statement_Kind::CALL: assert(false); break;
-        case AST_Statement_Kind::IF: assert(false); break;
+
+        case AST_Statement_Kind::IF: {
+
+            Bytecode_Register cond_reg = ast_expr_to_bytecode(bc, stmt->if_stmt.cond);
+
+            auto cfn = (Bytecode_Function_Handle)bc->builder->insert_fn_index;
+            Bytecode_Block_Handle then_block = bytecode_append_block(bc->builder, cfn, "then");
+
+            Bytecode_Block_Handle else_block = -1;
+
+            if (stmt->if_stmt.else_stmt) {
+                else_block = bytecode_append_block(bc->builder, cfn, "else");
+            }
+
+            Bytecode_Block_Handle post_if_block = bytecode_append_block(bc->builder, cfn, "post_if");
+            if (!stmt->if_stmt.else_stmt) {
+                else_block = post_if_block;
+            }
+
+            bytecode_emit_jmp_if(bc->builder, cond_reg, then_block, else_block);
+
+            bytecode_set_insert_point(bc->builder, cfn, then_block);
+            ast_stmt_to_bytecode(bc, stmt->if_stmt.then_stmt);
+            if (!bytecode_block_is_terminated(bc->builder, cfn, then_block)) {
+                bytecode_emit_jmp(bc->builder, post_if_block);
+            }
+
+            if (stmt->if_stmt.else_stmt) {
+                bytecode_set_insert_point(bc->builder, cfn, else_block);
+                ast_stmt_to_bytecode(bc, stmt->if_stmt.else_stmt);
+
+                if (!bytecode_block_is_terminated(bc->builder, cfn, else_block)) {
+                    bytecode_emit_jmp(bc->builder, post_if_block);
+                }
+
+                bytecode_set_insert_point(bc->builder, cfn, post_if_block);
+
+            } else {
+
+                bytecode_set_insert_point(bc->builder, cfn, post_if_block);
+            }
+
+
+            break;
+        }
+
         case AST_Statement_Kind::WHILE: assert(false); break;
 
         case AST_Statement_Kind::RETURN: {
@@ -259,9 +324,9 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
     assert(expr);
 
     if (actual_type) {
-        assert(expr->resolved_type == &builtin_type_unsized_integer ||
-               expr->resolved_type == actual_type);
-        assert(actual_type != &builtin_type_unsized_integer);
+        assert(actual_type == expr->resolved_type);
+    } else {
+        actual_type = expr->resolved_type;
     }
 
     switch (expr->kind) {
@@ -388,10 +453,19 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             } else {
                 actual_type = expr->resolved_type;
             }
-            assert(actual_type->kind == Type_Kind::INTEGER);
 
-            Bytecode_Register lhs_reg = ast_expr_to_bytecode(bc, expr->binary.lhs, actual_type);
-            Bytecode_Register rhs_reg = ast_expr_to_bytecode(bc, expr->binary.rhs, actual_type);
+            Bytecode_Register lhs_reg;
+            Bytecode_Register rhs_reg;
+
+
+            if (is_binary_arithmetic_op(expr->binary.op)) {
+                lhs_reg = ast_expr_to_bytecode(bc, expr->binary.lhs, actual_type);
+                rhs_reg = ast_expr_to_bytecode(bc, expr->binary.rhs, actual_type);
+            } else {
+                lhs_reg = ast_expr_to_bytecode(bc, expr->binary.lhs);
+                rhs_reg = ast_expr_to_bytecode(bc, expr->binary.rhs);
+            }
+
 
             switch (expr->binary.op) {
                 case AST_Binary_Operator::INVALID: assert(false); break;
@@ -403,7 +477,12 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                 case AST_Binary_Operator::SUB: assert(false); break;
                 case AST_Binary_Operator::MUL: assert(false); break;
                 case AST_Binary_Operator::DIV: assert(false); break;
-                case AST_Binary_Operator::EQ: assert(false); break;
+
+                case AST_Binary_Operator::EQ: {
+                    return bytecode_emit_eq(bc->builder, lhs_reg, rhs_reg);
+                    break;
+                }
+
                 case AST_Binary_Operator::NEQ: assert(false); break;
                 case AST_Binary_Operator::LT: assert(false); break;
                 case AST_Binary_Operator::GT: assert(false); break;

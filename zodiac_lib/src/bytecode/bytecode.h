@@ -237,6 +237,7 @@ ZAPI Bytecode_Program bytecode_get_program(Bytecode_Builder *builder);
 ZAPI Bytecode_Function_Handle bytecode_find_entry(Bytecode_Program program);
 ZAPI bool bytecode_instruction_is_terminator(Bytecode_Instruction *inst);
 ZAPI bool bytecode_block_is_terminated(Bytecode_Block *block);
+ZAPI bool bytecode_block_is_terminated(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Bytecode_Block_Handle block_handle);
 
 ZAPI Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, const char* cstr_fn_name, Type *fn_type, BC_Function_Flag flags = BC_FUNCTION_FLAG_NONE);
 ZAPI Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Atom fn_name, Type *fn_type, BC_Function_Flag flags = BC_FUNCTION_FLAG_NONE);

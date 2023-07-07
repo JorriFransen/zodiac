@@ -945,4 +945,9 @@ bool is_binary_arithmetic_op(AST_Binary_Operator op)
     return op >= AST_Binary_Operator::FIRST_ARITHMETIC_OP && op <= AST_Binary_Operator::LAST_ARITHMETIC_OP;
 }
 
+bool is_binary_cmp_op(AST_Binary_Operator op)
+{
+    return op >= AST_Binary_Operator::FIRST_CMP_OP && op <= AST_Binary_Operator::LAST_CMP_OP;
+}
+
 }
