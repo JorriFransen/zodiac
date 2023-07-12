@@ -946,9 +946,7 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
                     return false;
                 }
 
-                Dynamic_Array<Type *> param_types;
-                dynamic_array_create(&ctx->temp_allocator, &param_types, func_decl->function.params.count);
-                auto mark = temporary_allocator_get_mark(&ctx->temp_allocator_state);
+                auto param_types = temp_array_create<Type *>(&ctx->temp_allocator, func_decl->function.params.count);
 
                 for (u64 i = 0; i < func_decl->function.params.count; i++) {
 
@@ -956,7 +954,7 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
                     auto param_ts = func_decl->function.params[i]->type_spec;
                     assert(param_ts && param_ts->resolved_type);
 
-                    dynamic_array_append(&param_types, param_ts->resolved_type);
+                    dynamic_array_append(&param_types.array, param_ts->resolved_type);
                 }
 
                 Type *return_type = nullptr;
@@ -974,9 +972,9 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
                     return false;
                 }
 
-                func_decl->function.type = get_function_type(return_type, param_types, &ctx->ast_allocator);
+                func_decl->function.type = get_function_type(return_type, param_types.array, &ctx->ast_allocator);
 
-                temporary_allocator_reset(&ctx->temp_allocator_state, mark);
+                temp_array_destroy(&param_types);
             }
 
             auto sym = scope_get_symbol(node->scope, node->decl->identifier.name);

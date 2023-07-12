@@ -176,7 +176,7 @@ struct Temp_Array
 };
 
 template <typename T>
-file_local Temp_Array<T> temp_array_create(Allocator *allocator)
+file_local Temp_Array<T> temp_array_create(Allocator *allocator, s64 cap = 0)
 {
     Temp_Array<T> result;
 
@@ -184,7 +184,7 @@ file_local Temp_Array<T> temp_array_create(Allocator *allocator)
     assert(tas);
 
     result.mark = temporary_allocator_get_mark(tas);
-    dynamic_array_create(allocator, &result.array, 0);
+    dynamic_array_create(allocator, &result.array, cap);
     return result;
 }
 
