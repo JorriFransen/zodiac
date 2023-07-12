@@ -5,7 +5,6 @@
 #include "atom.h"
 #include "containers/dynamic_array.h"
 #include "defines.h"
-#include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 #include "platform/platform.h"
 #include "source_pos.h"
@@ -14,39 +13,6 @@
 
 namespace Zodiac
 {
-
-template <typename T>
-struct Temp_Array
-{
-    Temporary_Allocator_Mark mark;
-    Dynamic_Array<T> array;
-};
-
-template <typename T>
-file_local Temp_Array<T> temp_array_create(Parser *parser)
-{
-    assert(parser);
-
-    Temp_Array<T> result;
-
-    result.mark = temporary_allocator_get_mark(&parser->context->temp_allocator_state);
-    dynamic_array_create(&parser->context->temp_allocator, &result.array, 0);
-    return result;
-}
-
-template <typename T>
-file_local void temp_array_destroy(Parser *parser, Temp_Array<T> ta)
-{
-    temporary_allocator_reset(&parser->context->temp_allocator_state, ta.mark);
-}
-
-template <typename T>
-file_local Dynamic_Array<T> temp_array_finalize(Parser *parser, Temp_Array<T> ta)
-{
-    auto result = dynamic_array_copy(&ta.array, &parser->context->ast_allocator);
-    temp_array_destroy(parser, ta);
-    return result;
-}
 
 void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser)
 {
@@ -121,7 +87,7 @@ AST_Expression *parse_expr_base(Parser *parser)
 
         if (match_token(parser, '(')) {
 
-            auto temp_args = temp_array_create<AST_Expression *>(parser);
+            auto temp_args = temp_array_create<AST_Expression *>(&parser->context->temp_allocator);
 
             auto end_pos = cur_tok(parser).range.end;
 
@@ -137,7 +103,7 @@ AST_Expression *parse_expr_base(Parser *parser)
                 end_pos = cur_tok(parser).range.end;
             }
 
-            auto args = temp_array_finalize(parser, temp_args);
+            auto args = temp_array_finalize(&parser->context->ast_allocator, &temp_args);
             expr = ast_call_expr_new(parser->context, {start_pos, end_pos}, expr, args);
 
         } else if (match_token(parser, '[')) {
@@ -270,13 +236,15 @@ AST_Statement *parse_keyword_statement(Parser *parser)
 
         auto end_pos = then_stmt->range.end;
 
-        auto temp_else_ifs = temp_array_create<AST_Else_If>(parser);
+        auto temp_else_ifs = temp_array_create<AST_If_Block>(&parser->context->temp_allocator);
+
+        dynamic_array_append(&temp_else_ifs.array, { cond, then_stmt, nullptr });
 
         while (match_keyword(parser, keyword_else)) {
             if (match_keyword(parser, keyword_if)) {
                 AST_Expression *else_if_cond = parse_expression(parser);
                 AST_Statement *else_if_then = parse_statement(parser);
-                AST_Else_If else_if = { else_if_cond, else_if_then };
+                AST_If_Block else_if = { else_if_cond, else_if_then, nullptr };
                 dynamic_array_append(&temp_else_ifs.array, else_if);
                 end_pos = else_if_then->range.end;
             } else {
@@ -286,9 +254,9 @@ AST_Statement *parse_keyword_statement(Parser *parser)
             }
         }
 
-        auto else_ifs = temp_array_finalize(parser, temp_else_ifs);
+        auto else_ifs = temp_array_finalize(&parser->context->ast_allocator, &temp_else_ifs);
 
-        return ast_if_stmt_new(parser->context, {start_pos, end_pos}, cond, then_stmt, else_ifs, else_stmt);
+        return ast_if_stmt_new(parser->context, {start_pos, end_pos}, else_ifs, else_stmt);
 
     } else if (match_keyword(parser, keyword_while)) {
 
@@ -336,7 +304,7 @@ AST_Statement *parse_statement(Parser *parser)
     Source_Pos start_pos = cur_tok(parser).range.start;
 
     if (match_token(parser, '{')) {
-        auto temp_statements = temp_array_create<AST_Statement *>(parser);
+        auto temp_statements = temp_array_create<AST_Statement *>(&parser->context->temp_allocator);
 
         while (!is_token(parser, '}')) {
 
@@ -346,7 +314,7 @@ AST_Statement *parse_statement(Parser *parser)
         auto end_pos = cur_tok(parser).range.end;
         expect_token(parser, '}');
 
-        auto statements = temp_array_finalize(parser, temp_statements);
+        auto statements = temp_array_finalize(&parser->context->ast_allocator, &temp_statements);
         return ast_block_stmt_new(parser->context, {start_pos, end_pos}, statements);
     }
 
@@ -408,7 +376,7 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
 
     if (is_token(parser, TOK_NAME)) {
 
-        auto temp_params = temp_array_create<AST_Field_Declaration *>(parser);
+        auto temp_params = temp_array_create<AST_Field_Declaration *>(&parser->context->temp_allocator);
         do {
 
             Token name_tok = cur_tok(parser);
@@ -426,7 +394,7 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
             dynamic_array_append(&temp_params.array, field_decl);
         } while (match_token(parser, ','));
 
-        params = temp_array_finalize(parser, temp_params);
+        params = temp_array_finalize(&parser->context->ast_allocator, &temp_params);
 
     }
 
@@ -440,7 +408,7 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
 
     expect_token(parser, '{');
 
-    auto temp_stmts = temp_array_create<AST_Statement *>(parser);
+    auto temp_stmts = temp_array_create<AST_Statement *>(&parser->context->temp_allocator);
 
     while (!match_token(parser, '}')) {
         AST_Statement *stmt = parse_statement(parser);
@@ -448,7 +416,7 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
         dynamic_array_append(&temp_stmts.array, stmt);
     }
 
-    auto statements = temp_array_finalize(parser, temp_stmts);
+    auto statements = temp_array_finalize(&parser->context->ast_allocator, &temp_stmts);
 
     return ast_function_decl_new(parser->context, ident.range, ident, params, return_ts, statements);
 }
@@ -470,11 +438,11 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
 
     expect_token(parser, '{');
 
-    auto temp_fields = temp_array_create<AST_Field_Declaration *>(parser);
+    auto temp_fields = temp_array_create<AST_Field_Declaration *>(&parser->context->temp_allocator);
 
     while (!match_token(parser, '}')) {
 
-        auto temp_idents = temp_array_create<AST_Identifier>(parser);
+        auto temp_idents = temp_array_create<AST_Identifier>(&parser->context->temp_allocator);
 
         // At least one name
         Token first_name_tok = cur_tok(parser);
@@ -507,7 +475,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
         }
     }
 
-    auto fields = temp_array_finalize(parser, temp_fields);
+    auto fields = temp_array_finalize(&parser->context->ast_allocator, &temp_fields);
     return ast_aggregate_decl_new(parser->context, ident.range, ident, kind, fields);
 }
 

@@ -1,51 +1,51 @@
 //test
 
-// foo : s64 = 33;
-// bar : s64;
+foo : s64 = 33;
+bar : s64;
 
-// add :: (a: s64, b: s64) {
-//     return a + b;
-// }
-
-// infer_void_return1 :: () {
-//     return;
-// }
-
-// infer_void_return2 :: () {
-
-// }
-
-// void_return_ts :: () -> void {
-
-// }
-
-main :: () -> s64 {
-    // a := 10;
-    // z :: 19;
-    // b := z + x + y + foo;
-    // print(b);
-    // print(a + b);
-    // print(add(40, 2));
-    // return a + b;
-
-    if (1 == 2) {
-        return 1;
-    } else {
-        return 4;
-    }
-
-    // if (1 == 2) {
-    //     return 1;
-    // } else if (2 == 2) {
-    //     return 2;
-    // } else if (3 == 2) {
-    //     return 3;
-    // } else {
-    //     return 4;
-    // }
-
-    // return 42;
+add :: (a: s64, b: s64) {
+    return a + b;
 }
 
-// x :: 21;
-// y :: 2;
+infer_void_return1 :: () {
+    return;
+}
+
+infer_void_return2 :: () {
+
+}
+
+void_return_ts :: () -> void {
+
+}
+
+test :: (x: s64) {
+    if (x == 1) {
+        print(1);
+    } else if (x == 2) {
+        print(2);
+    } else if (x == 3) {
+        print(3);
+    } else {
+        print(4);
+    }
+
+    // return;
+}
+
+main :: () -> s64 {
+    a := 10;
+    z :: 19;
+    b := z + x + y + foo;
+    print(b);
+    print(a + b);
+    print(add(40, 2));
+    test(1);
+    test(2);
+    test(3);
+    test(4);
+    return a + b;
+}
+
+x :: 21;
+y :: 2;

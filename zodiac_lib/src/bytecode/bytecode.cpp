@@ -261,6 +261,39 @@ Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_
     auto index = fn->blocks.count;
     assert(index >= 0);
 
+    bool duplicate = false;
+    for (s64 i = 0; i < fn->blocks.count; i++) {
+        if (fn->blocks[i].name == name) {
+            duplicate = true;
+            break;
+        }
+    }
+
+    if (duplicate) {
+
+        char new_name[ZSTRING_FORMAT_STACK_BUFFER_SIZE];
+        s64 new_length = 0;
+
+        s64 index = 0;
+        while (duplicate) {
+
+            new_length = string_format(new_name, "%s_%i", name.data, index + 1);
+            assert(new_length + 1 <= ZSTRING_FORMAT_STACK_BUFFER_SIZE);
+
+            duplicate = false;
+            for (s64 i = index; i < fn->blocks.count; i++) {
+                if (fn->blocks[i].name == new_name) {
+                    duplicate = true;
+                    break;
+                }
+            }
+
+            index += 1;
+        }
+
+        name = atom_get(&builder->zodiac_context->atoms, { new_name, new_length } );
+    }
+
     Bytecode_Block block = {
         .name = name,
         .terminated = false,

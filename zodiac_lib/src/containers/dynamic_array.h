@@ -1,6 +1,7 @@
 #pragma once
 
 #include "memory/zmemory.h"
+#include "memory/temporary_allocator.h"
 
 namespace Zodiac
 {
@@ -165,6 +166,43 @@ void dynamic_array_remove_ordered(Dynamic_Array< Element_Type> *array, s64 index
     zmemmove(&array->data[index], &array->data[index + 1], copy_size);
 
     array->count -= 1;
+}
+
+template <typename T>
+struct Temp_Array
+{
+    Temporary_Allocator_Mark mark;
+    Dynamic_Array<T> array;
+};
+
+template <typename T>
+file_local Temp_Array<T> temp_array_create(Allocator *allocator)
+{
+    Temp_Array<T> result;
+
+    auto tas = (Temporary_Allocator *)allocator->user_data;
+    assert(tas);
+
+    result.mark = temporary_allocator_get_mark(tas);
+    dynamic_array_create(allocator, &result.array, 0);
+    return result;
+}
+
+template <typename T>
+file_local void temp_array_destroy(Temp_Array<T> *ta)
+{
+    auto tas = (Temporary_Allocator *)ta->array.backing_allocator->user_data;
+    assert(tas);
+
+    temporary_allocator_reset(tas, ta->mark);
+}
+
+template <typename T>
+file_local Dynamic_Array<T> temp_array_finalize(Allocator *allocator, Temp_Array<T> *ta)
+{
+    auto result = dynamic_array_copy(&ta->array, allocator);
+    temp_array_destroy(ta);
+    return result;
 }
 
 }

@@ -8,6 +8,7 @@
 #include "scope.h"
 #include "type.h"
 #include "util/asserts.h"
+#include "zodiac_context.h"
 
 namespace Zodiac { namespace Bytecode {
 
@@ -188,11 +189,15 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     auto fn = &bc->builder->functions[fn_handle];
     auto block = &fn->blocks[bc->builder->insert_block_index];
 
-    // We might sometimes be left with an empty block at the end, remove it if this is the case.
     if (!block->instructions.count) {
-        assert(fn->blocks.count >= 2);
-        fn->blocks.count -= 1;
-        dynamic_array_free(&block->instructions);
+        if (fn->type->function.return_type->kind == Type_Kind::VOID) {
+            bytecode_emit_return(bc->builder);
+        } else {
+            // We might sometimes be left with an empty block at the end, remove it if this is the case.
+            assert(fn->blocks.count >= 2);
+            fn->blocks.count -= 1;
+            dynamic_array_free(&block->instructions);
+        }
     }
 
     if (fn->type->function.return_type->kind == Type_Kind::VOID) {
@@ -243,49 +248,77 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
         }
 
         case AST_Statement_Kind::ASSIGN: assert(false); break;
-        case AST_Statement_Kind::CALL: assert(false); break;
+
+        case AST_Statement_Kind::CALL: {
+            ast_expr_to_bytecode(bc, stmt->call.call);
+            break;
+        }
 
         case AST_Statement_Kind::IF: {
-
-            Bytecode_Register cond_reg = ast_expr_to_bytecode(bc, stmt->if_stmt.cond);
-
             auto cfn = (Bytecode_Function_Handle)bc->builder->insert_fn_index;
-            Bytecode_Block_Handle then_block = bytecode_append_block(bc->builder, cfn, "then");
+            auto ta = &bc->context->temp_allocator;
 
-            Bytecode_Block_Handle else_block = -1;
+            auto temp_blocks = temp_array_create<Bytecode_Block_Handle>(ta);
 
-            if (stmt->if_stmt.else_stmt) {
-                else_block = bytecode_append_block(bc->builder, cfn, "else");
-            }
-
-            Bytecode_Block_Handle post_if_block = bytecode_append_block(bc->builder, cfn, "post_if");
-            if (!stmt->if_stmt.else_stmt) {
-                else_block = post_if_block;
-            }
-
-            bytecode_emit_jmp_if(bc->builder, cond_reg, then_block, else_block);
-
-            bytecode_set_insert_point(bc->builder, cfn, then_block);
-            ast_stmt_to_bytecode(bc, stmt->if_stmt.then_stmt);
-            if (!bytecode_block_is_terminated(bc->builder, cfn, then_block)) {
-                bytecode_emit_jmp(bc->builder, post_if_block);
+            for (s64 i = 0; i < stmt->if_stmt.blocks.count; i++) {
+                if (i > 0) {
+                    auto elif_handle = bytecode_append_block(bc->builder, cfn, "elif_cond");
+                    dynamic_array_append(&temp_blocks.array, elif_handle);
+                }
+                auto block_handle = bytecode_append_block(bc->builder, cfn, "then");
+                dynamic_array_append(&temp_blocks.array, block_handle);
             }
 
             if (stmt->if_stmt.else_stmt) {
-                bytecode_set_insert_point(bc->builder, cfn, else_block);
-                ast_stmt_to_bytecode(bc, stmt->if_stmt.else_stmt);
+                auto block_handle = bytecode_append_block(bc->builder, cfn, "else");
+                dynamic_array_append(&temp_blocks.array, block_handle);
+            }
 
-                if (!bytecode_block_is_terminated(bc->builder, cfn, else_block)) {
-                    bytecode_emit_jmp(bc->builder, post_if_block);
+            auto post_if_block_handle = bytecode_append_block(bc->builder, cfn, "post_if");
+            dynamic_array_append(&temp_blocks.array, post_if_block_handle);
+
+            auto block_index = 0;
+            for (s64 i = 0; i < stmt->if_stmt.blocks.count; i++) {
+                auto if_block = &stmt->if_stmt.blocks[i];
+
+                if (i > 0) {
+                    // The first condition doesn't need it's own block
+                    bytecode_set_insert_point(bc->builder, cfn, temp_blocks.array[block_index++]);
+                }
+                Bytecode_Register cond_reg = ast_expr_to_bytecode(bc, if_block->cond);
+
+                auto then_block = temp_blocks.array[block_index++];
+                auto else_block = temp_blocks.array[block_index];
+
+                bytecode_emit_jmp_if(bc->builder, cond_reg, then_block, else_block);
+
+                bytecode_set_insert_point(bc->builder, cfn, then_block);
+                ast_stmt_to_bytecode(bc, if_block->then);
+                bytecode_set_insert_point(bc->builder, cfn, then_block);
+
+                if (!bytecode_block_is_terminated(bc->builder, cfn, then_block)) {
+                    bytecode_emit_jmp(bc->builder, post_if_block_handle);
                 }
 
-                bytecode_set_insert_point(bc->builder, cfn, post_if_block);
-
-            } else {
-
-                bytecode_set_insert_point(bc->builder, cfn, post_if_block);
             }
 
+            if (stmt->if_stmt.else_stmt) {
+
+                assert(temp_blocks.array.count >= 2);
+                auto else_block = temp_blocks.array[temp_blocks.array.count - 2];
+
+                bytecode_set_insert_point(bc->builder, cfn, else_block);
+                ast_stmt_to_bytecode(bc, stmt->if_stmt.else_stmt);
+                bytecode_set_insert_point(bc->builder, cfn, else_block);
+
+                if (!bytecode_block_is_terminated(bc->builder, cfn, else_block)) {
+                    bytecode_emit_jmp(bc->builder, post_if_block_handle);
+                }
+            }
+
+            bytecode_set_insert_point(bc->builder, cfn, post_if_block_handle);
+
+            temp_array_destroy(&temp_blocks);
 
             break;
         }
@@ -323,6 +356,10 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
     assert(bc);
     assert(expr);
 
+    if (expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER && actual_type->kind == Type_Kind::INTEGER) {
+        actual_type = expr->resolved_type;
+    }
+
     if (actual_type) {
         assert(actual_type == expr->resolved_type);
     } else {
@@ -337,6 +374,9 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             if (literal_type->kind == Type_Kind::UNSIZED_INTEGER) {
                 assert(actual_type);
                 literal_type = actual_type;
+            }
+            if (literal_type->kind == Type_Kind::UNSIZED_INTEGER) {
+                literal_type = &builtin_type_s64;
             }
             assert(literal_type->kind == Type_Kind::INTEGER);
             return bytecode_integer_literal(bc->builder, literal_type, expr->integer_literal.value);

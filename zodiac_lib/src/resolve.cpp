@@ -384,22 +384,15 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
         }
 
         case AST_Statement_Kind::IF: {
+            for (s64 i = 0; i < stmt->if_stmt.blocks.count; i++) {
+                auto if_block = &stmt->if_stmt.blocks[i];
 
-            flatten_expression(stmt->if_stmt.cond, scope, dest, nullptr);
+                flatten_expression(if_block->cond, scope, dest, nullptr);
 
-            auto then_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
-            flatten_statement(ctx, stmt->if_stmt.then_stmt, then_scope, dest);
-            assert(stmt->if_stmt.then_scope == nullptr);
-            stmt->if_stmt.then_scope = then_scope;
-
-            for (s64 i = 0; i < stmt->if_stmt.else_ifs.count; i++) {
-                auto elseif = &stmt->if_stmt.else_ifs[i];
-                flatten_expression(elseif->cond, scope, dest, nullptr);
-
-                auto elif_then_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
-                flatten_statement(ctx, elseif->then, elif_then_scope, dest);
-                assert(elseif->then_scope == nullptr);
-                elseif->then_scope = elif_then_scope;
+                auto then_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+                assert(if_block->then_scope == nullptr);
+                if_block->then_scope = then_scope;
+                flatten_statement(ctx, if_block->then, then_scope, dest);
             }
 
             if (stmt->if_stmt.else_stmt) {
@@ -953,7 +946,6 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
                     return false;
                 }
 
-
                 Dynamic_Array<Type *> param_types;
                 dynamic_array_create(&ctx->temp_allocator, &param_types, func_decl->function.params.count);
                 auto mark = temporary_allocator_get_mark(&ctx->temp_allocator_state);
@@ -1072,8 +1064,17 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             // Only implicitly infer a void return type from the body when there is no return type_spec
             if (!decl->function.type && !decl->function.inferred_return_type) {
                 if (!decl->function.return_ts) {
-                    decl->function.type = get_function_type(&builtin_type_void, {}, &ctx->ast_allocator);
+                    auto param_types = temp_array_create<Type *>(&ctx->temp_allocator);
+
+                    for (s64 i = 0; i < decl->function.params.count; i++) {
+                        auto param = decl->function.params[i];
+                        assert(param->resolved_type);
+                        dynamic_array_append(&param_types.array, param->resolved_type);
+                    }
+                    decl->function.type = get_function_type(&builtin_type_void, param_types.array, &ctx->ast_allocator);
                     decl->function.inferred_return_type = decl->function.type->function.return_type;
+
+                    temp_array_destroy(&param_types);
                 } else {
                     assert(false);
                 }
@@ -1110,16 +1111,18 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
         }
 
         case AST_Statement_Kind::ASSIGN: assert(false);
-        case AST_Statement_Kind::CALL: assert(false);
+
+        case AST_Statement_Kind::CALL: {
+            // leaf
+            return true;
+        }
 
         case AST_Statement_Kind::IF: {
-            assert(stmt->if_stmt.cond->resolved_type);
-            assert(stmt->if_stmt.cond->resolved_type->kind == Type_Kind::BOOLEAN);
 
-            for (s64 i = 0; i < stmt->if_stmt.else_ifs.count; i++) {
-                auto &elif = stmt->if_stmt.else_ifs[i];
-                assert(elif.cond->resolved_type);
-                assert(elif.cond->resolved_type->kind == Type_Kind::BOOLEAN);
+            for (s64 i = 0; i < stmt->if_stmt.blocks.count; i++) {
+                auto &if_block = stmt->if_stmt.blocks[i];
+                assert(if_block.cond->resolved_type);
+                assert(if_block.cond->resolved_type->kind == Type_Kind::BOOLEAN);
             }
 
             return true;
@@ -1176,6 +1179,10 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
 
         case AST_Statement_Kind::PRINT: {
             assert(stmt->print_expr->resolved_type);
+
+            if (stmt->print_expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER) {
+                stmt->print_expr->resolved_type = &builtin_type_s64;
+            }
 
             assert(stmt->print_expr->resolved_type->kind == Type_Kind::INTEGER);
 
@@ -1327,6 +1334,12 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                 }
 
             } else if (is_binary_cmp_op(op)) {
+                if (lhs->resolved_type->kind == Type_Kind::INTEGER &&
+                    rhs->resolved_type->kind == Type_Kind::UNSIZED_INTEGER) {
+
+                    assert(valid_static_type_conversion(rhs->resolved_type, lhs->resolved_type));
+                    rhs->resolved_type = lhs->resolved_type;
+                }
                 assert(lhs->resolved_type == rhs->resolved_type);
                 if (lhs->resolved_type == &builtin_type_unsized_integer) {
                     lhs->resolved_type = &builtin_type_s64;

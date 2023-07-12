@@ -155,16 +155,13 @@ void ast_call_stmt_create(AST_Expression *call, AST_Statement *out_stmt)
     out_stmt->call.call = call;
 }
 
-void ast_if_stmt_create(AST_Expression *cond, AST_Statement *then_stmt, Dynamic_Array<AST_Else_If> else_ifs, AST_Statement *else_stmt, AST_Statement *out_stmt)
+void ast_if_stmt_create(Dynamic_Array<AST_If_Block> blocks, AST_Statement *else_stmt, AST_Statement *out_stmt)
 {
-    assert(cond && then_stmt && out_stmt);
+    assert(blocks.count && out_stmt);
 
     ast_statement_create(AST_Statement_Kind::IF, out_stmt);
 
-    out_stmt->if_stmt.cond = cond;
-    out_stmt->if_stmt.then_stmt = then_stmt;
-    out_stmt->if_stmt.then_scope = nullptr;
-    out_stmt->if_stmt.else_ifs = else_ifs;
+    out_stmt->if_stmt.blocks = blocks;
     out_stmt->if_stmt.else_stmt = else_stmt;
     out_stmt->if_stmt.else_scope = nullptr;
 }
@@ -436,12 +433,12 @@ AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Ex
     return stmt;
 }
 
-AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *cond, AST_Statement *then_stmt, Dynamic_Array<AST_Else_If> else_ifs, AST_Statement *else_stmt)
+AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_If_Block> blocks, AST_Statement *else_stmt)
 {
-    assert(ctx && cond && then_stmt);
+    assert(ctx && blocks.count);
 
     auto stmt = ast_statement_new(ctx, range);
-    ast_if_stmt_create(cond, then_stmt, else_ifs, else_stmt, stmt);
+    ast_if_stmt_create(blocks, else_stmt, stmt);
     return stmt;
 }
 
@@ -727,21 +724,21 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
 
         case AST_Statement_Kind::IF: {
             semicolon = false;
-            string_builder_append(sb, "if ");
-            ast_print_expression(sb, stmt->if_stmt.cond);
-            ast__print_statement_internal(sb, stmt->if_stmt.then_stmt, indent);
 
-            bool indent_else_if = stmt->if_stmt.then_stmt->kind != AST_Statement_Kind::BLOCK;
+            assert(stmt->if_stmt.blocks.count);
+            bool indent_else_if = stmt->if_stmt.blocks[0].then->kind != AST_Statement_Kind::BLOCK;
 
-            for (u64 i = 0; i < stmt->if_stmt.else_ifs.count; i++) {
-                auto else_if = stmt->if_stmt.else_ifs[i];
-                if (indent_else_if) ast_print_indent(sb, indent);
-                else string_builder_append(sb, " ");
-                string_builder_append(sb, "else if ");
-                ast_print_expression(sb, else_if.cond);
-                ast__print_statement_internal(sb, else_if.then, indent);
+            for (s64 i = 0; i < stmt->if_stmt.blocks.count; i++) {
+                auto if_block = &stmt->if_stmt.blocks[i];
+                if (i == 0) {
+                    string_builder_append(sb, "if ");
+                } else {
+                    string_builder_append(sb, " else if ");
+                }
+                ast_print_expression(sb, if_block->cond);
+                ast__print_statement_internal(sb, if_block->then, indent);
 
-                indent_else_if = else_if.then->kind != AST_Statement_Kind::BLOCK;
+                indent_else_if = if_block->then->kind != AST_Statement_Kind::BLOCK;
             }
 
             bool indent_else = indent_else_if;
