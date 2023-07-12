@@ -73,7 +73,7 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
                 Bytecode_Register initial_value_reg;
                 if (decl->variable.value) {
-                    initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value, decl->variable.resolved_type);
+                    initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
                 }
 
                 auto global_handle = bytecode_create_global(bc->builder, global_name, global_type, initial_value_reg);
@@ -154,7 +154,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             for (s64 i = 0; i < decl->function.variables.count; i++) {
                 AST_Declaration *var_decl = decl->function.variables[i];
                 if (var_decl->variable.value) {
-                    Bytecode_Register value = ast_expr_to_bytecode(bc, var_decl->variable.value, var_decl->variable.resolved_type);
+                    Bytecode_Register value = ast_expr_to_bytecode(bc, var_decl->variable.value);
 
                     // TODO: Temporarily store this on the stack from before?
                     Bytecode_Register alloc_reg;
@@ -327,14 +327,7 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
         case AST_Statement_Kind::RETURN: {
             if (stmt->return_stmt.value) {
-                assert(stmt->return_stmt.scope);
-                AST_Declaration *func_decl = enclosing_function(stmt->return_stmt.scope);
-                assert(func_decl);
-
-                assert(func_decl->function.type);
-                Type *return_type = func_decl->function.type->function.return_type;
-
-                Bytecode_Register return_value_register = ast_expr_to_bytecode(bc, stmt->return_stmt.value, return_type);
+                Bytecode_Register return_value_register = ast_expr_to_bytecode(bc, stmt->return_stmt.value);
                 bytecode_emit_return(bc->builder, return_value_register);
             } else {
                 bytecode_emit_return(bc->builder);
@@ -351,30 +344,16 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
     }
 }
 
-Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr, Type *actual_type/*=nullptr*/)
+Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr)
 {
     assert(bc);
     assert(expr);
-
-    if (expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER && actual_type->kind == Type_Kind::INTEGER) {
-        actual_type = expr->resolved_type;
-    }
-
-    if (actual_type) {
-        assert(actual_type == expr->resolved_type);
-    } else {
-        actual_type = expr->resolved_type;
-    }
 
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false); break;
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
             Type *literal_type = expr->resolved_type;
-            if (literal_type->kind == Type_Kind::UNSIZED_INTEGER) {
-                assert(actual_type);
-                literal_type = actual_type;
-            }
             if (literal_type->kind == Type_Kind::UNSIZED_INTEGER) {
                 literal_type = &builtin_type_s64;
             }
@@ -418,12 +397,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
                 case AST_Declaration_Kind::CONSTANT_VARIABLE: {
                     assert(ident_decl->variable.value);
-                    Type *type = expr->resolved_type;
-                    if (ident_decl->variable.resolved_type == &builtin_type_unsized_integer) {
-                        assert(actual_type);
-                        type = actual_type;
-                    }
-                    return ast_expr_to_bytecode(bc, ident_decl->variable.value, type);
+                    return ast_expr_to_bytecode(bc, ident_decl->variable.value);
                 }
 
                 case AST_Declaration_Kind::FUNCTION: {
@@ -488,24 +462,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
         case AST_Expression_Kind::BINARY: {
 
-            if (actual_type) {
-                assert(actual_type == expr->resolved_type);
-            } else {
-                actual_type = expr->resolved_type;
-            }
-
-            Bytecode_Register lhs_reg;
-            Bytecode_Register rhs_reg;
-
-
-            if (is_binary_arithmetic_op(expr->binary.op)) {
-                lhs_reg = ast_expr_to_bytecode(bc, expr->binary.lhs, actual_type);
-                rhs_reg = ast_expr_to_bytecode(bc, expr->binary.rhs, actual_type);
-            } else {
-                lhs_reg = ast_expr_to_bytecode(bc, expr->binary.lhs);
-                rhs_reg = ast_expr_to_bytecode(bc, expr->binary.rhs);
-            }
-
+            Bytecode_Register lhs_reg = ast_expr_to_bytecode(bc, expr->binary.lhs);
+            Bytecode_Register rhs_reg = ast_expr_to_bytecode(bc, expr->binary.rhs);
 
             switch (expr->binary.op) {
                 case AST_Binary_Operator::INVALID: assert(false); break;
