@@ -34,7 +34,7 @@ test :: (x: s64) {
 }
 
 main :: () -> s64 {
-    a := 10;
+    a := 8 + 2;
     z :: 19;
     b := z + x + y + foo;
     print(b);

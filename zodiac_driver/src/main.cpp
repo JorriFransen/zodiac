@@ -147,7 +147,7 @@ int main() {
         assert(result);
     }
 
-    llvm_builder_print(&llvm_builder);
+    /* llvm_builder_print(&llvm_builder); */
 
     llvm_builder_emit_binary(&llvm_builder);
 

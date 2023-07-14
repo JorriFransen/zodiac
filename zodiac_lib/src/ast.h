@@ -120,9 +120,19 @@ enum class AST_Expression_Kind
     BINARY,
 };
 
+typedef u32 AST_Expression_Flags;
+enum AST_Expression_Flag : AST_Expression_Flags
+{
+    AST_EXPR_FLAG_NONE  = 0x00,
+    AST_EXPR_FLAG_CONST = 0x01,
+};
+
+#define EXPR_IS_CONST(e) (((e)->flags & AST_EXPR_FLAG_CONST) == AST_EXPR_FLAG_CONST)
+
 struct AST_Expression
 {
     AST_Expression_Kind kind;
+    AST_Expression_Flags flags;
 
     Source_Range range;
 
@@ -348,7 +358,7 @@ ZAPI void ast_call_expr_create(AST_Expression *base, Dynamic_Array<AST_Expressio
 ZAPI void ast_index_expr_create(AST_Expression *base, AST_Expression *index, AST_Expression *out_expr);
 ZAPI void ast_unary_expr_create(AST_Unary_Operator op, AST_Expression *operand, AST_Expression *out_expr);
 ZAPI void ast_binary_expr_create(AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs, AST_Expression *out_expr);
-ZAPI void ast_expression_create(AST_Expression_Kind kind, AST_Expression *out_expr);
+ZAPI void ast_expression_create(AST_Expression_Kind kind, AST_Expression_Flags flags, AST_Expression *out_expr);
 
 ZAPI void ast_block_stmt_create(Dynamic_Array<AST_Statement *> statements, AST_Statement *out_stmt);
 ZAPI void ast_declaration_stmt_create(AST_Declaration *decl, AST_Statement *out_stmt);

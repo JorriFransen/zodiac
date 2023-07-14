@@ -24,7 +24,7 @@ void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_ex
 {
     assert(out_expr);
 
-    ast_expression_create(AST_Expression_Kind::INTEGER_LITERAL, out_expr);
+    ast_expression_create(AST_Expression_Kind::INTEGER_LITERAL, AST_EXPR_FLAG_CONST, out_expr);
 
     out_expr->integer_literal.value = value;
 }
@@ -33,7 +33,7 @@ void ast_string_literal_expr_create(Atom atom, AST_Expression *out_expr)
 {
     assert(out_expr);
 
-    ast_expression_create(AST_Expression_Kind::STRING_LITERAL, out_expr);
+    ast_expression_create(AST_Expression_Kind::STRING_LITERAL, AST_EXPR_FLAG_CONST, out_expr);
 
     out_expr->string_literal.atom = atom;
 }
@@ -42,14 +42,14 @@ void ast_null_literal_expr_create(AST_Expression *out_expr)
 {
     assert(out_expr);
 
-    ast_expression_create(AST_Expression_Kind::NULL_LITERAL, out_expr);
+    ast_expression_create(AST_Expression_Kind::NULL_LITERAL, AST_EXPR_FLAG_CONST, out_expr);
 }
 
 void ast_identifier_expr_create(AST_Identifier ident, AST_Expression *out_expr)
 {
     assert(&out_expr);
 
-    ast_expression_create(AST_Expression_Kind::IDENTIFIER, out_expr);
+    ast_expression_create(AST_Expression_Kind::IDENTIFIER, AST_EXPR_FLAG_NONE, out_expr);
 
     out_expr->identifier = ident;
 }
@@ -58,7 +58,7 @@ void ast_member_expr_create(AST_Expression *base, Atom atom, AST_Expression *out
 {
     assert(base && out_expr);
 
-    ast_expression_create(AST_Expression_Kind::MEMBER, out_expr);
+    ast_expression_create(AST_Expression_Kind::MEMBER, AST_EXPR_FLAG_NONE, out_expr);
 
     out_expr->member.base = base;
     out_expr->member.member_name = atom;
@@ -68,7 +68,7 @@ void ast_index_expr_create(AST_Expression *base, AST_Expression *index, AST_Expr
 {
     assert(base && index && out_expr);
 
-    ast_expression_create(AST_Expression_Kind::INDEX, out_expr);
+    ast_expression_create(AST_Expression_Kind::INDEX, AST_EXPR_FLAG_NONE, out_expr);
 
     out_expr->index.base = base;
     out_expr->index.index = index;
@@ -78,7 +78,7 @@ void ast_call_expr_create(AST_Expression *base, Dynamic_Array<AST_Expression *> 
 {
     assert(base && out_expr);
 
-    ast_expression_create(AST_Expression_Kind::CALL, out_expr);
+    ast_expression_create(AST_Expression_Kind::CALL, AST_EXPR_FLAG_NONE, out_expr);
 
     out_expr->call.base = base;
     out_expr->call.args = args;
@@ -89,7 +89,7 @@ void ast_unary_expr_create(AST_Unary_Operator op, AST_Expression *operand, AST_E
     assert(operand && out_expr);
     assert(op != AST_Unary_Operator::INVALID);
 
-    ast_expression_create(AST_Expression_Kind::UNARY, out_expr);
+    ast_expression_create(AST_Expression_Kind::UNARY, AST_EXPR_FLAG_NONE, out_expr);
 
     out_expr->unary.op = op;
     out_expr->unary.operand = operand;
@@ -100,19 +100,25 @@ void ast_binary_expr_create(AST_Binary_Operator op, AST_Expression *lhs, AST_Exp
     assert(lhs && rhs && out_expr);
     assert(op != AST_Binary_Operator::INVALID);
 
-    ast_expression_create(AST_Expression_Kind::BINARY, out_expr);
+    AST_Expression_Flags flags = AST_EXPR_FLAG_NONE;
+
+    if (lhs->flags & AST_EXPR_FLAG_CONST && rhs->flags & AST_EXPR_FLAG_CONST) {
+        flags |= AST_EXPR_FLAG_CONST;
+    }
+
+    ast_expression_create(AST_Expression_Kind::BINARY, flags, out_expr);
 
     out_expr->binary.op = op;
     out_expr->binary.lhs = lhs;
     out_expr->binary.rhs = rhs;
 }
 
-void ast_expression_create(AST_Expression_Kind kind, AST_Expression *out_expr)
+void ast_expression_create(AST_Expression_Kind kind, AST_Expression_Flags flags, AST_Expression *out_expr)
 {
     assert(out_expr);
 
-
     out_expr->kind = kind;
+    out_expr->flags = flags;
     out_expr->resolved_type = nullptr;
     out_expr->infer_type_from = nullptr;
 }

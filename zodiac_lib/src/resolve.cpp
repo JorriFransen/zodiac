@@ -771,9 +771,16 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 
         case AST_Expression_Kind::INTEGER_LITERAL:
         case AST_Expression_Kind::STRING_LITERAL:
-        case AST_Expression_Kind::NULL_LITERAL:
-        case AST_Expression_Kind::BINARY: {
+        case AST_Expression_Kind::NULL_LITERAL: {
+            assert((expr->flags & AST_EXPR_FLAG_CONST) == AST_EXPR_FLAG_CONST);
             // Leaf
+            break;
+        }
+
+        case AST_Expression_Kind::BINARY: {
+            if (EXPR_IS_CONST(expr->binary.lhs) && EXPR_IS_CONST(expr->binary.rhs)) {
+                expr->flags |= AST_EXPR_FLAG_CONST;
+            }
             break;
         }
 
@@ -820,6 +827,10 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 
             } else {
                 assert(sym->state >= Symbol_State::RESOLVED);
+
+                if (sym->kind == Symbol_Kind::CONST) {
+                    expr->flags |= AST_EXPR_FLAG_CONST;
+                }
             }
             break;
         }
