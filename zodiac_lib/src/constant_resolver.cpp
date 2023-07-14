@@ -3,6 +3,7 @@
 #include "ast.h"
 #include "scope.h"
 #include "type.h"
+#include "util/asserts.h"
 
 namespace Zodiac {
 
@@ -61,6 +62,9 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
             return resolve_constant_integer_binary_expr(expr, type);
         }
     }
+
+    assert(false);
+    return {};
 }
 
 Integer_Value resolve_constant_integer_binary_expr(AST_Expression *expr, Type *type/*=nullptr*/)

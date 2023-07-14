@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include "atom.h"
+#include "common.h"
 #include "constant_resolver.h"
 #include "containers/dynamic_array.h"
 #include "error.h"
@@ -536,6 +537,9 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
         case Type_Kind::BOOLEAN: assert(false); break;
     }
+
+    assert(false);
+    return {};
 }
 
 } }

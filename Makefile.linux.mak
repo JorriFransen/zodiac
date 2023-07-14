@@ -50,4 +50,4 @@ $(DYNCALL_LIB):  $(DYNCALL_INSTALL_DIR) $(DYNCALL_MAKEFILE)
 .PHONY: clean_dyncall
 clean_dyncall:
 	rm -rf $(DYNCALL_INSTALL_DIR)
-	rm $(DYNCALL_SOURCE_DIR)/Makefile
+	rm -f $(DYNCALL_SOURCE_DIR)/Makefile
