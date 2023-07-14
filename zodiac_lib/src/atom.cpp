@@ -147,7 +147,7 @@ static Atom atom_table_add(Atom_Table *at, const char *cstr, s64 length)
 
 Atom atom_get(Atom_Table *at, const char *cstr, s64 length)
 {
-    u64 hash = hash_c_string(cstr, length);
+    u64 hash = hash_string(cstr, length);
     u64 hash_index = hash % at->capacity;
 
     u64 iteration_count = 0;
@@ -192,7 +192,7 @@ Atom atom_get(Atom_Table *at, const String_Ref &string_ref)
 
 u64 hash_key(const Atom &atom)
 {
-    return hash_c_string(atom.data, atom.length);
+    return hash_string(atom.data, atom.length);
 }
 
 }

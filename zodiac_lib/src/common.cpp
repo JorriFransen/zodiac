@@ -1,11 +1,12 @@
 #include "common.h"
 
 #include "util/asserts.h"
+#include "util/zstring.h"
 
 namespace Zodiac
 {
 
-u64 hash_c_string(const char *cstr, u64 length)
+u64 hash_string(const char *cstr, u64 length)
 {
     // 64 bit FNV hash
     if (length == 0)
@@ -23,6 +24,11 @@ u64 hash_c_string(const char *cstr, u64 length)
 
     return hash;
 
+}
+
+u64 hash_string(const char *cstr)
+{
+    return hash_string(cstr, zstrlen(cstr));
 }
 
 u64 hash_s64(s64 key)
@@ -48,7 +54,7 @@ u64 hash_mix(u64 a, u64 b)
     u64 string[2] = { a, b };
     assert(sizeof(string) == 16);
 
-    return hash_c_string((const char *)&string, sizeof(string));
+    return hash_string((const char *)&string, sizeof(string));
 }
 
 }

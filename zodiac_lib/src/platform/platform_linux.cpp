@@ -132,6 +132,27 @@ bool platform_info_generic(Allocator *allocator, Platform_Info *info)
     return true;
 }
 
+struct Sup_Plat_Info {
+    const char *name;
+    const u64 hash;
+};
+
+#define SUPPORTED_PLATFORM_LIST \
+    SUP_PLAT("arch") \
+    SUP_PLAT("ubuntu") \
+    SUP_PLAT("fedora")
+
+#define SUP_PLAT(p) { (p), hash_string(p) },
+
+file_local Sup_Plat_Info supported_platforms[] = {
+    SUPPORTED_PLATFORM_LIST
+};
+
+#undef SUP_PLAT
+
+#define SUPPORTED_PLATFORM_COUNT (sizeof(supported_platforms) / sizeof(supported_platforms[0]))
+
+
 bool platform_info(Allocator *allocator, Platform_Info *info)
 {
     assert(allocator);
@@ -146,17 +167,25 @@ bool platform_info(Allocator *allocator, Platform_Info *info)
     OS_Release_Info ori = os_release_info(temp_allocator_allocator());
     assert(ori.found);
 
+    u64 platform_hash = hash_string(ori.id.data, ori.id.length);
+
+    for (s64 i = 0; i < SUPPORTED_PLATFORM_COUNT; i++) {
+        if (platform_hash == supported_platforms[i].hash) {
+
+            // Just in case there is a hash collision
+            assert(string_equal(ori.id, supported_platforms[i].name));
+
+            ZTRACE( "[platform_info()] using platform_info_generic for os '%s'", supported_platforms[i].name);
+            return platform_info_generic(allocator, info);
+        }
+    }
+
     if (string_equal(ori.id, "nixos")) {
         assert_msg(false, "nixos_platform_info not implemented");
         // return nixos_find_crt_path(allocator, dest);
     }
 
-    if (string_equal(ori.id, "arch") || string_equal(ori.id, "ubuntu")) {
-        ZTRACE( "[platform_info()] using platform_info_generic for os '%s'\n", ori.id.data);
-        return platform_info_generic(allocator, info);
-    }
-
-    ZTRACE( "[platform_info()] Unsupported os '%s', falling back on platform_info_generic()\n", ori.id.data);
+    ZTRACE( "[platform_info()] Unsupported os '%s', falling back on platform_info_generic()", ori.id.data);
     return platform_info_generic(allocator, info);
 }
 

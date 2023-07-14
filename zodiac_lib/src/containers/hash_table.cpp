@@ -9,7 +9,7 @@ namespace Zodiac
 
 u64 hash_key(const char *str)
 {
-    return hash_c_string(str, strlen(str));
+    return hash_string(str, strlen(str));
 }
 
 u64 hash_key(s64 key)

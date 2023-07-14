@@ -16,6 +16,11 @@ struct Atom;
 
 #define ZSTRING_FORMAT_STACK_BUFFER_SIZE 32000
 
+ZAPI ZINLINE size_t zstrlen(const char *cstr)
+{
+    return strlen(cstr);
+}
+
 struct String
 {
     char* data = nullptr;
