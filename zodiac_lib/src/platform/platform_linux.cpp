@@ -151,8 +151,8 @@ bool platform_info(Allocator *allocator, Platform_Info *info)
         // return nixos_find_crt_path(allocator, dest);
     }
 
-    if (string_equal(ori.id, "arch")) {
-        ZTRACE( "[platform_info()] using platform_info_generic for os 'arch'\n");
+    if (string_equal(ori.id, "arch") || string_equal(ori.id, "ubuntu")) {
+        ZTRACE( "[platform_info()] using platform_info_generic for os '%s'\n", ori.id.data);
         return platform_info_generic(allocator, info);
     }
 

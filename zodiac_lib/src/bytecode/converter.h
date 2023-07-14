@@ -11,7 +11,6 @@ struct AST_Declaration;
 struct AST_Expression;
 struct AST_Statement;
 struct Resolver;
-struct Type;
 struct Zodiac_Context;
 
 namespace Bytecode {
