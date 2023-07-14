@@ -1,6 +1,5 @@
-- Are we using bytecode_retype_literal()?
 - Make parameter declarations act like other declarations (their symbols point to the function decl atm).
-- Calculate/substitute non leaf constant expressions before emitting bytecode.
+- Calculate/substitute non leaf constant expressions before emitting bytecode (we only do this when emitting bytecode now).
 - Initializers for globals should also be constant.
 
 - Containers

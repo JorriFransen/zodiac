@@ -36,6 +36,9 @@ ZAPI void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc);
 ZAPI void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl);
 ZAPI void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl);
 ZAPI void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt);
+
 ZAPI Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr);
+
+ZAPI Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr);
 
 } }

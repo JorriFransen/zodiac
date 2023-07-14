@@ -1042,6 +1042,10 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
 
             assert(decl->variable.resolved_type);
 
+            if (decl->variable.value && scope->kind == Scope_Kind::GLOBAL) {
+                assert(EXPR_IS_CONST(decl->variable.value));
+            }
+
             auto sym = scope_get_symbol(scope, decl->identifier.name);
             assert(sym && sym->state == Symbol_State::RESOLVED);
             sym->state = Symbol_State::TYPED;
@@ -1051,6 +1055,7 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
             assert(decl->variable.resolved_type == nullptr);
             assert(decl->variable.value);
+            assert(EXPR_IS_CONST(decl->variable.value));
 
             if (decl->variable.type_spec) {
                 assert(valid_static_type_conversion(decl->variable.value->resolved_type,

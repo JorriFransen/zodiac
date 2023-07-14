@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include "atom.h"
+#include "constant_resolver.h"
 #include "containers/dynamic_array.h"
 #include "error.h"
 #include "resolve.h"
@@ -73,6 +74,7 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
                 Bytecode_Register initial_value_reg;
                 if (decl->variable.value) {
+                    assert(EXPR_IS_CONST(decl->variable.value))
                     initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
                 }
 
@@ -349,6 +351,15 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
     assert(bc);
     assert(expr);
 
+    if (expr->kind != AST_Expression_Kind::INTEGER_LITERAL && EXPR_IS_CONST(expr)) {
+        assert_msg(expr->resolved_type->kind == Type_Kind::INTEGER ||
+                   expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER ||
+                   expr->resolved_type->kind == Type_Kind::BOOLEAN,
+                   "Non integer constant expression substitution is not supported yet");
+
+        return ast_const_expr_to_bytecode(bc, expr);
+    }
+
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false); break;
 
@@ -462,8 +473,13 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
         case AST_Expression_Kind::BINARY: {
 
-            Bytecode_Register lhs_reg = ast_expr_to_bytecode(bc, expr->binary.lhs);
-            Bytecode_Register rhs_reg = ast_expr_to_bytecode(bc, expr->binary.rhs);
+            auto lhs = expr->binary.lhs;
+            auto rhs = expr->binary.rhs;
+
+            assert(lhs->resolved_type == rhs->resolved_type);
+
+            Bytecode_Register lhs_reg = ast_expr_to_bytecode(bc, lhs);
+            Bytecode_Register rhs_reg = ast_expr_to_bytecode(bc, rhs);
 
             switch (expr->binary.op) {
                 case AST_Binary_Operator::INVALID: assert(false); break;
@@ -494,4 +510,32 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
     assert(false);
     return {};
 }
+
+Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr)
+{
+    assert(bc);
+    assert(expr);
+    assert(EXPR_IS_CONST(expr));
+
+    auto type = expr->resolved_type;
+
+    switch (type->kind) {
+
+        default: assert_msg(false, "Unsupported type in ast_const_expr_to_bytecode()");
+
+        case Type_Kind::INTEGER: {
+
+            Type *literal_type = type;
+            if (literal_type->kind == Type_Kind::UNSIZED_INTEGER) {
+                literal_type = &builtin_type_s64;
+            }
+
+            Integer_Value result_value = resolve_constant_integer_expr( expr);
+            return bytecode_integer_literal(bc->builder, literal_type, result_value);
+        }
+
+        case Type_Kind::BOOLEAN: assert(false); break;
+    }
+}
+
 } }
