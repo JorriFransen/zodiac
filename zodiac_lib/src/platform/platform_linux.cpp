@@ -116,7 +116,7 @@ bool platform_info_generic(Allocator *allocator, Platform_Info *info)
         if (!filesystem_is_link(path)) {
             auto dynamic_linker_path = string_append(temp_allocator_allocator(), path, "ld-linux-x86-64.so.2");
 
-            if (filesystem_is_regular(dynamic_linker_path)) {
+            if (filesystem_exists(dynamic_linker_path)) {
                 info->dynamic_linker_path = string_copy(allocator, dynamic_linker_path);
                 dynamic_linker_found = true;
                 break;
