@@ -40,6 +40,10 @@ jobs:
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   triggers:
   - !BranchUpdateTrigger {}
+  jobDependencies:
+  - jobName: Test
+    requireSuccessful: true
+    artifacts: '**'
   retryCondition: never
   maxRetries: 3
   retryDelay: 30
@@ -48,6 +52,17 @@ jobs:
   timeout: 3600
 - name: Test
   jobExecutor: local-bare-metal-job-executor
+  steps:
+  - !CommandStep
+    name: Run tests
+    runInContainer: false
+    interpreter: !ShellInterpreter
+      shell: bash
+      commands:
+      - bin/zodiac
+      - bin/zodiac_tests
+    useTTY: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   jobDependencies:
   - jobName: Compile
     requireSuccessful: true
