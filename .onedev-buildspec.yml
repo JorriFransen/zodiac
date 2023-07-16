@@ -88,6 +88,7 @@ jobs:
       commands:
       - bin/zodiac
       - result=./a.out
+      - if [ $result -ne 0 ]; then exit $result; fi
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   jobDependencies:
