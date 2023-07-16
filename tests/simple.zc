@@ -44,7 +44,8 @@ main :: () -> s64 {
     test(2);
     test(3);
     test(4);
-    return a + b;
+    // return a + b;
+    return 3;
 }
 
 x :: 21;

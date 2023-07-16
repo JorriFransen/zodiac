@@ -66,6 +66,7 @@ jobs:
       commands:
       - bin/zodiac
       - ./a.out || EXIT_CODE=$?
+      - echo a.out returned $EXIT_CODE
       - '[[ $EXIT_CODE=85 ]] && exit 0 || exit 1'
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
