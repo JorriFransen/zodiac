@@ -63,13 +63,21 @@ jobs:
   jobExecutor: local-bare-metal-job-executor
   steps:
   - !CommandStep
-    name: Run tests
+    name: Extract artifacts
     runInContainer: false
     interpreter: !ShellInterpreter
       shell: bash
       commands:
       - unzip artifacts.zip
-      - bin/zodiac
+    useTTY: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  - !CommandStep
+    name: Run tests
+    runInContainer: false
+    interpreter: !ShellInterpreter
+      shell: bash
+      commands:
+      - bin/zodiac_tests
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   jobDependencies:
