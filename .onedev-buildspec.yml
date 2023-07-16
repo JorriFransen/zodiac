@@ -68,8 +68,8 @@ jobs:
     interpreter: !ShellInterpreter
       shell: bash
       commands:
+      - unzip artifacts.zip
       - bin/zodiac
-      - bin/zodiac_tests
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   jobDependencies:
