@@ -140,6 +140,7 @@ struct Sup_Plat_Info {
 #define SUPPORTED_PLATFORM_LIST \
     SUP_PLAT("arch") \
     SUP_PLAT("ubuntu") \
+    SUP_PLAT("debian") \
     SUP_PLAT("fedora")
 
 #define SUP_PLAT(p) { (p), hash_string(p) },
