@@ -9,4 +9,4 @@ if [ $ERR -ne 0 ]; then
     echo "Error:"$ERR && exit
 fi
 
-echo "All assemblies cleand successfully."
+echo "All assemblies cleaned successfully."
