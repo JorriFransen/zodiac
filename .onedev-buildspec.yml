@@ -87,7 +87,7 @@ jobs:
       shell: bash
       commands:
       - bin/zodiac
-      - ./a.out
+      - result=./a.out
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   jobDependencies:
