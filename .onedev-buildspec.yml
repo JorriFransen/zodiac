@@ -8,6 +8,7 @@ jobs:
     interpreter: !DefaultInterpreter
       commands:
       - ls
+      - pwd
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   retryCondition: never
