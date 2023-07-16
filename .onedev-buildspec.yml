@@ -15,12 +15,21 @@ jobs:
     interpreter: !ShellInterpreter
       shell: bash
       commands:
-        - make -f Makefile.linux.mak all -j $(nproc)
+      - make -f Makefile.linux.mak all -j $(nproc)
+    useTTY: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  - !CommandStep
+    name: Prepare artifacts
+    runInContainer: false
+    interpreter: !ShellInterpreter
+      shell: bash
+      commands:
+      - zip artifacts.zip bin/* tests/*
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   - !PublishArtifactStep
     name: Publish build results
-    artifacts: 'bin/zodiac bin/zodiac_tests'
+    artifacts: artifacts.zip
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   retryCondition: never
   maxRetries: 3
