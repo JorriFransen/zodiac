@@ -11,10 +11,10 @@ jobs:
   - !CommandStep
     name: compile
     runInContainer: false
-    interpreter: !DefaultInterpreter
+    interpreter: !ShellInterpreter
+      shell: bash
       commands:
-      - ls
-      - pwd
+      - ./build_all.sh
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   retryCondition: never
