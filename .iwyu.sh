@@ -7,10 +7,6 @@ then
     IWYU_TOOL=iwyu-tool
 fi
 
-if hash iwyu_tool 2> /dev/null
-    IWYU_TOOL=iwyu_tool
-fi
-
 if hash iwyu_tool.py 2> /dev/null
 then
     IWYU_TOOL=iwyu_tool.py
