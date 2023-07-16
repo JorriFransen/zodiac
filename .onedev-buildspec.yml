@@ -1,5 +1,21 @@
 version: 18
 jobs:
+- name: Compile
+  steps:
+  - !CommandStep
+    name: compile
+    runInContainer: false
+    interpreter: !DefaultInterpreter
+      commands:
+      - ls
+    useTTY: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  cpuRequirement: 250
+  memoryRequirement: 256
+  timeout: 3600
 - name: Github sync
   steps:
   - !PushRepository
