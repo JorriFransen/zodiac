@@ -15,7 +15,7 @@ jobs:
     interpreter: !ShellInterpreter
       shell: bash
       commands:
-      - make -f Makefile.linux.mak all -j $(nproc)
+      - ./build_all.sh
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   - !CommandStep
@@ -66,7 +66,7 @@ jobs:
       commands:
       - bin/zodiac
       - ./a.out || EXIT_CODE=$?
-      - '[[ $EXIT_CODE -eq 85 ]] && exit 0 || exit 1'
+      - '[[ $EXIT_CODE -eq 85 ]] && exit 0 || echo Invalid exit code $EXIT_CODE; exit 1'
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   jobDependencies:
