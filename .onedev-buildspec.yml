@@ -1,6 +1,7 @@
 version: 18
 jobs:
 - name: Compile
+  jobExecutor: local-bare-metal-job-executor
   steps:
   - !CheckoutStep
     name: Checkout
@@ -16,6 +17,10 @@ jobs:
       commands:
       - ./build_all.sh
     useTTY: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  - !PublishArtifactStep
+    name: Publish build results
+    artifacts: bin/zodiac,bin/zodiac_test
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   retryCondition: never
   maxRetries: 3
