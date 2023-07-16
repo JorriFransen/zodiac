@@ -16,11 +16,12 @@ jobs:
       shell: bash
       commands:
       - ./build_all.sh
+      - ls bin
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   - !PublishArtifactStep
     name: Publish build results
-    artifacts: bin/zodiac bin/zodiac_tests bin/libzodiac.so
+    artifacts: bin/zodiac bin/zodiac_tests
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   retryCondition: never
   maxRetries: 3
