@@ -69,19 +69,29 @@ void resolve_file(Resolver *resolver, AST_File *file)
 
     while (!done) {
 
-        bool names_done = resolve_names(resolver);
+        Resolve_Results names_result = resolve_names(resolver);
 
         if (resolver->ctx->fatal_resolve_error) break;
 
-        bool types_done = resolve_types(resolver);
+        Resolve_Results types_result = resolve_types(resolver);
 
         if (resolver->ctx->fatal_resolve_error) break;
 
-        if (names_done && types_done) {
-            done = true;
-        }
+        done = ((names_result & RESOLVE_RESULT_DONE) == RESOLVE_RESULT_DONE) &&
+               ((types_result & RESOLVE_RESULT_DONE) == RESOLVE_RESULT_DONE);
+
+        bool progress = ((names_result & RESOLVE_RESULT_PROGRESS) == RESOLVE_RESULT_PROGRESS) &&
+                        ((types_result & RESOLVE_RESULT_PROGRESS) == RESOLVE_RESULT_PROGRESS);
 
         if (done) assert(resolver->ctx->errors.count == 0);
+
+        if (!progress && !done) {
+            assert(resolver->ctx->errors.count);
+            break;
+        } else if (progress && resolve_error_count(resolver->ctx)) {
+            resolver->ctx->errors.count = 0;
+            temporary_allocator_reset(&resolver->ctx->error_allocator_state);
+        }
     }
 
 
@@ -128,7 +138,7 @@ void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Decla
     dynamic_array_append(&resolver->nodes_to_name_resolve, node);
 }
 
-bool resolve_names(Resolver *resolver)
+Resolve_Results resolve_names(Resolver *resolver)
 {
     bool progress = false;
     bool done = true;
@@ -170,20 +180,24 @@ bool resolve_names(Resolver *resolver)
         }
     }
 
-    if (progress && resolve_error_count(resolver->ctx))
-    {
-        assert(!done);
+    // if (progress && resolve_error_count(resolver->ctx))
+    // {
+    //     assert(!done);
 
-        // TODO: CLEANUP: Is it actually ok to clear all errors here?
-        resolver->ctx->errors.count = 0;
+    //     // TODO: CLEANUP: Is it actually ok to clear all errors here?
+    //     resolver->ctx->errors.count = 0;
 
-        temporary_allocator_reset(&resolver->ctx->error_allocator_state);
-    }
+    //     temporary_allocator_reset(&resolver->ctx->error_allocator_state);
+    // }
 
-    return done;
+    Resolve_Results result = RESOLVE_RESULT_NONE;
+    if (done) result |= RESOLVE_RESULT_DONE;
+    if (progress) result |= RESOLVE_RESULT_PROGRESS;
+
+    return result;
 }
 
-bool resolve_types(Resolver *resolver)
+Resolve_Results resolve_types(Resolver *resolver)
 {
     bool progress = false;
     bool done = true;
@@ -225,17 +239,21 @@ bool resolve_types(Resolver *resolver)
         }
     }
 
-    if (progress && resolve_error_count(resolver->ctx))
-    {
-        assert(!done);
+    // if (progress && resolve_error_count(resolver->ctx))
+    // {
+    //     assert(!done);
 
-        // TODO: CLEANUP: Is it actually ok to clear all errors here?
-        resolver->ctx->errors.count = 0;
+    //     // TODO: CLEANUP: Is it actually ok to clear all errors here?
+    //     resolver->ctx->errors.count = 0;
 
-        temporary_allocator_reset(&resolver->ctx->error_allocator_state);
-    }
+    //     temporary_allocator_reset(&resolver->ctx->error_allocator_state);
+    // }
 
-    return done;
+    Resolve_Results result = RESOLVE_RESULT_NONE;
+    if (done) result |= RESOLVE_RESULT_DONE;
+    if (progress) result |= RESOLVE_RESULT_PROGRESS;
+
+    return result;
 }
 
 void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest)
@@ -684,7 +702,17 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
         case AST_Declaration_Kind::INVALID: assert(false);
 
         case AST_Declaration_Kind::VARIABLE: {
-            if (!global) {
+            if (global) {
+
+                auto init_expr = decl->variable.value;
+                if (init_expr && !EXPR_IS_CONST(init_expr)) {
+                    resolve_error(resolver->ctx, init_expr, "Global initializer must be a constant");
+                    assert(decl_sym->state == Symbol_State::RESOLVING);
+                    decl_sym->state = Symbol_State::UNRESOLVED;
+                    return false;
+                }
+
+            } else {
                 AST_Declaration *func_decl = enclosing_function(scope);
                 dynamic_array_append(&func_decl->function.variables, decl);
             }

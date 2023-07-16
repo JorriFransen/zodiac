@@ -56,11 +56,19 @@ struct Resolver
     Dynamic_Array<Flat_Root_Node> nodes_to_emit_bytecode;
 };
 
+typedef u64 Resolve_Results;
+enum Resolve_Result : Resolve_Results
+{
+    RESOLVE_RESULT_NONE     = 0x00,
+    RESOLVE_RESULT_PROGRESS = 0x01,
+    RESOLVE_RESULT_DONE     = 0x02,
+};
+
 ZAPI void resolver_create(Resolver *resolver, Zodiac_Context *ctx, Scope *global_scope);
 ZAPI void resolve_file(Resolver *resolver, AST_File *file);
 ZAPI void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Declaration *decl, Scope *scope);
-ZAPI bool resolve_names(Resolver *resolver);
-ZAPI bool resolve_types(Resolver *resolver);
+ZAPI Resolve_Results resolve_names(Resolver *resolver);
+ZAPI Resolve_Results resolve_types(Resolver *resolver);
 
 ZAPI void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 ZAPI void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest);
