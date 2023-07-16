@@ -20,7 +20,7 @@ jobs:
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   - !PublishArtifactStep
     name: Publish build results
-    artifacts: 'bin/zodiac bin/zodiac_tests'
+    artifacts: 'bin/*'
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   retryCondition: never
   maxRetries: 3
