@@ -8,6 +8,36 @@ jobs:
     withLfs: false
     withSubmodules: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  - !CommandStep
+    name: Compile
+    runInContainer: false
+    interpreter: !ShellInterpreter
+      shell: bash
+      commands:
+      - ./build_all.sh
+    useTTY: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  - !CommandStep
+    name: Run tests
+    runInContainer: false
+    interpreter: !ShellInterpreter
+      shell: bash
+      commands:
+      - bin/zodiac_tests
+    useTTY: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  - !CommandStep
+    name: Run compiler
+    runInContainer: false
+    interpreter: !ShellInterpreter
+      shell: bash
+      commands:
+      - bin/zodiac tests/simple.zc -v
+      - ./a.out || EXIT_CODE=$?
+      - '[[ $EXIT_CODE -eq 85 ]] && exit 0 || echo Invalid exit code $EXIT_CODE; exit
+        1'
+    useTTY: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   triggers:
   - !BranchUpdateTrigger {}
   retryCondition: never
