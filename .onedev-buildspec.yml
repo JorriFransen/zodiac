@@ -48,3 +48,17 @@ jobs:
   maxRetries: 3
   retryDelay: 30
   timeout: 3600
+- name: Github sync
+  jobExecutor: local-bare-metal-job-executor
+  steps:
+  - !PushRepository
+    name: Github sync
+    remoteUrl: https://github.com/JorriFransen/zodiac.git
+    userName: jorri
+    passwordSecret: ghsynctoken
+    force: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  timeout: 3600
