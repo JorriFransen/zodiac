@@ -53,8 +53,7 @@ jobs:
     condition: failed or cancelled or timed out
     receivers: committers
   - !SendNotificationAction
-    condition: successful and (previous is failed or previous is cancelled or previous
-      is timed out)
+    condition: successful and previous is failed
     receivers: committers-since-previous-successful
 - name: Github sync
   jobExecutor: local-bare-metal-job-executor
@@ -81,6 +80,5 @@ jobs:
     condition: failed or cancelled or timed out
     receivers: committers
   - !SendNotificationAction
-    condition: successful and (previous is failed or previous is cancelled or previous
-      is timed out)
+    condition: successful and previous is failed
     receivers: committers-since-previous-successful
