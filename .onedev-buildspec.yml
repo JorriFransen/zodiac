@@ -105,10 +105,6 @@ jobs:
   timeout: 3600
 - name: Notification
   jobDependencies:
-  - jobName: Compile
-    requireSuccessful: false
-  - jobName: Test
-    requireSuccessful: false
   - jobName: Github sync
     requireSuccessful: false
   retryCondition: never
