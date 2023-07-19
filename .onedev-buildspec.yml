@@ -51,7 +51,7 @@ jobs:
   postBuildActions:
   - !SendNotificationAction
     condition: failed or cancelled or timed out
-    receivers: committers-since-previous-successful
+    receivers: committers
 - name: Github sync
   jobExecutor: local-bare-metal-job-executor
   steps:
