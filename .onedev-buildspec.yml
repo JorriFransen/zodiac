@@ -31,6 +31,8 @@ jobs:
     name: Publish build results
     artifacts: artifacts.zip
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  triggers:
+  - !BranchUpdateTrigger {}
   retryCondition: never
   maxRetries: 3
   retryDelay: 30
@@ -67,7 +69,8 @@ jobs:
       - tree
       - bin/zodiac tests/simple.zc -v
       - ./a.out || EXIT_CODE=$?
-      - '[[ $EXIT_CODE -eq 85 ]] && exit 0 || echo Invalid exit code $EXIT_CODE; exit 1'
+      - '[[ $EXIT_CODE -eq 85 ]] && exit 0 || echo Invalid exit code $EXIT_CODE; exit
+        1'
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   jobDependencies:
@@ -90,8 +93,6 @@ jobs:
     withLfs: false
     force: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
-  triggers:
-  - !BranchUpdateTrigger {}
   jobDependencies:
   - jobName: Test
     requireSuccessful: true
@@ -102,4 +103,3 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
-
