@@ -39,10 +39,6 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
-  postBuildActions:
-  - !RunJobAction
-    condition: successful
-    jobName: Test
 - name: Test
   jobExecutor: local-bare-metal-job-executor
   steps:
@@ -77,6 +73,9 @@ jobs:
         1'
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  triggers:
+  - !DependencyFinishedTrigger
+    projects: zodiac
   jobDependencies:
   - jobName: Compile
     requireSuccessful: true
@@ -87,10 +86,6 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
-  postBuildActions:
-  - !RunJobAction
-    condition: successful
-    jobName: Github sync
 - name: Github sync
   steps:
   - !PushRepository
@@ -101,6 +96,9 @@ jobs:
     withLfs: false
     force: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  triggers:
+  - !DependencyFinishedTrigger
+    projects: zodiac
   jobDependencies:
   - jobName: Test
     requireSuccessful: true
