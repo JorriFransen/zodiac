@@ -103,17 +103,7 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
-- name: Notification
-  jobDependencies:
-  - jobName: Github sync
-    requireSuccessful: false
-  retryCondition: never
-  maxRetries: 3
-  retryDelay: 30
-  cpuRequirement: 250
-  memoryRequirement: 256
-  timeout: 3600
   postBuildActions:
   - !SendNotificationAction
-    condition: previous is failed or previous is cancelled or previous is timed out
+    condition: failed or cancelled or timed out
     receivers: committers
