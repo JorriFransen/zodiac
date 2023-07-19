@@ -65,7 +65,7 @@ jobs:
       shell: bash
       commands:
       - tree
-      - bin/zodiac tests/simple.zdc -v
+      - bin/zodiac tests/simple.zc -v
       - ./a.out || EXIT_CODE=$?
       - '[[ $EXIT_CODE -eq 85 ]] && exit 0 || echo Invalid exit code $EXIT_CODE; exit 1'
     useTTY: false
