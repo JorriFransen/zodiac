@@ -104,7 +104,7 @@ void llvm_builder_init(LLVM_Builder *builder, Allocator *allocator, Bytecode_Bui
         assert_msg(false, "Failed to get platform info");
     }
 
-    builder->out_file_name = "out";
+    builder->out_file_name = builder->zodiac_context->options.output_file_name;
 
     hash_table_create(allocator, &builder->functions);
     hash_table_create(allocator, &builder->struct_types);
@@ -1329,14 +1329,16 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     string_builder_append(sb, pi.crt_path);
     string_builder_append(sb, "crti.o ");
 
-    string_builder_append(sb, "-lc %.*s.o ", (int)builder->out_file_name.length, builder->out_file_name.data);
+    auto out_name = builder->out_file_name;
+    string_builder_append(sb, "-o %.*s ", (int)out_name.length, out_name.data);
+    string_builder_append(sb, "-lc %.*s.o ", (int)out_name.length, out_name.data);
     string_builder_append(sb, "-R %.*s ", (int)builder->zodiac_context->compiler_exe_dir.length, builder->zodiac_context->compiler_exe_dir.data);
     string_builder_append(sb, "-L %.*s -lzrs_s ", (int)builder->zodiac_context->compiler_exe_dir.length, builder->zodiac_context->compiler_exe_dir.data);
     string_builder_append(sb, pi.crt_path);
     string_builder_append(sb, "crtn.o ");
 
     auto link_cmd = string_builder_to_string(sb);
-    printf("Running linker: %s\n", link_cmd.data);
+    ZTRACE("Running linker: %s\n", link_cmd.data);
 
     char out_buf[1024];
     FILE *link_proc_handle = popen(link_cmd.data, "r");
@@ -1387,6 +1389,7 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     string_builder_append(sb, " ucrt.lib");
     string_builder_append(sb, " msvcrt.lib");
 
+    assert_msg(false, "IMPLEMENT!");
     string_builder_append(sb, " %s.obj", builder->out_file_name.data);
 
     bool link_c = true;

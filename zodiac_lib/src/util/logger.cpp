@@ -8,7 +8,7 @@
 #include "util/asserts.h"
 #include "util/zstring.h"
 
-#define ZODIAC_LOGGER_FILE_LOCATIONS
+#define ZODIAC_LOGGER_FILE_LOCATIONS 0
 
 namespace Zodiac
 {
@@ -23,11 +23,15 @@ struct Logging_System_State
 file_local bool logging_system_initialized = false;
 file_local Logging_System_State logging_system_state;
 
+file_local Log_Level max_log_level = Log_Level::INFO;
+
 file_local void write_log_file(const String_Ref message);
 
-bool logging_system_initialize()
+bool logging_system_initialize(Log_Level mll/*=Log_Level::INFO*/)
 {
     if (logging_system_initialized) assert(false && !"Logging system already initialized");
+
+    logging_system_set_max_level(mll);
 
     filesystem_stdout_file(&logging_system_state.out_file);
     filesystem_stderr_file(&logging_system_state.err_file);
@@ -40,6 +44,11 @@ bool logging_system_initialize()
     logging_system_initialized = true;
 
     return true;
+}
+
+void logging_system_set_max_level(Log_Level max_level)
+{
+    max_log_level = max_level;
 }
 
 void logging_system_set_stdout_file(File_Handle out_file)
@@ -59,6 +68,8 @@ void logging_system_set_stderr_file(File_Handle err_file)
 void log_message(Log_Level log_level, const char *file, s64 line, const String_Ref fmt, ...)
 {
     assert(logging_system_initialized);
+
+    if (log_level > max_log_level) return;
 
     u64 level_index = (u64)log_level;
     assert(level_index >= 0 && log_level <= Log_Level::TRACE);
@@ -90,7 +101,7 @@ void log_message(Log_Level log_level, const char *file, s64 line, const String_R
 
     String_Ref out_fmt = "%s: %s\n";
 #define OUT_ARGS level_strings[level_index], out_message
-#ifdef ZODIAC_LOGGER_FILE_LOCATIONS
+#if ZODIAC_LOGGER_FILE_LOCATIONS
     out_fmt = "%s%s:%i: %s\n";
 #undef OUT_ARGS
 #define OUT_ARGS level_strings[level_index], file, line, out_message

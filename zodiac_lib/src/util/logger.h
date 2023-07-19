@@ -20,7 +20,8 @@ enum class Log_Level
     TRACE = 5,
 };
 
-ZAPI bool logging_system_initialize();
+ZAPI bool logging_system_initialize(Log_Level mll = Log_Level::INFO);
+ZAPI void logging_system_set_max_level(Log_Level max_level);
 ZAPI void logging_system_set_stdout_file(File_Handle out_file);
 ZAPI void logging_system_set_stderr_file(File_Handle err_file);
 
