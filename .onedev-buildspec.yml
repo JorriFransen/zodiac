@@ -42,6 +42,8 @@ jobs:
   triggers:
   - !BranchUpdateTrigger
     projects: zodiac
+  - !PullRequestUpdateTrigger
+    projects: zodiac
   retryCondition: never
   maxRetries: 3
   retryDelay: 30
