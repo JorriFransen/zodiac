@@ -12,7 +12,7 @@ SRC_DIR := $(BASE_DIR)/src
 ASSEMBLY := zodiac
 EXTENSION :=
 COMPILER_FLAGS := -g -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC $(LLVM_CXX_FLAGS)
-INCLUDE_FLAGS := -Izodiac_lib/src -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
+INCLUDE_FLAGS := -Izodiac_lib/src -I$(SRC_DIR) -I$(BASE_DIR)/cxxopts $(DYNCALL_INCLUDE_FLAGS)
 LINKER_FLAGS := $(LLVM_LIBS) $(LLVM_LD_FLAGS) -L$(BUILD_DIR) -lzodiac -Wl,-rpath,. -Wl,-rpath,$(BUILD_DIR)
 DEFINES := -D_DEBUG -DZIMPORT
 
@@ -35,14 +35,14 @@ compile:
 
 $(OBJ_DIR)/%.cpp.o: %.cpp
 	@echo "$< -> $@"
-	@clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+	@clang++ $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
 
 .PHONY: link
 link: $(FULL_ASSEMBLY_PATH)
 
 $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 	@echo Linking $(ASSEMBLY)
-	clang $(COMPILER_FLAGS) $(OBJ_FILES) -o $@ $(LINKER_FLAGS)
+	@clang++ $(COMPILER_FLAGS) $(OBJ_FILES) -o $@ $(LINKER_FLAGS)
 
 .PHONY: clean
 clean:
