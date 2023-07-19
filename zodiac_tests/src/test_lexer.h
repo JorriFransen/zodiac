@@ -75,6 +75,7 @@ static void lexer_test_tear_down(void *fixture)
 
 static MunitResult Create_And_Free(const MunitParameter params[], void *user_data_or_fixture)
 {
+
     return MUNIT_FAIL;
     // This test doesn't use the setup/teardown
     Zodiac_Context context;
