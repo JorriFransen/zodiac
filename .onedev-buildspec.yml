@@ -39,6 +39,10 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
+  postBuildActions:
+  - !RunJobAction
+    condition: successful
+    jobName: Test
 - name: Test
   jobExecutor: local-bare-metal-job-executor
   steps:
@@ -83,6 +87,10 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
+  postBuildActions:
+  - !RunJobAction
+    condition: successful
+    jobName: Github sync
 - name: Github sync
   steps:
   - !PushRepository
