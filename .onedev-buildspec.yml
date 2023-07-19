@@ -39,6 +39,10 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
+  postBuildActions:
+  - !SendNotificationAction
+    condition: failed or cancelled or timed out
+    receivers: group(Creator)
 - name: Test
   jobExecutor: local-bare-metal-job-executor
   steps:
