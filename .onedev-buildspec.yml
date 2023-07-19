@@ -64,6 +64,7 @@ jobs:
     interpreter: !ShellInterpreter
       shell: bash
       commands:
+      - tree
       - bin/zodiac test/simple.zdc -v
       - ./a.out || EXIT_CODE=$?
       - '[[ $EXIT_CODE -eq 85 ]] && exit 0 || echo Invalid exit code $EXIT_CODE; exit 1'
