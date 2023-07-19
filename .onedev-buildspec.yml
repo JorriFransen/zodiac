@@ -34,8 +34,7 @@ jobs:
       commands:
       - bin/zodiac tests/simple.zc -v
       - ./a.out || EXIT_CODE=$?
-      - '[[ $EXIT_CODE -eq 85 ]] && exit 0 || echo Invalid exit code $EXIT_CODE; exit
-        1'
+      - '[[ $EXIT_CODE -eq 85 ]] && exit 0 || echo Invalid exit code $EXIT_CODE; exit 1'
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   triggers:
@@ -43,6 +42,8 @@ jobs:
     projects: zodiac
   - !PullRequestUpdateTrigger
     projects: zodiac
+  triggers:
+  - !BranchUpdateTrigger {}
   retryCondition: never
   maxRetries: 3
   retryDelay: 30
