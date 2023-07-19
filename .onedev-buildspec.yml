@@ -58,6 +58,12 @@ jobs:
     passwordSecret: ghsynctoken
     force: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  triggers:
+  - !DependencyFinishedTrigger
+    projects: zodiac
+  jobDependencies:
+  - jobName: CI
+    requireSuccessful: true
   retryCondition: never
   maxRetries: 3
   retryDelay: 30
