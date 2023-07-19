@@ -1354,7 +1354,8 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     assert(close_ret >= 0);
 
     if (close_ret != 0) {
-        ZFATAL("Link command failed with exit code: %d\n", close_ret);
+        ZERROR("Link command failed with exit code: %d\n", close_ret);
+        return false;
     }
 
 #elif ZPLATFORM_WINDOWS
@@ -1410,7 +1411,8 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     auto result = platform_execute_process({}, arg_str);
 
     if (!result.success) {
-        ZFATAL("[llvm_builder] execute_process() failed...");
+        ZERROR("[llvm_builder] platform_execute_process() failed...");
+        return false;
     }
 
 #else
