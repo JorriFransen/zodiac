@@ -1,10 +1,18 @@
 #include "command_line_arguments.h"
 
+#include "memory/allocator.h"
 #include "platform/filesystem.h"
 #include "util/asserts.h"
 #include "util/logger.h"
 #include "util/zstring.h"
 #include "zodiac_context.h"
+
+#include <cxxopts.hpp>
+
+#include <memory>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string>
 
 namespace Zodiac
 {
