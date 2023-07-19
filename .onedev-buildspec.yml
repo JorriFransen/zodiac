@@ -37,10 +37,6 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
-  postBuildActions:
-  - !SendNotificationAction
-    condition: failed or timed out or cancelled
-    receivers: committers
 - name: Test
   jobExecutor: local-bare-metal-job-executor
   steps:
@@ -85,10 +81,6 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
-  postBuildActions:
-  - !SendNotificationAction
-    condition: failed or timed out or cancelled
-    receivers: committers
 - name: Github sync
   steps:
   - !PushRepository
@@ -111,7 +103,21 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
+- name: Notification
+  jobDependencies:
+  - jobName: Compile
+    requireSuccessful: false
+  - jobName: Test
+    requireSuccessful: false
+  - jobName: Github sync
+    requireSuccessful: false
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  cpuRequirement: 250
+  memoryRequirement: 256
+  timeout: 3600
   postBuildActions:
   - !SendNotificationAction
-    condition: failed or timed out or cancelled
+    condition: previous is failed or previous is cancelled or previous is timed out
     receivers: committers
