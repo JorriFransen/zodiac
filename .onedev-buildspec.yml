@@ -48,3 +48,25 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
+- name: Github Sync
+  steps:
+  - !PushRepository
+    name: Github sync
+    remoteUrl: https://github.com/JorriFransen/zodiac.git
+    userName: jorri
+    passwordSecret: ghsynctoken
+    withLfs: false
+    force: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  triggers:
+  - !DependencyFinishedTrigger
+    projects: zodiac
+  jobDependencies:
+  - jobName: CI
+    requireSuccessful: true
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  cpuRequirement: 250
+  memoryRequirement: 256
+  timeout: 3600
