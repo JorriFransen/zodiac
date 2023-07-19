@@ -37,6 +37,10 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
+  postBuildActions:
+  - !SendNotificationAction
+    condition: failed or timed out or cancelled
+    receivers: committers
 - name: Test
   jobExecutor: local-bare-metal-job-executor
   steps:
@@ -67,7 +71,8 @@ jobs:
       - tree
       - bin/zodiac tests/simple.zc -v
       - ./a.out || EXIT_CODE=$?
-      - '[[ $EXIT_CODE -eq 85 ]] && exit 0 || echo Invalid exit code $EXIT_CODE; exit 1'
+      - '[[ $EXIT_CODE -eq 85 ]] && exit 0 || echo Invalid exit code $EXIT_CODE; exit
+        1'
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   jobDependencies:
@@ -80,6 +85,10 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
+  postBuildActions:
+  - !SendNotificationAction
+    condition: failed or timed out or cancelled
+    receivers: committers
 - name: Github sync
   steps:
   - !PushRepository
@@ -102,3 +111,7 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
+  postBuildActions:
+  - !SendNotificationAction
+    condition: failed or timed out or cancelled
+    receivers: committers
