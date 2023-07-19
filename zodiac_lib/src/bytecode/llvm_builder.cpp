@@ -1389,7 +1389,6 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     string_builder_append(sb, " ucrt.lib");
     string_builder_append(sb, " msvcrt.lib");
 
-    assert_msg(false, "IMPLEMENT!");
     string_builder_append(sb, " %s.obj", builder->out_file_name.data);
 
     bool link_c = true;
