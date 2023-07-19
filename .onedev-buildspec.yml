@@ -90,6 +90,10 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
+  postBuildActions:
+  - !SendNotificationAction
+    condition: failed or cancelled or timed out
+    receivers: group(Creator)
 - name: Github sync
   steps:
   - !PushRepository
@@ -113,3 +117,7 @@ jobs:
   cpuRequirement: 250
   memoryRequirement: 256
   timeout: 3600
+  postBuildActions:
+  - !SendNotificationAction
+    condition: failed or cancelled or timed out
+    receivers: group(Creator)
