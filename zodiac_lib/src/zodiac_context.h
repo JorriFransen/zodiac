@@ -42,6 +42,15 @@ struct Zodiac_Context
     String support_lib_static_path;
 };
 
+struct Zodiac_Options
+{
+    bool print_bytecode = false;
+    bool print_llvm_ir = false;
+
+    String_Ref input_file_name = {};
+    String_Ref output_file_name {};
+};
+
 ZAPI void zodiac_context_create(Zodiac_Context *out_context);
 ZAPI void zodiac_context_destroy(Zodiac_Context *context);
 

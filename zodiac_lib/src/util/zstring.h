@@ -103,6 +103,7 @@ ZAPI String string_append(Allocator *allocator, const String_Ref &a, const Strin
 ZAPI Wide_String string_append(Allocator *allocator, const Wide_String_Ref &a, const Wide_String_Ref &b);
 #endif //ZPLATFORM_WINDOWS
 
+ZAPI bool string_empty(const String_Ref &string);
 ZAPI bool string_contains(const String_Ref &string, const String_Ref &sub_string);
 ZAPI bool string_starts_with(const String_Ref &string, const String_Ref &start);
 ZAPI bool string_ends_with(const String_Ref &string, const String_Ref &end);

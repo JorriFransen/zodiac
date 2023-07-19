@@ -120,6 +120,11 @@ Wide_String string_append(Allocator *allocator, const Wide_String_Ref &a, const 
 }
 #endif //ZPLATFORM_WINDOWS
 
+bool string_empty(const String_Ref &string)
+{
+    return string.length == 0 || string.data == nullptr;
+}
+
 bool string_contains(const String_Ref &str, const String_Ref &sub_str)
 {
     if (sub_str.length > str.length) return false;
@@ -165,6 +170,7 @@ bool string_equal(const String_Ref &a, const String_Ref &b)
 
 {
     if (a.length != b.length) return false;
+    if (a.length == 0) return true;
 
     return zmemcmp(a.data, b.data, a.length) == 0;
 }

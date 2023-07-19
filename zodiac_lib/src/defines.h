@@ -1,5 +1,11 @@
 #pragma once
 
+#define ZODIAC_MAJOR_VERSION "0"
+#define ZODIAC_MINOR_VERSION "1"
+#define ZODIAC_PATCH_VERSION "0"
+
+#define ZODIAC_VERSION ZODIAC_MAJOR_VERSION "." ZODIAC_MINOR_VERSION "." ZODIAC_PATCH_VERSION
+
 #if (defined(__clang__) || defined(__gcc__)) && (defined(__STDC_VERSION__)  && __STDC_VERSION__ > 201112L)
 #define STATIC_ASSERT _Static_assert
 #else
