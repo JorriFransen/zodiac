@@ -1,10 +1,9 @@
-version: 18
+version: 24
 jobs:
 - name: CI
-  jobExecutor: local-bare-metal-job-executor
   steps:
   - !CheckoutStep
-    name: checkout
+    name: Checkout
     cloneCredential: !DefaultCredential {}
     withLfs: false
     withSubmodules: false
