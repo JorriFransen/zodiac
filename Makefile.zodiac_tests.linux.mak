@@ -38,7 +38,7 @@ compile:
 
 $(OBJ_DIR)/%.cpp.o: %.cpp
 	@echo "$< -> $@"
-	@clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+	@clang++ $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
 
 $(OBJ_DIR)/%.c.o: %.c
 	@echo "$< -> $@"
@@ -49,7 +49,7 @@ link: $(FULL_ASSEMBLY_PATH)
 
 $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 	@echo Linking $(ASSEMBLY)
-	clang $(COMPILER_FLAGS) $(OBJ_FILES) -o $@ $(LINKER_FLAGS)
+	clang++ $(COMPILER_FLAGS) $(OBJ_FILES) -o $@ $(LINKER_FLAGS)
 
 .PHONY: clean
 clean:
