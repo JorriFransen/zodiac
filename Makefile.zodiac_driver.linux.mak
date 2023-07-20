@@ -3,17 +3,13 @@ OBJ_DIR := obj
 
 include Makefile.dyncall_vars.linux.mak
 
-LLVM_LIBS := $(shell llvm-config --libs codegen)
-LLVM_CXX_FLAGS := $(shell llvm-config --cxxflags)
-LLVM_LD_FLAGS := $(shell llvm-config --ldflags)
-
 BASE_DIR := zodiac_driver
 SRC_DIR := $(BASE_DIR)/src
 ASSEMBLY := zodiac
 EXTENSION :=
-COMPILER_FLAGS := -g -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC $(LLVM_CXX_FLAGS)
+COMPILER_FLAGS := -g -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC
 INCLUDE_FLAGS := -Izodiac_lib/src -I$(SRC_DIR) -I$(BASE_DIR)/cxxopts $(DYNCALL_INCLUDE_FLAGS)
-LINKER_FLAGS := $(LLVM_LIBS) $(LLVM_LD_FLAGS) -L$(BUILD_DIR) -lzodiac -Wl,-rpath,. -Wl,-rpath,$(BUILD_DIR)
+LINKER_FLAGS := -L$(BUILD_DIR) -lzodiac -Wl,-rpath,. -Wl,-rpath,$(BUILD_DIR)
 DEFINES := -D_DEBUG -DZIMPORT
 
 SRC_FILES := $(shell find $(SRC_DIR) -name *.cpp)
