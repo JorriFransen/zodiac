@@ -48,7 +48,7 @@ jobs:
     interpreter: !ShellInterpreter
       shell: bash
       commands:
-      - patchelf --replace-needed libz3.so.4 libz3.so.4.12 bin/libzodiac.so
+      - patchelf --remove-needed libz3.so.4 bin/libzodiac.so
       - zip artifacts.zip bin/* tests/*
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
