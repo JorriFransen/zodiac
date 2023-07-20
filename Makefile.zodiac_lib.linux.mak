@@ -12,7 +12,7 @@ SUPPORT_EXTENSION_DYN := .so
 SUPPORT_ASSEMBLY_STAT := libzrs_s
 SUPPORT_EXTENSION_STAT := .a
 
-LLVM_LIBS := $(shell llvm-config --libs codegen)
+LLVM_LIBS := $(shell llvm-config --libs x86 --link-static --system-libs)
 LLVM_CXX_FLAGS := $(shell llvm-config --cxxflags)
 LLVM_LD_FLAGS := $(shell llvm-config --ldflags)
 
