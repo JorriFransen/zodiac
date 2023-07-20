@@ -9,7 +9,7 @@ console.log
 .vs
 .vimspector.json
 
-out.exe
-out.obj
+*.exe
+*.obj
 a.out
 *.o

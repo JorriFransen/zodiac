@@ -102,7 +102,7 @@ llvm:
 llvm_vars:
 	$(eval LLVM_CONFIG = $(LLVM_DEBUG_INSTALL_DIR)\bin\llvm-config.exe)
 	$(eval LLVM_INCLUDE_DIR = $(shell $(LLVM_CONFIG) --includedir))
-	$(eval LLVM_LIBS = $(shell $(LLVM_CONFIG) --libs codegen x86))
+	$(eval LLVM_LIBS = $(shell $(LLVM_CONFIG) --libs x86))
 	$(eval INCLUDE_FLAGS += -I$(LLVM_INCLUDE_DIR))
 	$(eval LINKER_FLAGS += $(LLVM_LIBS))
 

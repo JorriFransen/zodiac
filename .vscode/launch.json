@@ -6,7 +6,7 @@
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/zodiac.exe",
-            "args": [],
+            "args": [ "tests/simple.zc" ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
