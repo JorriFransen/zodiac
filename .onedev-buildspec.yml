@@ -12,6 +12,7 @@ jobs:
   - !CommandStep
     name: Compile
     runInContainer: false
+    image: alpine
     interpreter: !ShellInterpreter
       shell: bash
       commands:
@@ -21,6 +22,7 @@ jobs:
   - !CommandStep
     name: Run tests
     runInContainer: false
+    image: alpine
     interpreter: !ShellInterpreter
       shell: bash
       commands:
@@ -30,6 +32,7 @@ jobs:
   - !CommandStep
     name: Run compiler
     runInContainer: false
+    image: alpine
     interpreter: !ShellInterpreter
       shell: bash
       commands:
@@ -38,6 +41,19 @@ jobs:
       - '[[ $EXIT_CODE -eq 85 ]] && exit 0 || echo Invalid exit code $EXIT_CODE; exit
         1'
     useTTY: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  - !CommandStep
+    name: Prepare artifacts
+    runInContainer: false
+    interpreter: !ShellInterpreter
+      shell: bash
+      commands:
+      - zip artifacts.zip bin/* tests/*
+    useTTY: false
+    condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
+  - !PublishArtifactStep
+    name: Publish artifacts
+    artifacts: artifacts.zip
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   triggers:
   - !BranchUpdateTrigger
