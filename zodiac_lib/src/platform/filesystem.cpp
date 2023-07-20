@@ -140,6 +140,12 @@ void filesystem_flush(File_Handle *handle)
     fflush((FILE *)handle->handle);
 }
 
+void filesystem_remove(const String_Ref path)
+{
+    assert(filesystem_exists(path));
+    remove(path.data);
+}
+
 bool filesystem_read(File_Handle *handle, u64 size, u8 *out_bytes, u64 *out_size)
 {
     assert(handle && handle->valid && handle->handle);

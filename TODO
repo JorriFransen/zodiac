@@ -1,5 +1,3 @@
-- Remove object file after linking
-
 - Capture stderr from popen (platform_execute_process on linux)
 
 - Make parameter declarations act like other declarations (their symbols point to the function decl atm).

@@ -6,6 +6,7 @@
 #include "defines.h"
 #include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
+#include "platform/filesystem.h"
 #include "type.h"
 #include "util/logger.h"
 #include "util/string_builder.h"
@@ -1303,6 +1304,9 @@ void llvm_builder_emit_binary(LLVM_Builder *builder)
     dest.close();
 
     bool linker_result = llvm_builder_run_linker(builder);
+
+    filesystem_remove(obj_file_name);
+
     assert(linker_result);
     if (!linker_result) {
         ZFATAL("Linking failed...");
