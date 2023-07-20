@@ -9,8 +9,8 @@
 #include "platform/filesystem.h"
 #include "util/asserts.h"
 #include "util/logger.h"
+#include "util/string_builder.h"
 #include "util/zstring.h"
-
 
 #include <cmath>
 #include <libgen.h>
@@ -264,6 +264,42 @@ i64 platform_memcmp(const void *a, const void *b, u64 num)
 double platform_sqrt(double x)
 {
     return sqrt(x);
+}
+
+Process_Result platform_execute_process(const String_Ref &command, const String_Ref &args)
+{
+    String_Builder sb;
+    string_builder_create(&sb, temp_allocator_allocator());
+
+    string_builder_append(&sb, "%.*s %.*s 2>&1",
+                          (int)command.length, command.data,
+                          (int)args.length, args.data);
+
+    String full_command = string_builder_to_string(&sb);
+
+    FILE *proc_handle = popen(full_command.data, "r");
+    assert(proc_handle);
+
+    String_Builder result_sb;
+    string_builder_create(&result_sb, temp_allocator_allocator());
+
+    char out_buf[1024];
+    while (fgets(out_buf, sizeof(out_buf), proc_handle) != nullptr) {
+        string_builder_append(&result_sb, "%s", out_buf);
+    }
+
+    assert(feof(proc_handle));
+
+    int close_ret = pclose(proc_handle);
+
+    Process_Result result;
+    result.exit_code = WEXITSTATUS(close_ret);
+    result.success = result.exit_code == 0;
+    if (result_sb.total_size) {
+        result.result_string = string_builder_to_string(&result_sb);
+    }
+
+    return result;
 }
 
 void platform_temp_file(File_Handle *out_file)

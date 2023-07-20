@@ -51,7 +51,6 @@ zodiac_disable_msvc_llvm_warnings()
 
 #include <iterator>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string>
 #include <system_error>
 
@@ -1340,22 +1339,10 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     auto link_cmd = string_builder_to_string(sb);
     ZTRACE("Running linker: %s\n", link_cmd.data);
 
-    char out_buf[1024];
-    FILE *link_proc_handle = popen(link_cmd.data, "r");
-    assert(link_proc_handle);
-
-    while (fgets(out_buf, sizeof(out_buf), link_proc_handle) != nullptr) {
-        ZERROR("%s", out_buf);
-    }
-    assert(feof(link_proc_handle));
-
-    int close_ret = pclose(link_proc_handle);
-    close_ret = WEXITSTATUS(close_ret);
-    assert(close_ret >= 0);
-
-    if (close_ret != 0) {
-        ZERROR("Link command failed with exit code: %d\n", close_ret);
-        return false;
+    Process_Result result = platform_execute_process(link_cmd, {});
+    if (!result.success) {
+        ZERROR("Link command failed with exit code: %d\n", result.exit_code);
+        ZERROR("Linker output: %s\n", result.result_string.data);
     }
 
 #elif ZPLATFORM_WINDOWS
