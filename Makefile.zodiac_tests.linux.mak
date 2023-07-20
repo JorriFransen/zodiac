@@ -11,7 +11,7 @@ include Makefile.dyncall_vars.linux.mak
 
 COMPILER_FLAGS := -g -MD -MP -Werror=vla -fdeclspec -fPIC
 INCLUDE_FLAGS := -Izodiac_lib/src -I$(BASE_DIR)/munit -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
-LINKER_FLAGS := -L$(BUILD_DIR) -lzodiac -Wl,-rpath,. -Wl,-rpath,$(BUILD_DIR) $(DYNCALL_LINK_FLAGS)
+LINKER_FLAGS := -L$(BUILD_DIR) -lzodiac -Wl,-rpath,'$$ORIGIN/.'
 DEFINES := -D_DEBUG -DZIMPORT
 
 SRC_FILES := $(shell find $(SRC_DIR) -name *.cpp)

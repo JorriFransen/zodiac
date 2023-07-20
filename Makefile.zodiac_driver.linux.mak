@@ -9,7 +9,7 @@ ASSEMBLY := zodiac
 EXTENSION :=
 COMPILER_FLAGS := -g -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC
 INCLUDE_FLAGS := -Izodiac_lib/src -I$(SRC_DIR) -I$(BASE_DIR)/cxxopts $(DYNCALL_INCLUDE_FLAGS)
-LINKER_FLAGS := -L$(BUILD_DIR) -lzodiac -Wl,-rpath,. -Wl,-rpath,$(BUILD_DIR)
+LINKER_FLAGS := -L$(BUILD_DIR) -lzodiac -Wl,-rpath,'$$ORIGIN/.'
 DEFINES := -D_DEBUG -DZIMPORT
 
 SRC_FILES := $(shell find $(SRC_DIR) -name *.cpp)
