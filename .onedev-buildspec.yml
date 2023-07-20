@@ -38,8 +38,7 @@ jobs:
       commands:
       - bin/zodiac tests/simple.zc -v
       - ./a.out || EXIT_CODE=$?
-      - '[[ $EXIT_CODE -eq 85 ]] && exit 0 || echo Invalid exit code $EXIT_CODE; exit
-        1'
+      - '[[ $EXIT_CODE -eq 85 ]] && exit 0 || echo Invalid exit code $EXIT_CODE; exit 1'
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   - !CommandStep
@@ -49,7 +48,6 @@ jobs:
       shell: bash
       commands:
       - patchelf --remove-needed libz3.so.4 bin/libzodiac.so
-      - patchelf --remove-needed libtinfo.so.6 bin/libzodiac.so
       - zip artifacts.zip bin/* tests/*
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
