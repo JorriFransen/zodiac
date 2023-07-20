@@ -332,6 +332,9 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
         close(CHILD_STDOUT_FD);
         close(CHILD_STDERR_FD);
 
+        // We don't write to stdin of the child
+        close(PARENT_STDIN_FD);
+
         String_Builder stdout_sb;
         string_builder_create(&stdout_sb, temp_allocator_allocator());
 
