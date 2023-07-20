@@ -15,6 +15,8 @@ namespace Zodiac
 struct File_Handle;
 struct Platform_Info;
 
+template<typename T> struct Array_Ref;
+
 enum class Platform_Console_Color
 {
     Blue,
@@ -47,7 +49,7 @@ ZAPI i64 platform_memcmp(const void *a, const void *b, u64 num);
 
 ZAPI double platform_sqrt(double x);
 
-ZAPI Process_Result platform_execute_process(const String_Ref &command, const String_Ref &args);
+ZAPI Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line);
 
 ZAPI void platform_temp_file(File_Handle *out_file);
 

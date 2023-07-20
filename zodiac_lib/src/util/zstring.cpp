@@ -96,8 +96,8 @@ String string_append(Allocator *allocator, const String_Ref &a, const String_Ref
 
     String result(alloc_array<char>(allocator, new_length + 1), new_length);
 
-    zmemcpy(result.data, a.data, (size_t)a.length);
-    zmemcpy(result.data + a.length, b.data, (size_t)b.length);
+    if (a.length) zmemcpy(result.data, a.data, (size_t)a.length);
+    if (b.length) zmemcpy(result.data + a.length, b.data, (size_t)b.length);
     result.data[new_length] = '\0';
 
     return result;

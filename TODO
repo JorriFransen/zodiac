@@ -1,4 +1,4 @@
-- Capture stderr from popen (platform_execute_process on linux)
+- Use select loop in platform_execute_process on linux
 
 - Make parameter declarations act like other declarations (their symbols point to the function decl atm).
 - Calculate/substitute non leaf constant expressions before emitting bytecode (we only do this when emitting bytecode now).

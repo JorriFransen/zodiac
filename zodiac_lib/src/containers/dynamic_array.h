@@ -1,7 +1,8 @@
 #pragma once
 
-#include "memory/zmemory.h"
 #include "memory/temporary_allocator.h"
+#include "memory/zmemory.h"
+#include "util/asserts.h"
 
 namespace Zodiac
 {

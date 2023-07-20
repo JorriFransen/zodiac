@@ -1325,28 +1325,51 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     auto pi = builder->platform_info;
     assert(!pi.err);
 
-    string_builder_append(sb, "ld --dynamic-linker %.*s ", (int)pi.dynamic_linker_path.length, pi.dynamic_linker_path.data);;
+#define APPEND_COMMAND(x) dynamic_array_append(&command_line.array, String_Ref(x))
+#define APPEND_COMMANDF(fmt, ...) APPEND_COMMAND(string_format(temp_allocator_allocator(), (fmt), ##__VA_ARGS__));
 
-    string_builder_append(sb, pi.crt_path);
-    string_builder_append(sb, "crt1.o ");
-    string_builder_append(sb, pi.crt_path);
-    string_builder_append(sb, "crti.o ");
+    auto command_line = temp_array_create<String_Ref>(temp_allocator_allocator());
+    APPEND_COMMAND("ld");
+    APPEND_COMMANDF("--dynamic-linker");
+    APPEND_COMMAND(pi.dynamic_linker_path.data);
+
+    APPEND_COMMANDF("%scrt1.o", pi.crt_path.data);
+    APPEND_COMMANDF("%scrti.o", pi.crt_path.data);
 
     auto out_name = builder->out_file_name;
-    string_builder_append(sb, "-o %.*s ", (int)out_name.length, out_name.data);
-    string_builder_append(sb, "-lc %.*s.o ", (int)out_name.length, out_name.data);
-    string_builder_append(sb, "-R %.*s ", (int)builder->zodiac_context->compiler_exe_dir.length, builder->zodiac_context->compiler_exe_dir.data);
-    string_builder_append(sb, "-L %.*s -lzrs_s ", (int)builder->zodiac_context->compiler_exe_dir.length, builder->zodiac_context->compiler_exe_dir.data);
-    string_builder_append(sb, pi.crt_path);
-    string_builder_append(sb, "crtn.o ");
+    APPEND_COMMAND("-o");
+    APPEND_COMMAND(out_name.data);
 
-    auto link_cmd = string_builder_to_string(sb);
-    ZTRACE("Running linker: %s\n", link_cmd.data);
+    APPEND_COMMAND("-lc");
+    APPEND_COMMANDF("%.*s.o", (int)out_name.length, out_name.data);
 
-    Process_Result result = platform_execute_process(link_cmd, {});
+    APPEND_COMMAND("-R");
+    APPEND_COMMAND(builder->zodiac_context->compiler_exe_dir.data);
+
+    APPEND_COMMAND("-L");
+    APPEND_COMMAND(builder->zodiac_context->compiler_exe_dir.data);
+
+    APPEND_COMMAND("-lzrs_s");
+
+    APPEND_COMMANDF("%scrtn.o", pi.crt_path.data);
+
+    if (builder->zodiac_context->options.verbose) {
+
+        String link_cmd;
+        for (s64 i = 0; i < command_line.array.count; i++) {
+            link_cmd = string_append(temp_allocator_allocator(), link_cmd, " ");
+            link_cmd = string_append(temp_allocator_allocator(), link_cmd, command_line.array[i]);
+        }
+
+        ZTRACE("Running linker: %.*s", (int)link_cmd.length, link_cmd.data);
+    }
+
+    auto _command_line = Array_Ref<String_Ref>(command_line.array);
+    Process_Result result = platform_execute_process(&_command_line);
     if (!result.success) {
         ZERROR("Link command failed with exit code: %d\n", result.exit_code);
-        ZERROR("Linker output: %s\n", result.result_string.data);
+        ZERROR("Linker error: %.*s", (int)result.error_string.length, result.error_string.data);
+        ZERROR("Linker output: %.*s", (int)result.result_string.length, result.result_string.data);
     }
 
 #elif ZPLATFORM_WINDOWS
@@ -1410,6 +1433,9 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     assert(false);
     ZFATAL("[llvm_builder] Trying to run linker on unsupported platform!");
 #endif
+
+#undef APPEND_COMMAND
+#undef APPEND_COMMANDF
 
     return true;
 }

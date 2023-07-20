@@ -3,6 +3,7 @@
 #ifdef ZPLATFORM_LINUX
 
 #include "common.h"
+#include "containers/dynamic_array.h"
 #include "defines.h"
 #include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
@@ -18,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 namespace Zodiac
@@ -266,40 +268,126 @@ double platform_sqrt(double x)
     return sqrt(x);
 }
 
-Process_Result platform_execute_process(const String_Ref &command, const String_Ref &args)
+Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
 {
-    String_Builder sb;
-    string_builder_create(&sb, temp_allocator_allocator());
+    auto command_line = *command_line_;
+    assert(command_line.count);
+    pid_t pid;
 
-    string_builder_append(&sb, "%.*s %.*s 2>&1",
-                          (int)command.length, command.data,
-                          (int)args.length, args.data);
+#define NUM_PIPES 3
+#define READ_FD 0
+#define WRITE_FD 1
+#define STDIN_PIPE 0
+#define STDOUT_PIPE 1
+#define STDERR_PIPE 2
 
-    String full_command = string_builder_to_string(&sb);
+    int pipes[NUM_PIPES][2];
 
-    FILE *proc_handle = popen(full_command.data, "r");
-    assert(proc_handle);
+#define PARENT_STDOUT_FD ( pipes[STDOUT_PIPE][READ_FD] )
+#define PARENT_STDIN_FD ( pipes[STDIN_PIPE][WRITE_FD] )
+#define PARENT_STDERR_FD ( pipes[STDERR_PIPE][READ_FD] )
 
-    String_Builder result_sb;
-    string_builder_create(&result_sb, temp_allocator_allocator());
+#define CHILD_STDOUT_FD ( pipes[STDOUT_PIPE][WRITE_FD] )
+#define CHILD_STDIN_FD ( pipes[STDIN_PIPE][READ_FD] )
+#define CHILD_STDERR_FD ( pipes[STDERR_PIPE][WRITE_FD] )
 
-    char out_buf[1024];
-    while (fgets(out_buf, sizeof(out_buf), proc_handle) != nullptr) {
-        string_builder_append(&result_sb, "%s", out_buf);
+    pipe(pipes[STDIN_PIPE]);
+    pipe(pipes[STDOUT_PIPE]);
+    pipe(pipes[STDERR_PIPE]);
+
+    char **argv;
+
+    if ((pid = fork()) == -1) {
+        ZFATAL("Fork error");
+    } else if (pid == 0) {
+        // New child process
+
+        dup2(CHILD_STDIN_FD, STDIN_FILENO);
+        dup2(CHILD_STDOUT_FD, STDOUT_FILENO);
+        dup2(CHILD_STDERR_FD, STDERR_FILENO);
+
+        close(CHILD_STDIN_FD);
+        close(CHILD_STDOUT_FD);
+        close(CHILD_STDERR_FD);
+        close(PARENT_STDOUT_FD);
+        close(PARENT_STDIN_FD);
+        close(PARENT_STDERR_FD);
+
+        argv = alloc_array<char*>(c_allocator(), command_line.count + 1);
+
+        for (s64 i = 0; i < command_line.count; i++) {
+            argv[i] = (char *)command_line[i].data;
+        }
+
+        argv[command_line.count] = 0;
+
+        execvp(argv[0], (char *const *)argv);
+        ZERROR("execv error"); // We don't expect execv to return
+        exit(1);
+    } else {
+        // Original parent process
+        // ZINFO("Parent!");
+
+        close(CHILD_STDIN_FD);
+        close(CHILD_STDOUT_FD);
+        close(CHILD_STDERR_FD);
+
+        String_Builder stdout_sb;
+        string_builder_create(&stdout_sb, temp_allocator_allocator());
+
+        String_Builder stderr_sb;
+        string_builder_create(&stderr_sb, temp_allocator_allocator());
+
+        { // read stdout
+            size_t read_count;
+            char buffer[1024];
+            do {
+                read_count = read(PARENT_STDOUT_FD, buffer, sizeof(buffer) - 1);
+                if (read_count) {
+                    string_builder_append(&stdout_sb, "%.*s", read_count, buffer);
+                }
+            } while (read_count > 0);
+        }
+
+        { // read stderr
+            size_t read_count;
+            char buffer[1024];
+            do {
+                read_count = read(PARENT_STDERR_FD, buffer, sizeof(buffer) - 1);
+                if (read_count) {
+                    string_builder_append(&stderr_sb, "%.*s", read_count, buffer);
+                }
+            } while (read_count > 0);
+        }
+
+        // Wait for the child process to finish
+        int status;
+        if (waitpid(pid, &status, 0) == -1) {
+            ZFATAL("Unexpected return value from waitpid");
+        }
+
+        Process_Result result;
+        result.exit_code = WEXITSTATUS(status);
+        result.success = result.exit_code == 0;
+        if (stdout_sb.total_size) result.result_string = string_builder_to_string(&stdout_sb);
+        if (stderr_sb.total_size) result.error_string = string_builder_to_string(&stderr_sb);
+
+        return result;
     }
 
-    assert(feof(proc_handle));
+    assert(false);
+    return {};
 
-    int close_ret = pclose(proc_handle);
-
-    Process_Result result;
-    result.exit_code = WEXITSTATUS(close_ret);
-    result.success = result.exit_code == 0;
-    if (result_sb.total_size) {
-        result.result_string = string_builder_to_string(&result_sb);
-    }
-
-    return result;
+#undef NUM_PIPES
+#undef READ_FD
+#undef WRITE_FD
+#undef STDIN_PIPE
+#undef STDOUT_PIPE
+#undef STDERR_PIPE
+#undef PARENT_STDOUT_FD
+#undef PARENT_STDIN_FD
+#undef CHILD_STDOUT_FD
+#undef CHILD_STDIN_FD
 }
 
 void platform_temp_file(File_Handle *out_file)
