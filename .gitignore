@@ -7,7 +7,6 @@ obj
 compile_commands.json
 console.log
 .vs
-.vimspector.json
 
 *.exe
 *.obj

@@ -1,0 +1,17 @@
+{
+    "configurations": {
+        "Launch": {
+            "adapter": "vscode-cpptools",
+            "filetypes": [ "cpp", "c" ],
+            "configuration": {
+                "request": "launch",
+                "program": "bin/zodiac",
+                "args": [ "tests/simple.zc", "-v" ],
+                "cwd": "${workspaceRoot}",
+                "environment": [],
+                "externalConsole": false,
+                "MIMode": "gdb"
+            }
+        }
+    }
+}
