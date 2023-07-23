@@ -1308,6 +1308,7 @@ void llvm_builder_emit_binary(LLVM_Builder *builder)
     filesystem_remove(obj_file_name);
 
     assert(linker_result);
+
     if (!linker_result) {
         ZFATAL("Linking failed...");
     }

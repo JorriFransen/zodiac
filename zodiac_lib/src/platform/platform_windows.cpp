@@ -6,6 +6,7 @@
 #include "filesystem.h"
 #include "memory/temporary_allocator.h"
 #include "util/logger.h"
+#include "util/string_builder.h"
 #include "util/zstring.h"
 
 #include <windows.h>
@@ -113,19 +114,51 @@ double platform_sqrt(double x)
 
 Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
 {
+    assert(command_line_);
     auto command_line = *command_line_;
     assert(command_line.count);
 
-    Process_Result result = {};
+    auto ca = c_allocator();
+    auto ta = temp_allocator_allocator();
+    auto mark = temporary_allocator_get_mark(temp_allocator());
+
+    // Used for the pipes
+    SECURITY_ATTRIBUTES sec_attr;
+    sec_attr.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sec_attr.bInheritHandle = true;
+    sec_attr.lpSecurityDescriptor = nullptr;
+
+    HANDLE stdout_read_handle = nullptr;
+    HANDLE stdout_write_handle = nullptr;
+    HANDLE stderr_read_handle = nullptr;
+    HANDLE stderr_write_handle = nullptr;
+
+    if (!CreatePipe(&stdout_read_handle, &stdout_write_handle, &sec_attr, 0)) {
+        ZFATAL("[platform_execute_process] Failed to create stdout pipe")
+    }
+
+    if (!SetHandleInformation(stdout_read_handle, HANDLE_FLAG_INHERIT, 0)) {
+        ZFATAL("[platform_execute_process] SetHandleInformation failed for stdout pipe")
+    }
+
+    if (!CreatePipe(&stderr_read_handle, &stderr_write_handle, &sec_attr, 0)) {
+        ZFATAL("[platform_execute_process] Failed to create stderr pipe")
+    }
+
+    if (!SetHandleInformation(stderr_read_handle, HANDLE_FLAG_INHERIT, 0)) {
+        ZFATAL("[platform_execute_process] SetHandleInformation failed for stderr pipe")
+    }
 
     PROCESS_INFORMATION process_info;
     STARTUPINFOW startup_info;
     ZeroMemory(&startup_info, sizeof(startup_info));
     ZeroMemory(&process_info, sizeof(process_info));
-    startup_info.cb = sizeof(startup_info);
 
-    auto ta = temp_allocator_allocator();
-    auto mark = temporary_allocator_get_mark(temp_allocator());
+    startup_info.cb = sizeof(startup_info);
+    startup_info.hStdOutput = stdout_write_handle;
+    startup_info.hStdError = stderr_write_handle;
+    startup_info.dwFlags |= STARTF_USESTDHANDLES;
+
 
     auto arg_str_ = string_append(ta, command_line, " ");
     Wide_String arg_str(ta, arg_str_);
@@ -134,6 +167,7 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
         nullptr, nullptr, true, 0, nullptr,
         nullptr, &startup_info, &process_info);
 
+    Process_Result result = {};
     if (!proc_res) {
         auto err = GetLastError();
         LPSTR message_buf = nullptr;
@@ -153,6 +187,37 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
     else {
         WaitForSingleObject(process_info.hProcess, INFINITE);
 
+        CloseHandle(stdout_write_handle);
+        CloseHandle(stderr_write_handle);
+
+        String_Builder stdout_sb;
+        string_builder_create(&stdout_sb, ta);
+
+        String_Builder stderr_sb;
+        string_builder_create(&stderr_sb, ta);
+
+        for (;;) {
+            const int buf_size = 1024;
+            char buf[buf_size];
+            DWORD read_count;
+            BOOL success = ReadFile(stdout_read_handle, buf, buf_size, &read_count, nullptr);
+            if (!success || read_count == 0) {
+                break;
+            }
+            string_builder_append(&stdout_sb, "%.*s", read_count, buf);
+        }
+
+        for (;;) {
+            const int buf_size = 1024;
+            char buf[buf_size];
+            DWORD read_count;
+            BOOL success = ReadFile(stderr_read_handle, buf, buf_size, &read_count, nullptr);
+            if (!success || read_count == 0) {
+                break;
+            }
+            string_builder_append(&stderr_sb, "%.*s", read_count, buf);
+        }
+
         DWORD exit_code;
         GetExitCodeProcess(process_info.hProcess, &exit_code);
 
@@ -160,12 +225,11 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
         CloseHandle(process_info.hThread);
 
         result.exit_code = exit_code;
-        if (exit_code == 0) {
-            result.success = true;
-        }
-        else {
-            result.success = false;
-        }
+        result.success = result.exit_code == 0;
+
+        if (stdout_sb.total_size) result.result_string = string_builder_to_string(ca, &stdout_sb);
+        if (stderr_sb.total_size) result.error_string = string_builder_to_string(ca, &stderr_sb);
+
     }
 
     temporary_allocator_reset(temp_allocator(), mark);
