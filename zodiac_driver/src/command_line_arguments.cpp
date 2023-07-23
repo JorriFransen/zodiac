@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <vector>
 
 namespace Zodiac
 {
@@ -38,7 +39,12 @@ void parse_command_line_options(Zodiac_Options *opts, int argc, const char **arg
     cxxoptions.positional_help("[input_file_name]");
 
     auto result = cxxoptions.parse(argc, argv);
+
     auto unmatched = result.unmatched();
+    if (unmatched.size()) {
+        printf("%s\n", cxxoptions.help().c_str());
+        ZFATAL("Unmatched option: '%s'", unmatched.begin()->c_str());
+    }
 
     if (result.count("help")) {
         printf("%s\n", cxxoptions.help().c_str());
