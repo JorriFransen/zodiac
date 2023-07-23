@@ -2,15 +2,17 @@
 
 #ifdef ZPLATFORM_WINDOWS
 
-#include <windows.h>
-
-#include <io.h>
-#include <libloaderapi.h>
-
 #include "containers/dynamic_array.h"
 #include "filesystem.h"
 #include "memory/temporary_allocator.h"
+#include "util/logger.h"
 #include "util/zstring.h"
+
+#include <windows.h>
+#include <io.h>
+#include <libloaderapi.h>
+
+#undef ERROR // Cleanup after including windows stuf....
 
 #define MICROSOFT_CRAZINESS_IMPLEMENTATION
 #pragma warning(push)
@@ -113,7 +115,7 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
 {
     auto command_line = *command_line_;
     assert(command_line.count);
-    
+
     Process_Result result = {};
 
     PROCESS_INFORMATION process_info;
@@ -123,14 +125,12 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
     startup_info.cb = sizeof(startup_info);
 
     auto ta = temp_allocator_allocator();
+    auto mark = temporary_allocator_get_mark(temp_allocator());
 
-    Wide_String cmd_str(ta, command_line[0]);
-    auto args = *command_line_; 
-    args.count -= 1;
-    args.data = &args.data[1];
-    Wide_String arg_str(ta, string_append(ta, args, " "));
+    auto arg_str_ = string_append(ta, command_line, " ");
+    Wide_String arg_str(ta, arg_str_);
 
-    bool proc_res = CreateProcessW(cmd_str.data, (LPWSTR)arg_str.data,
+    bool proc_res = CreateProcessW(nullptr, (LPWSTR)arg_str.data,
         nullptr, nullptr, true, 0, nullptr,
         nullptr, &startup_info, &process_info);
 
@@ -143,11 +143,12 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
             nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
             (LPSTR)&message_buf, 0, nullptr);
 
-        fprintf(stderr, "%.*s", (int)size, message_buf);
+
+        result.error_string = string_copy(c_allocator(), String_Ref(message_buf, size));
         LocalFree(message_buf);
 
         result.success = false;
-
+        ZERROR("CreateProcessW failed with commandline: '%.*s", (int)arg_str.length, arg_str.data);
     }
     else {
         WaitForSingleObject(process_info.hProcess, INFINITE);
@@ -167,7 +168,7 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
         }
     }
 
-
+    temporary_allocator_reset(temp_allocator(), mark);
     return result;
 }
 

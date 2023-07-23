@@ -1,4 +1,7 @@
 - Use select loop in platform_execute_process on linux
+- Use pipes in platform_excute_process on windows (capture stdout and stderr)
+
+- Detect and report extra non option arguments on the commandline
 
 - Make parameter declarations act like other declarations (their symbols point to the function decl atm).
 - Calculate/substitute non leaf constant expressions before emitting bytecode (we only do this when emitting bytecode now).

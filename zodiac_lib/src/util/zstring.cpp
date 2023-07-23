@@ -120,7 +120,7 @@ String string_append(Allocator *allocator, Array_Ref<String_Ref> strings, const 
         zmemcpy(cursor, strings[i].data, strings[i].length);
         cursor += strings[i].length;
 
-        if (separator.length) {
+        if (separator.length && i < strings.count - 1) {
             zmemcpy(cursor, separator.data, separator.length);
             cursor += separator.length;
         }

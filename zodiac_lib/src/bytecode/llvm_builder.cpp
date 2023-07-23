@@ -1315,11 +1315,15 @@ void llvm_builder_emit_binary(LLVM_Builder *builder)
 
 bool llvm_builder_run_linker(LLVM_Builder *builder)
 {
-    auto command_line = temp_array_create<String_Ref>(temp_allocator_allocator());
+    assert(builder);
 
+    auto ta = temp_allocator_allocator();
+    auto mark = temporary_allocator_get_mark((Temporary_Allocator *)ta->user_data);
+
+    auto command_line = temp_array_create<String_Ref>(ta);
 
 #define APPEND_COMMAND(x) dynamic_array_append(&command_line.array, String_Ref(x))
-#define APPEND_COMMANDF(fmt, ...) APPEND_COMMAND(string_format(temp_allocator_allocator(), (fmt), ##__VA_ARGS__));
+#define APPEND_COMMANDF(fmt, ...) APPEND_COMMAND(string_format(ta, (fmt), ##__VA_ARGS__));
 
 #if ZPLATFORM_LINUX
 
@@ -1350,102 +1354,72 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
 
     APPEND_COMMANDF("%scrtn.o", pi.crt_path.data);
 
-    if (builder->zodiac_context->options.verbose) {
-
-        String link_cmd;
-        for (s64 i = 0; i < command_line.array.count; i++) {
-            link_cmd = string_append(temp_allocator_allocator(), link_cmd, " ");
-            link_cmd = string_append(temp_allocator_allocator(), link_cmd, command_line.array[i]);
-        }
-
-        ZTRACE("Running linker: %.*s", (int)link_cmd.length, link_cmd.data);
-    }
-
-    auto _command_line = Array_Ref<String_Ref>(command_line.array);
-    Process_Result result = platform_execute_process(&_command_line);
-    if (!result.success) {
-        ZERROR("Link command failed with exit code: %d\n", result.exit_code);
-        ZERROR("Linker error: %.*s", (int)result.error_string.length, result.error_string.data);
-        ZERROR("Linker output: %.*s", (int)result.result_string.length, result.result_string.data);
-    }
-
 #elif ZPLATFORM_WINDOWS
-
-    assert(builder);
 
     auto &sdk_info = builder->platform_info.sdk_info;
     auto vs_exe_path = Wide_String_Ref(sdk_info.vs_exe_path);
-    auto wide_linker_path = string_append(temp_allocator_allocator(), vs_exe_path, L"\\link.exe");
-    auto linker_path = String(temp_allocator_allocator(), wide_linker_path.data, wide_linker_path.length);
 
-    APPEND_COMMAND(linker_path.data);
+    auto wide_linker_path = string_append(ta, vs_exe_path, L"\\link.exe");
+    auto linker_path = String(ta, wide_linker_path.data, wide_linker_path.length);
+
+    auto wide_um_lib_path = Wide_String_Ref(sdk_info.windows_sdk_um_library_path);
+    auto um_lib_path = String(ta, wide_um_lib_path.data, wide_um_lib_path.length);
+
+    auto wide_ucrt_lib_path = Wide_String_Ref(sdk_info.windows_sdk_ucrt_library_path);
+    auto ucrt_lib_path = String(ta, wide_ucrt_lib_path.data, wide_ucrt_lib_path.length);
+
+    auto wide_vs_lib_path = Wide_String_Ref(sdk_info.vs_library_path);
+    auto vs_lib_path = String(ta, wide_vs_lib_path.data, wide_vs_lib_path.length);
+
+    String_Ref zrs_s_lib_path = builder->zodiac_context->support_lib_static_path;
+    // String_Ref zrs_lib_path = builder->zodiac_context->support_lib_dynamic_path;
+
+    APPEND_COMMANDF("\"%.*s\"", (int)linker_path.length, linker_path.data);
+
     APPEND_COMMAND("/nologo /wx /subsystem:CONSOLE /nodefaultlib");
 
+    APPEND_COMMANDF("/libpath:\"%.*s\"", (int)um_lib_path.length, um_lib_path.data);
+    APPEND_COMMANDF("/libpath:\"%.*s\"", (int)ucrt_lib_path.length, ucrt_lib_path.data);
+    APPEND_COMMANDF("/libpath:\"%.*s\"", (int)vs_lib_path.length, vs_lib_path.data);
 
-    // auto wide_um_lib_path = Wide_String_Ref(sdk_info.windows_sdk_um_library_path);
-    // auto um_lib_path = String(temp_allocator_allocator(), wide_um_lib_path.data, wide_um_lib_path.length);
+    APPEND_COMMAND("kernel32.lib");
+    APPEND_COMMAND("ucrt.lib");
+    APPEND_COMMAND("msvcrt.lib");
 
-    // assert(um_lib_path.length == (signed)strlen(um_lib_path.data));
-    // string_builder_append(sb, " /libpath:\"%.*s\"", (int)um_lib_path.length, um_lib_path.data);
+    APPEND_COMMANDF(" %s.obj", builder->out_file_name.data);
 
-    // auto wide_ucrt_lib_path = Wide_String_Ref(sdk_info.windows_sdk_ucrt_library_path);
-    // auto ucrt_lib_path = String(temp_allocator_allocator(), wide_ucrt_lib_path.data, wide_ucrt_lib_path.length);
-    // assert(ucrt_lib_path.length == (signed)(strlen(ucrt_lib_path.data)));
-    // string_builder_append(sb, " /libpath:\"%.*s\"", (int)ucrt_lib_path.length, ucrt_lib_path.data);
-
-    // auto wide_vs_lib_path = Wide_String_Ref(sdk_info.vs_library_path);
-    // auto vs_lib_path = String(temp_allocator_allocator(), wide_vs_lib_path.data, wide_vs_lib_path.length);
-    // assert(vs_lib_path.length == (signed)strlen(vs_lib_path.data));
-    // string_builder_append(sb, " /libpath:\"%.*s\"", (int)vs_lib_path.length, vs_lib_path.data);
-
-    // string_builder_append(sb, " kernel32.lib");
-    // string_builder_append(sb, " ucrt.lib");
-    // string_builder_append(sb, " msvcrt.lib");
-
-    // string_builder_append(sb, " %s.obj", builder->out_file_name.data);
-
-    // bool link_c = true;
-    // if (link_c) {
-    //     string_builder_append(sb, " libvcruntime.lib");
-    //     string_builder_append(sb, " legacy_stdio_definitions.lib");
-    //     string_builder_append(sb, " legacy_stdio_wide_specifiers.lib");
-    // }
-
-    // String_Ref zrs_s_lib_path = builder->zodiac_context->support_lib_static_path;
-    // string_builder_append(sb, " %.*s", (int)zrs_s_lib_path.length, zrs_s_lib_path.data);
-
-    // // String_Ref zrs_lib_path = builder->zodiac_context->support_lib_dynamic_path;
-    // // string_builder_append(sb, " %.*s", (int)zrs_lib_path.length, zrs_lib_path.data);
-
-    // auto arg_str = string_builder_to_string(sb);
-    // printf("Running link command: %.*s\n", (int)arg_str.length, arg_str.data);
-
-    // auto result = platform_execute_process(arg_str);
-
-    // if (!result.success) {
-    //     ZERROR("[llvm_builder] platform_execute_process() failed...");
-    //     return false;
-    // }
-
-    if (builder->zodiac_context->options.verbose) {
-
-        String link_cmd = string_append(temp_allocator_allocator(), command_line.array, " ");
-        ZTRACE("Running linker: %.*s", (int)link_cmd.length, link_cmd.data);
+    bool link_c = true;
+    if (link_c) {
+        APPEND_COMMAND("libvcruntime.lib");
+        APPEND_COMMAND("legacy_stdio_definitions.lib");
+        APPEND_COMMAND("legacy_stdio_wide_specifiers.lib");
     }
 
-    auto _command_line = Array_Ref<String_Ref>(command_line.array);
-    Process_Result result = platform_execute_process(&_command_line);
-    if (!result.success) {
-        ZERROR("Link command failed with exit code: %d\n", result.exit_code);
-        ZERROR("Linker error: %.*s", (int)result.error_string.length, result.error_string.data);
-        ZERROR("Linker output: %.*s", (int)result.result_string.length, result.result_string.data);
-    }
+    APPEND_COMMANDF(" %.*s", (int)zrs_s_lib_path.length, zrs_s_lib_path.data);
+    // APPEND_COMMANDF(" %.*s", (int)zrs_lib_path.length, zrs_lib_path.data);
 
-    assert(false);
+
 #else
     assert(false);
     ZFATAL("[llvm_builder] Trying to run linker on unsupported platform!");
 #endif
+
+    if (builder->zodiac_context->options.verbose) {
+        String link_cmd = string_append(ta, command_line.array, " ");
+        ZTRACE("Running linker: %.*s", (int)link_cmd.length, link_cmd.data);
+    }
+
+    auto _command_line = Array_Ref<String_Ref>(command_line.array);
+    Process_Result result = platform_execute_process(&_command_line);
+
+    temporary_allocator_reset((Temporary_Allocator *)ta->user_data, mark);
+
+    if (!result.success) {
+        ZERROR("Link command failed with exit code: %d", result.exit_code);
+        if (result.error_string.length) ZERROR("Linker error: %.*s", (int)result.error_string.length, result.error_string.data);
+        if (result.result_string.length) ZERROR("Linker output: %.*s", (int)result.result_string.length, result.result_string.data);
+        return false;
+    }
 
 #undef APPEND_COMMAND
 #undef APPEND_COMMANDF
