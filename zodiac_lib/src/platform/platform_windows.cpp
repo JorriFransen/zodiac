@@ -7,8 +7,10 @@
 #include <io.h>
 #include <libloaderapi.h>
 
+#include "containers/dynamic_array.h"
 #include "filesystem.h"
 #include "memory/temporary_allocator.h"
+#include "util/zstring.h"
 
 #define MICROSOFT_CRAZINESS_IMPLEMENTATION
 #pragma warning(push)
@@ -107,8 +109,11 @@ double platform_sqrt(double x)
     return sqrt(x);
 }
 
-Process_Result platform_execute_process(const String_Ref &command, const String_Ref &args)
+Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
 {
+    auto command_line = *command_line_;
+    assert(command_line.count);
+    
     Process_Result result = {};
 
     PROCESS_INFORMATION process_info;
@@ -119,8 +124,11 @@ Process_Result platform_execute_process(const String_Ref &command, const String_
 
     auto ta = temp_allocator_allocator();
 
-    Wide_String cmd_str(ta, command);
-    Wide_String arg_str(ta, args);
+    Wide_String cmd_str(ta, command_line[0]);
+    auto args = *command_line_; 
+    args.count -= 1;
+    args.data = &args.data[1];
+    Wide_String arg_str(ta, string_append(ta, args, " "));
 
     bool proc_res = CreateProcessW(cmd_str.data, (LPWSTR)arg_str.data,
         nullptr, nullptr, true, 0, nullptr,

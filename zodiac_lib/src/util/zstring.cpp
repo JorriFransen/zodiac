@@ -5,8 +5,8 @@
 
 #include "asserts.h"
 #include "atom.h"
+#include "containers/dynamic_array.h"
 #include "defines.h"
-#include "memory/allocator.h"
 #include "memory/zmemory.h"
 
 #ifdef _WIN32
@@ -98,6 +98,34 @@ String string_append(Allocator *allocator, const String_Ref &a, const String_Ref
 
     if (a.length) zmemcpy(result.data, a.data, (size_t)a.length);
     if (b.length) zmemcpy(result.data + a.length, b.data, (size_t)b.length);
+    result.data[new_length] = '\0';
+
+    return result;
+}
+
+String string_append(Allocator *allocator, Array_Ref<String_Ref> strings, const String_Ref &separator/*=""*/)
+{
+    s64 new_length = 0;
+
+    for (s64 i = 0; i < strings.count; i++) {
+        new_length += strings[i].length;
+    }
+
+    new_length += separator.length * (strings.count - 1);
+
+    String result(alloc_array<char>(allocator, new_length + 1), new_length);
+
+    auto cursor = result.data;
+    for (s64 i = 0; i < strings.count; i++) {
+        zmemcpy(cursor, strings[i].data, strings[i].length);
+        cursor += strings[i].length;
+
+        if (separator.length) {
+            zmemcpy(cursor, separator.data, separator.length);
+            cursor += separator.length;
+        }
+    }
+
     result.data[new_length] = '\0';
 
     return result;

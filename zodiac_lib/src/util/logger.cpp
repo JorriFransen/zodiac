@@ -8,7 +8,7 @@
 #include "util/asserts.h"
 #include "util/zstring.h"
 
-#define ZODIAC_LOGGER_FILE_LOCATIONS 0
+#define ZODIAC_LOGGER_FILE_LOCATIONS 1
 
 namespace Zodiac
 {

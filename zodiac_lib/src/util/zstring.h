@@ -8,11 +8,14 @@
 #include "common.h"
 #include "defines.h"
 
+
 namespace Zodiac
 {
 
 struct Allocator;
 struct Atom;
+
+template <typename T> struct Array_Ref;
 
 #define ZSTRING_FORMAT_STACK_BUFFER_SIZE 32000
 
@@ -98,6 +101,7 @@ ZAPI String string_copy(Allocator *allocator, const String_Ref &original);
 ZAPI String string_copy(Allocator *allocator, const char *cstr, s64 length);
 
 ZAPI String string_append(Allocator *allocator, const String_Ref &a, const String_Ref &b);
+ZAPI String string_append(Allocator *allocator, Array_Ref<String_Ref> strings, const String_Ref &separator = "");
 
 #ifdef ZPLATFORM_WINDOWS
 ZAPI Wide_String string_append(Allocator *allocator, const Wide_String_Ref &a, const Wide_String_Ref &b);
