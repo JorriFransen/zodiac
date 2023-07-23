@@ -1,4 +1,3 @@
-- Use select loop in platform_execute_process on linux
 - Use pipes in platform_excute_process on windows (capture stdout and stderr)
 
 - Detect and report extra non option arguments on the commandline

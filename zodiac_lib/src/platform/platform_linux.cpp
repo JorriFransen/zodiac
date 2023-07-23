@@ -327,8 +327,10 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
         argv[command_line.count] = 0;
 
         execvp(argv[0], (char *const *)argv);
-        ZERROR("execv error"); // We don't expect execv to return
+        auto cmd_line_str = string_append(c_allocator(), command_line);
+        ZERROR("execv error: '%s'", cmd_line_str.data); // We don't expect execv to return
         exit(1);
+
     } else {
         // Original parent process
         // ZINFO("Parent!");
@@ -345,6 +347,14 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
 
         String_Builder stderr_sb;
         string_builder_create(&stderr_sb, ta);
+
+        int exit_status;
+
+        // Wait for the child process to finish
+        pid_t wait_res = waitpid(pid, &exit_status, 0);
+        if (wait_res == -1) {
+            ZFATAL("Unexpected return value from waitpid");
+        } 
 
         { // read stdout
             size_t read_count;
@@ -368,14 +378,8 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
             } while (read_count > 0);
         }
 
-        // Wait for the child process to finish
-        int status;
-        if (waitpid(pid, &status, 0) == -1) {
-            ZFATAL("Unexpected return value from waitpid");
-        }
-
         Process_Result result;
-        result.exit_code = WEXITSTATUS(status);
+        result.exit_code = WEXITSTATUS(exit_status);
         result.success = result.exit_code == 0;
 
         if (stdout_sb.total_size) result.result_string = string_builder_to_string(ca, &stdout_sb);
