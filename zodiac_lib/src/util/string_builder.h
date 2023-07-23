@@ -38,6 +38,7 @@ ZAPI void string_builder_create(String_Builder *out_sb, Allocator *allocator, s6
 ZAPI void string_builder_destroy(String_Builder *sb);
 
 ZAPI String string_builder_to_string(String_Builder *sb);
+ZAPI String string_builder_to_string(Allocator *allocator, String_Builder *sb);
 
 ZAPI void string_builder_append(String_Builder *sb, String_Ref fmt, ...);
 ZAPI void string_builder_append(String_Builder *sb, String_Ref fmt, va_list args);

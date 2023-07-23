@@ -270,6 +270,11 @@ double platform_sqrt(double x)
 
 Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
 {
+    assert(command_line_);
+
+    auto ta = temp_allocator_allocator();
+    auto ca = c_allocator();
+
     auto command_line = *command_line_;
     assert(command_line.count);
     pid_t pid;
@@ -336,10 +341,10 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
         close(PARENT_STDIN_FD);
 
         String_Builder stdout_sb;
-        string_builder_create(&stdout_sb, temp_allocator_allocator());
+        string_builder_create(&stdout_sb, ta);
 
         String_Builder stderr_sb;
-        string_builder_create(&stderr_sb, temp_allocator_allocator());
+        string_builder_create(&stderr_sb, ta);
 
         { // read stdout
             size_t read_count;
@@ -372,8 +377,9 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
         Process_Result result;
         result.exit_code = WEXITSTATUS(status);
         result.success = result.exit_code == 0;
-        if (stdout_sb.total_size) result.result_string = string_builder_to_string(&stdout_sb);
-        if (stderr_sb.total_size) result.error_string = string_builder_to_string(&stderr_sb);
+
+        if (stdout_sb.total_size) result.result_string = string_builder_to_string(ca, &stdout_sb);
+        if (stderr_sb.total_size) result.error_string = string_builder_to_string(ca, &stderr_sb);
 
         return result;
     }
@@ -391,6 +397,16 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
 #undef PARENT_STDIN_FD
 #undef CHILD_STDOUT_FD
 #undef CHILD_STDIN_FD
+}
+
+void platform_free_process_result(Process_Result *pr)
+{
+    assert(pr);
+
+    if (pr->result_string.data) free(c_allocator(), pr->result_string.data);
+    if (pr->error_string.data) free(c_allocator(), pr->error_string.data);
+
+    *pr = {};
 }
 
 void platform_temp_file(File_Handle *out_file)

@@ -1410,21 +1410,28 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     }
 
     auto _command_line = Array_Ref<String_Ref>(command_line.array);
-    Process_Result result = platform_execute_process(&_command_line);
+    Process_Result proc_res = platform_execute_process(&_command_line);
 
     temporary_allocator_reset((Temporary_Allocator *)ta->user_data, mark);
 
-    if (!result.success) {
-        ZERROR("Link command failed with exit code: %d", result.exit_code);
-        if (result.error_string.length) ZERROR("Linker error: %.*s", (int)result.error_string.length, result.error_string.data);
-        if (result.result_string.length) ZERROR("Linker output: %.*s", (int)result.result_string.length, result.result_string.data);
-        return false;
+    bool result = true;
+
+    if (!proc_res.success) {
+
+        ZERROR("Link command failed with exit code: %d", proc_res.exit_code);
+
+        if (proc_res.error_string.length) ZERROR("Linker error: %.*s", (int)proc_res.error_string.length, proc_res.error_string.data);
+        if (proc_res.result_string.length) ZERROR("Linker output: %.*s", (int)proc_res.result_string.length, proc_res.result_string.data);
+
+        result = false;
     }
+
+    platform_free_process_result(&proc_res);
 
 #undef APPEND_COMMAND
 #undef APPEND_COMMANDF
 
-    return true;
+    return result;
 }
 
 void llvm_builder_print(LLVM_Builder *builder)

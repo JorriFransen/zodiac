@@ -57,11 +57,18 @@ void string_builder_destroy(String_Builder *sb)
 
 String string_builder_to_string(String_Builder *sb)
 {
+    assert(sb && sb->allocator);
+    return string_builder_to_string(sb->allocator, sb);
+}
+
+String string_builder_to_string(Allocator *allocator, String_Builder *sb)
+{
+    assert(allocator);
     assert(sb && sb->first_block && sb->total_size);
 
     String result;
     result.length = sb->total_size;
-    result.data = alloc_array<char>(sb->allocator, sb->total_size + 1);
+    result.data = alloc_array<char>(allocator, sb->total_size + 1);
 
     char *cur = result.data;
 

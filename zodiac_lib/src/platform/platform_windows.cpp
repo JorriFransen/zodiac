@@ -172,6 +172,16 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
     return result;
 }
 
+void platform_free_process_result(Process_Result *pr)
+{
+    assert(pr);
+
+    if (pr->result_string.data) free(c_allocator(), pr->result_string.data);
+    if (pr->error_string.data) free(c_allocator(), pr->error_string.data);
+
+    *pr = {};
+}
+
 void platform_temp_file(File_Handle *out_file)
 {
     const auto temp_path_length_ = 2048;

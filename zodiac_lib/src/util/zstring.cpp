@@ -7,6 +7,7 @@
 #include "atom.h"
 #include "containers/dynamic_array.h"
 #include "defines.h"
+#include "memory/allocator.h"
 #include "memory/zmemory.h"
 
 #ifdef _WIN32

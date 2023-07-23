@@ -50,6 +50,7 @@ ZAPI i64 platform_memcmp(const void *a, const void *b, u64 num);
 ZAPI double platform_sqrt(double x);
 
 ZAPI Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line);
+ZAPI void platform_free_process_result(Process_Result *pr);
 
 ZAPI void platform_temp_file(File_Handle *out_file);
 
