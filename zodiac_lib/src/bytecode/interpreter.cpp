@@ -212,7 +212,7 @@ break; \
 Interpreter_Register lhs = interpreter_load_register(interp, instruction.a); \
 Interpreter_Register rhs = interpreter_load_register(interp, instruction.b); \
 assert(lhs.type == rhs.type); \
-assert(lhs.type->kind == Type_Kind::INTEGER); \
+assert(lhs.type->kind == Type_Kind::INTEGER || lhs.type->kind == Type_Kind ::BOOLEAN); \
 Bytecode_Register_Value rv = {}; \
 auto lhsi = lhs.value.integer; \
 auto rhsi = rhs.value.integer; \

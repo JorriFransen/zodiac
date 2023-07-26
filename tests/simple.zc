@@ -33,6 +33,22 @@ test :: (x: s64) {
     // return;
 }
 
+pbool1 :: (x: bool) {
+    if (x == true) {
+        print("true");
+    } else {
+        print("false");
+    }
+}
+
+pbool2 :: (x: bool) {
+    if (x) {
+        print("true");
+    } else {
+        print("false");
+    }
+}
+
 main :: () -> s64 {
     a := 8 + 2;
     z :: 19;
@@ -46,7 +62,10 @@ main :: () -> s64 {
     test(4);
     print(true);
     print(false);
-    // pbool(true);
+    pbool1(true);
+    pbool1(false);
+    pbool2(true);
+    pbool2(false);
     print("Hello, Zodiac!");
     return a + b;
 }

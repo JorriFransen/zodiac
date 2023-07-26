@@ -516,6 +516,8 @@ Bytecode_Register bytecode_emit_div(Bytecode_Builder *builder, Bytecode_Register
         bytecode_emit_instruction(builder, Bytecode_Opcode::I_##op, a, b, result); \
     } else if (a.type->kind == Type_Kind::FLOAT) { \
         bytecode_emit_instruction(builder, Bytecode_Opcode::F_##op, a, b, result); \
+    } else if (a.type->kind == Type_Kind::BOOLEAN) { \
+        bytecode_emit_instruction(builder, Bytecode_Opcode::I_##op, a, b, result); \
     } else { \
         assert(false && !"EMIT_CMP_BINOP unhandled type"); \
     }\

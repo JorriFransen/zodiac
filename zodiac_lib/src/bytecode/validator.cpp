@@ -295,13 +295,15 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
         return false; \
     } \
  \
-    if (instruction->a.type->kind != Type_Kind::INTEGER) { \
-        bytecode_validator_report_error(validator, "The 'a' register for '" #op "' must be of integer type"); \
+    if (instruction->a.type->kind != Type_Kind::INTEGER && \
+        instruction->a.type->kind != Type_Kind::BOOLEAN) { \
+        bytecode_validator_report_error(validator, "The 'a' register for '" #op "' must be of integer or boolean type"); \
         return false; \
     } \
  \
-    if (instruction->b.type->kind != Type_Kind::INTEGER) { \
-        bytecode_validator_report_error(validator, "The 'b' register for '" #op "' must be of integer type"); \
+    if (instruction->b.type->kind != Type_Kind::INTEGER && \
+        instruction->b.type->kind != Type_Kind::BOOLEAN ) { \
+        bytecode_validator_report_error(validator, "The 'b' register for '" #op "' must be of integer or boolean type"); \
         return false; \
     } \
  \
@@ -1454,7 +1456,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
 
 
             if (phi_args.false_value.kind != Bytecode_Register_Kind::TEMPORARY) {
-                bytecode_validator_report_error(validator, "The'false' value for PHI must be a temporary");
+                bytecode_validator_report_error(validator, "The 'false' value for PHI must be a temporary");
                 return false;
             }
 

@@ -285,8 +285,8 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 #define EMIT_INTEGER_CMP_BINOP(op) { \
     llvm::Value *lhs = llvm_builder_emit_register(builder, bc_inst.a); \
     llvm::Value *rhs = llvm_builder_emit_register(builder, bc_inst.b); \
-    assert(bc_inst.a.type->kind == Type_Kind::INTEGER); \
-    assert(bc_inst.b.type->kind == Type_Kind::INTEGER); \
+    assert(bc_inst.a.type == bc_inst.b.type); \
+    assert(bc_inst.a.type->kind == Type_Kind::INTEGER || bc_inst.a.type->kind == Type_Kind::BOOLEAN); \
     assert(bc_inst.dest.type->kind == Type_Kind::BOOLEAN); \
     llvm::Value *result = irb->CreateICmp##op(lhs, rhs); \
     assert(result); \
@@ -1216,7 +1216,8 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
         }
 
         case Type_Kind::BOOLEAN: {
-            return llvm::Type::getIntNTy(*builder->llvm_context, (unsigned)ast_type->bit_size);
+            assert(ast_type->bit_size == 8);
+            return llvm::Type::getIntNTy(*builder->llvm_context, 1);
             break;
         }
 
