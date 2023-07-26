@@ -6,7 +6,7 @@ Vec2 :: struct {
 }
 
 main :: () -> s64 {
-    p : Vec2;    
+    p : Vec2;
     return 42;
 }
 

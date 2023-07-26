@@ -1,12 +1,17 @@
 #pragma once
 
-#include "ast.h"
 #include "containers/dynamic_array.h"
 #include "defines.h"
 
 namespace Zodiac
 {
 
+struct AST_Declaration;
+struct AST_Expression;
+struct AST_Field_Declaration;
+struct AST_File;
+struct AST_Statement;
+struct AST_Type_Spec;
 struct Scope;
 struct Zodiac_Context;
 

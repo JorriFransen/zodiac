@@ -1,5 +1,6 @@
 #include "resolve.h"
 
+#include "ast.h"
 #include "atom.h"
 #include "error.h"
 #include "memory/temporary_allocator.h"
