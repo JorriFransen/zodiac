@@ -12,10 +12,10 @@ Rect :: struct {
 
 main :: () -> s64 {
 
-    r : Rect;
-    r.pos.x = 1;
+    // r : Rect;
+    // r.pos.x = 1;
 
-    return 42;
+    return 85;
 }
 
 // main :: () -> s64 {
