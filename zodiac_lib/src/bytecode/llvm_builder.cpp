@@ -1348,6 +1348,8 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
 {
     assert(builder);
 
+    auto out_name = builder->out_file_name;
+
     auto ta = temp_allocator_allocator();
     auto mark = temporary_allocator_get_mark((Temporary_Allocator *)ta->user_data);
 
@@ -1368,7 +1370,6 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     APPEND_COMMANDF("%scrt1.o", pi.crt_path.data);
     APPEND_COMMANDF("%scrti.o", pi.crt_path.data);
 
-    auto out_name = builder->out_file_name;
     APPEND_COMMAND("-o");
     APPEND_COMMAND(out_name.data);
 
@@ -1407,7 +1408,7 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
 
     APPEND_COMMANDF("\"%.*s\"", (int)linker_path.length, linker_path.data);
 
-    APPEND_COMMAND("/nologo /wx /subsystem:CONSOLE /nodefaultlib");
+    APPEND_COMMAND("/nologo /wx /subsystem:CONSOLE /nodefaultlib /noimplib /noexp");
 
     APPEND_COMMANDF("/libpath:\"%.*s\"", (int)um_lib_path.length, um_lib_path.data);
     APPEND_COMMANDF("/libpath:\"%.*s\"", (int)ucrt_lib_path.length, ucrt_lib_path.data);
@@ -1418,6 +1419,8 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     APPEND_COMMAND("msvcrt.lib");
 
     APPEND_COMMANDF(" %s.obj", builder->out_file_name.data);
+
+    APPEND_COMMANDF(" /out:\"%.*s.exe\"", (int)out_name.length, out_name.data);
 
     bool link_c = true;
     if (link_c) {
