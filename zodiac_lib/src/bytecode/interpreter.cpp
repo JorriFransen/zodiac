@@ -234,7 +234,7 @@ if (lhs.type->integer.sign) { \
     } \
 } \
 Interpreter_Register result_register = { \
-    .type = &builtin_type_boolean, \
+    .type = &builtin_type_bool, \
     .value = rv, \
 }; \
 interpreter_store_register(interp, result_register, instruction.dest); \
@@ -292,7 +292,7 @@ switch (lhs.type->bit_size) { \
     case 64: rv.boolean = lhsr.r64 op rhsr.r64; break; \
 } \
 Interpreter_Register result_register = { \
-    .type = &builtin_type_boolean, \
+    .type = &builtin_type_bool, \
     .value = rv, \
 }; \
 interpreter_store_register(interp, result_register, instruction.dest); \

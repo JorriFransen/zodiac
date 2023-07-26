@@ -25,6 +25,7 @@ struct Zodiac_Context;
     ZODIAC_NUMERIC_TYPE_DEF(r, 32)   \
     ZODIAC_NUMERIC_TYPE_DEF(r, 64)   \
     ZODIAC_NAME_TYPE_DEF(void)       \
+    ZODIAC_NAME_TYPE_DEF(bool)       \
     ZODIAC_NAME_TYPE_DEF(String)     \
 
 // Builtin type atoms
@@ -105,7 +106,7 @@ ZAPI extern bool type_system_initialized;
 
 ZAPI extern Type builtin_type_unsized_integer;
 ZAPI extern Type builtin_type_void;
-ZAPI extern Type builtin_type_boolean;
+ZAPI extern Type builtin_type_bool;
 
 ZAPI extern Type builtin_type_u64;
 ZAPI extern Type builtin_type_s64;

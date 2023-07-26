@@ -45,6 +45,14 @@ void ast_null_literal_expr_create(AST_Expression *out_expr)
     ast_expression_create(AST_Expression_Kind::NULL_LITERAL, AST_EXPR_FLAG_CONST, out_expr);
 }
 
+void ast_bool_literal_expr_create(AST_Expression *out_expr, bool value)
+{
+    assert(out_expr);
+
+    ast_expression_create(AST_Expression_Kind::BOOL_LITERAL, AST_EXPR_FLAG_CONST, out_expr);
+    out_expr->bool_literal = value;
+}
+
 void ast_identifier_expr_create(AST_Identifier ident, AST_Expression *out_expr)
 {
     assert(&out_expr);
@@ -338,6 +346,16 @@ AST_Expression *ast_null_literal_expr_new(Zodiac_Context *ctx, Source_Range rang
     return expr;
 }
 
+AST_Expression *ast_bool_literal_expr_new(Zodiac_Context *ctx, Source_Range range, bool value)
+{
+    assert(ctx);
+
+    auto expr = ast_expression_new(ctx, range);
+    ast_bool_literal_expr_create(expr, value);
+
+    return expr;
+}
+
 AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Source_Range range, Atom atom)
 {
     assert(ctx);
@@ -611,6 +629,11 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
 
         case AST_Expression_Kind::NULL_LITERAL: {
             string_builder_append(sb, "null");
+            break;
+        }
+
+        case AST_Expression_Kind::BOOL_LITERAL: {
+            assert(false);
             break;
         }
 

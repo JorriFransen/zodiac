@@ -32,6 +32,7 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
 
         case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
+        case AST_Expression_Kind::BOOL_LITERAL: assert(false); break;
 
         case AST_Expression_Kind::IDENTIFIER: {
             auto scope = expr->identifier.scope;

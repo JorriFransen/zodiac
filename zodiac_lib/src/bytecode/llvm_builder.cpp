@@ -427,7 +427,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
                 case Type_Kind::BOOLEAN: {
                     Type *bool_to_str_ret_type = get_pointer_type(&builtin_type_u8, ast_allocator);
-                    Type *bool_to_str_arg_type = &builtin_type_boolean;
+                    Type *bool_to_str_arg_type = &builtin_type_bool;
                     Type *bool_to_str_arg_types[] = { bool_to_str_arg_type };
                     Type *bool_to_str_fn_type = get_function_type(bool_to_str_ret_type, bool_to_str_arg_types, ast_allocator);
 

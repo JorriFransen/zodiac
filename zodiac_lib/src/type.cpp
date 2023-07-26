@@ -23,7 +23,7 @@ bool type_system_initialized = false;
 
 Type builtin_type_unsized_integer;
 Type builtin_type_void;
-Type builtin_type_boolean;
+Type builtin_type_bool;
 
 Type builtin_type_u64;
 Type builtin_type_s64;
@@ -61,7 +61,7 @@ ZODIAC_BUILTIN_TYPES
 
     create_type(&builtin_type_unsized_integer, Type_Kind::UNSIZED_INTEGER, 0, TYPE_FLAG_INT);
     create_type(&builtin_type_void, Type_Kind::VOID, 0);
-    create_type(&builtin_type_boolean, Type_Kind::BOOLEAN, 8);
+    create_type(&builtin_type_bool, Type_Kind::BOOLEAN, 8);
 
     create_integer_type(&builtin_type_u64, 64, false);
     create_integer_type(&builtin_type_s64, 64, true);

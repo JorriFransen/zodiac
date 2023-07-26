@@ -23,3 +23,8 @@ public s64 foreign_call_binop_ptr(Binop_FN_Ptr fn_ptr, s64 a, s64 b) {
     fprintf(stdout_handle, "Calling pointer!\n");
     return fn_ptr(a, b);
 }
+
+public const char *bool_to_string(bool x) {
+    if (x) return "true";
+    return "false";
+}

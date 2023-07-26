@@ -62,6 +62,10 @@ AST_Expression *parse_expr_operand(Parser *parser)
 
         if (match_keyword(parser, keyword_null)) {
             return ast_null_literal_expr_new(parser->context, range);
+        } else if (match_keyword(parser, keyword_true)) {
+            return ast_bool_literal_expr_new(parser->context, range, true);
+        } else if (match_keyword(parser, keyword_false)) {
+            return ast_bool_literal_expr_new(parser->context, range, false);
         }
 
     } else {

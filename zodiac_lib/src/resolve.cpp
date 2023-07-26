@@ -49,6 +49,7 @@ void resolve_file(Resolver *resolver, AST_File *file)
     add_builtin_type_symbol(r64);
 
     add_builtin_type_symbol(void);
+    add_builtin_type_symbol(bool);
     add_builtin_type_symbol(String);
 
     // Register all top level symbols first
@@ -465,7 +466,8 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
         }
 
         case AST_Expression_Kind::STRING_LITERAL:
-        case AST_Expression_Kind::NULL_LITERAL: {
+        case AST_Expression_Kind::NULL_LITERAL:
+        case AST_Expression_Kind::BOOL_LITERAL: {
             // Leaf expression
             break;
         }
@@ -799,7 +801,8 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 
         case AST_Expression_Kind::INTEGER_LITERAL:
         case AST_Expression_Kind::STRING_LITERAL:
-        case AST_Expression_Kind::NULL_LITERAL: {
+        case AST_Expression_Kind::NULL_LITERAL:
+        case AST_Expression_Kind::BOOL_LITERAL: {
             assert((expr->flags & AST_EXPR_FLAG_CONST) == AST_EXPR_FLAG_CONST);
             // Leaf
             break;
@@ -1220,14 +1223,17 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
         }
 
         case AST_Statement_Kind::PRINT: {
-            assert(stmt->print_expr->resolved_type);
+            auto type = stmt->print_expr->resolved_type;
+            assert(type);
 
-            if (stmt->print_expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER) {
+            if (type->kind == Type_Kind::UNSIZED_INTEGER) {
+                type = &builtin_type_s64;
                 stmt->print_expr->resolved_type = &builtin_type_s64;
             }
 
-            assert(stmt->print_expr->resolved_type->kind == Type_Kind::INTEGER ||
-                   stmt->print_expr->resolved_type == &builtin_type_String);
+            assert(type->kind == Type_Kind::INTEGER ||
+                   type->kind == Type_Kind::BOOLEAN ||
+                   type == &builtin_type_String);
 
             return true;
         }
@@ -1267,7 +1273,13 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             break;
         }
 
-        case AST_Expression_Kind::NULL_LITERAL: assert(false);
+        case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
+
+        case AST_Expression_Kind::BOOL_LITERAL: {
+            assert(!expr->infer_type_from);
+            expr->resolved_type = &builtin_type_bool;
+            break;
+        }
 
         case AST_Expression_Kind::IDENTIFIER: {
             auto sym = scope_get_symbol(scope, expr->identifier.name);
@@ -1393,7 +1405,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                     lhs->resolved_type = &builtin_type_s64;
                     rhs->resolved_type = &builtin_type_s64;
                 }
-                expr->resolved_type = &builtin_type_boolean;
+                expr->resolved_type = &builtin_type_bool;
 
             } else {
                 assert(false);

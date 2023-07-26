@@ -70,6 +70,8 @@ struct Lexer
     ZODIAC_KEYWORD(struct)  \
     ZODIAC_KEYWORD(union)   \
     ZODIAC_KEYWORD(print)   \
+    ZODIAC_KEYWORD(true)   \
+    ZODIAC_KEYWORD(false)   \
     ZODIAC_KEYWORD(null)
 
 // Emit variable declaration for all keywords

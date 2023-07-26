@@ -44,6 +44,9 @@ main :: () -> s64 {
     test(2);
     test(3);
     test(4);
+    print(true);
+    print(false);
+    // pbool(true);
     print("Hello, Zodiac!");
     return a + b;
 }

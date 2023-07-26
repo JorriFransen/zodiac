@@ -1553,12 +1553,12 @@ file_local MunitResult Non_Return_Error_Simple(const MunitParameter params[], vo
         bytecode_emit_return(&bb, r);
     }
 
-    auto return_bool_fn_type = get_function_type(&builtin_type_boolean, {}, &zc.ast_allocator);
+    auto return_bool_fn_type = get_function_type(&builtin_type_bool, {}, &zc.ast_allocator);
     auto return_bool = bytecode_function_create(&bb, "return_bool", return_bool_fn_type);
     auto return_bool_entry_block = bytecode_append_block(&bb, return_bool, "entry");
     bytecode_set_insert_point(&bb, return_bool, return_bool_entry_block);
     {
-        auto b = bytecode_boolean_literal(&bb, &builtin_type_boolean, true);
+        auto b = bytecode_boolean_literal(&bb, &builtin_type_bool, true);
         bytecode_emit_return(&bb, b);
     }
 

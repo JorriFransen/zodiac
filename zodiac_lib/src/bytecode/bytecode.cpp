@@ -511,7 +511,7 @@ Bytecode_Register bytecode_emit_div(Bytecode_Builder *builder, Bytecode_Register
     assert(a.kind == Bytecode_Register_Kind::TEMPORARY);\
     assert(b.kind == Bytecode_Register_Kind::TEMPORARY);\
     assert(a.type == b.type); \
-    auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, &builtin_type_boolean); \
+    auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, &builtin_type_bool); \
     if (a.type->kind == Zodiac::Type_Kind::INTEGER) { \
         bytecode_emit_instruction(builder, Bytecode_Opcode::I_##op, a, b, result); \
     } else if (a.type->kind == Type_Kind::FLOAT) { \
