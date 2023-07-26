@@ -387,9 +387,15 @@ switch (operand.type->bit_size) { \
             assert(operand.type->kind == Type_Kind::INTEGER ||
                    operand.type->kind == Type_Kind::FLOAT ||
                    operand.type->kind == Type_Kind::BOOLEAN ||
-                   operand.type->kind == Type_Kind::POINTER);
+                   operand.type->kind == Type_Kind::POINTER ||
+                   operand.type == &builtin_type_String);
 
             auto out_handle = (FILE *)interp->std_out.handle;
+
+            if (operand.type == &builtin_type_String) {
+                fprintf(out_handle, "%.*s", (int)operand.value.string.length, operand.value.string.data);
+                break;
+            }
 
             switch (operand.type->kind) {
                 default: assert(false); break;

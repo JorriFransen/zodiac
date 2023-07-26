@@ -375,6 +375,15 @@ Bytecode_Register bytecode_boolean_literal(Bytecode_Builder *builder, Type *type
     return result;
 }
 
+Bytecode_Register bytecode_string_literal(Bytecode_Builder *bb, String_Ref str)
+{
+    assert(&builtin_type_String);
+    auto result = bytecode_register_create(bb, Bytecode_Register_Kind::TEMPORARY, &builtin_type_String, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT);
+    result.value.string = str;
+
+    return result;
+}
+
 Bytecode_Register bytecode_block_value(Bytecode_Builder *builder, Bytecode_Block_Handle block_handle)
 {
     auto result = bytecode_register_create(builder, Bytecode_Register_Kind::BLOCK, nullptr, BC_REGISTER_FLAG_NONE);

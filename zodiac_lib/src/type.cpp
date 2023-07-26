@@ -78,6 +78,7 @@ ZODIAC_BUILTIN_TYPES
     create_float_type(&builtin_type_r32, 32);
 
     create_type(&builtin_type_String, Type_Kind::STRUCTURE, 0, TYPE_FLAG_AGGREGATE);
+    builtin_type_String.structure.name = atom_get(&ctx->atoms, "String");
 
     type_system_initialized = true;
     return true;

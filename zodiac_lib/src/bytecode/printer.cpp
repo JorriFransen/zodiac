@@ -370,52 +370,69 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
             if (reg.flags & BC_REGISTER_FLAG_LITERAL) {
                 assert(reg.kind == Bytecode_Register_Kind::TEMPORARY);
 
-                if(reg.type->kind == Type_Kind::INTEGER) {
-
-                    auto ri = reg.value.integer;
-                    if (reg.type->integer.sign) {
-                        switch (reg.type->bit_size) {
-                            default: assert(false); break;
-                            case 8: string_builder_append(sb, "%d", ri.s8); break;
-                            case 16: string_builder_append(sb, "%d", ri.s16); break;
-                            case 32: string_builder_append(sb, "%d", ri.s32); break;
-                            case 64: string_builder_append(sb, "%d", ri.s64); break;
+                switch (reg.type->kind) {
+                    case Type_Kind::INTEGER: {
+                        auto ri = reg.value.integer;
+                        if (reg.type->integer.sign) {
+                            switch (reg.type->bit_size) {
+                                default: assert(false); break;
+                                case 8: string_builder_append(sb, "%d", ri.s8); break;
+                                case 16: string_builder_append(sb, "%d", ri.s16); break;
+                                case 32: string_builder_append(sb, "%d", ri.s32); break;
+                                case 64: string_builder_append(sb, "%d", ri.s64); break;
+                            }
+                        } else {
+                            switch (reg.type->bit_size) {
+                                default: assert(false); break;
+                                case 8: string_builder_append(sb, "%u", ri.u8); break;
+                                case 16: string_builder_append(sb, "%u", ri.u16); break;
+                                case 32: string_builder_append(sb, "%u", ri.u32); break;
+                                case 64: string_builder_append(sb, "%u", ri.u64); break;
+                            }
                         }
-                    } else {
-                        switch (reg.type->bit_size) {
-                            default: assert(false); break;
-                            case 8: string_builder_append(sb, "%u", ri.u8); break;
-                            case 16: string_builder_append(sb, "%u", ri.u16); break;
-                            case 32: string_builder_append(sb, "%u", ri.u32); break;
-                            case 64: string_builder_append(sb, "%u", ri.u64); break;
+                        break;
+                    }
+
+                    case Type_Kind::FLOAT: {
+                        auto rr = reg.value.real;
+                        if (reg.type->bit_size == 32) {
+                            string_builder_append(sb, "%f", rr.r32);
+                        } else if (reg.type->bit_size == 64) {
+                            string_builder_append(sb, "%f", rr.r64);
+                        } else {
+                            assert(false && !"Unsupported literal float size register for printing");
                         }
+                        break;
                     }
 
-                } else if (reg.type->kind == Type_Kind::FLOAT) {
-
-                    auto rr = reg.value.real;
-                    if (reg.type->bit_size == 32) {
-                        string_builder_append(sb, "%f", rr.r32);
-                    } else if (reg.type->bit_size == 64) {
-                        string_builder_append(sb, "%f", rr.r64);
-                    } else {
-                        assert(false && !"Unsupported literal float size register for printing");
+                    case Type_Kind::BOOLEAN: {
+                        if (reg.value.boolean) {
+                            string_builder_append(sb, "TRUE");
+                        } else {
+                            string_builder_append(sb, "FALSE");
+                        }
+                        break;
                     }
 
-                } else if (reg.type->kind == Type_Kind::BOOLEAN) {
-                    if (reg.value.boolean) {
-                        string_builder_append(sb, "TRUE");
-                    } else {
-                        string_builder_append(sb, "FALSE");
+                    case Type_Kind::POINTER: {
+                        string_builder_append(sb, "%p", reg.value.pointer);
+                        break;
                     }
-                } else if (reg.type->kind == Type_Kind::POINTER) {
 
+                    case Type_Kind::STRUCTURE: {
+                        if (reg.type == &builtin_type_String) {
+                            string_builder_append(sb, "\"%.*s\"", (int)reg.value.string.length, reg.value.string.data);
+                        } else {
+                            assert(false && !"Unsupported literal type register for printing");
+                        }
+                        break;
+                    }
 
-                    string_builder_append(sb, "%p", reg.value.pointer);
-
-                } else {
-                    assert(false && !"Unsupported literal type register for printing");
+                    default: {
+                        break;
+                    }
                 }
+
             } else {
                 string_builder_append(sb, "%%%d", reg.index);
             }

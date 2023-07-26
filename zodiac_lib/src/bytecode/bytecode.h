@@ -5,6 +5,7 @@
 #include "containers/dynamic_array.h"
 #include "containers/hash_table.h"
 #include "defines.h"
+#include "util/zstring.h"
 
 namespace Zodiac {
 
@@ -111,6 +112,7 @@ union Bytecode_Register_Value
     Integer_Value integer;
     Real_Value real;
     bool boolean;
+    String_Ref string;
     u8 *pointer;
 
     Bytecode_Function_Handle function_handle;
@@ -259,6 +261,7 @@ ZAPI Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type 
 ZAPI Bytecode_Register bytecode_real_literal(Bytecode_Builder *builder, Type *type, float float_value, double double_value);
 ZAPI Bytecode_Register bytecode_real_literal(Bytecode_Builder *builder, Type *type, Real_Value rv);
 ZAPI Bytecode_Register bytecode_boolean_literal(Bytecode_Builder *builder, Type *type, bool value);
+ZAPI Bytecode_Register bytecode_string_literal(Bytecode_Builder *bb, String_Ref str);
 ZAPI Bytecode_Register bytecode_block_value(Bytecode_Builder *builder, Bytecode_Block_Handle block_handle);
 ZAPI Bytecode_Register bytecode_type_value(Bytecode_Builder *builder, Type *type);
 ZAPI Bytecode_Register bytecode_register_create(Bytecode_Builder *builder, Bytecode_Register_Kind kind, Type *type, Bytecode_Register_Flags flags = BC_REGISTER_FLAG_NONE);

@@ -10,7 +10,9 @@
 #include "type.h"
 #include "zodiac_context.h"
 
+#ifndef PRINT_BYTECODE_IN_TESTS
 #define PRINT_BYTECODE_IN_TESTS 0
+#endif // PRINT_BYTECODE_IN_TESTS
 
 #if PRINT_BYTECODE_IN_TESTS
 #include "bytecode/printer.h"
@@ -1874,6 +1876,58 @@ file_local MunitResult Constants(const MunitParameter params[], void *user_data_
     return MUNIT_OK;
 }
 
+file_local MunitResult String_Literals(const MunitParameter params[], void *user_data_or_fixture)
+{
+    Zodiac_Context zc;
+    zodiac_context_create(&zc);
+
+    auto c_alloc = c_allocator();
+    auto aa = &zc.ast_allocator;
+
+    Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+
+    auto main_fn_type = get_function_type(&builtin_type_s64, {}, aa);
+    auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
+    auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
+
+    const char* str_lit = "Hello, Zodiac!";
+
+    bytecode_set_insert_point(&bb, main_fn, main_entry_block);
+    {
+        auto str_lit_val = bytecode_string_literal(&bb, str_lit);
+        bytecode_emit_print(&bb, str_lit_val);
+        auto return_val = bytecode_integer_literal(&bb, &builtin_type_s64, 0);
+        bytecode_emit_return(&bb, return_val);
+    }
+
+    print_bytecode(bb);
+
+    Bytecode_Validator validator;
+    bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    bool bytecode_valid = validate_bytecode(&validator);
+
+    bytecode_validator_print_errors(&validator);
+
+    munit_assert(bytecode_valid);
+    munit_assert_int64(validator.errors.count, ==, 0);
+
+    Interpreter interp = interpreter_create(c_alloc, &zc);
+    filesystem_temp_file(&interp.std_out);
+    auto program = bytecode_get_program(&bb);
+    program.entry_handle = main_fn;
+    Interpreter_Register result_register = interpreter_start(&interp, program);
+
+    assert_zodiac_stream(interp.std_out, str_lit);
+    munit_assert(filesystem_close(&interp.std_out));
+
+    munit_assert_ptr_equal(result_register.type, &builtin_type_s64);
+    munit_assert_int64(result_register.value.integer.s64, ==, 0);
+
+    interpreter_free(&interp);
+
+    return MUNIT_OK;
+}
+
 START_TESTS(bytecode_tests)
     DEFINE_TEST(Building_1),
     DEFINE_TEST(Simple_Function_Call),
@@ -1898,6 +1952,7 @@ START_TESTS(bytecode_tests)
     DEFINE_TEST(Non_Return_Flag),
     DEFINE_TEST(Globals),
     DEFINE_TEST(Constants),
+    DEFINE_TEST(String_Literals),
 END_TESTS()
 
 } }
