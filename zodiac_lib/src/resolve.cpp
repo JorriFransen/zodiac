@@ -1188,7 +1188,20 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             return true;
         }
 
-        case AST_Declaration_Kind::FIELD: assert(false); break;
+        case AST_Declaration_Kind::FIELD: {
+            assert(decl->field.resolved_type == nullptr);
+            assert(decl->field.value == nullptr);
+            assert(decl->field.type_spec);
+            assert(decl->field.type_spec->resolved_type);
+
+            decl->field.resolved_type = decl->field.type_spec->resolved_type;
+
+            auto sym = scope_get_symbol(scope, decl->identifier.name);
+            assert(sym && sym->state == Symbol_State::RESOLVED);
+            assert(sym->kind == Symbol_Kind::MEMBER);
+            sym->state = Symbol_State::TYPED;
+            return true;
+        }
 
         case AST_Declaration_Kind::FUNCTION: {
 

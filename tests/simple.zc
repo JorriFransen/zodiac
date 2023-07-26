@@ -1,17 +1,23 @@
 //test
 
-// Vec2 :: struct {
-//     x: r32;
-//     y: r32;
-// }
+Vec2 :: struct {
+    x: r32;
+    y: r32;
+}
 
-// Rect :: struct {
-//     pos: Vec2;
-//     size: Vec2;
-// }
+Rect :: struct {
+    pos: Vec2;
+    size: Vec2;
+}
 
 
 main :: () -> s64 {
+    p : Vec2;
+    r : Rect;
+
+    // p.x = 40;
+    // p.y = 2;
+
     a := 8 + 2;
     z :: 19;
     b := z + x + y + foo;
