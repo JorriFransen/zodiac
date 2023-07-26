@@ -8,7 +8,6 @@ namespace Zodiac
 
 struct AST_Declaration;
 struct AST_Expression;
-struct AST_Field_Declaration;
 struct AST_File;
 struct AST_Statement;
 struct AST_Type_Spec;
@@ -39,11 +38,6 @@ struct Flat_Node
         AST_Statement *stmt;
         AST_Expression *expr;
         AST_Type_Spec *ts;
-
-        union {
-            AST_Field_Declaration *param;
-            AST_Field_Declaration *field;
-        };
     };
 };
 
@@ -87,7 +81,6 @@ ZAPI Flat_Node to_flat_node(AST_Declaration *decl, Scope *scope);
 ZAPI Flat_Node to_flat_node(AST_Statement *stmt, Scope *scope);
 ZAPI Flat_Node to_flat_node(AST_Expression *expr, Scope *scope);
 ZAPI Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope);
-ZAPI Flat_Node to_flat_node(AST_Field_Declaration *param, Scope *scope);
 
 ZAPI Flat_Node to_flat_proto(AST_Declaration *decl, Scope *scope);
 

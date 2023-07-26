@@ -103,6 +103,9 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             break;
         }
 
+        case AST_Declaration_Kind::PARAMETER: assert(false); break;
+        case AST_Declaration_Kind::FIELD: assert(false); break;
+
         case AST_Declaration_Kind::FUNCTION: {
             ast_function_to_bytecode(bc, decl);
             break;
@@ -423,10 +426,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     return ast_expr_to_bytecode(bc, ident_decl->variable.value);
                 }
 
-                case AST_Declaration_Kind::FUNCTION: {
-                    // At this point this must a function paramter
-                    // TODO: Fix this, paramter symbols should point to a parameter declaration?
-                    assert(ident_sym->kind == Symbol_Kind::PARAM);
+                case Zodiac::AST_Declaration_Kind::PARAMETER: {
+                    assert(ident_decl->parameter.resolved_type);
 
                     auto func_decl = enclosing_function(expr->identifier.scope);
                     assert(func_decl);
@@ -445,6 +446,9 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     return bytecode_emit_load_argument(bc->builder, param_index);
                 }
 
+                case Zodiac::AST_Declaration_Kind::FIELD: assert(false); break;
+
+                case AST_Declaration_Kind::FUNCTION: assert(false); break;
                 case AST_Declaration_Kind::STRUCT: assert(false); break;
                 case AST_Declaration_Kind::UNION: assert(false); break;
             }

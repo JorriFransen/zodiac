@@ -261,32 +261,15 @@ Type *sym_decl_type(Symbol *sym)
     assert(sym);
     assert(sym->decl);
 
-    // Special case, parameter symbols store their function declaration
-    if (sym->kind == Symbol_Kind::PARAM) {
-        auto func_decl = sym->decl;
-        assert(func_decl->kind == AST_Declaration_Kind::FUNCTION);
-
-        bool found = false;
-        for (s64 i = 0; i < func_decl->function.params.count; i++) {
-            auto param = func_decl->function.params[i];
-
-            if (param->identifier.name == sym->name) {
-                found = true;
-                assert(param->resolved_type);
-                return param->resolved_type;
-            }
-        }
-
-        assert_msg(found, "[sym_decl_type()] Did not find expected parameter in function declaration");
-    }
-
     auto decl = sym->decl;
 
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
 
         case AST_Declaration_Kind::VARIABLE:
-        case AST_Declaration_Kind::CONSTANT_VARIABLE: {
+        case AST_Declaration_Kind::CONSTANT_VARIABLE:
+        case AST_Declaration_Kind::PARAMETER:
+        case AST_Declaration_Kind::FIELD: {
             assert(decl->variable.resolved_type);
             return decl->variable.resolved_type;
         }

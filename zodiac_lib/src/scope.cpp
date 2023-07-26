@@ -136,6 +136,9 @@ Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declar
         case AST_Declaration_Kind::VARIABLE:          kind = Symbol_Kind::VAR; break;
         case AST_Declaration_Kind::CONSTANT_VARIABLE: kind = Symbol_Kind::CONST; break;
 
+        case AST_Declaration_Kind::PARAMETER: assert(false); break;
+        case AST_Declaration_Kind::FIELD: assert(false); break;
+
         case AST_Declaration_Kind::FUNCTION: {
             kind = Symbol_Kind::FUNC;
 
@@ -145,7 +148,7 @@ Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declar
             for (u64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
 
-                auto param_sym = add_unresolved_symbol(ctx, parameter_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param->identifier.name, decl, param->identifier.range);
+                auto param_sym = add_unresolved_symbol(ctx, parameter_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param->identifier.name, param, param->identifier.range);
                 if (!param_sym) {
                     return nullptr;
                 }
@@ -163,7 +166,7 @@ Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declar
 
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
-                auto mem_sym = add_unresolved_symbol(ctx, aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field->identifier.name, decl, field->identifier.range);
+                auto mem_sym = add_unresolved_symbol(ctx, aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field->identifier.name, field, field->identifier.range);
                 if (!mem_sym) {
                     return nullptr;
                 }

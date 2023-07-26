@@ -122,7 +122,9 @@ void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Decla
 
         for (s64 i = 0; i < decl->function.params.count; i++) {
             auto field = decl->function.params[i];
-            flatten_type_spec(field->type_spec, scope, &proto_node.nodes);
+            assert(field->kind == AST_Declaration_Kind::PARAMETER);
+
+            flatten_type_spec(field->field.type_spec, scope, &proto_node.nodes);
         }
 
         if (decl->function.return_ts) {
@@ -309,13 +311,14 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
         case AST_Declaration_Kind::INVALID: assert(false);
 
         case AST_Declaration_Kind::VARIABLE:
-        case AST_Declaration_Kind::CONSTANT_VARIABLE: {
+        case AST_Declaration_Kind::CONSTANT_VARIABLE:
+        case AST_Declaration_Kind::PARAMETER:
+        case AST_Declaration_Kind::FIELD: {
             auto ts = decl->variable.type_spec;
             auto val = decl->variable.value;
 
             if (ts) flatten_type_spec(ts, scope, dest);
             if (val) flatten_expression(val, scope, dest, ts);
-
 
             assert(decl->identifier.scope == nullptr);
             decl->identifier.scope = scope;
@@ -333,8 +336,9 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
             for (u64 i = 0; i < decl->function.params.count; i++) {
 
                 auto field = decl->function.params[i];
+                assert(field->kind == AST_Declaration_Kind::PARAMETER);
 
-                flatten_type_spec(field->type_spec, scope, dest);
+                flatten_type_spec(field->parameter.type_spec, scope, dest);
                 Flat_Node param_node = to_flat_node(field, parameter_scope);
                 dynamic_array_append(dest, param_node);
             }
@@ -355,8 +359,9 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
             assert(aggregate_scope);
             for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
+                assert(field->kind == AST_Declaration_Kind::FIELD);
 
-                flatten_type_spec(field->type_spec, scope, dest);
+                flatten_type_spec(field->field.type_spec, scope, dest);
                 Flat_Node member_node = to_flat_node(field, aggregate_scope);
                 dynamic_array_append(dest, member_node);
             }
@@ -577,23 +582,6 @@ Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope)
     return result;
 }
 
-Flat_Node to_flat_node(AST_Field_Declaration *param, Scope *scope)
-{
-    assert(scope);
-    assert(scope->kind == Scope_Kind::FUNCTION_PARAMETER ||
-           scope->kind == Scope_Kind::AGGREGATE);
-
-    Flat_Node result = {};
-    if (scope->kind == Scope_Kind::FUNCTION_PARAMETER) {
-        result.kind = Flat_Node_Kind::PARAM_DECL;
-    } else {
-        result.kind = Flat_Node_Kind::FIELD_DECL;
-    }
-    result.scope = scope;
-    result.param = param;
-    return result;
-}
-
 Flat_Node to_flat_proto(AST_Declaration *decl, Scope *scope)
 {
     assert(decl && decl->kind == AST_Declaration_Kind::FUNCTION);
@@ -630,7 +618,7 @@ bool name_resolve_node(Resolver *resolver, Flat_Node *node)
         }
 
         case Flat_Node_Kind::PARAM_DECL: {
-            Symbol *param_sym = scope_get_symbol(node->scope, node->param->identifier);
+            Symbol *param_sym = scope_get_symbol(node->scope, node->decl->identifier);
             assert(param_sym);
             assert(param_sym->decl->kind == AST_Declaration_Kind::FUNCTION);
 
@@ -641,7 +629,7 @@ bool name_resolve_node(Resolver *resolver, Flat_Node *node)
 
         case Flat_Node_Kind::FIELD_DECL: {
             assert(node->scope->kind == Scope_Kind::AGGREGATE);
-            Symbol *field_sym = scope_get_symbol(node->scope, node->field->identifier);
+            Symbol *field_sym = scope_get_symbol(node->scope, node->decl->identifier);
             assert(field_sym);
             assert(field_sym->decl->kind == AST_Declaration_Kind::STRUCT ||
                    field_sym->decl->kind == AST_Declaration_Kind::UNION);
@@ -729,6 +717,8 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
         };
 
         case AST_Declaration_Kind::CONSTANT_VARIABLE:
+        case AST_Declaration_Kind::PARAMETER:
+        case AST_Declaration_Kind::FIELD:
         case AST_Declaration_Kind::FUNCTION:
         case AST_Declaration_Kind::STRUCT:
         case AST_Declaration_Kind::UNION: {
@@ -1019,13 +1009,13 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
         }
 
         case Flat_Node_Kind::PARAM_DECL: {
-            assert(node->param->type_spec);
-            assert(node->param->type_spec->resolved_type);
+            assert(node->decl->parameter.type_spec);
+            assert(node->decl->parameter.type_spec->resolved_type);
 
-            assert(node->param->resolved_type == nullptr);
-            node->param->resolved_type = node->param->type_spec->resolved_type;
+            assert(node->decl->parameter.resolved_type == nullptr);
+            node->decl->parameter.resolved_type = node->decl->parameter.type_spec->resolved_type;
 
-            auto sym = scope_get_symbol(node->scope, node->param->identifier);
+            auto sym = scope_get_symbol(node->scope, node->decl->identifier);
             assert(sym);
             assert(sym->kind == Symbol_Kind::PARAM);
             assert(sym->state == Symbol_State::RESOLVED);
@@ -1034,13 +1024,13 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
         }
 
         case Flat_Node_Kind::FIELD_DECL: {
-            assert(node->field->type_spec);
-            assert(node->field->type_spec->resolved_type);
+            assert(node->decl->field.type_spec);
+            assert(node->decl->field.type_spec->resolved_type);
 
-            assert(node->field->resolved_type == nullptr);
-            node->field->resolved_type = node->field->type_spec->resolved_type;
+            assert(node->decl->field.resolved_type == nullptr);
+            node->decl->field.resolved_type = node->decl->field.type_spec->resolved_type;
 
-            auto sym = scope_get_symbol(node->scope, node->field->identifier);
+            auto sym = scope_get_symbol(node->scope, node->decl->identifier);
             assert(sym);
             assert(sym->kind == Symbol_Kind::MEMBER);
             assert(sym->state == Symbol_State::RESOLVED);
@@ -1072,7 +1062,7 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
                 for (u64 i = 0; i < func_decl->function.params.count; i++) {
 
                     // Only use the typespec here, the actual fields are not resolved as part of the prototype
-                    auto param_ts = func_decl->function.params[i]->type_spec;
+                    auto param_ts = func_decl->function.params[i]->parameter.type_spec;
                     assert(param_ts && param_ts->resolved_type);
 
                     dynamic_array_append(&param_types.array, param_ts->resolved_type);
@@ -1183,6 +1173,23 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             return true;
         }
 
+        case AST_Declaration_Kind::PARAMETER: {
+            assert(decl->parameter.resolved_type == nullptr);
+            assert(decl->parameter.value == nullptr);
+            assert(decl->parameter.type_spec);
+            assert(decl->parameter.type_spec->resolved_type);
+
+            decl->parameter.resolved_type = decl->parameter.type_spec->resolved_type;
+
+            auto sym = scope_get_symbol(scope, decl->identifier.name);
+            assert(sym && sym->state == Symbol_State::RESOLVED);
+            assert(sym->kind == Symbol_Kind::PARAM);
+            sym->state = Symbol_State::TYPED;
+            return true;
+        }
+
+        case AST_Declaration_Kind::FIELD: assert(false); break;
+
         case AST_Declaration_Kind::FUNCTION: {
 
             // Only implicitly infer a void return type from the body when there is no return type_spec
@@ -1192,8 +1199,9 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
 
                     for (s64 i = 0; i < decl->function.params.count; i++) {
                         auto param = decl->function.params[i];
-                        assert(param->resolved_type);
-                        dynamic_array_append(&param_types.array, param->resolved_type);
+                        assert(param->kind == AST_Declaration_Kind::PARAMETER);
+                        assert(param->parameter.resolved_type);
+                        dynamic_array_append(&param_types.array, param->parameter.resolved_type);
                     }
                     decl->function.type = get_function_type(&builtin_type_void, param_types.array, &ctx->ast_allocator);
                     decl->function.inferred_return_type = decl->function.type->function.return_type;
@@ -1215,9 +1223,10 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
 
             for (s64 i = 0; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
-                assert(field->resolved_type);
+                assert(field->kind == AST_Declaration_Kind::FIELD);
+                assert(field->field.resolved_type);
 
-                dynamic_array_append(&temp_member_types.array, field->resolved_type);
+                dynamic_array_append(&temp_member_types.array, field->field.resolved_type);
             }
 
             auto member_types = temp_array_finalize(&ctx->ast_allocator, &temp_member_types);
@@ -1413,7 +1422,8 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             for (s64 i = 0; i < expr->call.args.count; i++) {
                 AST_Expression *arg_expr = expr->call.args[i];
                 Type *arg_type = arg_expr->resolved_type;
-                Type *param_type = func_decl->function.params[i]->resolved_type;
+
+                Type *param_type = func_decl->function.params[i]->parameter.resolved_type;
 
                 bool match = true;
 

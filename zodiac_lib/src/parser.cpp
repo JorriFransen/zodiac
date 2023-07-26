@@ -376,11 +376,11 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
 
     expect_token(parser, '(');
 
-    Dynamic_Array<AST_Field_Declaration *> params = {};
+    Dynamic_Array<AST_Declaration *> params = {};
 
     if (is_token(parser, TOK_NAME)) {
 
-        auto temp_params = temp_array_create<AST_Field_Declaration *>(&parser->context->temp_allocator);
+        auto temp_params = temp_array_create<AST_Declaration *>(&parser->context->temp_allocator);
         do {
 
             Token name_tok = cur_tok(parser);
@@ -393,7 +393,7 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
             AST_Identifier param_ident;
             ast_identifier_create(name_tok.atom, name_tok.range, &param_ident);
 
-            AST_Field_Declaration *field_decl = ast_field_decl_new(parser->context, {start, end}, param_ident, ts);
+            AST_Declaration *field_decl = ast_parameter_decl_new(parser->context, {start, end}, param_ident, ts);
 
             dynamic_array_append(&temp_params.array, field_decl);
         } while (match_token(parser, ','));
@@ -442,7 +442,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
 
     expect_token(parser, '{');
 
-    auto temp_fields = temp_array_create<AST_Field_Declaration *>(&parser->context->temp_allocator);
+    auto temp_fields = temp_array_create<AST_Declaration *>(&parser->context->temp_allocator);
 
     while (!match_token(parser, '}')) {
 
@@ -474,7 +474,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
 
             Source_Range field_range = { temp_idents.array[i].range.start, ts->range.end };
 
-            AST_Field_Declaration *field_decl = ast_field_decl_new(parser->context, field_range, temp_idents.array[i], ts);
+            AST_Declaration *field_decl = ast_field_decl_new(parser->context, field_range, temp_idents.array[i], ts);
             dynamic_array_append(&temp_fields.array, field_decl);
         }
     }

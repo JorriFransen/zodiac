@@ -1,4 +1,4 @@
-- Make parameter declarations act like other declarations (their symbols point to the function decl atm).
+- Update the ast printer
 - Calculate/substitute non leaf constant expressions before emitting bytecode (we only do this when emitting bytecode now).
 
 test
