@@ -296,8 +296,12 @@ Type *sym_decl_type(Symbol *sym)
             return decl->function.type;
         }
 
-        case AST_Declaration_Kind::STRUCT: assert(false);
-        case AST_Declaration_Kind::UNION: assert(false);
+        case AST_Declaration_Kind::STRUCT:
+        case AST_Declaration_Kind::UNION: {
+            assert(decl->aggregate.resolved_type);
+            return decl->aggregate.resolved_type;
+            break;
+        }
     }
 
     assert(false);

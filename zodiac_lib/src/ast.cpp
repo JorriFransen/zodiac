@@ -277,6 +277,7 @@ void ast_aggregate_decl_create(AST_Identifier ident, AST_Declaration_Kind kind, 
 
     out_decl->identifier = ident;
     out_decl->aggregate.fields = fields;
+    out_decl->aggregate.resolved_type = nullptr;
 }
 
 void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl)

@@ -331,11 +331,11 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
 
             for (u64 i = 0; i < decl->function.params.count; i++) {
 
-            auto field = decl->function.params[i];
+                auto field = decl->function.params[i];
 
-            flatten_type_spec(field->type_spec, scope, dest);
-            Flat_Node param_node = to_flat_node(field, parameter_scope);
-            dynamic_array_append(dest, param_node);
+                flatten_type_spec(field->type_spec, scope, dest);
+                Flat_Node param_node = to_flat_node(field, parameter_scope);
+                dynamic_array_append(dest, param_node);
             }
 
             if (decl->function.return_ts) {
@@ -634,7 +634,8 @@ bool name_resolve_node(Resolver *resolver, Flat_Node *node)
         }
 
         case Flat_Node_Kind::FIELD_DECL: {
-            Symbol *field_sym = scope_get_symbol(node->scope, node->field.identifier);
+            assert(node->scope->kind == Scope_Kind::AGGREGATE);
+            Symbol *field_sym = scope_get_symbol(node->scope, node->field->identifier);
             assert(field_sym);
             assert(field_sym->decl->kind == AST_Declaration_Kind::STRUCT ||
                    field_sym->decl->kind == AST_Declaration_Kind::UNION);
@@ -959,7 +960,7 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
             assert(node->param->resolved_type == nullptr);
             node->param->resolved_type = node->param->type_spec->resolved_type;
 
-            auto sym = scope_get_symbol(node->scope, node->param->identifier.name);
+            auto sym = scope_get_symbol(node->scope, node->param->identifier);
             assert(sym);
             assert(sym->kind == Symbol_Kind::PARAM);
             assert(sym->state == Symbol_State::RESOLVED);
@@ -967,7 +968,20 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
             return true;
         }
 
-        case Flat_Node_Kind::FIELD_DECL: assert(false);
+        case Flat_Node_Kind::FIELD_DECL: {
+            assert(node->field->type_spec);
+            assert(node->field->type_spec->resolved_type);
+
+            assert(node->field->resolved_type == nullptr);
+            node->field->resolved_type = node->field->type_spec->resolved_type;
+
+            auto sym = scope_get_symbol(node->scope, node->field->identifier);
+            assert(sym);
+            assert(sym->kind == Symbol_Kind::MEMBER);
+            assert(sym->state == Symbol_State::RESOLVED);
+            sym->state = Symbol_State::TYPED;
+            return true;
+        }
 
         case Flat_Node_Kind::FUNCTION_PROTO: {
 
@@ -1126,10 +1140,27 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             }
 
             if (decl->function.type) assert(decl->function.type->kind == Type_Kind::FUNCTION);
-            return decl->function.type;
+            return decl->function.type != nullptr;
         }
 
-        case AST_Declaration_Kind::STRUCT: assert(false);
+        case AST_Declaration_Kind::STRUCT: {
+            assert(!decl->aggregate.resolved_type);
+
+            auto temp_member_types = temp_array_create<Type *>(temp_allocator_allocator(), decl->aggregate.fields.count);
+
+            for (s64 i = 0; i < decl->aggregate.fields.count; i++) {
+                auto field = decl->aggregate.fields[i];
+                assert(field->resolved_type);
+
+                dynamic_array_append(&temp_member_types.array, field->resolved_type);
+            }
+
+            auto member_types = temp_array_finalize(&ctx->ast_allocator, &temp_member_types);
+
+            decl->aggregate.resolved_type = get_struct_type(ctx, member_types, decl->identifier.name.data, &ctx->ast_allocator);
+            return true;
+        }
+
         case AST_Declaration_Kind::UNION: assert(false);
     }
 
@@ -1433,13 +1464,23 @@ bool type_resolve_ts(AST_Type_Spec *ts, Scope *scope)
         case AST_Type_Spec_Kind::NAME: {
             auto sym = scope_get_symbol(scope, ts->identifier.name);
             if (sym->decl) {
-                assert(false);
+
+                assert(sym->kind == Symbol_Kind::TYPE);
+                assert(sym->decl);
+
+                auto type = sym_decl_type(sym);
+                assert((type->flags & TYPE_FLAG_AGGREGATE) == TYPE_FLAG_AGGREGATE);
+                ts->resolved_type = type;
+                return true;
+
             } else {
                 assert((sym->flags & SYM_FLAG_BUILTIN) == SYM_FLAG_BUILTIN)
                 assert(sym->builtin_type);
                 ts->resolved_type = sym->builtin_type;
                 return true;
             }
+
+            assert(false); // Should have returned
         }
 
         case AST_Type_Spec_Kind::POINTER: assert(false);

@@ -35,7 +35,10 @@ struct Flat_Node
         AST_Expression *expr;
         AST_Type_Spec *ts;
 
-        AST_Field_Declaration * param, field;
+        union {
+            AST_Field_Declaration *param;
+            AST_Field_Declaration *field;
+        };
     };
 };
 

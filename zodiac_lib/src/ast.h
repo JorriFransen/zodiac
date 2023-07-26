@@ -280,6 +280,7 @@ struct AST_Function_Declaration
 struct AST_Aggregate_Declaration
 {
     Dynamic_Array<AST_Field_Declaration *> fields;
+    Type *resolved_type;
 };
 
 enum class AST_Declaration_Kind
