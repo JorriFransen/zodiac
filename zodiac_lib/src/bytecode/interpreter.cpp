@@ -8,6 +8,7 @@
 #include "platform/platform.h"
 #include "type.h"
 #include "util/asserts.h"
+#include "util/zstring.h"
 #include "zodiac_context.h"
 
 namespace Zodiac { namespace Bytecode {
@@ -393,7 +394,7 @@ switch (operand.type->bit_size) { \
             auto out_handle = (FILE *)interp->std_out.handle;
 
             if (operand.type == &builtin_type_String) {
-                fprintf(out_handle, "%.*s", (int)operand.value.string.length, operand.value.string.data);
+                fprintf(out_handle, "%.*s\n", (int)operand.value.string.length, operand.value.string.data);
                 break;
             }
 

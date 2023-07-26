@@ -339,7 +339,8 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
         }
 
         case AST_Statement_Kind::PRINT: {
-            assert(stmt->print_expr->resolved_type->kind == Type_Kind::INTEGER);
+            assert(stmt->print_expr->resolved_type->kind == Type_Kind::INTEGER ||
+                   stmt->print_expr->resolved_type == &builtin_type_String);
             Bytecode_Register value_reg = ast_expr_to_bytecode(bc, stmt->print_expr);
             bytecode_emit_print(bc->builder, value_reg);
             break;
@@ -352,7 +353,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
     assert(bc);
     assert(expr);
 
-    if (expr->kind != AST_Expression_Kind::INTEGER_LITERAL && EXPR_IS_CONST(expr)) {
+    if (expr->kind != AST_Expression_Kind::INTEGER_LITERAL &&
+        expr->kind != AST_Expression_Kind::STRING_LITERAL && EXPR_IS_CONST(expr)) {
         assert_msg(expr->resolved_type->kind == Type_Kind::INTEGER ||
                    expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER ||
                    expr->resolved_type->kind == Type_Kind::BOOLEAN,
@@ -373,7 +375,11 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             return bytecode_integer_literal(bc->builder, literal_type, expr->integer_literal.value);
         }
 
-        case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
+        case AST_Expression_Kind::STRING_LITERAL: {
+            return bytecode_string_literal(bc->builder, &expr->string_literal.atom);
+            break;
+        }
+
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
 
         case AST_Expression_Kind::IDENTIFIER: {

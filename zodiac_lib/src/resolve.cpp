@@ -1226,7 +1226,8 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
                 stmt->print_expr->resolved_type = &builtin_type_s64;
             }
 
-            assert(stmt->print_expr->resolved_type->kind == Type_Kind::INTEGER);
+            assert(stmt->print_expr->resolved_type->kind == Type_Kind::INTEGER ||
+                   stmt->print_expr->resolved_type == &builtin_type_String);
 
             return true;
         }
@@ -1260,7 +1261,12 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             break;
         }
 
-        case AST_Expression_Kind::STRING_LITERAL: assert(false);
+        case AST_Expression_Kind::STRING_LITERAL: {
+            assert(!expr->infer_type_from);
+            expr->resolved_type = &builtin_type_String;
+            break;
+        }
+
         case AST_Expression_Kind::NULL_LITERAL: assert(false);
 
         case AST_Expression_Kind::IDENTIFIER: {

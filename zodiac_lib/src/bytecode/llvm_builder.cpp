@@ -483,6 +483,15 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
                     fmt_str = "%p\n";
                     break;
                 }
+
+                case Type_Kind::STRUCTURE: {
+                    if (bc_inst.a.type == &builtin_type_String) {
+                        fmt_str = "%s\n";
+                    } else {
+                        assert_msg(false, "Unhandled struct type in print (llvm)");
+                    }
+                    break;
+                }
             }
 
             assert(fmt_str);
@@ -985,6 +994,10 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
 
         case Bytecode_Register_Kind::TEMPORARY: {
             assert(!(bc_reg.flags & BC_REGISTER_FLAG_ARGUMENT));
+
+            if (bc_reg.type == &builtin_type_String) {
+                return llvm_builder_emit_string_literal(builder, bc_reg.value.string);
+            }
 
             switch (bc_reg.type->kind) {
                 case Type_Kind::INVALID: { assert(false); break; }
