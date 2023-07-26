@@ -1890,11 +1890,10 @@ file_local MunitResult String_Literals(const MunitParameter params[], void *user
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
     auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
 
-    const char* str_lit = "Hello, Zodiac!";
 
     bytecode_set_insert_point(&bb, main_fn, main_entry_block);
     {
-        auto str_lit_val = bytecode_string_literal(&bb, str_lit);
+        auto str_lit_val = bytecode_string_literal(&bb, "Hello, Zodiac!");
         bytecode_emit_print(&bb, str_lit_val);
         auto return_val = bytecode_integer_literal(&bb, &builtin_type_s64, 0);
         bytecode_emit_return(&bb, return_val);
@@ -1917,7 +1916,7 @@ file_local MunitResult String_Literals(const MunitParameter params[], void *user
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
 
-    assert_zodiac_stream(interp.std_out, str_lit);
+    assert_zodiac_stream(interp.std_out, "Hello, Zodiac!\n");
     munit_assert(filesystem_close(&interp.std_out));
 
     munit_assert_ptr_equal(result_register.type, &builtin_type_s64);
