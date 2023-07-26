@@ -13,12 +13,14 @@ namespace Zodiac
 
 struct Zodiac_Options
 {
+    String_Ref input_file_name = {};
+    String_Ref output_file_name {};
+
+    bool dont_emit_binary = false;
+
     bool print_bytecode = false;
     bool print_llvm_ir = false;
     bool verbose = false;
-
-    String_Ref input_file_name = {};
-    String_Ref output_file_name {};
 };
 
 struct Zodiac_Error;

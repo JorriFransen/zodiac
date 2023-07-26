@@ -136,26 +136,28 @@ int main(int argc, const char **argv) {
         assert_msg(false, "Unexpected return type from entry point")
     }
 
-    LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
+    if (!opts->dont_emit_binary) {
+        LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
 
-    for (s64 i = 0; i < program.globals.count; i++) {
-        llvm_builder_emit_global(&llvm_builder, i);
+        for (s64 i = 0; i < program.globals.count; i++) {
+            llvm_builder_emit_global(&llvm_builder, i);
+        }
+
+        for (s64 i = 0; i < program.functions.count; i++) {
+            llvm_builder_register_function(&llvm_builder, i);
+        }
+
+        for (s64 i = 0; i < program.functions.count; i++) {
+            bool result = llvm_builder_emit_function(&llvm_builder, i);
+            assert(result);
+        }
+
+        if (opts->print_llvm_ir) llvm_builder_print(&llvm_builder);
+
+        llvm_builder_emit_binary(&llvm_builder);
+
+        llvm_builder_free(&llvm_builder);
     }
-
-    for (s64 i = 0; i < program.functions.count; i++) {
-        llvm_builder_register_function(&llvm_builder, i);
-    }
-
-    for (s64 i = 0; i < program.functions.count; i++) {
-        bool result = llvm_builder_emit_function(&llvm_builder, i);
-        assert(result);
-    }
-
-    if (opts->print_llvm_ir) llvm_builder_print(&llvm_builder);
-
-    llvm_builder_emit_binary(&llvm_builder);
-
-    llvm_builder_free(&llvm_builder);
 
     return 0;
 }
