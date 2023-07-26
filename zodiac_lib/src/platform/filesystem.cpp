@@ -149,7 +149,12 @@ void filesystem_remove(const String_Ref path)
 bool filesystem_read(File_Handle *handle, u64 size, u8 *out_bytes, u64 *out_size)
 {
     assert(handle && handle->valid && handle->handle);
-    assert(size && out_bytes && out_size);
+    assert(out_bytes && out_size);
+
+    if (!size) {
+        *out_size = 0;
+        return true;
+    }
 
     *out_size = fread(out_bytes, 1, size, (FILE *)handle->handle);
     if (*out_size != size) {

@@ -1,6 +1,6 @@
 {
     "configurations": {
-        "Launch": {
+        "Zodiac": {
             "adapter": "vscode-cpptools",
             "filetypes": [ "cpp", "c" ],
             "configuration": {
@@ -11,6 +11,25 @@
                 "environment": [],
                 "externalConsole": false,
                 "MIMode": "gdb"
+            }
+        },
+        "Zodiac Tests": {
+            "adapter": "vscode-cpptools",
+            "filetypes": [ "cpp", "c" ],
+            "configuration": {
+                "request": "launch",
+                "program": "bin/zodiac_tests",
+                "args": [ "BC/String_Literals" ],
+                "cwd": "${workspaceRoot}",
+                "environment": [],
+                "externalConsole": false,
+                "MIMode": "gdb",
+                "setupCommands": [
+                    {
+                        "description": "Following child process on fork",
+                        "text": "set follow-fork-mode child"
+                    }
+                ]
             }
         }
     }

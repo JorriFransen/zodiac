@@ -84,7 +84,7 @@ file_local MunitResult Building_1(const MunitParameter params[], void* user_data
     char _buf[_buf_size]; \
     u64 read_length; \
     bool read_res = filesystem_read(&stream, length, (u8 *)_buf, &read_length); \
-    munit_assert_int((int)read_length, ==, length); \
+    munit_assert_int(read_length, ==, length); \
     _buf[length] = '\0'; \
     munit_assert_int((int)strlen(_buf), ==, (int)strlen(expected_string)); \
     munit_assert_string_equal(_buf, expected_string); \
