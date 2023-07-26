@@ -5,8 +5,16 @@ Vec2 :: struct {
     y: r32;
 }
 
+Rect :: struct {
+    pos: Vec2;
+    size: Vec2;
+}
+
 main :: () -> s64 {
-    p : Vec2;
+
+    r : Rect;
+    r.pos.x = 1;
+
     return 42;
 }
 

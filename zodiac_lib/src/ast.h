@@ -42,6 +42,9 @@ struct AST_Member_Expression
 {
     AST_Expression *base;
     Atom member_name;
+
+    // Used for nested member expressions
+    AST_Declaration *type_decl;
 };
 
 struct AST_Index_Expression

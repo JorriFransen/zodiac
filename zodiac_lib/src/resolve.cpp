@@ -479,7 +479,12 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
             break;
         }
 
-        case AST_Expression_Kind::MEMBER: assert(false);
+        case AST_Expression_Kind::MEMBER: {
+            assert(!infer_type_from);
+            flatten_expression(expr->member.base, scope, dest, nullptr);
+            break;
+        }
+
         case AST_Expression_Kind::INDEX: assert(false);
 
         case AST_Expression_Kind::CALL: {
@@ -868,7 +873,66 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             break;
         }
 
-        case AST_Expression_Kind::MEMBER: assert(false);
+        case AST_Expression_Kind::MEMBER: {
+            AST_Expression *base = expr->member.base;
+            AST_Declaration *base_decl = nullptr;
+            AST_Declaration *base_type_decl = nullptr;
+
+            if (base->kind == AST_Expression_Kind::IDENTIFIER) {
+
+                Symbol *base_sym = scope_get_symbol(scope, base->identifier);
+                assert(base_sym->state == Symbol_State::RESOLVED);
+                assert(base_sym->decl);
+                base_decl = base_sym->decl;
+                assert(base_decl->kind == AST_Declaration_Kind::VARIABLE);
+
+            } else {
+                assert(base->kind == AST_Expression_Kind::MEMBER);
+                base_type_decl = base->member.type_decl;
+            }
+
+            Scope *base_scope = nullptr;
+
+            if (base_decl->variable.type_spec) {
+
+                auto ts = base_decl->variable.type_spec;
+                assert(ts->kind == AST_Type_Spec_Kind::NAME);
+
+                auto base_type_decl_sym = scope_get_symbol(scope, ts->identifier);
+                assert(base_type_decl_sym);
+                assert(base_type_decl_sym->kind == Symbol_Kind::TYPE);
+                assert(base_type_decl_sym->decl);
+                assert(base_type_decl_sym->aggregate.scope);
+
+                base_type_decl = base_type_decl_sym->decl;
+                base_scope = base_type_decl_sym->aggregate.scope;
+
+            } else {
+                assert(false);
+            }
+
+            assert(base_type_decl);
+            assert(base_type_decl->kind == AST_Declaration_Kind::STRUCT);
+
+            Symbol *mem_sym = scope_get_symbol(base_scope, expr->member.member_name);
+            if (!mem_sym) {
+                auto aggregate_name = base_type_decl->identifier.name.data;
+                resolve_error(ctx, expr, "'%s' is not a member of '%s'", expr->member.member_name.data, aggregate_name);
+                resolve_error(ctx, base_type_decl, "'%s' defined here", aggregate_name);
+                result = false;
+                break;
+            }
+
+            assert(mem_sym->decl);
+            assert(expr->member.type_decl == nullptr);
+            expr->member.type_decl = mem_sym->decl;
+
+
+            assert(mem_sym && mem_sym->kind == Symbol_Kind::MEMBER);
+            result = mem_sym->state == Symbol_State::RESOLVED;
+            break;
+        }
+
         case AST_Expression_Kind::INDEX: assert(false);
         case AST_Expression_Kind::UNARY: assert(false);
     }
