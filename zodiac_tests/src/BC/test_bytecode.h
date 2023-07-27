@@ -39,6 +39,8 @@ file_local MunitResult Building_1(const MunitParameter params[], void* user_data
     zodiac_context_create(&zc);
 
     Bytecode_Builder bb = bytecode_builder_create(c_allocator(), &zc);
+    defer { bytecode_builder_free(&bb); };
+
     Type *main_fn_type = get_function_type(&builtin_type_void, {}, &zc.ast_allocator);
 
     Bytecode_Function_Handle fn_handle = bytecode_function_create(&bb, "main_fn", main_fn_type);
@@ -71,9 +73,6 @@ file_local MunitResult Building_1(const MunitParameter params[], void* user_data
 
     print_bytecode(bb);
 
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
-
     return MUNIT_OK;
 }
 
@@ -96,8 +95,11 @@ file_local MunitResult Simple_Function_Call(const MunitParameter params[], void*
 {
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
 
     Bytecode_Builder bb = bytecode_builder_create(c_allocator(), &zc);
+    defer { bytecode_builder_free(&bb); };
+
     Type *main_fn_type = get_function_type(&builtin_type_void, {}, &zc.ast_allocator);
 
     Bytecode_Function_Handle fn_handle = bytecode_function_create(&bb, "main_fn", main_fn_type);
@@ -120,36 +122,29 @@ file_local MunitResult Simple_Function_Call(const MunitParameter params[], void*
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-    bool bytecode_valid = validate_bytecode(&validator);
+    defer { bytecode_validator_free(&validator); };
 
-    MunitResult result = MUNIT_OK;
+    bool bytecode_valid = validate_bytecode(&validator);
 
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        result = MUNIT_FAIL;
-
-    } else {
-
-        Interpreter interp = interpreter_create(c_allocator(), &zc);
-        filesystem_temp_file(&interp.std_out);
-
-        auto program = bytecode_get_program(&bb);
-        program.entry_handle = fn_handle;
-        interpreter_start(&interp, program);
-
-        assert_zodiac_stream(interp.std_out, "42\n");
-
-        munit_assert(filesystem_close(&interp.std_out));
-
-        interpreter_free(&interp);
+        return MUNIT_FAIL;
 
     }
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
+    Interpreter interp = interpreter_create(c_allocator(), &zc);
+    defer { interpreter_free(&interp); };
 
-    return result;
+    filesystem_temp_file(&interp.std_out);
+    defer { filesystem_close(&interp.std_out); };
+
+    auto program = bytecode_get_program(&bb);
+    program.entry_handle = fn_handle;
+    interpreter_start(&interp, program);
+
+    assert_zodiac_stream(interp.std_out, "42\n");
+
+    return MUNIT_OK;
 }
 
 file_local MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* user_data_or_fixture)
@@ -158,7 +153,10 @@ file_local MunitResult Arguments_And_Return_Values(const MunitParameter params[]
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     // ADD
     Type *add_args[] = { &builtin_type_s64, &builtin_type_s64 };
@@ -199,35 +197,28 @@ file_local MunitResult Arguments_And_Return_Values(const MunitParameter params[]
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-    bool bytecode_valid = validate_bytecode(&validator);
+    defer { bytecode_validator_free(&validator); };
 
-    MunitResult result = MUNIT_OK;
+    bool bytecode_valid = validate_bytecode(&validator);
 
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        result = MUNIT_FAIL;
-
-    } else {
-        Interpreter interp = interpreter_create(c_alloc, &zc);
-
-        filesystem_temp_file(&interp.std_out);
-
-        auto program = bytecode_get_program(&bb);
-        program.entry_handle = main_fn_handle;
-        interpreter_start(&interp, program);
-
-        assert_zodiac_stream(interp.std_out, "42\n42\n");
-
-        munit_assert(filesystem_close(&interp.std_out));
-
-        interpreter_free(&interp);
+        return MUNIT_FAIL;
     }
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
+    Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
 
-    return result;
+    filesystem_temp_file(&interp.std_out);
+    defer { filesystem_close(&interp.std_out); };
+
+    auto program = bytecode_get_program(&bb);
+    program.entry_handle = main_fn_handle;
+    interpreter_start(&interp, program);
+
+    assert_zodiac_stream(interp.std_out, "42\n42\n");
+
+    return MUNIT_OK;
 }
 
 file_local MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_or_fixture)
@@ -236,7 +227,10 @@ file_local MunitResult Recursion_And_Jumps(const MunitParameter params[], void* 
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     // recurse
     Type *param_types[] = { &builtin_type_s64 };
@@ -290,35 +284,28 @@ file_local MunitResult Recursion_And_Jumps(const MunitParameter params[], void* 
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-    bool bytecode_valid = validate_bytecode(&validator);
+    defer { bytecode_validator_free(&validator); } ;
 
-    MunitResult result = MUNIT_OK;
+    bool bytecode_valid = validate_bytecode(&validator);
 
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        result = MUNIT_FAIL;
+        return MUNIT_FAIL;
 
-    } else {
-        Interpreter interp = interpreter_create(c_alloc, &zc);
-
-        filesystem_temp_file(&interp.std_out);
-
-        auto program = bytecode_get_program(&bb);
-        program.entry_handle = main_fn_handle;
-        interpreter_start(&interp, program);
-
-        assert_zodiac_stream(interp.std_out, "true\ntrue\nfalse\n0\n");
-
-        munit_assert(filesystem_close(&interp.std_out));
-
-        interpreter_free(&interp);
     }
+    Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
+    filesystem_temp_file(&interp.std_out);
+    defer { filesystem_close(&interp.std_out); };
 
-    return result;
+    auto program = bytecode_get_program(&bb);
+    program.entry_handle = main_fn_handle;
+    interpreter_start(&interp, program);
+
+    assert_zodiac_stream(interp.std_out, "true\ntrue\nfalse\n0\n");
+
+    return MUNIT_OK;
 }
 
 file_local MunitResult Insert_And_Extract_Value(const MunitParameter params[], void *user_data_or_fixture)
@@ -327,7 +314,10 @@ file_local MunitResult Insert_And_Extract_Value(const MunitParameter params[], v
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     auto fn_type = get_function_type(&builtin_type_void, { }, &zc.ast_allocator);
     auto fn = bytecode_function_create(&bb, "insert_and_extract_value", fn_type);
@@ -365,34 +355,29 @@ file_local MunitResult Insert_And_Extract_Value(const MunitParameter params[], v
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    defer { bytecode_validator_free(&validator); };
+
     bool bytecode_valid = validate_bytecode(&validator);
 
-    MunitResult result = MUNIT_OK;
 
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        result = MUNIT_FAIL;
-
-    } else {
-
-        auto interp = interpreter_create(c_alloc, &zc);
-        filesystem_temp_file(&interp.std_out);
-        auto program = bytecode_get_program(&bb);
-        program.entry_handle = fn;
-        interpreter_start(&interp, program);
-
-        assert_zodiac_stream(interp.std_out, "42\n24\n");
-
-        munit_assert(filesystem_close(&interp.std_out));
-
-        interpreter_free(&interp);
+        return MUNIT_FAIL;
     }
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
+    auto interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
 
-    return result;
+    filesystem_temp_file(&interp.std_out);
+    defer { munit_assert(filesystem_close(&interp.std_out)); };
+
+    auto program = bytecode_get_program(&bb);
+    program.entry_handle = fn;
+    interpreter_start(&interp, program);
+
+    assert_zodiac_stream(interp.std_out, "42\n24\n");
+
+    return MUNIT_OK;
 }
 
 file_local MunitResult Extract_Struct_Value(const MunitParameter params[], void *user_data_or_fixture)
@@ -401,7 +386,10 @@ file_local MunitResult Extract_Struct_Value(const MunitParameter params[], void 
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
     Type *vec2_type = get_struct_type(&zc, vec2_mem_types, "vec2", &zc.ast_allocator);
@@ -456,18 +444,16 @@ file_local MunitResult Extract_Struct_Value(const MunitParameter params[], void 
     print_bytecode(bb);
 
     Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
+
     filesystem_temp_file(&interp.std_out);
+    defer { munit_assert(filesystem_close(&interp.std_out)); };
+
     auto program = bytecode_get_program(&bb);
     program.entry_handle = main_fn;
     interpreter_start(&interp, program);
 
     assert_zodiac_stream(interp.std_out, "1\n2\n3\n4\n");
-
-    munit_assert(filesystem_close(&interp.std_out));
-
-    interpreter_free(&interp);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
 
     return MUNIT_OK;
 }
@@ -478,7 +464,10 @@ file_local MunitResult Return_Struct(const MunitParameter params[], void *user_d
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
     Type *vec2_type = get_struct_type(&zc, vec2_mem_types, "vec2", &zc.ast_allocator);
@@ -515,38 +504,31 @@ file_local MunitResult Return_Struct(const MunitParameter params[], void *user_d
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-    bool bytecode_valid = validate_bytecode(&validator);
+    defer { bytecode_validator_free(&validator); };
 
-    MunitResult result = MUNIT_OK;
+    bool bytecode_valid = validate_bytecode(&validator);
 
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        result = MUNIT_FAIL;
-
-    } else {
-
-        Interpreter interp = interpreter_create(c_alloc, &zc);
-        filesystem_temp_file(&interp.std_out);
-
-        auto program = bytecode_get_program(&bb);
-        program.entry_handle = main_fn;
-        Interpreter_Register result_register = interpreter_start(&interp, program);
-
-        munit_assert(result_register.type == &builtin_type_s64);
-        munit_assert_int64(result_register.value.integer.s64, ==, 66);
-
-        assert_zodiac_stream(interp.std_out, "42\n24\n");
-
-        munit_assert(filesystem_close(&interp.std_out));
-
-        interpreter_free(&interp);
+        return MUNIT_OK;
     }
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
+    Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
 
-    return result;
+    filesystem_temp_file(&interp.std_out);
+    defer { munit_assert(filesystem_close(&interp.std_out)); };
+
+    auto program = bytecode_get_program(&bb);
+    program.entry_handle = main_fn;
+    Interpreter_Register result_register = interpreter_start(&interp, program);
+
+    munit_assert(result_register.type == &builtin_type_s64);
+    munit_assert_int64(result_register.value.integer.s64, ==, 66);
+
+    assert_zodiac_stream(interp.std_out, "42\n24\n");
+
+    return MUNIT_OK;
 }
 
 file_local MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_fixture)
@@ -555,7 +537,10 @@ file_local MunitResult Struct_Arguments(const MunitParameter params[], void *use
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     Type *vec2_mem_types[] = { &builtin_type_r32, &builtin_type_r32 };
     Type *vec2_type = get_struct_type(&zc, vec2_mem_types, "vec2", &zc.ast_allocator);
@@ -626,36 +611,30 @@ file_local MunitResult Struct_Arguments(const MunitParameter params[], void *use
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-    bool bytecode_valid = validate_bytecode(&validator);
+    defer { bytecode_validator_free(&validator); };
 
-    MunitResult result = MUNIT_OK;
+    bool bytecode_valid = validate_bytecode(&validator);
 
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        result = MUNIT_FAIL;
-
-    } else {
-
-        Interpreter interp = interpreter_create(c_alloc, &zc);
-        filesystem_temp_file(&interp.std_out);
-        auto program = bytecode_get_program(&bb);
-        program.entry_handle = main_fn;
-        Interpreter_Register result_register = interpreter_start(&interp, program);
-        munit_assert(result_register.type == &builtin_type_s64);
-        munit_assert_int64(result_register.value.integer.s64, ==, 42);
-
-        assert_zodiac_stream(interp.std_out, "3.000000\n4.000000\n5.000000\n");
-
-        munit_assert(filesystem_close(&interp.std_out));
-
-        interpreter_free(&interp);
+        return MUNIT_FAIL;
     }
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
+    Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
 
-    return result;
+    filesystem_temp_file(&interp.std_out);
+    defer { munit_assert(filesystem_close(&interp.std_out)); };
+
+    auto program = bytecode_get_program(&bb);
+    program.entry_handle = main_fn;
+    Interpreter_Register result_register = interpreter_start(&interp, program);
+    munit_assert(result_register.type == &builtin_type_s64);
+    munit_assert_int64(result_register.value.integer.s64, ==, 42);
+
+    assert_zodiac_stream(interp.std_out, "3.000000\n4.000000\n5.000000\n");
+
+    return MUNIT_OK;
 }
 
 file_local MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fixture)
@@ -664,7 +643,10 @@ file_local MunitResult Basic_Pointers(const MunitParameter params[], void *user_
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -688,36 +670,32 @@ file_local MunitResult Basic_Pointers(const MunitParameter params[], void *user_
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    defer { bytecode_validator_free(&validator); };
+
     bool bytecode_valid = validate_bytecode(&validator);
 
     MunitResult result = MUNIT_OK;
 
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        result = MUNIT_FAIL;
-
-    } else {
-
-        Interpreter interp = interpreter_create(c_alloc, &zc);
-        filesystem_temp_file(&interp.std_out);
-        auto program = bytecode_get_program(&bb);
-        program.entry_handle = main_fn;
-        Interpreter_Register result_register = interpreter_start(&interp, program);
-        munit_assert(result_register.type == &builtin_type_s64);
-        munit_assert_int64(result_register.value.integer.s64, ==, 43);
-
-        assert_zodiac_stream(interp.std_out, "42\n");
-
-        munit_assert(filesystem_close(&interp.std_out));
-
-        interpreter_free(&interp);
+        return MUNIT_FAIL;
     }
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
+    Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
 
-    return result;
+    filesystem_temp_file(&interp.std_out);
+    defer { munit_assert(filesystem_close(&interp.std_out)); };
+
+    auto program = bytecode_get_program(&bb);
+    program.entry_handle = main_fn;
+    Interpreter_Register result_register = interpreter_start(&interp, program);
+    munit_assert(result_register.type == &builtin_type_s64);
+    munit_assert_int64(result_register.value.integer.s64, ==, 43);
+
+    assert_zodiac_stream(interp.std_out, "42\n");
+
+    return MUNIT_OK;
 }
 
 file_local MunitResult Struct_Pointers(const MunitParameter params[], void *user_data_or_fixture)
@@ -726,7 +704,10 @@ file_local MunitResult Struct_Pointers(const MunitParameter params[], void *user
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
     Type *vec_type = get_struct_type(&zc, vec_mem_types, "Vec2", &zc.ast_allocator);
@@ -755,29 +736,25 @@ file_local MunitResult Struct_Pointers(const MunitParameter params[], void *user
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-    bool bytecode_valid = validate_bytecode(&validator);
+    defer { bytecode_validator_free(&validator); };
 
-    MunitResult result = MUNIT_OK;
+    bool bytecode_valid = validate_bytecode(&validator);
 
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        result = MUNIT_FAIL;
-
-    } else {
-
-        Interpreter interp = interpreter_create(c_alloc, &zc);
-        auto progam = bytecode_get_program(&bb);
-        progam.entry_handle = main_fn;
-        Interpreter_Register result_register = interpreter_start(&interp, progam);
-        munit_assert(result_register.type == &builtin_type_s64);
-        munit_assert_int64(result_register.value.integer.s64, ==, 66);
+        return MUNIT_FAIL;
     }
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
+    Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
 
-    return result;
+    auto progam = bytecode_get_program(&bb);
+    progam.entry_handle = main_fn;
+    Interpreter_Register result_register = interpreter_start(&interp, progam);
+    munit_assert(result_register.type == &builtin_type_s64);
+    munit_assert_int64(result_register.value.integer.s64, ==, 66);
+
+    return MUNIT_OK;
 }
 
 file_local MunitResult Invalid_Extract_Element(const MunitParameter params[], void *user_data_or_fixture)
@@ -786,7 +763,10 @@ file_local MunitResult Invalid_Extract_Element(const MunitParameter params[], vo
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
     Type *vec_type = get_struct_type(&zc, vec_mem_types, "Vec2", &zc.ast_allocator);
@@ -814,6 +794,8 @@ file_local MunitResult Invalid_Extract_Element(const MunitParameter params[], vo
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    defer { bytecode_validator_free(&validator); };
+
     bool bytecode_valid = validate_bytecode(&validator);
 
     bytecode_validator_print_errors(&validator);
@@ -828,10 +810,6 @@ file_local MunitResult Invalid_Extract_Element(const MunitParameter params[], vo
     munit_assert_int64(err->message.length, ==, (s64)strlen(expected_msg));
     munit_assert_string_equal(err->message.data, expected_msg);
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
-
     return MUNIT_OK;
 }
 
@@ -841,7 +819,10 @@ file_local MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
     Type *vec_type = get_struct_type(&zc, vec_mem_types, "Vec2", &zc.ast_allocator);
@@ -885,36 +866,30 @@ file_local MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-    bool bytecode_valid = validate_bytecode(&validator);
+    defer { bytecode_validator_free(&validator); };
 
-    MunitResult result = MUNIT_OK;
+    bool bytecode_valid = validate_bytecode(&validator);
 
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        result = MUNIT_FAIL;
-
-    } else {
-
-        Interpreter interp = interpreter_create(c_alloc, &zc);
-        filesystem_temp_file(&interp.std_out);
-        auto program = bytecode_get_program(&bb);
-        program.entry_handle = main_fn;
-        Interpreter_Register result_register = interpreter_start(&interp, program);
-        munit_assert(result_register.type == &builtin_type_s64);
-        munit_assert_int64(result_register.value.integer.s64, ==, 132);
-
-        assert_zodiac_stream(interp.std_out, "66\n132\n");
-
-        munit_assert(filesystem_close(&interp.std_out));
-
-        interpreter_free(&interp);
+        return MUNIT_FAIL;
     }
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
+    Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
 
-    return result;
+    filesystem_temp_file(&interp.std_out);
+    defer { munit_assert(filesystem_close(&interp.std_out)); };
+
+    auto program = bytecode_get_program(&bb);
+    program.entry_handle = main_fn;
+    Interpreter_Register result_register = interpreter_start(&interp, program);
+    munit_assert(result_register.type == &builtin_type_s64);
+    munit_assert_int64(result_register.value.integer.s64, ==, 132);
+
+    assert_zodiac_stream(interp.std_out, "66\n132\n");
+
+    return MUNIT_OK;
 }
 
 file_local MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture)
@@ -923,7 +898,10 @@ file_local MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
     Type *vec_type = get_struct_type(&zc, vec_mem_types, "Vec2", &zc.ast_allocator);
@@ -975,36 +953,29 @@ file_local MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-    bool bytecode_valid = validate_bytecode(&validator);
+    defer { bytecode_validator_free(&validator); };
 
-    MunitResult result = MUNIT_OK;
+    bool bytecode_valid = validate_bytecode(&validator);
 
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        result = MUNIT_FAIL;
-
-    } else {
-
-        Interpreter interp = interpreter_create(c_alloc, &zc);
-        filesystem_temp_file(&interp.std_out);
-        auto program = bytecode_get_program(&bb);
-        program.entry_handle = main_fn;
-        Interpreter_Register result_register = interpreter_start(&interp, program);
-        munit_assert(result_register.type == &builtin_type_s64);
-        munit_assert_int64(result_register.value.integer.s64, ==, 33);
-
-        assert_zodiac_stream(interp.std_out, "11\n22\n33\n44\n");
-
-        munit_assert(filesystem_close(&interp.std_out));
-
-        interpreter_free(&interp);
+        return MUNIT_FAIL;
     }
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
+    Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
 
-    return result;
+    filesystem_temp_file(&interp.std_out);
+    defer { munit_assert(filesystem_close(&interp.std_out)); };
+    auto program = bytecode_get_program(&bb);
+    program.entry_handle = main_fn;
+    Interpreter_Register result_register = interpreter_start(&interp, program);
+    munit_assert(result_register.type == &builtin_type_s64);
+    munit_assert_int64(result_register.value.integer.s64, ==, 33);
+
+    assert_zodiac_stream(interp.std_out, "11\n22\n33\n44\n");
+
+    return MUNIT_OK;
 }
 
 file_local MunitResult Insert_And_Extract_Element(const MunitParameter params[], void *user_data_or_fixture)
@@ -1013,7 +984,10 @@ file_local MunitResult Insert_And_Extract_Element(const MunitParameter params[],
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     auto array_type = get_static_array_type(&builtin_type_s64, 5, &zc.ast_allocator);
 
@@ -1050,37 +1024,30 @@ file_local MunitResult Insert_And_Extract_Element(const MunitParameter params[],
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-    bool bytecode_valid = validate_bytecode(&validator);
+    defer { bytecode_validator_free(&validator); };
 
-    MunitResult result = MUNIT_OK;
+    bool bytecode_valid = validate_bytecode(&validator);
 
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        result = MUNIT_FAIL;
-
-    } else {
-
-
-        Interpreter interp = interpreter_create(c_alloc, &zc);
-        filesystem_temp_file(&interp.std_out);
-        auto program = bytecode_get_program(&bb);
-        program.entry_handle = main_fn;
-        Interpreter_Register result_register = interpreter_start(&interp, program);
-        munit_assert(result_register.type == &builtin_type_s64);
-        munit_assert_int64(result_register.value.integer.s64, ==, 15);
-
-        assert_zodiac_stream(interp.std_out, "5\n4\n3\n2\n1\n15\n");
-
-        munit_assert(filesystem_close(&interp.std_out));
-
-        interpreter_free(&interp);
+        return MUNIT_FAIL;
     }
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
+    Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
 
-    return result;
+    filesystem_temp_file(&interp.std_out);
+    defer { munit_assert(filesystem_close(&interp.std_out)); };
+
+    auto program = bytecode_get_program(&bb);
+    program.entry_handle = main_fn;
+    Interpreter_Register result_register = interpreter_start(&interp, program);
+    munit_assert(result_register.type == &builtin_type_s64);
+    munit_assert_int64(result_register.value.integer.s64, ==, 15);
+
+    assert_zodiac_stream(interp.std_out, "5\n4\n3\n2\n1\n15\n");
+
+    return MUNIT_OK;
 }
 
 file_local MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture)
@@ -1089,7 +1056,10 @@ file_local MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     auto array_type = get_static_array_type(&builtin_type_s64, 5, &zc.ast_allocator);
 
@@ -1137,36 +1107,31 @@ file_local MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-    bool bytecode_valid = validate_bytecode(&validator);
+    defer { bytecode_validator_free(&validator); };
 
-    MunitResult result = MUNIT_OK;
+    bool bytecode_valid = validate_bytecode(&validator);
 
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        result = MUNIT_FAIL;
+        return MUNIT_FAIL;
 
-    } else {
-
-        Interpreter interp = interpreter_create(c_alloc, &zc);
-        filesystem_temp_file(&interp.std_out);
-        auto program = bytecode_get_program(&bb);
-        program.entry_handle = main_fn;
-        Interpreter_Register result_register = interpreter_start(&interp, program);
-        munit_assert(result_register.type == &builtin_type_s64);
-        munit_assert_int64(result_register.value.integer.s64, ==, 30);
-
-        assert_zodiac_stream(interp.std_out, "5\n4\n3\n2\n1\n5\n4\n3\n2\n1\n30\n");
-
-        munit_assert(filesystem_close(&interp.std_out));
-
-        interpreter_free(&interp);
     }
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
+    Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
 
-    return result;
+    filesystem_temp_file(&interp.std_out);
+    defer { munit_assert(filesystem_close(&interp.std_out)); };
+
+    auto program = bytecode_get_program(&bb);
+    program.entry_handle = main_fn;
+    Interpreter_Register result_register = interpreter_start(&interp, program);
+    munit_assert(result_register.type == &builtin_type_s64);
+    munit_assert_int64(result_register.value.integer.s64, ==, 30);
+
+    assert_zodiac_stream(interp.std_out, "5\n4\n3\n2\n1\n5\n4\n3\n2\n1\n30\n");
+
+    return MUNIT_OK;
 }
 
 file_local MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_data_or_fixture)
@@ -1175,7 +1140,10 @@ file_local MunitResult Calling_Function_Pointers(const MunitParameter params[], 
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     Type *add_arg_types[] = { &builtin_type_s64, &builtin_type_s64 };
     auto add_fn_type = get_function_type(&builtin_type_s64, add_arg_types, &zc.ast_allocator);
@@ -1261,36 +1229,29 @@ file_local MunitResult Calling_Function_Pointers(const MunitParameter params[], 
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-    bool bytecode_valid = validate_bytecode(&validator);
+    defer { bytecode_validator_free(&validator); };
 
-    MunitResult result = MUNIT_OK;
+    bool bytecode_valid = validate_bytecode(&validator);
 
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        result = MUNIT_FAIL;
-
-    } else {
-
-        Interpreter interp = interpreter_create(c_alloc, &zc);
-        filesystem_temp_file(&interp.std_out);
-        auto program = bytecode_get_program(&bb);
-        program.entry_handle = main_fn;
-        Interpreter_Register result_register = interpreter_start(&interp, program);
-        munit_assert(result_register.type == &builtin_type_s64);
-        munit_assert_int64(result_register.value.integer.s64, ==, 66);
-
-        assert_zodiac_stream(interp.std_out, "66\n66\n66\n66\n33\n33\n");
-
-        munit_assert(filesystem_close(&interp.std_out));
-
-        interpreter_free(&interp);
+        return MUNIT_FAIL;
     }
+    Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
+    filesystem_temp_file(&interp.std_out);
+    defer { munit_assert(filesystem_close(&interp.std_out)); };
 
-    return result;
+    auto program = bytecode_get_program(&bb);
+    program.entry_handle = main_fn;
+    Interpreter_Register result_register = interpreter_start(&interp, program);
+    munit_assert(result_register.type == &builtin_type_s64);
+    munit_assert_int64(result_register.value.integer.s64, ==, 66);
+
+    assert_zodiac_stream(interp.std_out, "66\n66\n66\n66\n33\n33\n");
+
+    return MUNIT_OK;
 }
 
 
@@ -1300,7 +1261,10 @@ file_local MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
     Type *vec2_type = get_struct_type(&zc, vec2_mem_types, "vec2", &zc.ast_allocator);
@@ -1390,36 +1354,29 @@ file_local MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
-    bool bytecode_valid = validate_bytecode(&validator);
+    defer { bytecode_validator_free(&validator); };
 
-    MunitResult result = MUNIT_OK;
+    bool bytecode_valid = validate_bytecode(&validator);
 
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        result = MUNIT_FAIL;
-
-    } else {
-
-        Interpreter interp = interpreter_create(c_alloc, &zc);
-        filesystem_temp_file(&interp.std_out);
-        auto program = bytecode_get_program(&bb);
-        program.entry_handle = main_fn;
-        Interpreter_Register result_register = interpreter_start(&interp, program);
-        munit_assert(result_register.type == &builtin_type_s64);
-        munit_assert_int64(result_register.value.integer.s64, ==, 66);
-
-        assert_zodiac_stream(interp.std_out, "42\n24\n66\n42\n24\n66\n");
-
-        munit_assert(filesystem_close(&interp.std_out));
-
-        interpreter_free(&interp);
+        return MUNIT_FAIL;
     }
+    Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
+    filesystem_temp_file(&interp.std_out);
+    defer { munit_assert(filesystem_close(&interp.std_out)); };
 
-    return result;
+    auto program = bytecode_get_program(&bb);
+    program.entry_handle = main_fn;
+    Interpreter_Register result_register = interpreter_start(&interp, program);
+    munit_assert(result_register.type == &builtin_type_s64);
+    munit_assert_int64(result_register.value.integer.s64, ==, 66);
+
+    assert_zodiac_stream(interp.std_out, "42\n24\n66\n42\n24\n66\n");
+
+    return MUNIT_OK;
 }
 
 file_local MunitResult BC_Callback_From_C(const MunitParameter params[], void *user_data_or_fixture)
@@ -1428,7 +1385,10 @@ file_local MunitResult BC_Callback_From_C(const MunitParameter params[], void *u
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     Interpreter interp = interpreter_create(c_alloc, &zc);
     filesystem_temp_file(&interp.std_out);
@@ -1501,6 +1461,8 @@ file_local MunitResult BC_Callback_From_C(const MunitParameter params[], void *u
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    defer { bytecode_validator_free(&validator); };
+
     bool bytecode_valid = validate_bytecode(&validator);
 
     MunitResult result = MUNIT_OK;
@@ -1524,10 +1486,6 @@ file_local MunitResult BC_Callback_From_C(const MunitParameter params[], void *u
         interpreter_free(&interp);
     }
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
-
     return result;
 }
 
@@ -1537,7 +1495,10 @@ file_local MunitResult Non_Return_Error_Simple(const MunitParameter params[], vo
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -1604,6 +1565,8 @@ file_local MunitResult Non_Return_Error_Simple(const MunitParameter params[], vo
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    defer { bytecode_validator_free(&validator); };
+
     bool bytecode_valid = validate_bytecode(&validator);
 
     munit_assert_false(bytecode_valid);
@@ -1618,10 +1581,6 @@ file_local MunitResult Non_Return_Error_Simple(const MunitParameter params[], vo
     munit_assert_int64(err->message.length, ==, (s64)strlen(expected_err_msg));
     munit_assert_string_equal(err->message.data, expected_err_msg);
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
-
     return MUNIT_OK;
 }
 
@@ -1631,7 +1590,10 @@ file_local MunitResult Non_Return_Error_Indirect(const MunitParameter params[], 
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -1679,6 +1641,8 @@ file_local MunitResult Non_Return_Error_Indirect(const MunitParameter params[], 
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    defer { bytecode_validator_free(&validator); };
+
     bool bytecode_valid = validate_bytecode(&validator);
 
     bytecode_validator_print_errors(&validator);
@@ -1694,10 +1658,6 @@ file_local MunitResult Non_Return_Error_Indirect(const MunitParameter params[], 
     munit_assert_int64(err->message.length, ==, (s64)strlen(expected_msg));
     munit_assert_string_equal(err->message.data, expected_msg);
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
-
     return MUNIT_OK;
 }
 
@@ -1707,7 +1667,10 @@ file_local MunitResult Non_Return_Flag(const MunitParameter params[], void *user
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -1746,6 +1709,8 @@ file_local MunitResult Non_Return_Flag(const MunitParameter params[], void *user
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    defer { bytecode_validator_free(&validator); };
+
     bool bytecode_valid = validate_bytecode(&validator);
 
     bytecode_validator_print_errors(&validator);
@@ -1765,10 +1730,6 @@ file_local MunitResult Non_Return_Flag(const MunitParameter params[], void *user
     munit_assert_int64(ve.instruction_handle.block_index, ==, 1);
     munit_assert_int64(ve.instruction_handle.instruction_index, ==, -1);
 
-    bytecode_validator_free(&validator);
-    bytecode_builder_free(&bb);
-    zodiac_context_destroy(&zc);
-
     return MUNIT_OK;
 }
 
@@ -1778,7 +1739,10 @@ file_local MunitResult Globals(const MunitParameter params[], void *user_data_or
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     auto global_var = bytecode_create_global(&bb, "global_var", &builtin_type_s64);
     auto global_var2 = bytecode_create_global(&bb, "global_var2", &builtin_type_s64, bytecode_integer_literal(&bb, &builtin_type_s64, 42));
@@ -1803,6 +1767,8 @@ file_local MunitResult Globals(const MunitParameter params[], void *user_data_or
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    defer { bytecode_validator_free(&validator); };
+
     bool bytecode_valid = validate_bytecode(&validator);
 
     bytecode_validator_print_errors(&validator);
@@ -1811,18 +1777,19 @@ file_local MunitResult Globals(const MunitParameter params[], void *user_data_or
     munit_assert_int64(validator.errors.count, ==, 0);
 
     Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
+
     filesystem_temp_file(&interp.std_out);
+    defer { munit_assert(filesystem_close(&interp.std_out)); };
+
     auto program = bytecode_get_program(&bb);
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
 
     assert_zodiac_stream(interp.std_out, "24\n42\n");
-    munit_assert(filesystem_close(&interp.std_out));
 
     munit_assert_ptr_equal(result_register.type, &builtin_type_s64);
     munit_assert_int64(result_register.value.integer.s64, ==, 24);
-
-    interpreter_free(&interp);
 
     return MUNIT_OK;
 }
@@ -1834,7 +1801,10 @@ file_local MunitResult Constants(const MunitParameter params[], void *user_data_
 
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
+
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     auto global_const = bytecode_integer_literal(&bb, &builtin_type_s64, 42);
     munit_assert(global_const.flags & BC_REGISTER_FLAG_CONSTANT);
@@ -1852,6 +1822,8 @@ file_local MunitResult Constants(const MunitParameter params[], void *user_data_
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    defer { bytecode_validator_free(&validator); };
+
     bool bytecode_valid = validate_bytecode(&validator);
 
     bytecode_validator_print_errors(&validator);
@@ -1860,18 +1832,19 @@ file_local MunitResult Constants(const MunitParameter params[], void *user_data_
     munit_assert_int64(validator.errors.count, ==, 0);
 
     Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
+
     filesystem_temp_file(&interp.std_out);
+    defer { munit_assert(filesystem_close(&interp.std_out)); };
+
     auto program = bytecode_get_program(&bb);
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
 
     assert_zodiac_stream(interp.std_out, "42\n");
-    munit_assert(filesystem_close(&interp.std_out));
 
     munit_assert_ptr_equal(result_register.type, &builtin_type_s64);
     munit_assert_int64(result_register.value.integer.s64, ==, 42);
-
-    interpreter_free(&interp);
 
     return MUNIT_OK;
 }
@@ -1880,11 +1853,13 @@ file_local MunitResult String_Literals(const MunitParameter params[], void *user
 {
     Zodiac_Context zc;
     zodiac_context_create(&zc);
+    defer { zodiac_context_destroy(&zc); };
 
     auto c_alloc = c_allocator();
     auto aa = &zc.ast_allocator;
 
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
+    defer { bytecode_builder_free(&bb); };
 
     auto main_fn_type = get_function_type(&builtin_type_s64, {}, aa);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -1903,6 +1878,8 @@ file_local MunitResult String_Literals(const MunitParameter params[], void *user
 
     Bytecode_Validator validator;
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
+    defer { bytecode_validator_free(&validator); };
+
     bool bytecode_valid = validate_bytecode(&validator);
 
     bytecode_validator_print_errors(&validator);
@@ -1911,18 +1888,19 @@ file_local MunitResult String_Literals(const MunitParameter params[], void *user
     munit_assert_int64(validator.errors.count, ==, 0);
 
     Interpreter interp = interpreter_create(c_alloc, &zc);
+    defer { interpreter_free(&interp); };
+
     filesystem_temp_file(&interp.std_out);
+    defer { munit_assert(filesystem_close(&interp.std_out)); };
+
     auto program = bytecode_get_program(&bb);
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
 
     assert_zodiac_stream(interp.std_out, "Hello, Zodiac!\n");
-    munit_assert(filesystem_close(&interp.std_out));
 
     munit_assert_ptr_equal(result_register.type, &builtin_type_s64);
     munit_assert_int64(result_register.value.integer.s64, ==, 0);
-
-    interpreter_free(&interp);
 
     return MUNIT_OK;
 }
