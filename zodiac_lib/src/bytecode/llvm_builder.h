@@ -122,6 +122,7 @@ struct LLVM_Builder
 ZAPI LLVM_Builder llvm_builder_create(Allocator *allocator, Bytecode_Builder *bytecode_builder);
 ZAPI void llvm_builder_free(LLVM_Builder *builder);
 
+ZAPI void llvm_builder_emit_program(LLVM_Builder *builder, Bytecode_Program *program);
 ZAPI void llvm_builder_emit_global(LLVM_Builder *builder, Bytecode_Global_Handle glob_handle);
 ZAPI void llvm_builder_register_function(LLVM_Builder *builder, Bytecode_Function_Handle fn_handle);
 ZAPI bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle fn_handle);

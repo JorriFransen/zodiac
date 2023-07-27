@@ -354,7 +354,7 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
         pid_t wait_res = waitpid(pid, &exit_status, 0);
         if (wait_res == -1) {
             ZFATAL("Unexpected return value from waitpid");
-        } 
+        }
 
         { // read stdout
             size_t read_count;
@@ -515,6 +515,17 @@ String platform_dir_name(Allocator *allocator, const String_Ref path)
     assert(result);
 
     return String(allocator, result);
+}
+
+String platform_cwd(Allocator *allocator)
+{
+    const size_t cwd_buf_size = 1024;
+    char cwd_buf[cwd_buf_size];
+
+    auto result_buf = getcwd(cwd_buf, cwd_buf_size);
+    assert(result_buf);
+
+    return String(allocator, result_buf);
 }
 
 void platform_exit(int exit_code)

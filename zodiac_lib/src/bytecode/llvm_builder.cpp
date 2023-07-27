@@ -104,6 +104,8 @@ void llvm_builder_init(LLVM_Builder *builder, Allocator *allocator, Bytecode_Bui
         assert_msg(false, "Failed to get platform info");
     }
 
+    auto out_name = builder->zodiac_context->options.output_file_name;
+    assert(out_name.length && out_name.data);
     builder->out_file_name = builder->zodiac_context->options.output_file_name;
 
     hash_table_create(allocator, &builder->functions);
@@ -133,6 +135,22 @@ void llvm_builder_free(LLVM_Builder *builder)
     stack_free(&builder->arg_stack);
 
     free_platform_info(&builder->platform_info);
+}
+
+void llvm_builder_emit_program(LLVM_Builder *builder, Bytecode_Program *program)
+{
+    for (s64 i = 0; i < program->globals.count; i++) {
+        llvm_builder_emit_global(builder, i);
+    }
+
+    for (s64 i = 0; i < program->functions.count; i++) {
+        llvm_builder_register_function(builder, i);
+    }
+
+    for (s64 i = 0; i < program->functions.count; i++) {
+        bool result = llvm_builder_emit_function(builder, i);
+        assert(result);
+    }
 }
 
 void llvm_builder_emit_global(LLVM_Builder *builder, Bytecode_Global_Handle glob_handle)
@@ -1028,7 +1046,13 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
                     return llvm_builder_emit_float_literal(builder, bc_reg.type, bc_reg.value.real);
                 }
 
-                case Type_Kind::POINTER: { assert(false); break; }
+                case Type_Kind::POINTER: {
+                    llvm::Type *type = llvm_type_from_ast_type(builder, bc_reg.type);
+                    llvm::Type *inttype = llvm_type_from_ast_type(builder, &builtin_type_u64);
+                    llvm::Constant *intval = llvm::ConstantInt::get(inttype, (u64)bc_reg.value.pointer);
+                    return llvm::ConstantExpr::getIntToPtr(intval, type);
+                }
+
                 case Type_Kind::FUNCTION: { assert(false); break; }
 
                 case Type_Kind::BOOLEAN: {
@@ -1042,8 +1066,12 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
         }
 
         case Bytecode_Register_Kind::FUNCTION: {
-            assert(false);
-            break;
+            llvm::Function* llvm_fn = nullptr;
+            bool found = hash_table_find(&builder->functions, bc_reg.value.function_handle, &llvm_fn);
+            assert(found);
+            assert_msg(found, "[LLVM_BUILDER] Failed to find function");
+            assert(llvm_fn);
+            return llvm_fn;
         }
 
         case Bytecode_Register_Kind::BLOCK: {
@@ -1349,6 +1377,7 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     assert(builder);
 
     auto out_name = builder->out_file_name;
+    assert(out_name.length && out_name.data);
 
     auto ta = temp_allocator_allocator();
     auto mark = temporary_allocator_get_mark((Temporary_Allocator *)ta->user_data);

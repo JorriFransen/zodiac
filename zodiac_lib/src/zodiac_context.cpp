@@ -15,6 +15,8 @@ void zodiac_context_create(Zodiac_Context *out_context)
 {
     assert(out_context);
 
+    *out_context = {};
+
     atom_table_init(&out_context->atoms);
 
     if (!type_system_initialized) {

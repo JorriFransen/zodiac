@@ -801,7 +801,7 @@ Bytecode_Register bytecode_emit_address_of_function(Bytecode_Builder *builder, B
 
     Bytecode_Register fn_register = {
         .kind = Bytecode_Register_Kind::FUNCTION,
-        .flags = BC_REGISTER_FLAG_LITERAL,
+        .flags = BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT,
         .index = -1,
         .type = fn->type,
         .value = { .function_handle = fn_handle },

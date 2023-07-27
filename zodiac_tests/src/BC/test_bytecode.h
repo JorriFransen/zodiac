@@ -10,9 +10,9 @@
 #define PRINT_BYTECODE_IN_TESTS 0
 #endif // PRINT_BYTECODE_IN_TESTS
 
-#if PRINT_BYTECODE_IN_TESTS
-#include "bytecode/printer.h"
-#endif
+#ifndef BYTECODE_TESTS_VERBOSE
+#define BYTECODE_TESTS_VERBOSE 1
+#endif // BYTECODE_TESTS_VERBOSE
 
 namespace Zodiac { namespace Bytecode_Tests {
 
@@ -34,6 +34,8 @@ using namespace Bytecode;
 }
 
 void print_bytecode(const Bytecode_Builder &bb);
+void init_test_context(Zodiac_Context *zc);
+MunitResult execute_and_verify(String_Ref out_file_name, s64 return_code=0);
 
 MunitResult Building_1(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Simple_Function_Call(const MunitParameter params[], void* user_data_or_fixture);

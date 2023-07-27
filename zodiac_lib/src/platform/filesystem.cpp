@@ -240,4 +240,9 @@ String filesystem_dir_name(Allocator *allocator, const String_Ref path)
     return platform_dir_name(allocator, path);
 }
 
+String filesystem_cwd(Allocator *allocator)
+{
+    return platform_cwd(allocator);
+}
+
 }
