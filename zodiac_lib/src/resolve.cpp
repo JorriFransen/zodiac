@@ -3,6 +3,7 @@
 #include "ast.h"
 #include "atom.h"
 #include "error.h"
+#include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 #include "scope.h"
@@ -207,7 +208,7 @@ Resolve_Results resolve_types(Resolver *resolver)
 
         for (u64 i = node->type_index; i < node->nodes.count; i++)
         {
-            if (node->type_index > node->name_index)
+            if (node->type_index >= node->name_index)
                 break;
 
             node->type_index = i;
@@ -933,23 +934,43 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
         {
             assert(sym->state >= Symbol_State::RESOLVED);
 
-            if (sym->kind == Symbol_Kind::CONST)
-            {
+            if (sym->kind == Symbol_Kind::CONST) {
                 expr->flags |= AST_EXPR_FLAG_CONST;
             }
         }
         break;
     }
 
-    case AST_Expression_Kind::MEMBER:
-    {
+    case AST_Expression_Kind::MEMBER: {
 
         AST_Expression *base_expr = expr->member.base;
-        if (!base_expr->resolved_type)
-        {
+        if (!base_expr->resolved_type) {
             resolve_error(ctx, expr, "Waiting for base to be resolved");
             return false;
         }
+
+        auto aggregate_type = base_expr->resolved_type;
+        assert((aggregate_type->flags & TYPE_FLAG_AGGREGATE) == TYPE_FLAG_AGGREGATE);
+
+        assert(aggregate_type->structure.name.length);
+
+        auto type_sym = scope_get_symbol(scope, aggregate_type->structure.name);
+        assert(type_sym);
+        assert(type_sym->kind == Symbol_Kind::TYPE);
+        assert(type_sym->aggregate.scope);
+        assert(type_sym->aggregate.scope->kind == Scope_Kind::AGGREGATE);
+
+        auto sym = scope_get_symbol(type_sym->aggregate.scope, expr->member.member_name);
+        if (!sym) {
+            assert(type_sym->decl);
+            fatal_resolve_error(ctx, expr, "'%s' is not a member of aggregate type '%s'", expr->member.member_name.data, aggregate_type->structure.name);
+            fatal_resolve_error(ctx, type_sym->decl, "'%s' was declared here", aggregate_type->structure.name);
+            result = false;
+            break;
+        }
+        assert(sym);
+        assert(sym->kind == Symbol_Kind::MEMBER);
+        assert(sym->state == Symbol_State::TYPED);
         break;
     }
 
@@ -957,6 +978,7 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
         assert(false);
     case AST_Expression_Kind::UNARY:
         assert(false);
+
     }
 
     return result;
@@ -1449,7 +1471,31 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             break;
         }
 
-        case AST_Expression_Kind::MEMBER: assert(false);
+        case AST_Expression_Kind::MEMBER: {
+
+            auto base_expr = expr->member.base;
+            assert(base_expr->resolved_type);
+
+            auto aggregate_type = base_expr->resolved_type;
+            assert((aggregate_type->flags & TYPE_FLAG_AGGREGATE) == TYPE_FLAG_AGGREGATE);
+
+            auto type_sym = scope_get_symbol(scope, aggregate_type->structure.name);
+            assert(type_sym);
+            assert(type_sym->kind == Symbol_Kind::TYPE);
+
+            assert(type_sym->aggregate.scope && type_sym->aggregate.scope->kind == Scope_Kind::AGGREGATE);
+            auto sym = scope_get_symbol(type_sym->aggregate.scope, expr->member.member_name);
+            assert(sym && sym->kind == Symbol_Kind::MEMBER);
+            assert(sym->state == Symbol_State::TYPED);
+
+            auto mem_decl = sym->decl;
+            assert(mem_decl && mem_decl->kind == AST_Declaration_Kind::FIELD);
+            assert(mem_decl->field.resolved_type);
+
+            expr->resolved_type = mem_decl->field.resolved_type;
+            break;
+        }
+
         case AST_Expression_Kind::INDEX: assert(false);
 
         case AST_Expression_Kind::CALL: {
