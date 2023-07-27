@@ -35,7 +35,7 @@ void init_test_context(Zodiac_Context *zc)
 #endif // BYTECODE_TESTS_VERBOSE
 }
 
-MunitResult execute_and_verify(String_Ref out_file_name, s64 return_code/*=0*/)
+MunitResult execute_and_verify(String_Ref out_file_name, s64 return_code/*=0*/, String_Ref stdout_str_/*=""*/)
 {
     auto ta = temp_allocator_allocator();
     Array_Ref<String_Ref> args({string_append(ta, Array_Ref<String_Ref>({ filesystem_cwd(ta), "/", out_file_name } ))});
@@ -50,7 +50,15 @@ MunitResult execute_and_verify(String_Ref out_file_name, s64 return_code/*=0*/)
         return MUNIT_FAIL;
     }
 
+    String_Ref stdout_str("");
+    if (stdout_str_.length) {
+        stdout_str = string_append(ta, stdout_str_, "\n");
+    }
+
     munit_assert_int64(pr.exit_code, ==, return_code);
+
+    munit_assert_int64(pr.result_string.length, ==, stdout_str.length);
+    if (pr.result_string.length) munit_assert_string_equal(pr.result_string.data, stdout_str.data);
 
     return MUNIT_OK;
 }
@@ -108,6 +116,9 @@ MunitResult Simple_Function_Call(const MunitParameter params[], void* user_data_
     Bytecode_Builder bb = bytecode_builder_create(c_allocator(), &zc);
     defer { bytecode_builder_free(&bb); };
 
+    const s64 exit_code = 0;
+    const String_Ref stdout_str("42");
+
     Type *main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
 
     Bytecode_Function_Handle fn_handle = bytecode_function_create(&bb, "main", main_fn_type);
@@ -121,7 +132,7 @@ MunitResult Simple_Function_Call(const MunitParameter params[], void* user_data_
     bytecode_set_insert_point(&bb, fn_handle, block_handle);
 
     bytecode_emit_call(&bb, print_fn_handle, 0);
-    bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 0));
+    bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code));
 
     bytecode_set_insert_point(&bb, print_fn_handle, print_entry_handle);
     bytecode_emit_print(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 42));
@@ -151,9 +162,9 @@ MunitResult Simple_Function_Call(const MunitParameter params[], void* user_data_
 
     Interpreter_Register result_reg = interpreter_start(&interp, program);
     munit_assert_ptr_equal(result_reg.type, &builtin_type_s64);
-    munit_assert_int64(result_reg.value.integer.s64, ==, 0);
+    munit_assert_int64(result_reg.value.integer.s64, ==, exit_code);
 
-    assert_zodiac_stream(interp.std_out, "42\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -162,7 +173,7 @@ MunitResult Simple_Function_Call(const MunitParameter params[], void* user_data_
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* user_data_or_fixture)
@@ -191,6 +202,8 @@ MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* use
         bytecode_emit_return(&bb, add_result);
     }
 
+    const s64 exit_code = 0;
+    const String_Ref stdout_str("42\n42");
 
     // Main
     Bytecode_Function_Handle main_fn_handle = -1;
@@ -208,7 +221,7 @@ MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* use
         auto result = bytecode_emit_call(&bb, add_fn_handle, 2);
         bytecode_emit_print(&bb, result);
 
-        bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 0));
+        bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code));
     }
 
     print_bytecode(bb);
@@ -234,9 +247,9 @@ MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* use
     program.entry_handle = main_fn_handle;
     Interpreter_Register result_reg = interpreter_start(&interp, program);
     munit_assert_ptr_equal(result_reg.type, &builtin_type_s64);
-    munit_assert_int64(result_reg.value.integer.s64, ==, 0);
+    munit_assert_int64(result_reg.value.integer.s64, ==, exit_code);
 
-    assert_zodiac_stream(interp.std_out, "42\n42\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -245,7 +258,7 @@ MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* use
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_or_fixture)
@@ -286,6 +299,9 @@ MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_o
         bytecode_emit_return(&bb, a1);
     }
 
+    const s64 exit_code = 0;
+    const String_Ref stdout_str("true\ntrue\nfalse\n0");
+
     // Main
     Bytecode_Function_Handle main_fn_handle = -1;
     {
@@ -304,7 +320,7 @@ MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_o
 
         bytecode_set_insert_point(&bb, main_fn_handle, return_block);
         bytecode_emit_print(&bb, result);
-        bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 0));
+        bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code));
     }
 
     print_bytecode(bb);
@@ -330,8 +346,8 @@ MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_o
     program.entry_handle = main_fn_handle;
     Interpreter_Register result_reg = interpreter_start(&interp, program);
     munit_assert_ptr_equal(result_reg.type, &builtin_type_s64);
-    munit_assert_int64(result_reg.value.integer.s64, ==, 0);
-    assert_zodiac_stream(interp.std_out, "true\ntrue\nfalse\n0\n");
+    munit_assert_int64(result_reg.value.integer.s64, ==, exit_code);
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -340,7 +356,7 @@ MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_o
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 MunitResult Insert_And_Extract_Value(const MunitParameter params[], void *user_data_or_fixture)
@@ -353,6 +369,9 @@ MunitResult Insert_And_Extract_Value(const MunitParameter params[], void *user_d
 
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
     defer { bytecode_builder_free(&bb); };
+
+    const s64 exit_code = 0;
+    const String_Ref stdout_str("42\n24");
 
     auto fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
     auto fn = bytecode_function_create(&bb, "main", fn_type);
@@ -384,7 +403,7 @@ MunitResult Insert_And_Extract_Value(const MunitParameter params[], void *user_d
     bytecode_emit_print(&bb, x);
     bytecode_emit_print(&bb, y);
 
-    bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 0));
+    bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code));
 
     print_bytecode(bb);
 
@@ -410,8 +429,8 @@ MunitResult Insert_And_Extract_Value(const MunitParameter params[], void *user_d
     program.entry_handle = fn;
     Interpreter_Register result_reg = interpreter_start(&interp, program);
     munit_assert_ptr_equal(result_reg.type, &builtin_type_s64);
-    munit_assert_int64(result_reg.value.integer.s64, ==, 0);
-    assert_zodiac_stream(interp.std_out, "42\n24\n");
+    munit_assert_int64(result_reg.value.integer.s64, ==, exit_code);
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -420,7 +439,7 @@ MunitResult Insert_And_Extract_Value(const MunitParameter params[], void *user_d
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 MunitResult Extract_Struct_Value(const MunitParameter params[], void *user_data_or_fixture)
@@ -462,6 +481,9 @@ MunitResult Extract_Struct_Value(const MunitParameter params[], void *user_data_
         bytecode_emit_return(&bb, aabb);
     }
 
+    const s64 exit_code = 10;
+    const String_Ref stdout_str("1\n2\n3\n4");
+
     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
     auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
@@ -496,9 +518,9 @@ MunitResult Extract_Struct_Value(const MunitParameter params[], void *user_data_
     program.entry_handle = main_fn;
     Interpreter_Register result_reg = interpreter_start(&interp, program);
     munit_assert_ptr_equal(result_reg.type, &builtin_type_s64);
-    munit_assert_int64(result_reg.value.integer.s64, ==, 10);
+    munit_assert_int64(result_reg.value.integer.s64, ==, exit_code);
 
-    assert_zodiac_stream(interp.std_out, "1\n2\n3\n4\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -507,7 +529,7 @@ MunitResult Extract_Struct_Value(const MunitParameter params[], void *user_data_
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name, 10);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 MunitResult Return_Struct(const MunitParameter params[], void *user_data_or_fixture)
@@ -537,6 +559,9 @@ MunitResult Return_Struct(const MunitParameter params[], void *user_data_or_fixt
     new_struct_val = bytecode_emit_insert_value(&bb, new_struct_val, lit_24, vec2_type, 1);
 
     bytecode_emit_return(&bb, new_struct_val);
+
+    const s64 exit_code = 66;
+    const String_Ref stdout_str("42\n24");
 
     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -576,9 +601,9 @@ MunitResult Return_Struct(const MunitParameter params[], void *user_data_or_fixt
     Interpreter_Register result_register = interpreter_start(&interp, program);
 
     munit_assert(result_register.type == &builtin_type_s64);
-    munit_assert_int64(result_register.value.integer.s64, ==, 66);
+    munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
-    assert_zodiac_stream(interp.std_out, "42\n24\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -587,7 +612,7 @@ MunitResult Return_Struct(const MunitParameter params[], void *user_data_or_fixt
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name, 66);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_fixture)
@@ -651,6 +676,9 @@ MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_f
         bytecode_emit_return(&bb);
     }
 
+    const s64 exit_code = 42;
+    const String_Ref stdout_str("3.000000\n4.000000\n5.000000");
+
     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
     auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
@@ -662,7 +690,7 @@ MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_f
         bytecode_emit_push_arg(&bb, v);
         auto v_len = bytecode_emit_call(&bb, vec2_len_fn, 1);
         bytecode_emit_print(&bb, v_len);
-        bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 42));
+        bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code));
     }
 
 
@@ -689,9 +717,9 @@ MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_f
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
     munit_assert(result_register.type == &builtin_type_s64);
-    munit_assert_int64(result_register.value.integer.s64, ==, 42);
+    munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
-    assert_zodiac_stream(interp.std_out, "3.000000\n4.000000\n5.000000\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -700,7 +728,7 @@ MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_f
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name, 42);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fixture)
@@ -714,13 +742,16 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
     defer { bytecode_builder_free(&bb); };
 
+    const s64 exit_code = 43;
+    const String_Ref stdout_str("42");
+
     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
     auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
     bytecode_set_insert_point(&bb, main_fn, main_entry_block);
     {
         auto int_alloc = bytecode_emit_alloc(&bb, &builtin_type_s64, "x");
-        bytecode_emit_store_alloc(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 42), int_alloc);
+        bytecode_emit_store_alloc(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code - 1), int_alloc);
 
         auto int_alloc_addr = bytecode_emit_address_of_alloc(&bb, int_alloc);
         auto int_value = bytecode_emit_load_pointer(&bb, int_alloc_addr);
@@ -757,9 +788,9 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
     munit_assert(result_register.type == &builtin_type_s64);
-    munit_assert_int64(result_register.value.integer.s64, ==, 43);
+    munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
-    assert_zodiac_stream(interp.std_out, "42\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -768,7 +799,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name, 43);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 MunitResult Struct_Pointers(const MunitParameter params[], void *user_data_or_fixture)
@@ -784,6 +815,8 @@ MunitResult Struct_Pointers(const MunitParameter params[], void *user_data_or_fi
 
     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
     Type *vec_type = get_struct_type(&zc, vec_mem_types, "Vec2", &zc.ast_allocator);
+
+    const s64 exit_code = 66;
 
     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -825,7 +858,7 @@ MunitResult Struct_Pointers(const MunitParameter params[], void *user_data_or_fi
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
     munit_assert(result_register.type == &builtin_type_s64);
-    munit_assert_int64(result_register.value.integer.s64, ==, 66);
+    munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -834,7 +867,7 @@ MunitResult Struct_Pointers(const MunitParameter params[], void *user_data_or_fi
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name, 66);
+    return execute_and_verify(zc.options.output_file_name, exit_code);
 }
 
 MunitResult Invalid_Extract_Element(const MunitParameter params[], void *user_data_or_fixture)
@@ -907,6 +940,9 @@ MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data
     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
     Type *vec_type = get_struct_type(&zc, vec_mem_types, "Vec2", &zc.ast_allocator);
 
+    const s64 exit_code = 132;
+    const String_Ref stdout_str("66\n132");
+
     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
     auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
@@ -965,9 +1001,9 @@ MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
     munit_assert(result_register.type == &builtin_type_s64);
-    munit_assert_int64(result_register.value.integer.s64, ==, 132);
+    munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
-    assert_zodiac_stream(interp.std_out, "66\n132\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -976,7 +1012,7 @@ MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name, 132);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture)
@@ -995,6 +1031,9 @@ MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data
 
     Type *aabb_mem_types[] = { vec_type, vec_type };
     Type *aabb_type = get_struct_type(&zc, aabb_mem_types, "AABB", &zc.ast_allocator);
+
+    const s64 exit_code = 33;
+    const String_Ref stdout_str("11\n22\n33\n44");
 
     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -1058,9 +1097,9 @@ MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
     munit_assert(result_register.type == &builtin_type_s64);
-    munit_assert_int64(result_register.value.integer.s64, ==, 33);
+    munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
-    assert_zodiac_stream(interp.std_out, "11\n22\n33\n44\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -1069,7 +1108,7 @@ MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name, 33);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 MunitResult Insert_And_Extract_Element(const MunitParameter params[], void *user_data_or_fixture)
@@ -1084,6 +1123,9 @@ MunitResult Insert_And_Extract_Element(const MunitParameter params[], void *user
     defer { bytecode_builder_free(&bb); };
 
     auto array_type = get_static_array_type(&builtin_type_s64, 5, &zc.ast_allocator);
+
+    const s64 exit_code = 15;
+    const String_Ref stdout_str("5\n4\n3\n2\n1\n15");
 
     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -1137,9 +1179,9 @@ MunitResult Insert_And_Extract_Element(const MunitParameter params[], void *user
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
     munit_assert(result_register.type == &builtin_type_s64);
-    munit_assert_int64(result_register.value.integer.s64, ==, 15);
+    munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
-    assert_zodiac_stream(interp.std_out, "5\n4\n3\n2\n1\n15\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -1148,7 +1190,7 @@ MunitResult Insert_And_Extract_Element(const MunitParameter params[], void *user
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name, 15);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture)
@@ -1163,6 +1205,9 @@ MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void *user_data
     defer { bytecode_builder_free(&bb); };
 
     auto array_type = get_static_array_type(&builtin_type_s64, 5, &zc.ast_allocator);
+
+    const s64 exit_code = 30;
+    const String_Ref stdout_str("5\n4\n3\n2\n1\n5\n4\n3\n2\n1\n30");
 
     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -1228,9 +1273,9 @@ MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void *user_data
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
     munit_assert(result_register.type == &builtin_type_s64);
-    munit_assert_int64(result_register.value.integer.s64, ==, 30);
+    munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
-    assert_zodiac_stream(interp.std_out, "5\n4\n3\n2\n1\n5\n4\n3\n2\n1\n30\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -1239,7 +1284,7 @@ MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void *user_data
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name, 30);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_data_or_fixture)
@@ -1280,6 +1325,9 @@ MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_
         auto r = bytecode_emit_add(&bb, a, b);
         bytecode_emit_return(&bb, r);
     }
+
+    const s64 exit_code = 66;
+    const String_Ref stdout_str("66\n66\n66\n66\n33\n33");
 
     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -1355,9 +1403,9 @@ MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
     munit_assert(result_register.type == &builtin_type_s64);
-    munit_assert_int64(result_register.value.integer.s64, ==, 66);
+    munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
-    assert_zodiac_stream(interp.std_out, "66\n66\n66\n66\n33\n33\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -1366,7 +1414,7 @@ MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name, 66);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 
@@ -1412,6 +1460,9 @@ MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[], void *us
         bytecode_emit_print(&bb, y);
         bytecode_emit_return(&bb);
     }
+
+    const s64 exit_code = 66;
+    const String_Ref stdout_str("42\n24\n66\n42\n24\n66");
 
     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -1487,9 +1538,9 @@ MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[], void *us
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
     munit_assert(result_register.type == &builtin_type_s64);
-    munit_assert_int64(result_register.value.integer.s64, ==, 66);
+    munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
-    assert_zodiac_stream(interp.std_out, "42\n24\n66\n42\n24\n66\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -1498,7 +1549,7 @@ MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[], void *us
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name, 66);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 MunitResult BC_Callback_From_C(const MunitParameter params[], void *user_data_or_fixture)
@@ -1543,6 +1594,9 @@ MunitResult BC_Callback_From_C(const MunitParameter params[], void *user_data_or
     Type *call_binop_ptr_arg_types[] = { add_fn_type->pointer_to, &builtin_type_s64, &builtin_type_s64 };
     auto call_binop_ptr_type = get_function_type(&builtin_type_s64, call_binop_ptr_arg_types, &zc.ast_allocator);
     auto call_binop_ptr_fn = bytecode_foreign_function_create(&bb, "foreign_call_binop_ptr", call_binop_ptr_type);
+
+    const s64 exit_code = 66;
+    const String_Ref stdout_str("Calling pointer!\n66\nCalling pointer!\n66");
 
     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -1600,9 +1654,9 @@ MunitResult BC_Callback_From_C(const MunitParameter params[], void *user_data_or
 
     Interpreter_Register result_register = interpreter_start(&interp, program);
     munit_assert(result_register.type == &builtin_type_s64);
-    munit_assert_int64(result_register.value.integer.s64, ==, 66);
+    munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
-    assert_zodiac_stream(interp.std_out, "Calling pointer!\n66\nCalling pointer!\n66\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     return MUNIT_OK;
 }
@@ -1865,12 +1919,15 @@ MunitResult Globals(const MunitParameter params[], void *user_data_or_fixture)
     auto global_var = bytecode_create_global(&bb, "global_var", &builtin_type_s64);
     auto global_var2 = bytecode_create_global(&bb, "global_var2", &builtin_type_s64, bytecode_integer_literal(&bb, &builtin_type_s64, 42));
 
+    const s64 exit_code = 24;
+    const String_Ref stdout_str("24\n42");
+
     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
     auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
     bytecode_set_insert_point(&bb, main_fn, main_entry_block);
     {
-        bytecode_emit_store_global(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 24), global_var);
+        bytecode_emit_store_global(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code), global_var);
         auto global_val = bytecode_emit_load_global(&bb, global_var);
         bytecode_emit_print(&bb, global_val);
 
@@ -1904,10 +1961,10 @@ MunitResult Globals(const MunitParameter params[], void *user_data_or_fixture)
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
 
-    assert_zodiac_stream(interp.std_out, "24\n42\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     munit_assert_ptr_equal(result_register.type, &builtin_type_s64);
-    munit_assert_int64(result_register.value.integer.s64, ==, 24);
+    munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -1916,7 +1973,7 @@ MunitResult Globals(const MunitParameter params[], void *user_data_or_fixture)
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name, 24);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 
@@ -1931,7 +1988,11 @@ MunitResult Constants(const MunitParameter params[], void *user_data_or_fixture)
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
     defer { bytecode_builder_free(&bb); };
 
-    auto global_const = bytecode_integer_literal(&bb, &builtin_type_s64, 42);
+
+    const s64 exit_code = 42;
+    const String_Ref stdout_str("42");
+
+    auto global_const = bytecode_integer_literal(&bb, &builtin_type_s64, exit_code);
     munit_assert(global_const.flags & BC_REGISTER_FLAG_CONSTANT);
 
     auto main_fn_type = get_function_type(&builtin_type_s64, {}, &zc.ast_allocator);
@@ -1966,10 +2027,10 @@ MunitResult Constants(const MunitParameter params[], void *user_data_or_fixture)
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
 
-    assert_zodiac_stream(interp.std_out, "42\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     munit_assert_ptr_equal(result_register.type, &builtin_type_s64);
-    munit_assert_int64(result_register.value.integer.s64, ==, 42);
+    munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -1978,7 +2039,7 @@ MunitResult Constants(const MunitParameter params[], void *user_data_or_fixture)
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name, 42);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 MunitResult String_Literals(const MunitParameter params[], void *user_data_or_fixture)
@@ -1997,12 +2058,14 @@ MunitResult String_Literals(const MunitParameter params[], void *user_data_or_fi
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
     auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
 
+    const s64 exit_code = 42;
+    const String_Ref stdout_str("Hello, Zodiac!");
 
     bytecode_set_insert_point(&bb, main_fn, main_entry_block);
     {
-        auto str_lit_val = bytecode_string_literal(&bb, "Hello, Zodiac!");
+        auto str_lit_val = bytecode_string_literal(&bb, stdout_str);
         bytecode_emit_print(&bb, str_lit_val);
-        auto return_val = bytecode_integer_literal(&bb, &builtin_type_s64, 0);
+        auto return_val = bytecode_integer_literal(&bb, &builtin_type_s64, exit_code);
         bytecode_emit_return(&bb, return_val);
     }
 
@@ -2029,10 +2092,10 @@ MunitResult String_Literals(const MunitParameter params[], void *user_data_or_fi
     program.entry_handle = main_fn;
     Interpreter_Register result_register = interpreter_start(&interp, program);
 
-    assert_zodiac_stream(interp.std_out, "Hello, Zodiac!\n");
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     munit_assert_ptr_equal(result_register.type, &builtin_type_s64);
-    munit_assert_int64(result_register.value.integer.s64, ==, 0);
+    munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
     defer { llvm_builder_free(&llvm_builder); };
@@ -2041,6 +2104,7 @@ MunitResult String_Literals(const MunitParameter params[], void *user_data_or_fi
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(zc.options.output_file_name); };
 
-    return execute_and_verify(zc.options.output_file_name);
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
+
 } }

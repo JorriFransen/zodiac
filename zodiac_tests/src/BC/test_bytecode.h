@@ -19,6 +19,7 @@ namespace Zodiac { namespace Bytecode_Tests {
 using namespace Bytecode;
 
 #define assert_zodiac_stream(stream, expected_string) { \
+    auto es = string_append(temp_allocator_allocator(), (expected_string), "\n"); \
     filesystem_flush(&stream); \
     u64 length; \
     filesystem_size(&stream, &length); \
@@ -29,13 +30,13 @@ using namespace Bytecode;
     bool read_res = filesystem_read(&stream, length, (u8 *)_buf, &read_length); \
     munit_assert_int(read_length, ==, length); \
     _buf[length] = '\0'; \
-    munit_assert_int((int)strlen(_buf), ==, (int)strlen(expected_string)); \
-    munit_assert_string_equal(_buf, expected_string); \
+    munit_assert_int((int)strlen(_buf), ==, es.length); \
+    munit_assert_string_equal(_buf, es.data); \
 }
 
 void print_bytecode(const Bytecode_Builder &bb);
 void init_test_context(Zodiac_Context *zc);
-MunitResult execute_and_verify(String_Ref out_file_name, s64 return_code=0);
+MunitResult execute_and_verify(String_Ref out_file_name, s64 return_code=0, String_Ref stdout_str="");
 
 MunitResult Building_1(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Simple_Function_Call(const MunitParameter params[], void* user_data_or_fixture);
