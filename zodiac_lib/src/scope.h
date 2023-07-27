@@ -102,7 +102,7 @@ ZAPI Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kin
 ZAPI Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
 ZAPI Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Range range);
 
-ZAPI Symbol *add_resolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
+ZAPI Symbol *add_typed_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl);
 ZAPI Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declaration *decl, bool global);
 
 ZAPI AST_Declaration *enclosing_function(Scope *scope);

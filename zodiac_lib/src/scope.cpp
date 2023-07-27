@@ -111,13 +111,13 @@ Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kin
     return scope_add_symbol(ctx, scope, kind, Symbol_State::UNRESOLVED, flags, name, decl, range);
 }
 
-Symbol *add_resolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
+Symbol *add_typed_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
     assert(scope);
 
     if (!decl) assert(flags & SYM_FLAG_BUILTIN);
 
-    return scope_add_symbol(ctx, scope, kind, Symbol_State::RESOLVED, flags, name, decl);
+    return scope_add_symbol(ctx, scope, kind, Symbol_State::TYPED, flags, name, decl);
 }
 
 Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declaration *decl, bool global)

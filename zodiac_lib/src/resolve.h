@@ -45,7 +45,9 @@ struct Flat_Root_Node
 {
     Flat_Node root;
     Dynamic_Array<Flat_Node> nodes;
-    u64 current_index = 0;
+
+    u64 name_index = 0;
+    u64 type_index = 0;
 };
 
 struct Resolver
@@ -53,9 +55,11 @@ struct Resolver
     Zodiac_Context *ctx;
     Scope *global_scope;
 
-    Dynamic_Array<Flat_Root_Node> nodes_to_name_resolve;
-    Dynamic_Array<Flat_Root_Node> nodes_to_type_resolve;
-    Dynamic_Array<Flat_Root_Node> nodes_to_emit_bytecode;
+    Allocator *node_allocator;
+
+    Dynamic_Array<Flat_Root_Node *> nodes_to_name_resolve;
+    Dynamic_Array<Flat_Root_Node *> nodes_to_type_resolve;
+    Dynamic_Array<Flat_Root_Node *> nodes_to_emit_bytecode;
 };
 
 typedef u64 Resolve_Results;
@@ -94,6 +98,6 @@ ZAPI bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node);
 ZAPI bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope);
 ZAPI bool type_resolve_statement(AST_Statement *stmt, Scope *scope);
 ZAPI bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope);
-ZAPI bool type_resolve_ts(AST_Type_Spec *ts, Scope *scope);
+ZAPI bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope);
 
 }

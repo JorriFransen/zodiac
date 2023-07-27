@@ -28,7 +28,10 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/zodiac",
-            "args": [],
+            "args": [
+                "tests/simple.zc",
+                "-v"
+            ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

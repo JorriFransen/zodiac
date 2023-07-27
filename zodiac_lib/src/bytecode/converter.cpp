@@ -36,12 +36,12 @@ void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
 
     for (s64 i = 0; i < resolver->nodes_to_emit_bytecode.count; i++) {
 
-        Flat_Root_Node root_node = resolver->nodes_to_emit_bytecode[i];
+        Flat_Root_Node *root_node = resolver->nodes_to_emit_bytecode[i];
 
-        switch (root_node.root.kind) {
+        switch (root_node->root.kind) {
 
             case Flat_Node_Kind::DECL: {
-                ast_decl_to_bytecode(bc, root_node.root.decl);
+                ast_decl_to_bytecode(bc, root_node->root.decl);
                 break;
             }
 
