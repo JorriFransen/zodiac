@@ -91,7 +91,7 @@ int main(int argc, const char **argv) {
 
     free(&dynamic_allocator, stream.data);
 
-    ast_print_file(file);
+    if (opts->print_ast) ast_print_file(file);
 
     // Assume this stage won't cause any errors atm
     // This bytecode builder should maybe be part of the context?

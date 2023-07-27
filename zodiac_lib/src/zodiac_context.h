@@ -18,6 +18,7 @@ struct Zodiac_Options
 
     bool dont_emit_binary = false;
 
+    bool print_ast = false;
     bool print_bytecode = false;
     bool print_llvm_ir = false;
     bool verbose = false;
