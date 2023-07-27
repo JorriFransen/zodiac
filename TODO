@@ -1,5 +1,3 @@
-- Change the bytecode tests so they emit a binary, run it and check the output.
-
 - Move some of the test code in simple.zc to the test suite.
 - Calculate/substitute non leaf constant expressions before emitting bytecode (we only do this when emitting bytecode now).
 
