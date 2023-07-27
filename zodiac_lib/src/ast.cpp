@@ -660,7 +660,7 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
         }
 
         case AST_Expression_Kind::BOOL_LITERAL: {
-            assert(false);
+            string_builder_append(sb, "%s", expr->bool_literal ? "true" : "false");
             break;
         }
 

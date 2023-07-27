@@ -1,3 +1,4 @@
+#include "ast.h"
 #include "bytecode/bytecode.h"
 #include "bytecode/converter.h"
 #include "bytecode/interpreter.h"
@@ -26,15 +27,13 @@
 
 #include <stdio.h>
 
-namespace Zodiac {
-    struct AST_File;
-}
 
 using namespace Zodiac;
 using namespace Bytecode;
 
 
 int main(int argc, const char **argv) {
+
     if (!logging_system_initialize()) return 1;
     if (!memory_system_initialize()) return 1;
 
@@ -92,6 +91,8 @@ int main(int argc, const char **argv) {
 
     free(&dynamic_allocator, stream.data);
 
+    ast_print_file(file);
+
     // Assume this stage won't cause any errors atm
     // This bytecode builder should maybe be part of the context?
     Bytecode_Builder bb = bytecode_builder_create(&c.bytecode_allocator, &c);
@@ -131,7 +132,7 @@ int main(int argc, const char **argv) {
 
     Interpreter_Register result_reg = interpreter_start(&interp, program);
     if (result_reg.type->kind == Type_Kind::INTEGER) {
-        printf("Entry point returned: %lli\n", result_reg.value.integer.s64);
+        ZTRACE("Entry point returned: %lli\n", result_reg.value.integer.s64);
     } else {
         assert_msg(false, "Unexpected return type from entry point")
     }
