@@ -1449,7 +1449,7 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
 
     APPEND_COMMANDF(" %s.obj", builder->out_file_name.data);
 
-    APPEND_COMMANDF(" /out:\"%.*s.exe\"", (int)out_name.length, out_name.data);
+    APPEND_COMMANDF(" /out:\"%.*s\"", (int)out_name.length, out_name.data);
 
     bool link_c = true;
     if (link_c) {

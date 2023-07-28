@@ -24,14 +24,14 @@ void parse_command_line_options(Zodiac_Options *opts, int argc, const char **arg
 
     auto ca = c_allocator();
 
-    cxxopts::Options cxxoptions("zodiac", "zodiac compiler");
+    cxxopts::Options cxxoptions("zodiac", "zodiac " ZODIAC_VERSION);
 
 #define STRDEF(v) cxxopts::value<std::string>()->default_value(v)
 #define BDEF(v) cxxopts::value<bool>()->default_value(#v)
 
     cxxoptions.add_options()
         ("input_file_name", "Input file name", STRDEF(""))
-        ("o,output_file_name", "Output file name", STRDEF("a.out"))
+        ("o,output_file_name", "Output file name", STRDEF("a.out" ZPLATFORM_DEFAULT_EXE_EXTENSION))
 
         ("n,no_binary", "Do not emit binary", BDEF(false))
 

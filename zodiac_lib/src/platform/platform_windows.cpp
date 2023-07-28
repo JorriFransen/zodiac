@@ -4,6 +4,7 @@
 
 #include "containers/dynamic_array.h"
 #include "filesystem.h"
+#include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
 #include "util/logger.h"
 #include "util/string_builder.h"
@@ -198,24 +199,28 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
 
         for (;;) {
             const int buf_size = 1024;
-            char buf[buf_size];
+            char buf_[buf_size];
             DWORD read_count;
-            BOOL success = ReadFile(stdout_read_handle, buf, buf_size, &read_count, nullptr);
+            BOOL success = ReadFile(stdout_read_handle, buf_, buf_size, &read_count, nullptr);
             if (!success || read_count == 0) {
                 break;
             }
-            string_builder_append(&stdout_sb, "%.*s", read_count, buf);
+
+            auto buf = platform_windows_normalize_line_endings(ta, String_Ref(buf_, read_count));
+            string_builder_append(&stdout_sb, "%.*s", buf.length, buf.data);
         }
 
         for (;;) {
             const int buf_size = 1024;
-            char buf[buf_size];
+            char buf_[buf_size];
             DWORD read_count;
-            BOOL success = ReadFile(stderr_read_handle, buf, buf_size, &read_count, nullptr);
+            BOOL success = ReadFile(stderr_read_handle, buf_, buf_size, &read_count, nullptr);
             if (!success || read_count == 0) {
                 break;
             }
-            string_builder_append(&stderr_sb, "%.*s", read_count, buf);
+
+            auto buf = platform_windows_normalize_line_endings(ta, String_Ref(buf_, read_count));
+            string_builder_append(&stderr_sb, "%.*s", buf.length, buf.data);
         }
 
         DWORD exit_code;
@@ -379,9 +384,60 @@ String platform_dir_name(Allocator *allocator, const String_Ref path)
     return String(allocator, result.data, result.length);
 }
 
+String platform_cwd(Allocator *allocator)
+{
+    const DWORD buf_size = MAX_PATH;
+    TCHAR buf[buf_size];
+
+    DWORD length = GetCurrentDirectory(buf_size, buf);
+    assert(length > 0);
+    assert(length < buf_size);
+
+    return String(allocator, buf, length);
+}
+
 void platform_exit(int exit_code)
 {
     exit(exit_code);
+}
+
+String platform_windows_normalize_line_endings(Allocator *allocator, String_Ref str)
+{
+    s64 cr_count = 0;
+    for (s64 i = 0; i < str.length - 1; i++) {
+        if (str[i] == '\r' && str[i + 1] == '\n') {
+            cr_count += 1;
+        }
+    }
+
+    if (!cr_count) {
+        return string_copy(allocator, str);
+    }
+
+    auto new_length = str.length - cr_count;
+    auto buf = alloc_array<char>(allocator, new_length + 1);
+
+    s64 read_index = 0;
+    s64 copy_length = 0;
+    char *write_cursor = buf;
+
+    for (s64 i = 0; i < str.length; i++) {
+        if (i < str.length - 1 && str[i] == '\r' && str[i + 1] == '\n') {
+            zmemcpy(write_cursor, &str[read_index], copy_length);
+            write_cursor += copy_length;
+            copy_length = 0;
+            read_index = i + 1;
+        } else {
+            copy_length += 1;
+        }
+    }
+
+    if (copy_length) {
+        zmemcpy(write_cursor, &str[read_index], copy_length);
+    }
+
+    return String(buf, new_length);
+
 }
 
 }

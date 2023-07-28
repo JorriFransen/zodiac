@@ -14,7 +14,7 @@ namespace Zodiac
 struct Zodiac_Options
 {
     String_Ref input_file_name = {};
-    String_Ref output_file_name = "a.out";
+    String_Ref output_file_name = "a.out" ZPLATFORM_DEFAULT_EXE_EXTENSION;
 
     bool dont_emit_binary = false;
 

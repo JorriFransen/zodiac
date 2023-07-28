@@ -84,9 +84,13 @@ STATIC_ASSERT(sizeof(r64) == 8, "Expected sizeof(r64) to be 8 bytes");
 #define MEGABYTE(x) (x * 1000 * 1000)
 #define KILOBYTE(x) (x * 1000)
 
+#define ZPLATFORM_DEFAULT_EXE_EXTENSION ""
+
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 
 #define ZPLATFORM_WINDOWS 1
+#undef ZPLATFORM_DEFAULT_EXE_EXTENSION
+#define ZPLATFORM_DEFAULT_EXE_EXTENSION ".exe"
 #ifndef _WIN64
 #error "64-bit is required on Windows!"
 #endif // _WIN64
@@ -126,6 +130,8 @@ STATIC_ASSERT(false, "Unsupported platform (Apple).");
 
 #endif // ZEXPORT
 
+namespace Zodiac {
+
 ZINLINE u64 get_aligned(u64 operand, u64 alignment) {
     return ((operand + (alignment - 1)) & ~(alignment - 1));
 }
@@ -149,4 +155,6 @@ class ExitScopeHelp {
 #define CONCAT_INTERNAL(x,y) x##y
 #define CONCAT(x,y) CONCAT_INTERNAL(x,y)
 #define defer const auto& CONCAT(defer__, __LINE__) = ExitScopeHelp() + [&]()
+
+}
 
