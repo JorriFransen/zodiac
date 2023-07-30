@@ -12,12 +12,15 @@ Vec2 :: struct {
 
 
 main :: () -> s64 {
-    p : Vec2;
+    // p : Vec2;
     // r : Rect;
 
-    p.x = 40;
+    x : s64 = 1;
+    x = 2;
+
+    // p.x = 40;
     // p.y = 2;
-    return 0;
+    return x;
 }
 
 //     a := 8 + 2;

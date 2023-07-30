@@ -255,7 +255,18 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             break;
         }
 
-        case AST_Statement_Kind::ASSIGN: assert(false); break;
+        case AST_Statement_Kind::ASSIGN: {
+            Bytecode_Register lvalue_reg = ast_lvalue_to_bytecode(bc, stmt->assign.dest);
+            Bytecode_Register value_reg = ast_expr_to_bytecode(bc, stmt->assign.value);
+
+            if (lvalue_reg.kind == Bytecode_Register_Kind::ALLOC) {
+                bytecode_emit_store_alloc(bc->builder, value_reg, lvalue_reg);
+            } else {
+                assert(false);
+            }
+
+            break;
+        }
 
         case AST_Statement_Kind::CALL: {
             ast_expr_to_bytecode(bc, stmt->call.call);
@@ -353,6 +364,43 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             break;
         }
     }
+}
+
+Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr)
+{
+    assert(bc);
+    assert(expr);
+
+    switch (expr->kind) {
+        case AST_Expression_Kind::INVALID: assert(false); break;
+        case AST_Expression_Kind::INTEGER_LITERAL: assert(false); break;
+        case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
+        case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
+        case AST_Expression_Kind::BOOL_LITERAL: assert(false); break;
+
+        case AST_Expression_Kind::IDENTIFIER: {
+            assert(expr->identifier.scope);
+            Symbol *ident_sym = scope_get_symbol(expr->identifier.scope, expr->identifier);
+            assert(ident_sym);
+            assert(ident_sym->decl);
+            assert(ident_sym->decl->kind == AST_Declaration_Kind::VARIABLE);
+
+            Bytecode_Register alloc_reg;
+            bool found = hash_table_find(&bc->allocations, ident_sym->decl, &alloc_reg);
+            assert(found);
+
+            return alloc_reg;
+        }
+
+        case AST_Expression_Kind::MEMBER: assert(false); break;
+        case AST_Expression_Kind::INDEX: assert(false); break;
+        case AST_Expression_Kind::CALL: assert(false); break;
+        case AST_Expression_Kind::UNARY: assert(false); break;
+        case AST_Expression_Kind::BINARY: assert(false); break;
+    }
+
+    assert(false);
+    return {};
 }
 
 Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr)

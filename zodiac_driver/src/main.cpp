@@ -132,7 +132,7 @@ int main(int argc, const char **argv) {
 
     Interpreter_Register result_reg = interpreter_start(&interp, program);
     if (result_reg.type->kind == Type_Kind::INTEGER) {
-        ZTRACE("Entry point returned: %lli\n", result_reg.value.integer.s64);
+        ZTRACE("Entry point returned: %lli", result_reg.value.integer.s64);
     } else {
         assert_msg(false, "Unexpected return type from entry point")
     }

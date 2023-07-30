@@ -1332,7 +1332,15 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
             return true;
         }
 
-        case AST_Statement_Kind::ASSIGN: assert(false);
+        case AST_Statement_Kind::ASSIGN: {
+            AST_Expression *lvalue_expr = stmt->assign.dest;
+            AST_Expression *value_expr = stmt->assign.value;
+            assert(lvalue_expr->resolved_type);
+            assert(value_expr->resolved_type);
+
+            assert(valid_static_type_conversion(value_expr->resolved_type, lvalue_expr->resolved_type));
+            return true;
+        }
 
         case AST_Statement_Kind::CALL: {
             // leaf

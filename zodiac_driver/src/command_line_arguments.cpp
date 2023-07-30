@@ -1,5 +1,6 @@
 #include "command_line_arguments.h"
 
+#include "defines.h"
 #include "memory/allocator.h"
 #include "platform/filesystem.h"
 #include "util/asserts.h"
