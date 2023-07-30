@@ -84,7 +84,15 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                 hash_table_add(&bc->globals, decl, global_handle);
 
             } else {
-                // Leaf
+                if (decl->variable.value && !EXPR_IS_CONST(decl->variable.value)) {
+                    Bytecode_Register value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
+
+                    Bytecode_Register alloc_reg;
+                    bool found = hash_table_find(&bc->allocations, decl, &alloc_reg);
+                    assert(found)
+
+                    bytecode_emit_store_alloc(bc->builder, value_reg, alloc_reg);
+                }
             }
             break;
         }
@@ -150,7 +158,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
             hash_table_add(&bc->allocations, var_decl, alloc_reg);
 
-            if (var_decl->variable.value) has_inits = true;
+            if (var_decl->variable.value && EXPR_IS_CONST(var_decl->variable.value)) has_inits = true;
         }
 
         if (has_inits) {
@@ -161,7 +169,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
             for (s64 i = 0; i < decl->function.variables.count; i++) {
                 AST_Declaration *var_decl = decl->function.variables[i];
-                if (var_decl->variable.value) {
+                if (var_decl->variable.value && EXPR_IS_CONST(var_decl->variable.value)) {
                     Bytecode_Register value = ast_expr_to_bytecode(bc, var_decl->variable.value);
 
                     // TODO: Temporarily store this on the stack from before?
