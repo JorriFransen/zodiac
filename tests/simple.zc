@@ -44,7 +44,7 @@ main :: () -> s64 {
 
     print("Hello, Zodiac!");
 
-    return a + b;
+    return a + b - 85;
 }
 
 foo : s64 = 33;
