@@ -503,16 +503,13 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
         break;
     }
 
-    case AST_Expression_Kind::IDENTIFIER:
-    {
+    case AST_Expression_Kind::IDENTIFIER: {
         assert(expr->identifier.scope == nullptr);
         expr->identifier.scope = scope;
         break;
     }
 
-    case AST_Expression_Kind::MEMBER:
-    {
-        assert(!infer_type_from);
+    case AST_Expression_Kind::MEMBER: {
         flatten_expression(expr->member.base, scope, dest, nullptr);
         break;
     }
@@ -520,12 +517,10 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
     case AST_Expression_Kind::INDEX:
         assert(false);
 
-    case AST_Expression_Kind::CALL:
-    {
+    case AST_Expression_Kind::CALL: {
         flatten_expression(expr->call.base, scope, dest, nullptr);
 
-        for (u64 i = 0; i < expr->call.args.count; i++)
-        {
+        for (u64 i = 0; i < expr->call.args.count; i++) {
             flatten_expression(expr->call.args[i], scope, dest, nullptr);
         }
         break;
@@ -534,8 +529,7 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
     case AST_Expression_Kind::UNARY:
         assert(false);
 
-    case AST_Expression_Kind::BINARY:
-    {
+    case AST_Expression_Kind::BINARY: {
         // assert(infer_type_from);
         flatten_expression(expr->binary.lhs, scope, dest, infer_type_from);
         flatten_expression(expr->binary.rhs, scope, dest, infer_type_from);
@@ -552,22 +546,20 @@ void flatten_type_spec(AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node>
 {
     assert(ts && scope && dest);
 
-    switch (ts->kind)
-    {
-    case AST_Type_Spec_Kind::INVALID:
-        assert(false);
+    switch (ts->kind) {
 
-    case AST_Type_Spec_Kind::NAME:
-    {
-        // Leaf
-        break;
-    }
+        case AST_Type_Spec_Kind::INVALID:
+            assert(false);
 
-    case AST_Type_Spec_Kind::POINTER:
-    {
-        flatten_type_spec(ts->base, scope, dest);
-        break;
-    }
+        case AST_Type_Spec_Kind::NAME: {
+            // Leaf
+            break;
+        }
+
+        case AST_Type_Spec_Kind::POINTER: {
+            flatten_type_spec(ts->base, scope, dest);
+            break;
+        }
     }
 
     Flat_Node flat_ts = to_flat_node(ts, scope);
@@ -867,24 +859,20 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
     case AST_Expression_Kind::INTEGER_LITERAL:
     case AST_Expression_Kind::STRING_LITERAL:
     case AST_Expression_Kind::NULL_LITERAL:
-    case AST_Expression_Kind::BOOL_LITERAL:
-    {
+    case AST_Expression_Kind::BOOL_LITERAL: {
         assert((expr->flags & AST_EXPR_FLAG_CONST) == AST_EXPR_FLAG_CONST);
         // Leaf
         break;
     }
 
-    case AST_Expression_Kind::BINARY:
-    {
-        if (EXPR_IS_CONST(expr->binary.lhs) && EXPR_IS_CONST(expr->binary.rhs))
-        {
+    case AST_Expression_Kind::BINARY: {
+        if (EXPR_IS_CONST(expr->binary.lhs) && EXPR_IS_CONST(expr->binary.rhs)) {
             expr->flags |= AST_EXPR_FLAG_CONST;
         }
         break;
     }
 
-    case AST_Expression_Kind::CALL:
-    {
+    case AST_Expression_Kind::CALL: {
         AST_Expression *base = expr->call.base;
 
         // TODO: Support arbitrary expressions here
@@ -892,8 +880,7 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 
         Symbol *sym = scope_get_symbol(scope, base->identifier);
         assert(sym);
-        if (sym->kind != Symbol_Kind::FUNC)
-        {
+        if (sym->kind != Symbol_Kind::FUNC) {
             resolve_error(ctx, base, "Not a function '%s'", sym->name.data);
             result = false;
             break;
@@ -905,33 +892,26 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
         break;
     }
 
-    case AST_Expression_Kind::IDENTIFIER:
-    {
+    case AST_Expression_Kind::IDENTIFIER: {
         Symbol *sym = scope_get_symbol(scope, expr->identifier.name);
 
-        if (!sym)
-        {
+        if (!sym) {
             resolve_error(ctx, expr, "Undefined symbol: '%s'", expr->identifier.name.data);
             result = false;
             break;
         }
 
-        if (sym->state == Symbol_State::RESOLVING)
-        {
+        if (sym->state == Symbol_State::RESOLVING) {
 
             fatal_resolve_error(ctx, expr, "Circular dependency detected");
             result = false;
             break;
-        }
-        else if (sym->state == Symbol_State::UNRESOLVED)
-        {
+        } else if (sym->state == Symbol_State::UNRESOLVED) {
 
             resolve_error(ctx, expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
             result = false;
             break;
-        }
-        else
-        {
+        } else {
             assert(sym->state >= Symbol_State::RESOLVED);
 
             if (sym->kind == Symbol_Kind::CONST) {
@@ -960,7 +940,8 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
         assert(type_sym->aggregate.scope);
         assert(type_sym->aggregate.scope->kind == Scope_Kind::AGGREGATE);
 
-        auto sym = scope_get_symbol(type_sym->aggregate.scope, expr->member.member_name);
+        s64 member_index;
+        auto sym = scope_get_symbol_direct(type_sym->aggregate.scope, expr->member.member_name, &member_index);
         if (!sym) {
             assert(type_sym->decl);
             fatal_resolve_error(ctx, expr, "'%s' is not a member of aggregate type '%s'", expr->member.member_name.data, aggregate_type->structure.name);
@@ -971,6 +952,9 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
         assert(sym);
         assert(sym->kind == Symbol_Kind::MEMBER);
         assert(sym->state == Symbol_State::TYPED);
+        assert(member_index >= 0 && member_index < aggregate_type->structure.member_types.count);
+        expr->member.index_in_parent = member_index;
+
         break;
     }
 
@@ -1338,7 +1322,10 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
             assert(lvalue_expr->resolved_type);
             assert(value_expr->resolved_type);
 
-            assert(valid_static_type_conversion(value_expr->resolved_type, lvalue_expr->resolved_type));
+            if (value_expr->resolved_type != lvalue_expr->resolved_type &&
+                valid_static_type_conversion(value_expr->resolved_type, lvalue_expr->resolved_type)) {
+                value_expr->resolved_type = lvalue_expr->resolved_type;
+            }
             return true;
         }
 

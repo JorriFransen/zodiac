@@ -70,6 +70,7 @@ void ast_member_expr_create(AST_Expression *base, Atom atom, AST_Expression *out
 
     out_expr->member.base = base;
     out_expr->member.member_name = atom;
+    out_expr->member.index_in_parent = -1;
     out_expr->member.type_decl = nullptr;
 }
 

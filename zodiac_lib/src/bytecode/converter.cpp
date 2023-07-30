@@ -261,6 +261,10 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
             if (lvalue_reg.kind == Bytecode_Register_Kind::ALLOC) {
                 bytecode_emit_store_alloc(bc->builder, value_reg, lvalue_reg);
+            } else if (lvalue_reg.kind == Bytecode_Register_Kind::TEMPORARY) {
+                assert(lvalue_reg.type->kind == Type_Kind::POINTER);
+                assert(lvalue_reg.type->pointer.base == value_reg.type);
+                bytecode_emit_store_pointer(bc->builder, value_reg, lvalue_reg);
             } else {
                 assert(false);
             }
@@ -385,6 +389,8 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
             assert(ident_sym->decl);
             assert(ident_sym->decl->kind == AST_Declaration_Kind::VARIABLE);
 
+            assert(!((ident_sym->decl->flags & AST_DECL_FLAG_GLOBAL) == AST_DECL_FLAG_GLOBAL));
+
             Bytecode_Register alloc_reg;
             bool found = hash_table_find(&bc->allocations, ident_sym->decl, &alloc_reg);
             assert(found);
@@ -392,7 +398,12 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
             return alloc_reg;
         }
 
-        case AST_Expression_Kind::MEMBER: assert(false); break;
+        case AST_Expression_Kind::MEMBER: {
+            assert(expr->member.index_in_parent >= 0);
+            Bytecode_Register base_reg = ast_lvalue_to_bytecode(bc, expr->member.base);
+            return bytecode_emit_aggregate_offset_pointer(bc->builder, base_reg, expr->member.index_in_parent);
+        }
+
         case AST_Expression_Kind::INDEX: assert(false); break;
         case AST_Expression_Kind::CALL: assert(false); break;
         case AST_Expression_Kind::UNARY: assert(false); break;
@@ -504,7 +515,12 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             break;
         }
 
-        case AST_Expression_Kind::MEMBER: assert(false); break;
+        case AST_Expression_Kind::MEMBER: {
+            Bytecode_Register base_reg = ast_lvalue_to_bytecode(bc, expr->member.base);
+            Bytecode_Register addr_reg = bytecode_emit_aggregate_offset_pointer(bc->builder, base_reg, expr->member.index_in_parent);
+            return bytecode_emit_load_pointer(bc->builder, addr_reg);
+        }
+
         case AST_Expression_Kind::INDEX: assert(false); break;
 
         case AST_Expression_Kind::CALL: {
@@ -552,7 +568,10 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     return bytecode_emit_add(bc->builder, lhs_reg, rhs_reg);
                 }
 
-                case AST_Binary_Operator::SUB: assert(false); break;
+                case AST_Binary_Operator::SUB: {
+                    return bytecode_emit_sub(bc->builder, lhs_reg, rhs_reg);
+                }
+
                 case AST_Binary_Operator::MUL: assert(false); break;
                 case AST_Binary_Operator::DIV: assert(false); break;
 

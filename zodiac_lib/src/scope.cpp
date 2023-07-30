@@ -63,6 +63,21 @@ Symbol *scope_get_symbol(Scope *scope, const AST_Identifier &ident)
     return scope_get_symbol(scope, ident.name);
 }
 
+Symbol *scope_get_symbol_direct(Scope *scope, const Atom &name, s64 *index)
+{
+    assert(scope);
+
+    for (u64 i = 0; i < scope->symbols.count; i++) {
+        if (scope->symbols[i].name == name) {
+            if (index) *index = i;
+            return &scope->symbols[i];
+        }
+    }
+
+    if (index) *index = -1;
+    return nullptr;
+}
+
 Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
     assert(scope);

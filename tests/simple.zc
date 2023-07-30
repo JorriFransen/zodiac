@@ -1,8 +1,8 @@
 //test
 
 Vec2 :: struct {
-    x: r32;
-//    y: r32;
+    x: s64;
+    y: s64;
 }
 
 // Rect :: struct {
@@ -12,15 +12,17 @@ Vec2 :: struct {
 
 
 main :: () -> s64 {
-    // p : Vec2;
+    p : Vec2;
     // r : Rect;
 
-    x : s64 = 1;
-    x = 2;
+    // x : s64 = 1;
+    // x = 2;
 
-    // p.x = 40;
-    // p.y = 2;
-    return x;
+    p.x = 40;
+    p.y = 2;
+    x := p.x + p.y;
+    print(x);
+    return x - 42;
 }
 
 //     a := 8 + 2;

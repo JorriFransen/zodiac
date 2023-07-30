@@ -96,6 +96,8 @@ ZAPI Scope *scope_new(Allocator *allocator, Scope_Kind kind, Scope *parent);
 ZAPI Symbol *scope_get_symbol(Scope *scope, const Atom &name);
 ZAPI Symbol *scope_get_symbol(Scope *scope, const AST_Identifier &ident);
 
+ZAPI Symbol *scope_get_symbol_direct(Scope *scope, const Atom &name, s64 *index);
+
 ZAPI Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl);
 ZAPI Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Range range);
 
