@@ -379,6 +379,48 @@ switch (operand.type->bit_size) { \
             result.value = rv;
 
             interpreter_store_register(interp, result, instruction.dest);
+
+            break;
+        }
+
+        case Bytecode_Opcode::SEXT: {
+            Interpreter_Register operand = interpreter_load_register(interp, instruction.a);
+            Interpreter_Register result = {
+                .type = instruction.dest.type,
+            };
+
+            assert(operand.type->kind == Type_Kind::INTEGER);
+            assert(instruction.dest.type->kind == Type_Kind::INTEGER);
+            assert(instruction.dest.type->bit_size > operand.type->bit_size);
+
+            assert(operand.type->integer.sign);
+            assert(instruction.dest.type->integer.sign);
+
+            Bytecode_Register_Value rv = {};
+
+#define SEXT_CASE_(size) case size: { \
+switch (operand.type->bit_size) { \
+    default: assert(false); break; \
+    case 8: rv.integer.s##size = (u##size)operand.value.integer.s8; break; \
+    case 16: rv.integer.s##size = (u##size)operand.value.integer.s16; break; \
+    case 32: rv.integer.s##size = (u##size)operand.value.integer.s32; break; \
+    case 64: rv.integer.s##size = (u##size)operand.value.integer.s64; break; \
+} break; }
+
+            switch (instruction.dest.type->bit_size) {
+                default: assert(false); break;
+                SEXT_CASE_(8)
+                SEXT_CASE_(16)
+                SEXT_CASE_(32)
+                SEXT_CASE_(64)
+            }
+
+#undef SEXT_CASE_
+
+            result.value = rv;
+
+            interpreter_store_register(interp, result, instruction.dest);
+
             break;
         }
 

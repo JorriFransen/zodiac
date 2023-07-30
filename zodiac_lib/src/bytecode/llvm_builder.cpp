@@ -269,14 +269,6 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
     return result;
 }
 
-bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruction &bc_inst)
-{
-    auto irb = builder->ir_builder;
-    auto ast_allocator = &builder->zodiac_context->ast_allocator;
-
-    switch (bc_inst.op) {
-        case Bytecode_Opcode::NOP: assert(false); break;
-
 #define EMIT_INTEGER_BINOP(op) { \
     llvm::Value *lhs = llvm_builder_emit_register(builder, bc_inst.a); \
     llvm::Value *rhs = llvm_builder_emit_register(builder, bc_inst.b); \
@@ -291,14 +283,6 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
     if (bc_inst.a.type->integer.sign) { EMIT_INTEGER_BINOP(S##op); } \
     else { EMIT_INTEGER_BINOP(U##op) } \
 }
-
-        case Bytecode_Opcode::I_ADD: EMIT_INTEGER_BINOP(Add)
-        case Bytecode_Opcode::I_SUB: EMIT_INTEGER_BINOP(Sub)
-        case Bytecode_Opcode::I_MUL: EMIT_INTEGER_BINOP(Mul)
-        case Bytecode_Opcode::I_DIV: EMIT_INTEGER_BINOP_S(Div)
-
-#undef EMIT_INTEGER_BINOP_S
-#undef EMIT_INTEGER_BINOP
 
 #define EMIT_INTEGER_CMP_BINOP(op) { \
     llvm::Value *lhs = llvm_builder_emit_register(builder, bc_inst.a); \
@@ -318,16 +302,6 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
     else { EMIT_INTEGER_CMP_BINOP(U##op) } \
 }
 
-        case Bytecode_Opcode::I_EQ:    EMIT_INTEGER_CMP_BINOP(EQ)
-        case Bytecode_Opcode::I_NEQ:   EMIT_INTEGER_CMP_BINOP(NE)
-        case Bytecode_Opcode::I_GT:    EMIT_INTEGER_CMP_BINOP_S(GT)
-        case Bytecode_Opcode::I_LT:    EMIT_INTEGER_CMP_BINOP_S(LT)
-        case Bytecode_Opcode::I_GT_EQ: EMIT_INTEGER_CMP_BINOP_S(GE)
-        case Bytecode_Opcode::I_LT_EQ: EMIT_INTEGER_CMP_BINOP_S(LE)
-
-#undef EMIT_INTEGER_CMP_BINOP_S
-#undef EMIT_INTEGER_CMP_BINOP
-
 #define EMIT_FLOAT_BINOP(op) { \
     llvm::Value *lhs = llvm_builder_emit_register(builder, bc_inst.a); \
     llvm::Value *rhs = llvm_builder_emit_register(builder, bc_inst.b); \
@@ -336,13 +310,6 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
     llvm_builder_store_result(builder, bc_inst.dest, result); \
     break; \
 }
-
-        case Bytecode_Opcode::F_ADD: EMIT_FLOAT_BINOP(FAdd)
-        case Bytecode_Opcode::F_SUB: EMIT_FLOAT_BINOP(FSub)
-        case Bytecode_Opcode::F_MUL: EMIT_FLOAT_BINOP(FMul)
-        case Bytecode_Opcode::F_DIV: EMIT_FLOAT_BINOP(FDiv)
-
-#undef EMIT_FLOAT_BINOP
 
 #define EMIT_FLOAT_CMP_BINOP(op) { \
     llvm::Value *lhs = llvm_builder_emit_register(builder, bc_inst.a); \
@@ -356,12 +323,40 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
     break; \
 }
 
+bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruction &bc_inst)
+{
+    auto irb = builder->ir_builder;
+    auto ast_allocator = &builder->zodiac_context->ast_allocator;
+
+    switch (bc_inst.op) {
+        case Bytecode_Opcode::NOP: {
+            assert(false);
+        }
+
+        case Bytecode_Opcode::I_ADD: EMIT_INTEGER_BINOP(Add)
+        case Bytecode_Opcode::I_SUB: EMIT_INTEGER_BINOP(Sub)
+        case Bytecode_Opcode::I_MUL: EMIT_INTEGER_BINOP(Mul)
+        case Bytecode_Opcode::I_DIV: EMIT_INTEGER_BINOP_S(Div)
+
+        case Bytecode_Opcode::I_EQ:    EMIT_INTEGER_CMP_BINOP(EQ)
+        case Bytecode_Opcode::I_NEQ:   EMIT_INTEGER_CMP_BINOP(NE)
+        case Bytecode_Opcode::I_GT:    EMIT_INTEGER_CMP_BINOP_S(GT)
+        case Bytecode_Opcode::I_LT:    EMIT_INTEGER_CMP_BINOP_S(LT)
+        case Bytecode_Opcode::I_GT_EQ: EMIT_INTEGER_CMP_BINOP_S(GE)
+        case Bytecode_Opcode::I_LT_EQ: EMIT_INTEGER_CMP_BINOP_S(LE)
+
+        case Bytecode_Opcode::F_ADD: EMIT_FLOAT_BINOP(FAdd)
+        case Bytecode_Opcode::F_SUB: EMIT_FLOAT_BINOP(FSub)
+        case Bytecode_Opcode::F_MUL: EMIT_FLOAT_BINOP(FMul)
+        case Bytecode_Opcode::F_DIV: EMIT_FLOAT_BINOP(FDiv)
+
         case Bytecode_Opcode::F_EQ:    EMIT_FLOAT_CMP_BINOP(EQ)
         case Bytecode_Opcode::F_NEQ:   EMIT_FLOAT_CMP_BINOP(NE)
         case Bytecode_Opcode::F_GT:    EMIT_FLOAT_CMP_BINOP(GT)
         case Bytecode_Opcode::F_LT:    EMIT_FLOAT_CMP_BINOP(LT)
         case Bytecode_Opcode::F_GT_EQ: EMIT_FLOAT_CMP_BINOP(GE)
         case Bytecode_Opcode::F_LT_EQ: EMIT_FLOAT_CMP_BINOP(LE)
+
 
         case Bytecode_Opcode::SQRT: {
             llvm::Value *operand = llvm_builder_emit_register(builder, bc_inst.a);
@@ -433,6 +428,20 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             break;
         }
 
+        case Bytecode_Opcode::SEXT: {
+            assert(bc_inst.a.type->kind == Type_Kind::INTEGER);
+            assert(bc_inst.dest.type->kind == Type_Kind::INTEGER);
+            assert(bc_inst.dest.type->bit_size > bc_inst.a.type->bit_size);
+            assert(bc_inst.a.type->integer.sign);
+            assert(bc_inst.dest.type->integer.sign);
+
+            llvm::Type *llvm_target_type = llvm_type_from_ast_type(builder, bc_inst.dest.type);
+            llvm::Value *llvm_val = llvm_builder_emit_register(builder, bc_inst.a);
+            llvm::Value *result = irb->CreateSExt(llvm_val, llvm_target_type);
+            llvm_builder_store_result(builder, bc_inst.dest, result);
+            break;
+        }
+
         case Bytecode_Opcode::PRINT: {
 
             llvm::Value *llvm_val = llvm_builder_emit_register(builder, bc_inst.a);
@@ -441,7 +450,11 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             auto llvm_print_args = &temp_llvm_print_args.array;
 
             switch(bc_inst.a.type->kind) {
-                default: assert(false && !"Unhandled type in print (llvm)"); break;
+
+                default: {
+                    assert(false && !"Unhandled type in print (llvm)");
+                    break;
+                }
 
                 case Type_Kind::BOOLEAN: {
                     Type *bool_to_str_ret_type = get_pointer_type(&builtin_type_u8, ast_allocator);
@@ -460,6 +473,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
                     dynamic_array_append(llvm_print_args, llvm_bool_str);
                     break;
                 }
+
 
                 case Type_Kind::INTEGER: {
 
@@ -909,6 +923,14 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
     return true;
 }
+
+#undef EMIT_INTEGER_BINOP_S
+#undef EMIT_INTEGER_BINOP
+#undef EMIT_INTEGER_CMP_BINOP_S
+#undef EMIT_INTEGER_CMP_BINOP
+#undef EMIT_FLOAT_BINOP
+
+
 
 llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Register &bc_reg)
 {

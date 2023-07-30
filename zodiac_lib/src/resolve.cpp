@@ -278,102 +278,93 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
     Scope *parameter_scope = nullptr;
     Scope *local_scope = nullptr;
 
-    switch (decl_sym->kind)
-    {
+    switch (decl_sym->kind) {
 
-    default:
-        break;
+        default:
+            break;
 
-    case Symbol_Kind::FUNC:
-    {
-        assert(decl_sym->func.parameter_scope && decl_sym->func.local_scope);
-        parameter_scope = decl_sym->func.parameter_scope;
-        local_scope = decl_sym->func.local_scope;
-        break;
-    }
+        case Symbol_Kind::FUNC: {
+            assert(decl_sym->func.parameter_scope && decl_sym->func.local_scope);
+            parameter_scope = decl_sym->func.parameter_scope;
+            local_scope = decl_sym->func.local_scope;
+            break;
+        }
 
-    case Symbol_Kind::TYPE:
-    {
-        assert(decl_sym->aggregate.scope);
-        aggregate_scope = decl_sym->aggregate.scope;
-        break;
-    }
+        case Symbol_Kind::TYPE: {
+            assert(decl_sym->aggregate.scope);
+            aggregate_scope = decl_sym->aggregate.scope;
+            break;
+        }
     }
 
     assert(decl_sym->state == Symbol_State::UNRESOLVED);
 
-    switch (decl->kind)
-    {
-    case AST_Declaration_Kind::INVALID:
-        assert(false);
+    switch (decl->kind) {
 
-    case AST_Declaration_Kind::VARIABLE:
-    case AST_Declaration_Kind::CONSTANT_VARIABLE:
-    case AST_Declaration_Kind::PARAMETER:
-    case AST_Declaration_Kind::FIELD:
-    {
-        auto ts = decl->variable.type_spec;
-        auto val = decl->variable.value;
+        case AST_Declaration_Kind::INVALID:
+            assert(false);
 
-        if (ts)
-            flatten_type_spec(ts, scope, dest);
-        if (val)
-            flatten_expression(val, scope, dest, ts);
+        case AST_Declaration_Kind::VARIABLE:
+        case AST_Declaration_Kind::CONSTANT_VARIABLE:
+        case AST_Declaration_Kind::PARAMETER:
+        case AST_Declaration_Kind::FIELD: {
+            auto ts = decl->variable.type_spec;
+            auto val = decl->variable.value;
 
-        assert(decl->identifier.scope == nullptr);
-        decl->identifier.scope = scope;
-        break;
-    }
+            if (ts)
+                flatten_type_spec(ts, scope, dest);
+            if (val)
+                flatten_expression(val, scope, dest, ts);
 
-    case AST_Declaration_Kind::FUNCTION:
-    {
-
-        assert(parameter_scope);
-        assert(local_scope);
-
-        decl->function.parameter_scope = parameter_scope;
-        decl->function.local_scope = local_scope;
-
-        for (u64 i = 0; i < decl->function.params.count; i++)
-        {
-
-            auto field = decl->function.params[i];
-            assert(field->kind == AST_Declaration_Kind::PARAMETER);
-
-            flatten_type_spec(field->parameter.type_spec, scope, dest);
-            Flat_Node param_node = to_flat_node(field, parameter_scope);
-            dynamic_array_append(dest, param_node);
+            assert(decl->identifier.scope == nullptr);
+            decl->identifier.scope = scope;
+            break;
         }
 
-        if (decl->function.return_ts)
-        {
-            flatten_type_spec(decl->function.return_ts, scope, dest);
+        case AST_Declaration_Kind::FUNCTION: {
+
+            assert(parameter_scope);
+            assert(local_scope);
+
+            decl->function.parameter_scope = parameter_scope;
+            decl->function.local_scope = local_scope;
+
+            for (u64 i = 0; i < decl->function.params.count; i++) {
+
+                auto field = decl->function.params[i];
+                assert(field->kind == AST_Declaration_Kind::PARAMETER);
+
+                flatten_type_spec(field->parameter.type_spec, scope, dest);
+                Flat_Node param_node = to_flat_node(field, parameter_scope);
+                dynamic_array_append(dest, param_node);
+            }
+
+            if (decl->function.return_ts) {
+                flatten_type_spec(decl->function.return_ts, scope, dest);
+            }
+
+            for (u64 i = 0; i < decl->function.body.count; i++) {
+                flatten_statement(ctx, decl->function.body[i], local_scope, dest);
+            }
+
+            break;
         }
 
-        for (u64 i = 0; i < decl->function.body.count; i++)
-        {
-            flatten_statement(ctx, decl->function.body[i], local_scope, dest);
+        case AST_Declaration_Kind::STRUCT:
+        case AST_Declaration_Kind::UNION: {
+
+            assert(aggregate_scope);
+            for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
+                auto field = decl->aggregate.fields[i];
+                assert(field->kind == AST_Declaration_Kind::FIELD);
+
+                flatten_type_spec(field->field.type_spec, scope, dest);
+                Flat_Node member_node = to_flat_node(field, aggregate_scope);
+                dynamic_array_append(dest, member_node);
+            }
+
+            break;
         }
-
-        break;
-    }
-
-    case AST_Declaration_Kind::STRUCT:
-    case AST_Declaration_Kind::UNION:
-    {
-        assert(aggregate_scope);
-        for (u64 i = 0; i < decl->aggregate.fields.count; i++)
-        {
-            auto field = decl->aggregate.fields[i];
-            assert(field->kind == AST_Declaration_Kind::FIELD);
-
-            flatten_type_spec(field->field.type_spec, scope, dest);
-            Flat_Node member_node = to_flat_node(field, aggregate_scope);
-            dynamic_array_append(dest, member_node);
-        }
-
-        break;
-    }
     }
 
     Flat_Node flat_decl = to_flat_node(decl, scope);
@@ -484,58 +475,77 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
 {
     assert(expr && scope && dest);
 
-    switch (expr->kind)
-    {
-    case AST_Expression_Kind::INVALID:
-        assert(false);
+    switch (expr->kind) {
 
-    case AST_Expression_Kind::INTEGER_LITERAL:
-    {
-        expr->infer_type_from = infer_type_from;
-        break;
-    }
+        case AST_Expression_Kind::INVALID:
+            assert(false);
 
-    case AST_Expression_Kind::STRING_LITERAL:
-    case AST_Expression_Kind::NULL_LITERAL:
-    case AST_Expression_Kind::BOOL_LITERAL:
-    {
-        // Leaf expression
-        break;
-    }
-
-    case AST_Expression_Kind::IDENTIFIER: {
-        assert(expr->identifier.scope == nullptr);
-        expr->identifier.scope = scope;
-        break;
-    }
-
-    case AST_Expression_Kind::MEMBER: {
-        flatten_expression(expr->member.base, scope, dest, nullptr);
-        break;
-    }
-
-    case AST_Expression_Kind::INDEX:
-        assert(false);
-
-    case AST_Expression_Kind::CALL: {
-        flatten_expression(expr->call.base, scope, dest, nullptr);
-
-        for (u64 i = 0; i < expr->call.args.count; i++) {
-            flatten_expression(expr->call.args[i], scope, dest, nullptr);
+        case AST_Expression_Kind::INTEGER_LITERAL: {
+            expr->infer_type_from = infer_type_from;
+            break;
         }
-        break;
-    }
 
-    case AST_Expression_Kind::UNARY:
-        assert(false);
+        case AST_Expression_Kind::STRING_LITERAL:
+        case AST_Expression_Kind::NULL_LITERAL:
+        case AST_Expression_Kind::BOOL_LITERAL: {
+            // Leaf expression
+            break;
+        }
 
-    case AST_Expression_Kind::BINARY: {
-        // assert(infer_type_from);
-        flatten_expression(expr->binary.lhs, scope, dest, infer_type_from);
-        flatten_expression(expr->binary.rhs, scope, dest, infer_type_from);
-        expr->infer_type_from = infer_type_from;
-        break;
-    }
+        case AST_Expression_Kind::IDENTIFIER: {
+            assert(expr->identifier.scope == nullptr);
+            expr->identifier.scope = scope;
+            break;
+        }
+
+        case AST_Expression_Kind::MEMBER: {
+            flatten_expression(expr->member.base, scope, dest, nullptr);
+            break;
+        }
+
+        case AST_Expression_Kind::INDEX:
+            assert(false);
+
+        case AST_Expression_Kind::CALL: {
+            flatten_expression(expr->call.base, scope, dest, nullptr);
+
+            for (u64 i = 0; i < expr->call.args.count; i++) {
+                flatten_expression(expr->call.args[i], scope, dest, nullptr);
+            }
+            break;
+        }
+
+        case AST_Expression_Kind::UNARY:
+            assert(false);
+
+        case AST_Expression_Kind::BINARY: {
+            // assert(infer_type_from);
+
+            AST_Type_Spec *infer_from = infer_type_from;
+            if (expr->binary.lhs->kind == AST_Expression_Kind::INTEGER_LITERAL) {
+                infer_from = nullptr;
+            }
+
+            flatten_expression(expr->binary.lhs, scope, dest, infer_from);
+
+            infer_from = infer_type_from;
+            if (expr->binary.rhs->kind == AST_Expression_Kind::INTEGER_LITERAL) {
+                infer_from = nullptr;
+            }
+
+            flatten_expression(expr->binary.rhs, scope, dest, infer_from);
+
+            expr->infer_type_from = infer_type_from;
+            break;
+        }
+
+
+        case AST_Expression_Kind::CAST: {
+            assert(expr->cast.type_spec);
+            flatten_type_spec(expr->cast.type_spec, scope, dest);
+            flatten_expression(expr->cast.value, scope, dest, nullptr);
+            break;
+        }
     }
 
     Flat_Node flat_expr = to_flat_node(expr, scope);
@@ -851,117 +861,118 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 
     bool result = true;
 
-    switch (expr->kind)
-    {
-    case AST_Expression_Kind::INVALID:
-        assert(false);
+    switch (expr->kind) {
+        case AST_Expression_Kind::INVALID:
+            assert(false);
 
-    case AST_Expression_Kind::INTEGER_LITERAL:
-    case AST_Expression_Kind::STRING_LITERAL:
-    case AST_Expression_Kind::NULL_LITERAL:
-    case AST_Expression_Kind::BOOL_LITERAL: {
-        assert((expr->flags & AST_EXPR_FLAG_CONST) == AST_EXPR_FLAG_CONST);
-        // Leaf
-        break;
-    }
-
-    case AST_Expression_Kind::BINARY: {
-        if (EXPR_IS_CONST(expr->binary.lhs) && EXPR_IS_CONST(expr->binary.rhs)) {
-            expr->flags |= AST_EXPR_FLAG_CONST;
-        }
-        break;
-    }
-
-    case AST_Expression_Kind::CALL: {
-        AST_Expression *base = expr->call.base;
-
-        // TODO: Support arbitrary expressions here
-        assert(base->kind == AST_Expression_Kind::IDENTIFIER);
-
-        Symbol *sym = scope_get_symbol(scope, base->identifier);
-        assert(sym);
-        if (sym->kind != Symbol_Kind::FUNC) {
-            resolve_error(ctx, base, "Not a function '%s'", sym->name.data);
-            result = false;
+        case AST_Expression_Kind::INTEGER_LITERAL:
+        case AST_Expression_Kind::STRING_LITERAL:
+        case AST_Expression_Kind::NULL_LITERAL:
+        case AST_Expression_Kind::BOOL_LITERAL: {
+            assert((expr->flags & AST_EXPR_FLAG_CONST) == AST_EXPR_FLAG_CONST);
+            // Leaf
             break;
         }
 
-        assert(sym->kind == Symbol_Kind::FUNC);
-        AST_Declaration *decl = sym->decl;
-        assert(decl);
-        break;
-    }
-
-    case AST_Expression_Kind::IDENTIFIER: {
-        Symbol *sym = scope_get_symbol(scope, expr->identifier.name);
-
-        if (!sym) {
-            resolve_error(ctx, expr, "Undefined symbol: '%s'", expr->identifier.name.data);
-            result = false;
-            break;
-        }
-
-        if (sym->state == Symbol_State::RESOLVING) {
-
-            fatal_resolve_error(ctx, expr, "Circular dependency detected");
-            result = false;
-            break;
-        } else if (sym->state == Symbol_State::UNRESOLVED) {
-
-            resolve_error(ctx, expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
-            result = false;
-            break;
-        } else {
-            assert(sym->state >= Symbol_State::RESOLVED);
-
-            if (sym->kind == Symbol_Kind::CONST) {
+        case AST_Expression_Kind::BINARY: {
+            if (EXPR_IS_CONST(expr->binary.lhs) && EXPR_IS_CONST(expr->binary.rhs)) {
                 expr->flags |= AST_EXPR_FLAG_CONST;
             }
-        }
-        break;
-    }
-
-    case AST_Expression_Kind::MEMBER: {
-
-        AST_Expression *base_expr = expr->member.base;
-        if (!base_expr->resolved_type) {
-            resolve_error(ctx, expr, "Waiting for base to be resolved");
-            return false;
-        }
-
-        auto aggregate_type = base_expr->resolved_type;
-        assert((aggregate_type->flags & TYPE_FLAG_AGGREGATE) == TYPE_FLAG_AGGREGATE);
-
-        assert(aggregate_type->structure.name.length);
-
-        auto type_sym = scope_get_symbol(scope, aggregate_type->structure.name);
-        assert(type_sym);
-        assert(type_sym->kind == Symbol_Kind::TYPE);
-        assert(type_sym->aggregate.scope);
-        assert(type_sym->aggregate.scope->kind == Scope_Kind::AGGREGATE);
-
-        s64 member_index;
-        auto sym = scope_get_symbol_direct(type_sym->aggregate.scope, expr->member.member_name, &member_index);
-        if (!sym) {
-            assert(type_sym->decl);
-            fatal_resolve_error(ctx, expr, "'%s' is not a member of aggregate type '%s'", expr->member.member_name.data, aggregate_type->structure.name);
-            fatal_resolve_error(ctx, type_sym->decl, "'%s' was declared here", aggregate_type->structure.name);
-            result = false;
             break;
         }
-        assert(sym);
-        assert(sym->kind == Symbol_Kind::MEMBER);
-        assert(sym->state == Symbol_State::TYPED);
-        assert(member_index >= 0 && member_index < aggregate_type->structure.member_types.count);
-        expr->member.index_in_parent = member_index;
 
-        break;
-    }
+        case AST_Expression_Kind::CALL: {
+            AST_Expression *base = expr->call.base;
 
-    case AST_Expression_Kind::INDEX:
-        assert(false);
-    case AST_Expression_Kind::UNARY:
-        assert(false);
+            // TODO: Support arbitrary expressions here
+            assert(base->kind == AST_Expression_Kind::IDENTIFIER);
+
+            Symbol *sym = scope_get_symbol(scope, base->identifier);
+            assert(sym);
+            if (sym->kind != Symbol_Kind::FUNC) {
+                resolve_error(ctx, base, "Not a function '%s'", sym->name.data);
+                result = false;
+                break;
+            }
+
+            assert(sym->kind == Symbol_Kind::FUNC);
+            AST_Declaration *decl = sym->decl;
+            assert(decl);
+            break;
+        }
+
+        case AST_Expression_Kind::IDENTIFIER: {
+            Symbol *sym = scope_get_symbol(scope, expr->identifier.name);
+
+            if (!sym) {
+                resolve_error(ctx, expr, "Undefined symbol: '%s'", expr->identifier.name.data);
+                result = false;
+                break;
+            }
+
+            if (sym->state == Symbol_State::RESOLVING) {
+
+                fatal_resolve_error(ctx, expr, "Circular dependency detected");
+                result = false;
+                break;
+            } else if (sym->state == Symbol_State::UNRESOLVED) {
+
+                resolve_error(ctx, expr, "Unresolved symbol: '%s'", expr->identifier.name.data);
+                result = false;
+                break;
+            } else {
+                assert(sym->state >= Symbol_State::RESOLVED);
+
+                if (sym->kind == Symbol_Kind::CONST) {
+                    expr->flags |= AST_EXPR_FLAG_CONST;
+                }
+            }
+            break;
+        }
+
+        case AST_Expression_Kind::MEMBER: {
+
+            AST_Expression *base_expr = expr->member.base;
+            if (!base_expr->resolved_type) {
+                resolve_error(ctx, expr, "Waiting for base to be resolved");
+                return false;
+            }
+
+            auto aggregate_type = base_expr->resolved_type;
+            assert((aggregate_type->flags & TYPE_FLAG_AGGREGATE) == TYPE_FLAG_AGGREGATE);
+
+            assert(aggregate_type->structure.name.length);
+
+            auto type_sym = scope_get_symbol(scope, aggregate_type->structure.name);
+            assert(type_sym);
+            assert(type_sym->kind == Symbol_Kind::TYPE);
+            assert(type_sym->aggregate.scope);
+            assert(type_sym->aggregate.scope->kind == Scope_Kind::AGGREGATE);
+
+            s64 member_index;
+            auto sym = scope_get_symbol_direct(type_sym->aggregate.scope, expr->member.member_name, &member_index);
+            if (!sym) {
+                assert(type_sym->decl);
+                fatal_resolve_error(ctx, expr, "'%s' is not a member of aggregate type '%s'", expr->member.member_name.data, aggregate_type->structure.name);
+                fatal_resolve_error(ctx, type_sym->decl, "'%s' was declared here", aggregate_type->structure.name);
+                result = false;
+                break;
+            }
+            assert(sym);
+            assert(sym->kind == Symbol_Kind::MEMBER);
+            assert(sym->state == Symbol_State::TYPED);
+            assert(member_index >= 0 && member_index < aggregate_type->structure.member_types.count);
+            expr->member.index_in_parent = member_index;
+
+            break;
+        }
+
+        case AST_Expression_Kind::INDEX:
+            assert(false);
+        case AST_Expression_Kind::UNARY:
+            assert(false);
+
+        case AST_Expression_Kind::CAST: assert(false); break;
 
     }
 
@@ -1023,7 +1034,7 @@ bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
 
 bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
 {
-    assert(node);
+    debug_assert(ctx && node);
 
     switch (node->kind) {
 
@@ -1033,7 +1044,7 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
         }
 
         case Flat_Node_Kind::STMT: {
-            return type_resolve_statement(node->stmt, node->scope);
+            return type_resolve_statement(ctx, node->stmt, node->scope);
             break;
         }
 
@@ -1298,10 +1309,9 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
     return false;
 }
 
-bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
+bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
 {
-    assert(stmt);
-    assert(scope);
+    debug_assert(ctx && stmt && scope);
 
     switch (stmt->kind) {
         case AST_Statement_Kind::INVALID: assert(false);
@@ -1374,6 +1384,11 @@ bool type_resolve_statement(AST_Statement *stmt, Scope *scope)
                         assert(false); // report error
                         return false;
                     }
+
+                    AST_Expression *value_expr = stmt->return_stmt.value;
+                    AST_Expression *cast_expr = ast_cast_expr_new(ctx, value_expr->range, expected_type, value_expr);
+                    stmt->return_stmt.value = cast_expr;
+
                 } else {
 
                     if (actual_type == &builtin_type_unsized_integer) {
@@ -1611,6 +1626,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             break;
         }
 
+        case AST_Expression_Kind::CAST: assert(false); break;
     }
 
     assert(expr->resolved_type);

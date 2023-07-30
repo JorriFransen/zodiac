@@ -39,6 +39,7 @@ namespace Bytecode {
     ZODIAC_BC_OP(F_LT_EQ) \
     ZODIAC_BC_OP(SQRT) \
     ZODIAC_BC_OP(TRUNC) \
+    ZODIAC_BC_OP(SEXT) \
     ZODIAC_BC_OP(PRINT) \
     ZODIAC_BC_OP(PUSH_ARG) \
     ZODIAC_BC_OP(CALL) \

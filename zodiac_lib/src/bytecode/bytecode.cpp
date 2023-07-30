@@ -605,6 +605,8 @@ Bytecode_Register bytecode_emit_integer_cast(Bytecode_Builder *builder, Type *ta
     assert(op_type != target_type);
     assert(op_type->kind == Type_Kind::INTEGER);
 
+    auto dest_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, target_type);
+
     if (target_type->kind == Type_Kind::INTEGER) {
 
         if (target_type->bit_size == op_type->bit_size) {
@@ -619,13 +621,18 @@ Bytecode_Register bytecode_emit_integer_cast(Bytecode_Builder *builder, Type *ta
 
         } else if (target_type->bit_size < op_type->bit_size) {
 
-            auto dest_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, target_type);
             bytecode_emit_instruction(builder, Bytecode_Opcode::TRUNC, operand_register, {}, dest_register);
             return dest_register;
 
         } else {
-            // Zero extend or sign extend
-            assert(false);
+            // target bit size > op bit size
+            if (target_type->integer.sign) {
+
+                bytecode_emit_instruction(builder, Bytecode_Opcode::SEXT, operand_register, {}, dest_register);
+                return dest_register;
+            } else {
+                assert(false);
+            }
         }
 
     } else {

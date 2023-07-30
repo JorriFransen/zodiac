@@ -13,7 +13,7 @@ namespace Zodiac
 
 void ast_identifier_create(Atom name, Source_Range range, AST_Identifier *out_ident)
 {
-    assert(out_ident);
+    debug_assert(out_ident);
 
     out_ident->name = name;
     out_ident->range = range;
@@ -22,7 +22,7 @@ void ast_identifier_create(Atom name, Source_Range range, AST_Identifier *out_id
 
 void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_expr)
 {
-    assert(out_expr);
+    debug_assert(out_expr);
 
     ast_expression_create(AST_Expression_Kind::INTEGER_LITERAL, AST_EXPR_FLAG_CONST, out_expr);
 
@@ -31,7 +31,7 @@ void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_ex
 
 void ast_string_literal_expr_create(Atom atom, AST_Expression *out_expr)
 {
-    assert(out_expr);
+    debug_assert(out_expr);
 
     ast_expression_create(AST_Expression_Kind::STRING_LITERAL, AST_EXPR_FLAG_CONST, out_expr);
 
@@ -40,14 +40,14 @@ void ast_string_literal_expr_create(Atom atom, AST_Expression *out_expr)
 
 void ast_null_literal_expr_create(AST_Expression *out_expr)
 {
-    assert(out_expr);
+    debug_assert(out_expr);
 
     ast_expression_create(AST_Expression_Kind::NULL_LITERAL, AST_EXPR_FLAG_CONST, out_expr);
 }
 
 void ast_bool_literal_expr_create(AST_Expression *out_expr, bool value)
 {
-    assert(out_expr);
+    debug_assert(out_expr);
 
     ast_expression_create(AST_Expression_Kind::BOOL_LITERAL, AST_EXPR_FLAG_CONST, out_expr);
     out_expr->bool_literal = value;
@@ -55,7 +55,7 @@ void ast_bool_literal_expr_create(AST_Expression *out_expr, bool value)
 
 void ast_identifier_expr_create(AST_Identifier ident, AST_Expression *out_expr)
 {
-    assert(&out_expr);
+    debug_assert(&out_expr);
 
     ast_expression_create(AST_Expression_Kind::IDENTIFIER, AST_EXPR_FLAG_NONE, out_expr);
 
@@ -64,7 +64,7 @@ void ast_identifier_expr_create(AST_Identifier ident, AST_Expression *out_expr)
 
 void ast_member_expr_create(AST_Expression *base, Atom atom, AST_Expression *out_expr)
 {
-    assert(base && out_expr);
+    debug_assert(base && out_expr);
 
     ast_expression_create(AST_Expression_Kind::MEMBER, AST_EXPR_FLAG_NONE, out_expr);
 
@@ -76,7 +76,7 @@ void ast_member_expr_create(AST_Expression *base, Atom atom, AST_Expression *out
 
 void ast_index_expr_create(AST_Expression *base, AST_Expression *index, AST_Expression *out_expr)
 {
-    assert(base && index && out_expr);
+    debug_assert(base && index && out_expr);
 
     ast_expression_create(AST_Expression_Kind::INDEX, AST_EXPR_FLAG_NONE, out_expr);
 
@@ -86,7 +86,7 @@ void ast_index_expr_create(AST_Expression *base, AST_Expression *index, AST_Expr
 
 void ast_call_expr_create(AST_Expression *base, Dynamic_Array<AST_Expression *> args, AST_Expression *out_expr)
 {
-    assert(base && out_expr);
+    debug_assert(base && out_expr);
 
     ast_expression_create(AST_Expression_Kind::CALL, AST_EXPR_FLAG_NONE, out_expr);
 
@@ -96,8 +96,8 @@ void ast_call_expr_create(AST_Expression *base, Dynamic_Array<AST_Expression *> 
 
 void ast_unary_expr_create(AST_Unary_Operator op, AST_Expression *operand, AST_Expression *out_expr)
 {
-    assert(operand && out_expr);
-    assert(op != AST_Unary_Operator::INVALID);
+    debug_assert(operand && out_expr);
+    debug_assert(op != AST_Unary_Operator::INVALID);
 
     ast_expression_create(AST_Expression_Kind::UNARY, AST_EXPR_FLAG_NONE, out_expr);
 
@@ -107,8 +107,8 @@ void ast_unary_expr_create(AST_Unary_Operator op, AST_Expression *operand, AST_E
 
 void ast_binary_expr_create(AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs, AST_Expression *out_expr)
 {
-    assert(lhs && rhs && out_expr);
-    assert(op != AST_Binary_Operator::INVALID);
+    debug_assert(lhs && rhs && out_expr);
+    debug_assert(op != AST_Binary_Operator::INVALID);
 
     AST_Expression_Flags flags = AST_EXPR_FLAG_NONE;
 
@@ -123,9 +123,32 @@ void ast_binary_expr_create(AST_Binary_Operator op, AST_Expression *lhs, AST_Exp
     out_expr->binary.rhs = rhs;
 }
 
+void ast_cast_expr_create(AST_Type_Spec *ts, AST_Expression *value, AST_Expression *out_expr)
+{
+    debug_assert(ts && value && out_expr);
+
+    ast_expression_create(AST_Expression_Kind::CAST, AST_EXPR_FLAG_NONE, out_expr);
+
+    out_expr->cast.type_spec = ts;
+    out_expr->cast.value = value;
+    out_expr->cast.resolved_type = nullptr;
+}
+
+void ast_cast_expr_create(Type *type, AST_Expression *value, AST_Expression *out_expr)
+{
+    debug_assert(type && value && out_expr);
+
+    ast_expression_create(AST_Expression_Kind::CAST, AST_EXPR_FLAG_NONE, out_expr);
+
+    out_expr->cast.type_spec = nullptr;
+    out_expr->cast.value = value;
+    out_expr->cast.resolved_type = type;
+    out_expr->resolved_type = type;
+}
+
 void ast_expression_create(AST_Expression_Kind kind, AST_Expression_Flags flags, AST_Expression *out_expr)
 {
-    assert(out_expr);
+    debug_assert(out_expr);
 
     out_expr->kind = kind;
     out_expr->flags = flags;
@@ -135,7 +158,7 @@ void ast_expression_create(AST_Expression_Kind kind, AST_Expression_Flags flags,
 
 void ast_block_stmt_create(Dynamic_Array<AST_Statement *> statements, AST_Statement *out_stmt)
 {
-    assert(out_stmt);
+    debug_assert(out_stmt);
 
     ast_statement_create(AST_Statement_Kind::BLOCK, out_stmt);
 
@@ -145,7 +168,7 @@ void ast_block_stmt_create(Dynamic_Array<AST_Statement *> statements, AST_Statem
 
 void ast_declaration_stmt_create(AST_Declaration *decl, AST_Statement *out_stmt)
 {
-    assert(decl && out_stmt);
+    debug_assert(decl && out_stmt);
 
     ast_statement_create(AST_Statement_Kind::DECLARATION, out_stmt);
 
@@ -154,7 +177,7 @@ void ast_declaration_stmt_create(AST_Declaration *decl, AST_Statement *out_stmt)
 
 void ast_assign_stmt_create(AST_Expression *dest, AST_Expression *value, AST_Statement *out_stmt)
 {
-    assert(dest && value && out_stmt);
+    debug_assert(dest && value && out_stmt);
 
     ast_statement_create(AST_Statement_Kind::ASSIGN, out_stmt);
 
@@ -164,7 +187,7 @@ void ast_assign_stmt_create(AST_Expression *dest, AST_Expression *value, AST_Sta
 
 void ast_call_stmt_create(AST_Expression *call, AST_Statement *out_stmt)
 {
-    assert(call && out_stmt);
+    debug_assert(call && out_stmt);
 
     ast_statement_create(AST_Statement_Kind::CALL, out_stmt);
 
@@ -173,7 +196,7 @@ void ast_call_stmt_create(AST_Expression *call, AST_Statement *out_stmt)
 
 void ast_if_stmt_create(Dynamic_Array<AST_If_Block> blocks, AST_Statement *else_stmt, AST_Statement *out_stmt)
 {
-    assert(blocks.count && out_stmt);
+    debug_assert(blocks.count && out_stmt);
 
     ast_statement_create(AST_Statement_Kind::IF, out_stmt);
 
@@ -184,7 +207,7 @@ void ast_if_stmt_create(Dynamic_Array<AST_If_Block> blocks, AST_Statement *else_
 
 void ast_while_stmt_create(AST_Expression *cond, AST_Statement *do_stmt, AST_Statement *out_stmt)
 {
-    assert(cond && do_stmt && out_stmt);
+    debug_assert(cond && do_stmt && out_stmt);
 
     ast_statement_create(AST_Statement_Kind::WHILE, out_stmt);
 
@@ -195,7 +218,7 @@ void ast_while_stmt_create(AST_Expression *cond, AST_Statement *do_stmt, AST_Sta
 
 void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
 {
-    assert(out_stmt);
+    debug_assert(out_stmt);
 
     ast_statement_create(AST_Statement_Kind::RETURN, out_stmt);
 
@@ -205,7 +228,7 @@ void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
 
 void ast_print_stmt_create(AST_Expression *print_expr, AST_Statement *out_stmt)
 {
-    assert(print_expr && out_stmt);
+    debug_assert(print_expr && out_stmt);
 
     ast_statement_create(AST_Statement_Kind::PRINT, out_stmt);
 
@@ -214,14 +237,14 @@ void ast_print_stmt_create(AST_Expression *print_expr, AST_Statement *out_stmt)
 
 void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
 {
-    assert(out_stmt);
+    debug_assert(out_stmt);
 
     out_stmt->kind = kind;
 }
 
 void ast_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl)
 {
-    assert(out_decl);
+    debug_assert(out_decl);
 
     ast_declaration_create(AST_Declaration_Kind::VARIABLE, out_decl);
 
@@ -233,8 +256,8 @@ void ast_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expre
 
 void ast_constant_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl)
 {
-    assert(out_decl);
-    assert_msg(value, "Constant variable declaration must have a value");
+    debug_assert(out_decl);
+    debug_assert_msg(value, "Constant variable declaration must have a value");
 
     ast_declaration_create(AST_Declaration_Kind::CONSTANT_VARIABLE, out_decl);
 
@@ -246,7 +269,7 @@ void ast_constant_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, 
 
 void ast_parameter_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range range, AST_Declaration *out_decl)
 {
-    assert(out_decl);
+    debug_assert(out_decl);
 
     ast_declaration_create(AST_Declaration_Kind::PARAMETER, out_decl);
 
@@ -258,7 +281,7 @@ void ast_parameter_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_R
 
 void ast_field_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range range, AST_Declaration *out_decl)
 {
-    assert(out_decl);
+    debug_assert(out_decl);
 
     ast_declaration_create(AST_Declaration_Kind::FIELD, out_decl);
 
@@ -270,7 +293,7 @@ void ast_field_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range
 
 void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynamic_Array<AST_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl)
 {
-    assert(out_decl);
+    debug_assert(out_decl);
 
     ast_declaration_create(AST_Declaration_Kind::FUNCTION, out_decl);
 
@@ -287,8 +310,8 @@ void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynami
 
 void ast_aggregate_decl_create(AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Declaration *> fields, AST_Declaration *out_decl)
 {
-    assert(out_decl);
-    assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
+    debug_assert(out_decl);
+    debug_assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
 
     ast_declaration_create(kind, out_decl);
 
@@ -299,14 +322,14 @@ void ast_aggregate_decl_create(AST_Identifier ident, AST_Declaration_Kind kind, 
 
 void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl)
 {
-    assert(out_decl);
+    debug_assert(out_decl);
 
     out_decl->kind = kind;
 }
 
 void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts)
 {
-    assert(out_ts)
+    debug_assert(out_ts)
 
 
     ast_type_spec_create(AST_Type_Spec_Kind::NAME, out_ts);
@@ -316,7 +339,7 @@ void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts)
 
 void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts)
 {
-    assert(base && out_ts);
+    debug_assert(base && out_ts);
 
     ast_type_spec_create(AST_Type_Spec_Kind::POINTER, out_ts);
 
@@ -325,21 +348,21 @@ void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts)
 
 void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts)
 {
-    assert(out_ts);
+    debug_assert(out_ts);
 
     out_ts->kind = kind;
 }
 
 void ast_file_create(Dynamic_Array<AST_Declaration *> decls, AST_File *out_file)
 {
-    assert(out_file);
+    debug_assert(out_file);
 
     out_file->declarations = decls;
 }
 
 AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Integer_Value value)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     auto expr = ast_expression_new(ctx, range);
     ast_integer_literal_expr_create(value, expr);
@@ -348,7 +371,7 @@ AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Source_Range r
 
 AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Atom atom)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     auto expr = ast_expression_new(ctx, range);
     ast_string_literal_expr_create(atom, expr);
@@ -357,7 +380,7 @@ AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Source_Range ra
 
 AST_Expression *ast_null_literal_expr_new(Zodiac_Context *ctx, Source_Range range)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     auto expr = ast_expression_new(ctx, range);
     ast_null_literal_expr_create(expr);
@@ -366,7 +389,7 @@ AST_Expression *ast_null_literal_expr_new(Zodiac_Context *ctx, Source_Range rang
 
 AST_Expression *ast_bool_literal_expr_new(Zodiac_Context *ctx, Source_Range range, bool value)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     auto expr = ast_expression_new(ctx, range);
     ast_bool_literal_expr_create(expr, value);
@@ -376,7 +399,7 @@ AST_Expression *ast_bool_literal_expr_new(Zodiac_Context *ctx, Source_Range rang
 
 AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Source_Range range, Atom atom)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     AST_Identifier ident;
     ast_identifier_create(atom, range, &ident);
@@ -388,7 +411,7 @@ AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Source_Range range,
 
 AST_Expression *ast_member_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *base, Atom atom)
 {
-    assert(ctx && base);
+    debug_assert(ctx && base);
 
     auto expr = ast_expression_new(ctx, range);
     ast_member_expr_create(base, atom, expr);
@@ -397,7 +420,7 @@ AST_Expression *ast_member_expr_new(Zodiac_Context *ctx, Source_Range range, AST
 
 AST_Expression *ast_index_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *base, AST_Expression *index)
 {
-    assert(ctx && base && index);
+    debug_assert(ctx && base && index);
 
     auto expr = ast_expression_new(ctx, range);
     ast_index_expr_create(base, index, expr);
@@ -406,7 +429,7 @@ AST_Expression *ast_index_expr_new(Zodiac_Context *ctx, Source_Range range, AST_
 
 AST_Expression *ast_call_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *base, Dynamic_Array<AST_Expression *> args)
 {
-    assert(ctx && base);
+    debug_assert(ctx && base);
 
     auto expr = ast_expression_new(ctx, range);
     ast_call_expr_create(base, args, expr);
@@ -416,7 +439,7 @@ AST_Expression *ast_call_expr_new(Zodiac_Context *ctx, Source_Range range, AST_E
 
 AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Unary_Operator op, AST_Expression *operand)
 {
-    assert(ctx && operand);
+    debug_assert(ctx && operand);
 
     auto expr = ast_expression_new(ctx, range);
     ast_unary_expr_create(op, operand, expr);
@@ -425,10 +448,28 @@ AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, Source_Range range, AST_
 
 AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs)
 {
-    assert(ctx && lhs && rhs);
+    debug_assert(ctx && lhs && rhs);
 
     auto expr = ast_expression_new(ctx, range);
     ast_binary_expr_create(op, lhs, rhs, expr);
+    return expr;
+}
+
+AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *ts, AST_Expression *value)
+{
+    debug_assert(ctx && ts && value);
+
+    auto expr = ast_expression_new(ctx, range);
+    ast_cast_expr_create(ts, value, expr);
+    return expr;
+}
+
+AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range range, Type *type, AST_Expression *value)
+{
+    debug_assert(ctx && type && value);
+
+    auto expr = ast_expression_new(ctx, range);
+    ast_cast_expr_create(type, value, expr);
     return expr;
 }
 
@@ -441,7 +482,7 @@ AST_Expression *ast_expression_new(Zodiac_Context *ctx, Source_Range range)
 
 AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Statement *> statements)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     auto stmt = ast_statement_new(ctx, range);
     ast_block_stmt_create(statements, stmt);
@@ -450,7 +491,7 @@ AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynam
 
 AST_Statement *ast_declaration_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Declaration *decl)
 {
-    assert(ctx && decl);
+    debug_assert(ctx && decl);
 
     auto stmt = ast_statement_new(ctx, range);
     ast_declaration_stmt_create(decl, stmt);
@@ -459,7 +500,7 @@ AST_Statement *ast_declaration_stmt_new(Zodiac_Context *ctx, Source_Range range,
 
 AST_Statement *ast_assign_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *dest, AST_Expression *value)
 {
-    assert(ctx && dest && value);
+    debug_assert(ctx && dest && value);
 
     auto stmt = ast_statement_new(ctx, range);
     ast_assign_stmt_create(dest, value, stmt);
@@ -468,7 +509,7 @@ AST_Statement *ast_assign_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_
 
 AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *call)
 {
-    assert(ctx && call);
+    debug_assert(ctx && call);
 
     auto stmt = ast_statement_new(ctx, range);
     ast_call_stmt_create(call, stmt);
@@ -477,7 +518,7 @@ AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Ex
 
 AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_If_Block> blocks, AST_Statement *else_stmt)
 {
-    assert(ctx && blocks.count);
+    debug_assert(ctx && blocks.count);
 
     auto stmt = ast_statement_new(ctx, range);
     ast_if_stmt_create(blocks, else_stmt, stmt);
@@ -486,7 +527,7 @@ AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynamic_
 
 AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *cond, AST_Statement *do_stmt)
 {
-    assert(ctx && cond && do_stmt);
+    debug_assert(ctx && cond && do_stmt);
 
     auto stmt = ast_statement_new(ctx, range);
     ast_while_stmt_create(cond, do_stmt, stmt);
@@ -495,7 +536,7 @@ AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_E
 
 AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *value)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     auto stmt = ast_statement_new(ctx, range);
     ast_return_stmt_create(value, stmt);
@@ -504,7 +545,7 @@ AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_
 
 AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *print_expr)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     auto stmt = ast_statement_new(ctx, range);
     ast_print_stmt_create(print_expr, stmt);
@@ -513,7 +554,7 @@ AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, 
 
 AST_Statement *ast_statement_new(Zodiac_Context *ctx, Source_Range range)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     AST_Statement *result = alloc<AST_Statement>(&ctx->ast_allocator);
     result->range = range;
@@ -522,7 +563,7 @@ AST_Statement *ast_statement_new(Zodiac_Context *ctx, Source_Range range)
 
 AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     auto decl = ast_declaration_new(ctx, range);
     ast_variable_decl_create(ident, ts, value, decl);
@@ -531,7 +572,7 @@ AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Range range, 
 
 AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value)
 {
-    assert(ctx && value);
+    debug_assert(ctx && value);
 
     auto decl = ast_declaration_new(ctx, range);
     ast_constant_variable_decl_create(ident, ts, value, decl);
@@ -540,7 +581,7 @@ AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, Source_Rang
 
 AST_Declaration *ast_parameter_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     auto decl = ast_declaration_new(ctx, range);
     ast_parameter_decl_create(ident, ts, range, decl);
@@ -550,7 +591,7 @@ AST_Declaration *ast_parameter_decl_new(Zodiac_Context *ctx, Source_Range range,
 
 AST_Declaration *ast_field_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     auto decl = ast_declaration_new(ctx, range);
     ast_field_decl_create(ident, ts, range, decl);
@@ -560,7 +601,7 @@ AST_Declaration *ast_field_decl_new(Zodiac_Context *ctx, Source_Range range, AST
 
 AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, Dynamic_Array<AST_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     auto decl = ast_declaration_new(ctx, range);
     ast_function_decl_create(&ctx->ast_allocator, ident, args, return_ts, body, decl);
@@ -569,8 +610,8 @@ AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range range, 
 
 AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Declaration *> fields)
 {
-    assert(ctx);
-    assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
+    debug_assert(ctx);
+    debug_assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
 
     auto decl = ast_declaration_new(ctx, range);
     ast_aggregate_decl_create(ident, kind, fields, decl);
@@ -579,7 +620,7 @@ AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Range range,
 
 AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Range range)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     AST_Declaration *result = alloc<AST_Declaration>(&ctx->ast_allocator);
     result->range = range;
@@ -603,7 +644,7 @@ file_local const char *ast_binop_to_string[(int)AST_Binary_Operator::LAST_BINOP 
 
 AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     auto ts = ast_type_spec_new(ctx, range);
     ast_name_ts_create(ident, ts);
@@ -612,7 +653,7 @@ AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Iden
 
 AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *base)
 {
-    assert(ctx && base);
+    debug_assert(ctx && base);
 
     auto ts = ast_type_spec_new(ctx, range);
     ast_pointer_ts_create(base, ts);
@@ -621,7 +662,7 @@ AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range range, AST_T
 
 AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range range)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     AST_Type_Spec *result = alloc<AST_Type_Spec>(&ctx->ast_allocator);
     result->range = range;
@@ -630,7 +671,7 @@ AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range range)
 
 AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *> decls)
 {
-    assert(ctx);
+    debug_assert(ctx);
 
     auto file = alloc<AST_File>(&ctx->ast_allocator);
     ast_file_create(decls, file);
@@ -639,7 +680,7 @@ AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *> dec
 
 void ast_print_expression(String_Builder *sb, AST_Expression *expr)
 {
-    assert(sb && expr);
+    debug_assert(sb && expr);
 
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false);
@@ -709,6 +750,8 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
             string_builder_append(sb, ")");
             break;
         }
+
+        case AST_Expression_Kind::CAST: assert(false); break;
     }
 }
 
@@ -720,7 +763,7 @@ void ast_print_indent(String_Builder *sb, int indent) {
 
 file_local void ast__print_statement_internal(String_Builder *sb, AST_Statement *stmt, int indent, bool newline = true)
 {
-    assert(stmt);
+    debug_assert(stmt);
 
     if (stmt->kind == AST_Statement_Kind::BLOCK) {
         string_builder_append(sb, " {\n");
@@ -740,7 +783,7 @@ file_local void ast__print_statement_internal(String_Builder *sb, AST_Statement 
 
 void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0*/)
 {
-    assert(sb && stmt);
+    debug_assert(sb && stmt);
 
     bool semicolon = true;
 
@@ -841,7 +884,7 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
 
 void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent/*=0*/)
 {
-    assert(sb && decl);
+    debug_assert(sb && decl);
 
     bool semicolon = false;
 
@@ -932,7 +975,7 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
 
 void ast_print_declaration(AST_Declaration *decl)
 {
-    assert(decl);
+    debug_assert(decl);
 
     String_Builder sb;
     string_builder_create(&sb);
@@ -948,7 +991,7 @@ void ast_print_declaration(AST_Declaration *decl)
 
 file_local void ast__print_type_spec_internal(String_Builder *sb, AST_Type_Spec *ts, int indent)
 {
-    assert(sb && ts);
+    debug_assert(sb && ts);
 
     switch (ts->kind) {
         case AST_Type_Spec_Kind::INVALID: assert(false);
@@ -975,7 +1018,7 @@ void ast_print_type_spec(String_Builder *sb, AST_Type_Spec *ts, int indent/*=0*/
 
 void ast_print_file(String_Builder *sb, AST_File *file)
 {
-    assert(sb && file);
+    debug_assert(sb && file);
 
     for (u64 i = 0; i < file->declarations.count; i++) {
         ast_print_declaration(sb, file->declarations[i]);

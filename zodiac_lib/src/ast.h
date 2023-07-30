@@ -107,6 +107,14 @@ struct AST_Binary_Expression
     AST_Expression *rhs;
 };
 
+struct AST_Cast_Expression
+{
+    AST_Type_Spec *type_spec;
+    AST_Expression *value;
+
+    Type *resolved_type;
+};
+
 enum class AST_Expression_Kind
 {
     INVALID,
@@ -124,6 +132,8 @@ enum class AST_Expression_Kind
 
     UNARY,
     BINARY,
+
+    CAST,
 };
 
 typedef u32 AST_Expression_Flags;
@@ -156,6 +166,7 @@ struct AST_Expression
         AST_Call_Expression call;
         AST_Unary_Expression unary;
         AST_Binary_Expression binary;
+        AST_Cast_Expression cast;
     };
 };
 
@@ -359,6 +370,8 @@ ZAPI void ast_call_expr_create(AST_Expression *base, Dynamic_Array<AST_Expressio
 ZAPI void ast_index_expr_create(AST_Expression *base, AST_Expression *index, AST_Expression *out_expr);
 ZAPI void ast_unary_expr_create(AST_Unary_Operator op, AST_Expression *operand, AST_Expression *out_expr);
 ZAPI void ast_binary_expr_create(AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs, AST_Expression *out_expr);
+ZAPI void ast_cast_expr_create(AST_Type_Spec *ts, AST_Expression *value, AST_Expression *out_expr);
+ZAPI void ast_cast_expr_create(Type *type, AST_Expression *value, AST_Expression *out_expr);
 ZAPI void ast_expression_create(AST_Expression_Kind kind, AST_Expression_Flags flags, AST_Expression *out_expr);
 
 ZAPI void ast_block_stmt_create(Dynamic_Array<AST_Statement *> statements, AST_Statement *out_stmt);
@@ -395,6 +408,8 @@ ZAPI AST_Expression *ast_index_expr_new(Zodiac_Context *ctx, Source_Range range,
 ZAPI AST_Expression *ast_call_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *base, Dynamic_Array<AST_Expression *> args);
 ZAPI AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Unary_Operator op, AST_Expression *operand);
 ZAPI AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs);
+ZAPI AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *ts, AST_Expression *value);
+ZAPI AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range range, Type *type, AST_Expression *value);
 ZAPI AST_Expression *ast_expression_new(Zodiac_Context *ctx, Source_Range range);
 
 ZAPI AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Statement *> statements);

@@ -416,6 +416,7 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
         case AST_Expression_Kind::CALL: assert(false); break;
         case AST_Expression_Kind::UNARY: assert(false); break;
         case AST_Expression_Kind::BINARY: assert(false); break;
+        case AST_Expression_Kind::CAST: assert(false); break;
     }
 
     assert(false);
@@ -596,6 +597,13 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             }
             break;
         }
+
+        case AST_Expression_Kind::CAST: {
+            debug_assert(expr->resolved_type && expr->cast.resolved_type && expr->resolved_type == expr->cast.resolved_type);
+            Bytecode_Register value_reg = ast_expr_to_bytecode(bc, expr->cast.value);
+            return bytecode_emit_cast(bc->builder, expr->cast.resolved_type, value_reg);
+        }
+
     }
 
     assert(false);

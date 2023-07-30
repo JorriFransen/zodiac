@@ -215,6 +215,7 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
         UNOP_CASE_(SQRT)
 
         UNOP_CASE_(TRUNC)
+        UNOP_CASE_(SEXT)
         UNOP_CASE_(PRINT)
 
         UNOP_CASE_(PUSH_ARG)

@@ -565,7 +565,42 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             }
 
             return true;
-            break;
+        }
+
+        case Bytecode_Opcode::SEXT: {
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'a' register for 'SEXT' must be a temporary");
+                return false;
+            }
+
+            if (instruction->a.type->kind != Type_Kind::INTEGER) {
+                bytecode_validator_report_error(validator, "The 'a' register for 'SEXT' must be of integer type");
+                return false;
+            }
+
+            if (!instruction->a.type->integer.sign) {
+                bytecode_validator_report_error(validator, "The 'a' register for 'SEXT' must be of signed integer type");
+                return false;
+            }
+
+            if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'SEXT' must be a temporary");
+                return false;
+            }
+
+            if (instruction->dest.type->kind != Type_Kind::INTEGER) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'SEXT' must be of integer type");
+            }
+
+            auto target_type = instruction->dest.type;
+            auto op_type = instruction->a.type;
+
+            if (!(target_type->bit_size > op_type->bit_size)) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'TRUC' must have a smaller bit_size than the 'a' register");
+                return false;
+            }
+
+            return true;
         }
 
         case Bytecode_Opcode::PRINT: {

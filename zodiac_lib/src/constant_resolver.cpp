@@ -62,6 +62,8 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
         case AST_Expression_Kind::BINARY: {
             return resolve_constant_integer_binary_expr(expr, type);
         }
+
+        case AST_Expression_Kind::CAST: assert(false); break;
     }
 
     assert(false);

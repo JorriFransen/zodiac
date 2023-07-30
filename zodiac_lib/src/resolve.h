@@ -97,7 +97,7 @@ ZAPI bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope);
 
 ZAPI bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node);
 ZAPI bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope);
-ZAPI bool type_resolve_statement(AST_Statement *stmt, Scope *scope);
+ZAPI bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope);
 ZAPI bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope);
 ZAPI bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope);
 
