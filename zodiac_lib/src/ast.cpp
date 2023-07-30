@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "memory/allocator.h"
+#include "type.h"
 #include "util/asserts.h"
 #include "util/string_builder.h"
 #include "util/zstring.h"
@@ -751,7 +752,14 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
             break;
         }
 
-        case AST_Expression_Kind::CAST: assert(false); break;
+        case AST_Expression_Kind::CAST: {
+            type_to_string(expr->cast.resolved_type, sb);
+            string_builder_append(sb, "(");
+            ast_print_expression(sb, expr->cast.value);
+            string_builder_append(sb, ")");
+            break;
+        }
+
     }
 }
 
