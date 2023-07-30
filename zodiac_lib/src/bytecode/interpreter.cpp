@@ -424,6 +424,47 @@ switch (operand.type->bit_size) { \
             break;
         }
 
+        case Bytecode_Opcode::ZEXT: {
+            Interpreter_Register operand = interpreter_load_register(interp, instruction.a);
+            Interpreter_Register result = {
+                .type = instruction.dest.type,
+            };
+
+            assert(operand.type->kind == Type_Kind::INTEGER);
+            assert(instruction.dest.type->kind == Type_Kind::INTEGER);
+            assert(instruction.dest.type->bit_size > operand.type->bit_size);
+
+            assert(!operand.type->integer.sign);
+            assert(!instruction.dest.type->integer.sign);
+
+            Bytecode_Register_Value rv = {};
+
+#define ZEXT_CASE_(size) case size: { \
+switch (operand.type->bit_size) { \
+    default: assert(false); break; \
+    case 8: rv.integer.u##size = (u##size)operand.value.integer.u8; break; \
+    case 16: rv.integer.u##size = (u##size)operand.value.integer.u16; break; \
+    case 32: rv.integer.u##size = (u##size)operand.value.integer.u32; break; \
+    case 64: rv.integer.u##size = (u##size)operand.value.integer.u64; break; \
+} break; }
+
+            switch (instruction.dest.type->bit_size) {
+                default: assert(false); break;
+                ZEXT_CASE_(8)
+                ZEXT_CASE_(16)
+                ZEXT_CASE_(32)
+                ZEXT_CASE_(64)
+            }
+
+#undef ZEXT_CASE_
+
+            result.value = rv;
+
+            interpreter_store_register(interp, result, instruction.dest);
+
+            break;
+        }
+
         case Bytecode_Opcode::PRINT: {
             Interpreter_Register operand = interpreter_load_register(interp, instruction.a);
 

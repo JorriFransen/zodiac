@@ -967,13 +967,9 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             break;
         }
 
-        case AST_Expression_Kind::INDEX:
-            assert(false);
-        case AST_Expression_Kind::UNARY:
-            assert(false);
-
+        case AST_Expression_Kind::INDEX: assert(false); break;
+        case AST_Expression_Kind::UNARY: assert(false); break;
         case AST_Expression_Kind::CAST: assert(false); break;
-
     }
 
     return result;

@@ -442,6 +442,20 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             break;
         }
 
+        case Bytecode_Opcode::ZEXT: {
+            assert(bc_inst.a.type->kind == Type_Kind::INTEGER);
+            assert(bc_inst.dest.type->kind == Type_Kind::INTEGER);
+            assert(bc_inst.dest.type->bit_size > bc_inst.a.type->bit_size);
+            assert(!bc_inst.a.type->integer.sign);
+            assert(!bc_inst.dest.type->integer.sign);
+
+            llvm::Type *llvm_target_type = llvm_type_from_ast_type(builder, bc_inst.dest.type);
+            llvm::Value *llvm_val = llvm_builder_emit_register(builder, bc_inst.a);
+            llvm::Value *result = irb->CreateZExt(llvm_val, llvm_target_type);
+            llvm_builder_store_result(builder, bc_inst.dest, result);
+            break;
+        }
+
         case Bytecode_Opcode::PRINT: {
 
             llvm::Value *llvm_val = llvm_builder_emit_register(builder, bc_inst.a);

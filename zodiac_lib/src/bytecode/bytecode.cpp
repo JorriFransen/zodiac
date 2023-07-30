@@ -627,11 +627,11 @@ Bytecode_Register bytecode_emit_integer_cast(Bytecode_Builder *builder, Type *ta
         } else {
             // target bit size > op bit size
             if (target_type->integer.sign) {
-
                 bytecode_emit_instruction(builder, Bytecode_Opcode::SEXT, operand_register, {}, dest_register);
                 return dest_register;
             } else {
-                assert(false);
+                bytecode_emit_instruction(builder, Bytecode_Opcode::ZEXT, operand_register, {}, dest_register);
+                return dest_register;
             }
         }
 
