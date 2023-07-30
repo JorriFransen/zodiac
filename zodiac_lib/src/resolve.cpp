@@ -375,96 +375,84 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
 {
     assert(stmt && scope && dest);
 
-    switch (stmt->kind)
-    {
-    case AST_Statement_Kind::INVALID:
-        assert(false);
+    switch (stmt->kind) {
 
-    case AST_Statement_Kind::BLOCK:
-    {
+        case AST_Statement_Kind::INVALID: assert(false);
 
-        Scope *block_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
-        stmt->block.scope = block_scope;
+        case AST_Statement_Kind::BLOCK: {
 
-        for (u64 i = 0; i < stmt->block.statements.count; i++)
-        {
-            flatten_statement(ctx, stmt->block.statements[i], block_scope, dest);
-        }
-        break;
-    }
+            Scope *block_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+            stmt->block.scope = block_scope;
 
-    case AST_Statement_Kind::DECLARATION:
-    {
-        flatten_declaration(ctx, stmt->decl.decl, scope, dest);
-        break;
-    }
-
-    case AST_Statement_Kind::ASSIGN:
-    {
-        flatten_expression(stmt->assign.dest, scope, dest, nullptr);
-        flatten_expression(stmt->assign.value, scope, dest, nullptr);
-        break;
-    }
-
-    case AST_Statement_Kind::CALL:
-    {
-        flatten_expression(stmt->call.call, scope, dest, nullptr);
-        break;
-    }
-
-    case AST_Statement_Kind::IF:
-    {
-        for (s64 i = 0; i < stmt->if_stmt.blocks.count; i++)
-        {
-            auto if_block = &stmt->if_stmt.blocks[i];
-
-            flatten_expression(if_block->cond, scope, dest, nullptr);
-
-            auto then_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
-            assert(if_block->then_scope == nullptr);
-            if_block->then_scope = then_scope;
-            flatten_statement(ctx, if_block->then, then_scope, dest);
+            for (u64 i = 0; i < stmt->block.statements.count; i++) {
+                flatten_statement(ctx, stmt->block.statements[i], block_scope, dest);
+            }
+            break;
         }
 
-        if (stmt->if_stmt.else_stmt)
-        {
-            auto else_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
-            flatten_statement(ctx, stmt->if_stmt.else_stmt, else_scope, dest);
-            assert(stmt->if_stmt.else_scope == nullptr);
-            stmt->if_stmt.else_scope = else_scope;
+        case AST_Statement_Kind::DECLARATION: {
+            flatten_declaration(ctx, stmt->decl.decl, scope, dest);
+            break;
         }
-        break;
-    }
 
-    case AST_Statement_Kind::WHILE:
-        assert(false);
+        case AST_Statement_Kind::ASSIGN: {
+            flatten_expression(stmt->assign.dest, scope, dest, nullptr);
+            flatten_expression(stmt->assign.value, scope, dest, nullptr);
+            break;
+        }
 
-    case AST_Statement_Kind::RETURN:
-    {
-        if (stmt->return_stmt.value)
-        {
-            AST_Declaration *func_decl = enclosing_function(scope);
-            assert(func_decl);
+        case AST_Statement_Kind::CALL: {
+            flatten_expression(stmt->call.call, scope, dest, nullptr);
+            break;
+        }
 
-            AST_Type_Spec *infer_from = nullptr;
+        case AST_Statement_Kind::IF: {
 
-            if (func_decl->function.return_ts)
-            {
-                infer_from = func_decl->function.return_ts;
+            for (s64 i = 0; i < stmt->if_stmt.blocks.count; i++) {
+                auto if_block = &stmt->if_stmt.blocks[i];
+
+                flatten_expression(if_block->cond, scope, dest, nullptr);
+
+                auto then_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+                assert(if_block->then_scope == nullptr);
+                if_block->then_scope = then_scope;
+                flatten_statement(ctx, if_block->then, then_scope, dest);
             }
 
-            stmt->return_stmt.scope = scope;
-
-            flatten_expression(stmt->return_stmt.value, scope, dest, infer_from);
+            if (stmt->if_stmt.else_stmt) {
+                auto else_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+                flatten_statement(ctx, stmt->if_stmt.else_stmt, else_scope, dest);
+                assert(stmt->if_stmt.else_scope == nullptr);
+                stmt->if_stmt.else_scope = else_scope;
+            }
+            break;
         }
-        break;
-    }
 
-    case AST_Statement_Kind::PRINT:
-    {
-        flatten_expression(stmt->print_expr, scope, dest, nullptr);
-        break;
-    }
+        case AST_Statement_Kind::WHILE: assert(false);
+
+        case AST_Statement_Kind::RETURN: {
+
+            if (stmt->return_stmt.value) {
+                AST_Declaration *func_decl = enclosing_function(scope);
+                assert(func_decl);
+
+                AST_Type_Spec *infer_from = nullptr;
+
+                if (func_decl->function.return_ts) {
+                    infer_from = func_decl->function.return_ts;
+                }
+
+                stmt->return_stmt.scope = scope;
+
+                flatten_expression(stmt->return_stmt.value, scope, dest, infer_from);
+            }
+            break;
+        }
+
+        case AST_Statement_Kind::PRINT: {
+            flatten_expression(stmt->print_expr, scope, dest, nullptr);
+            break;
+        }
     }
 
     Flat_Node flat_stmt = to_flat_node(stmt, scope);
@@ -635,64 +623,56 @@ Flat_Node to_flat_proto(AST_Declaration *decl, Scope *scope)
 
 bool name_resolve_node(Resolver *resolver, Flat_Node *node)
 {
-    assert(resolver);
-    assert(node);
+    debug_assert(resolver && node);
 
     switch (node->kind)
     {
-    case Flat_Node_Kind::DECL:
-    {
-        return name_resolve_decl(resolver, node->decl, node->scope);
-    }
+        case Flat_Node_Kind::DECL: {
+            return name_resolve_decl(resolver, node->decl, node->scope);
+        }
 
-    case Flat_Node_Kind::STMT:
-    {
-        return name_resolve_stmt(node->stmt, node->scope);
-    }
+        case Flat_Node_Kind::STMT: {
+            return name_resolve_stmt(resolver->ctx, node->stmt, node->scope);
+        }
 
-    case Flat_Node_Kind::EXPR:
-    {
-        return name_resolve_expr(resolver->ctx, node->expr, node->scope);
-    }
+        case Flat_Node_Kind::EXPR: {
+            return name_resolve_expr(resolver->ctx, node->expr, node->scope);
+        }
 
-    case Flat_Node_Kind::TS:
-    {
-        return name_resolve_ts(resolver->ctx, node->ts, node->scope);
-    }
+        case Flat_Node_Kind::TS: {
+            return name_resolve_ts(resolver->ctx, node->ts, node->scope);
+        }
 
-    case Flat_Node_Kind::PARAM_DECL:
-    {
-        Symbol *param_sym = scope_get_symbol(node->scope, node->decl->identifier);
-        assert(param_sym);
-        assert(param_sym->decl->kind == AST_Declaration_Kind::FUNCTION);
+        case Flat_Node_Kind::PARAM_DECL: {
+            Symbol *param_sym = scope_get_symbol(node->scope, node->decl->identifier);
+            assert(param_sym);
+            assert(param_sym->decl->kind == AST_Declaration_Kind::FUNCTION);
 
-        assert(param_sym->state == Symbol_State::UNRESOLVED);
-        param_sym->state = Symbol_State::RESOLVED;
-        return true;
-    }
+            assert(param_sym->state == Symbol_State::UNRESOLVED);
+            param_sym->state = Symbol_State::RESOLVED;
+            return true;
+        }
 
-    case Flat_Node_Kind::FIELD_DECL:
-    {
-        assert(node->scope->kind == Scope_Kind::AGGREGATE);
-        Symbol *field_sym = scope_get_symbol(node->scope, node->decl->identifier);
-        assert(field_sym);
-        assert(field_sym->decl->kind == AST_Declaration_Kind::STRUCT ||
-               field_sym->decl->kind == AST_Declaration_Kind::UNION);
+        case Flat_Node_Kind::FIELD_DECL: {
+            assert(node->scope->kind == Scope_Kind::AGGREGATE);
+            Symbol *field_sym = scope_get_symbol(node->scope, node->decl->identifier);
+            assert(field_sym);
+            assert(field_sym->decl->kind == AST_Declaration_Kind::STRUCT ||
+                   field_sym->decl->kind == AST_Declaration_Kind::UNION);
 
-        assert(field_sym->state == Symbol_State::UNRESOLVED);
-        field_sym->state = Symbol_State::RESOLVED;
-        return true;
-    }
+            assert(field_sym->state == Symbol_State::UNRESOLVED);
+            field_sym->state = Symbol_State::RESOLVED;
+            return true;
+        }
 
-    case Flat_Node_Kind::FUNCTION_PROTO:
-    {
-        // If we get here, we have name resolved all dependencies
-        Symbol *sym = scope_get_symbol(node->scope, node->decl->identifier);
-        assert(sym && sym->kind == Symbol_Kind::FUNC);
-        assert(sym->state == Symbol_State::UNRESOLVED);
-        sym->state = Symbol_State::RESOLVED;
-        return true;
-    }
+        case Flat_Node_Kind::FUNCTION_PROTO: {
+            // If we get here, we have name resolved all dependencies
+            Symbol *sym = scope_get_symbol(node->scope, node->decl->identifier);
+            assert(sym && sym->kind == Symbol_Kind::FUNC);
+            assert(sym->state == Symbol_State::UNRESOLVED);
+            sym->state = Symbol_State::RESOLVED;
+            return true;
+        }
     }
 
     assert(false);
@@ -799,57 +779,50 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
     return result;
 }
 
-bool name_resolve_stmt(AST_Statement *stmt, Scope *scope)
+bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
 {
-    assert(stmt && scope);
+    debug_assert(ctx && stmt && scope);
 
     bool result = true;
 
-    switch (stmt->kind)
-    {
-    case AST_Statement_Kind::INVALID:
-        assert(false);
+    switch (stmt->kind) {
 
-    case AST_Statement_Kind::BLOCK:
-    {
-        // Leaf, statements are added during flattening, should have been resolved already
-        break;
-    }
+        case AST_Statement_Kind::INVALID: assert(false);
 
-    case AST_Statement_Kind::DECLARATION:
-    {
-        // Leaf, Symbol is added during flattening, value should have been resolved already
-        break;
-    }
+        case AST_Statement_Kind::BLOCK: {
+            // Leaf, statements are added during flattening, should have been resolved already
+            break;
+        }
 
-    case AST_Statement_Kind::ASSIGN:
-    {
-        // Leaf, decl sym and value should have been resolved already
-        break;
-    }
+        case AST_Statement_Kind::DECLARATION: {
+            // Leaf, Symbol is added during flattening, value should have been resolved already
+            break;
+        }
 
-    case AST_Statement_Kind::CALL:
-    {
-        // Leaf, base expr and args should have been resolved already
-        break;
-    }
+        case AST_Statement_Kind::ASSIGN: {
+            break;
+        }
 
-    case AST_Statement_Kind::IF:
-        break; // all resolved
-    case AST_Statement_Kind::WHILE:
-        assert(false);
+        case AST_Statement_Kind::CALL: {
+            // Leaf, base expr and args should have been resolved already
+            break;
+        }
 
-    case AST_Statement_Kind::RETURN:
-    {
-        // Leaf, optional value should have been resolved already
-        break;
-    }
+        case AST_Statement_Kind::IF: {
+            break; // all resolved
+        }
 
-    case AST_Statement_Kind::PRINT:
-    {
-        // Leaf, value should have been resolved already
-        break;
-    }
+        case AST_Statement_Kind::WHILE: assert(false);
+
+        case AST_Statement_Kind::RETURN: {
+            // Leaf, optional value should have been resolved already
+            break;
+        }
+
+        case AST_Statement_Kind::PRINT: {
+            // Leaf, value should have been resolved already
+            break;
+        }
     }
 
     return result;
@@ -1325,6 +1298,11 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
         case AST_Statement_Kind::ASSIGN: {
             AST_Expression *lvalue_expr = stmt->assign.dest;
             AST_Expression *value_expr = stmt->assign.value;
+
+            if (!EXPR_IS_LVALUE(lvalue_expr)) {
+                fatal_resolve_error(ctx, lvalue_expr, "Left side of assignment must be an lvalue");
+            }
+
             assert(lvalue_expr->resolved_type);
             assert(value_expr->resolved_type);
 

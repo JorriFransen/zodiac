@@ -73,6 +73,8 @@ test :: (x: s64) {
         print(4);
     }
 
+    print("After if");
+
     // return;
 }
 

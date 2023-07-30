@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "memory/allocator.h"
+#include "scope.h"
 #include "type.h"
 #include "util/asserts.h"
 #include "util/string_builder.h"
@@ -1056,6 +1057,50 @@ bool is_binary_arithmetic_op(AST_Binary_Operator op)
 bool is_binary_cmp_op(AST_Binary_Operator op)
 {
     return op >= AST_Binary_Operator::FIRST_CMP_OP && op <= AST_Binary_Operator::LAST_CMP_OP;
+}
+
+bool expr_is_lvalue(AST_Expression *e)
+{
+    debug_assert(e);
+
+    assert(e->resolved_type);
+
+    switch (e->kind) {
+
+        case AST_Expression_Kind::INVALID:
+        case AST_Expression_Kind::INTEGER_LITERAL:
+        case AST_Expression_Kind::STRING_LITERAL:
+        case AST_Expression_Kind::NULL_LITERAL:
+        case AST_Expression_Kind::BOOL_LITERAL: return false;
+
+        case AST_Expression_Kind::IDENTIFIER: {
+            auto sym = scope_get_symbol(e->identifier.scope, e->identifier);
+
+            return sym->kind == Symbol_Kind::VAR ||
+                   sym->kind == Symbol_Kind::PARAM;
+        }
+
+        case AST_Expression_Kind::MEMBER: {
+            AST_Expression *base = e->member.base;
+            if (!expr_is_lvalue(base)) {
+                return false;
+            }
+
+            assert(base->resolved_type);
+            return (base->resolved_type->flags & TYPE_FLAG_AGGREGATE) == TYPE_FLAG_AGGREGATE;
+        }
+
+        case AST_Expression_Kind::INDEX: assert(false); break;
+        case AST_Expression_Kind::CALL: assert(false); break;
+        case AST_Expression_Kind::UNARY: assert(false); break;
+
+        case AST_Expression_Kind::BINARY: assert(false);
+
+        case AST_Expression_Kind::CAST: assert(false); break;
+    }
+
+    assert(false);
+    return false;
 }
 
 }
