@@ -5,11 +5,10 @@ Vec2 :: struct {
     y: s32;
 }
 
-// Rect :: struct {
-//     pos: Vec2;
-//     size: Vec2;
-// }
-
+Rect :: struct {
+    pos: Vec2;
+    size: Vec2;
+}
 
 main :: () -> s64 {
     p : Vec2;
@@ -20,87 +19,83 @@ main :: () -> s64 {
 
     p.x = 40;
     p.y = 2;
-    x := p.x + p.y;
-    print(x);
-    return x - 42;
+
+    a := 8 + 2;
+    z :: 19;
+    b := z + x + y + foo;
+
+    print(b);
+    print(a + b);
+    print(add(40, 2));
+
+    test(1);
+    test(2);
+    test(3);
+    test(4);
+
+    print(true);
+    print(false);
+
+    pbool1(true);
+    pbool1(false);
+
+    pbool2(true);
+    pbool2(false);
+
+    print("Hello, Zodiac!");
+
+    return a + b;
 }
 
-//     a := 8 + 2;
-//     z :: 19;
-//     b := z + x + y + foo;
+foo : s64 = 33;
+bar : s64;
 
-//     print(b);
-//     print(a + b);
-//     print(add(40, 2));
+infer_void_return1 :: () {
+    return;
+}
 
-//     test(1);
-//     test(2);
-//     test(3);
-//     test(4);
+infer_void_return2 :: () {
 
-//     print(true);
-//     print(false);
+}
 
-//     pbool1(true);
-//     pbool1(false);
+void_return_ts :: () -> void {
 
-//     pbool2(true);
-//     pbool2(false);
+}
 
-//     print("Hello, Zodiac!");
+test :: (x: s64) {
+    if (x == 1) {
+        print(1);
+    } else if (x == 2) {
+        print(2);
+    } else if (x == 3) {
+        print(3);
+    } else {
+        print(4);
+    }
 
-//     return a + b;
-// }
+    // return;
+}
 
-// foo : s64 = 33;
-// bar : s64;
+pbool1 :: (x: bool) {
+    if (x == true) {
+        print("true");
+    } else {
+        print("false");
+    }
+}
 
-// infer_void_return1 :: () {
-//     return;
-// }
+pbool2 :: (x: bool) {
+    if (x) {
+        print("true");
+    } else {
+        print("false");
+    }
+}
 
-// infer_void_return2 :: () {
+x :: 21;
+y :: 2;
 
-// }
-
-// void_return_ts :: () -> void {
-
-// }
-
-// test :: (x: s64) {
-//     if (x == 1) {
-//         print(1);
-//     } else if (x == 2) {
-//         print(2);
-//     } else if (x == 3) {
-//         print(3);
-//     } else {
-//         print(4);
-//     }
-
-//     // return;
-// }
-
-// pbool1 :: (x: bool) {
-//     if (x == true) {
-//         print("true");
-//     } else {
-//         print("false");
-//     }
-// }
-
-// pbool2 :: (x: bool) {
-//     if (x) {
-//         print("true");
-//     } else {
-//         print("false");
-//     }
-// }
-
-// x :: 21;
-// y :: 2;
-
-// add :: (a: s64, b: s64) {
-//     return a + b;
-// }
+add :: (a: s64, b: s64) {
+    return a + b;
+}
 
