@@ -58,9 +58,9 @@ void resolve_file(Resolver *resolver, AST_File *file)
 
     // Register all top level symbols first
     for (s64 i = 0; i < file->declarations.count; i++) {
-        if (!add_unresolved_decl_symbol(resolver->ctx, resolver->global_scope, file->declarations[i], true)) {
+        auto decl = file->declarations[i];
+        if (!add_unresolved_decl_symbol(resolver->ctx, resolver->global_scope, decl, true)) {
             assert(resolver->ctx->fatal_resolve_error);
-            assert(false);
             return;
         }
     }

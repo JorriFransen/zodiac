@@ -195,7 +195,9 @@ Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declar
     if (global) decl->flags |= AST_DECL_FLAG_GLOBAL;
 
     Symbol *result = add_unresolved_symbol(ctx, scope, kind, SYM_FLAG_NONE, decl->identifier.name, decl);
-    if (!result) return nullptr;
+    if (!result) {
+        return nullptr;
+    }
 
     switch (result->kind) {
         case Symbol_Kind::INVALID: assert(false);

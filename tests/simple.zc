@@ -10,16 +10,32 @@ Rect :: struct {
     size: Vec2;
 }
 
-main :: () -> s64 {
+struct_test :: () {
     p : Vec2;
-    // r : Rect;
-
-    // x : s64 = 1;
-    // x = 2;
+    r : Rect;
 
     p.x = 40;
     p.y = 2;
 
+    r.pos.x = 1;
+    r.pos.y = 2;
+    r.size.x = 3;
+    r.size.y = 4;
+
+    print(r.pos.x + r.pos.y + r.size.x + r.size.y);
+
+    r2 : Rect;
+    r2.pos = p;
+
+    p.x = 2;
+    p.y = 40;
+
+    r2.size = p;
+
+    print(r2.pos.x + r2.pos.y + r2.size.x + r2.size.y);
+}
+
+main :: () -> s64 {
     a := 8 + 2;
     z :: 19;
     b := z + x + y + foo;
@@ -43,6 +59,8 @@ main :: () -> s64 {
     pbool2(false);
 
     print("Hello, Zodiac!");
+
+    struct_test();
 
     return a + b - 85;
 }
@@ -74,8 +92,6 @@ test :: (x: s64) {
     }
 
     print("After if");
-
-    // return;
 }
 
 pbool1 :: (x: bool) {
