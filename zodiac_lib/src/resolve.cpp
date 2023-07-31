@@ -61,6 +61,7 @@ void resolve_file(Resolver *resolver, AST_File *file)
         auto decl = file->declarations[i];
         if (!add_unresolved_decl_symbol(resolver->ctx, resolver->global_scope, decl, true)) {
             assert(resolver->ctx->fatal_resolve_error);
+            assert(false);
             return;
         }
     }
