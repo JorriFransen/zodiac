@@ -139,13 +139,14 @@ enum class AST_Expression_Kind
 typedef u32 AST_Expression_Flags;
 enum AST_Expression_Flag : AST_Expression_Flags
 {
-    AST_EXPR_FLAG_NONE  = 0x00,
-    AST_EXPR_FLAG_CONST = 0x01,
+    AST_EXPR_FLAG_NONE   = 0x00,
+    AST_EXPR_FLAG_CONST  = 0x01,
+    AST_EXPR_FLAG_LVALUE = 0x02,
 };
 
 
 #define EXPR_IS_CONST(e) (((e)->flags & AST_EXPR_FLAG_CONST) == AST_EXPR_FLAG_CONST)
-#define EXPR_IS_LVALUE(e) (expr_is_lvalue(e))
+#define EXPR_IS_LVALUE(e) (((e)->flags & AST_EXPR_FLAG_LVALUE) == AST_EXPR_FLAG_LVALUE)
 
 struct AST_Expression
 {
@@ -451,7 +452,5 @@ ZAPI void ast_print_file(AST_File *file);
 
 ZAPI bool is_binary_arithmetic_op(AST_Binary_Operator op);
 ZAPI bool is_binary_cmp_op(AST_Binary_Operator op);
-
-ZAPI bool expr_is_lvalue(AST_Expression *e);
 
 }

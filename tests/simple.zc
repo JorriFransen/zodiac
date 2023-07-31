@@ -40,6 +40,9 @@ main :: () -> s64 {
     z :: 19;
     b := z + x + y + foo;
 
+    fuz : s64;
+    fuz = 1;
+
     print(b);
     print(a + b);
     print(add(40, 2));

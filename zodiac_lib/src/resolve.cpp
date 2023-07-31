@@ -1453,6 +1453,11 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
             expr->resolved_type = sym_decl_type(sym);
 
+            if (sym->kind == Symbol_Kind::VAR ||
+                sym->kind == Symbol_Kind::PARAM) {
+                expr->flags |= AST_EXPR_FLAG_LVALUE;
+            }
+
             break;
         }
 
@@ -1478,6 +1483,9 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             assert(mem_decl->field.resolved_type);
 
             expr->resolved_type = mem_decl->field.resolved_type;
+
+            assert(EXPR_IS_LVALUE(base_expr));
+            expr->flags |= AST_EXPR_FLAG_LVALUE;
             break;
         }
 
