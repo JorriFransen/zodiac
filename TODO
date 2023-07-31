@@ -1,4 +1,3 @@
-- Flag lvalues
 - Move some of the test code in simple.zc to the test suite.
 - Calculate/substitute non leaf constant expressions before emitting bytecode (we only do this when emitting bytecode now).
 
@@ -11,7 +10,6 @@ test
 - Cleanup builtin types/symbols/atoms
     - Remove builtin type stuff from parser (probably move to type.h and include this)
 
-- Use a actual declaration ast nodes for function parameters. (Instead of the field declaration, which complicates things like redelcarations etc.)
 - Report circular dependency chains (Right now we just emit error for all the unresolved symbols in the chain)
 
 - decls_to_resolve should be a bucket array
