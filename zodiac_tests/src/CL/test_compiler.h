@@ -137,7 +137,7 @@ static MunitResult Infer_Void_Return(const MunitParameter params[], void* user_d
 
         infer_void_return2 :: () { }
 
-        // void_return_ts :: () -> void { }
+        void_return_ts :: () -> void { }
     )CODE_STR";
 
     return compile_and_run(code_string, 0);
