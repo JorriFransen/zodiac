@@ -16,7 +16,7 @@ jobs:
     interpreter: !ShellInterpreter
       shell: bash
       commands:
-      - ./build_all.sh
+      - make -f Makefile.linux.mak zodiac_tests zodiac_driver -j $(nproc)
     useTTY: false
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   - !CommandStep
