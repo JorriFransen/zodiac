@@ -71,18 +71,6 @@ main :: () -> s64 {
 foo : s64 = 33;
 bar : s64;
 
-infer_void_return1 :: () {
-    return;
-}
-
-infer_void_return2 :: () {
-
-}
-
-void_return_ts :: () -> void {
-
-}
-
 test :: (x: s64) {
     if (x == 1) {
         print(1);

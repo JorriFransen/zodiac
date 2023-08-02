@@ -20,24 +20,39 @@ namespace Zodiac { namespace Compiler_Tests {
 
 using namespace Bytecode;
 
-static MunitResult compile_and_run(String_Ref code_str, s64 exit_code) {
+struct Compile_Run_Results
+{
+    MunitResult result;
+    Bytecode_Program program;
+
+    Bytecode_Builder builder;
+    Zodiac_Context context;
+};
+
+static void free_compile_run_results(Compile_Run_Results *r)
+{
+    bytecode_builder_free(&r->builder);
+    zodiac_context_destroy(&r->context);
+}
+
+static Compile_Run_Results compile_and_run(String_Ref code_str, s64 exit_code) {
+
+    Compile_Run_Results result = { .result = MUNIT_OK };
 
     auto ta = temp_allocator_allocator();
 
-    Zodiac_Context c;
-    zodiac_context_create(&c);
-    defer { zodiac_context_destroy(&c); };
+    zodiac_context_create(&result.context);
 
-    c.options.verbose = true;
+    result.context.options.verbose = true;
 
     Lexer lexer;
-    lexer_create(&c, &lexer);
+    lexer_create(&result.context, &lexer);
     defer { lexer_destroy(&lexer); };
 
     lexer_init_stream(&lexer, code_str, "<test_code>");
 
     Parser parser;
-    parser_create(&c, &lexer, &parser);
+    parser_create(&result.context, &lexer, &parser);
     defer { parser_destroy(&parser); };
 
     AST_File *file = parse_file(&parser);
@@ -45,51 +60,56 @@ static MunitResult compile_and_run(String_Ref code_str, s64 exit_code) {
     munit_assert_false(parser.error);
 
     Resolver resolver;
-    resolver_create(&resolver, &c);
+    resolver_create(&resolver, &result.context);
     defer { resolver_destroy(&resolver); };
 
     resolve_file(&resolver, file);
 
     munit_assert_false(resolver_report_errors(&resolver));
 
-    Bytecode_Builder bb = Bytecode::bytecode_builder_create(&c.bytecode_allocator, &c);
-    Bytecode_Converter bc = bytecode_converter_create(&c.bytecode_allocator, &c, &bb);
+    result.builder = bytecode_builder_create(&result.context.bytecode_allocator, &result.context);
+    Bytecode_Converter bc = bytecode_converter_create(&result.context.bytecode_allocator, &result.context, &result.builder);
+    // defer { bytecode_converter_destroy(&bc); };
 
     emit_bytecode(&resolver, &bc);
-    munit_assert(c.errors.count == 0);
+    munit_assert(result.context.errors.count == 0);
 
-    // bytecode_print(&bb, temp_allocator_allocator());
+    // bytecode_print(&result.builder, temp_allocator_allocator());
 
     Bytecode_Validator validator;
-    bytecode_validator_init(&c, ta, &validator, bb.functions, nullptr);
+    bytecode_validator_init(&result.context, ta, &validator, result.builder.functions, nullptr);
+    defer { bytecode_validator_free(&validator); };
 
     bool bytecode_valid = validate_bytecode(&validator);
     if (!bytecode_valid) {
         bytecode_validator_print_errors(&validator);
-        return MUNIT_FAIL;
+        result.result = MUNIT_FAIL;
+        return result;
     }
 
-    Interpreter interp = interpreter_create(c_allocator(), &c);
-    auto program = bytecode_get_program(bc.builder);
+    result.program = bytecode_get_program(bc.builder);
 
-    munit_assert(program.entry_handle == -1);
-    program.entry_handle= bytecode_find_entry(program);
+    Interpreter interp = interpreter_create(c_allocator(), &result.context);
+    defer { interpreter_free(&interp); };
 
-    Interpreter_Register result_reg = interpreter_start(&interp, program);
+    munit_assert(result.program.entry_handle == -1);
+    result.program.entry_handle= bytecode_find_entry(result.program);
+
+    Interpreter_Register result_reg = interpreter_start(&interp, result.program);
     munit_assert(result_reg.type->kind == Type_Kind::INTEGER);
 
     munit_assert_int64(result_reg.value.integer.s64, ==, exit_code);
 
-    LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
+    LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &result.builder);
     defer { llvm_builder_free(&llvm_builder); };
 
-    llvm_builder_emit_program(&llvm_builder, &program);
+    llvm_builder_emit_program(&llvm_builder, &result.program);
 
-    auto out_file_name = c.options.output_file_name;
+    auto out_file_name = result.context.options.output_file_name;
     llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(out_file_name); };
 
-    munit_assert(filesystem_exists(c.options.output_file_name));
+    munit_assert(filesystem_exists(result.context.options.output_file_name));
 
     Array_Ref<String_Ref> args({string_append(ta, Array_Ref<String_Ref>({ filesystem_cwd(ta), "/", out_file_name } ))});
     Process_Result pr = platform_execute_process(&args);
@@ -101,7 +121,7 @@ static MunitResult compile_and_run(String_Ref code_str, s64 exit_code) {
     munit_assert_int64(pr.exit_code, ==, exit_code);
     munit_assert(pr.success == expected_result);
 
-    return MUNIT_OK;
+    return result;
 }
 
 static MunitResult Return_0(const MunitParameter params[], void* user_data_or_fixture) {
@@ -112,7 +132,9 @@ static MunitResult Return_0(const MunitParameter params[], void* user_data_or_fi
         }
     )CODE_STR";
 
-    return compile_and_run(code_string, 0);
+    auto result = compile_and_run(code_string, 0);
+    defer { free_compile_run_results(&result); };
+    return result.result;
 }
 
 static MunitResult Return_1(const MunitParameter params[], void* user_data_or_fixture) {
@@ -123,7 +145,9 @@ static MunitResult Return_1(const MunitParameter params[], void* user_data_or_fi
         }
     )CODE_STR";
 
-    return compile_and_run(code_string, 1);
+    auto result = compile_and_run(code_string, 1);
+    defer { free_compile_run_results(&result); };
+    return result.result;
 }
 
 static MunitResult Infer_Void_Return(const MunitParameter params[], void* user_data_or_fixture) {
@@ -140,8 +164,25 @@ static MunitResult Infer_Void_Return(const MunitParameter params[], void* user_d
         void_return_ts :: () -> void { }
     )CODE_STR";
 
-    return compile_and_run(code_string, 0);
-    return MUNIT_OK;
+    auto result = compile_and_run(code_string, 0);
+    defer { free_compile_run_results(&result); };
+
+    for (u64 i = 0; i < result.program.functions.count; i++) {
+
+        auto fn = &result.program.functions[i];
+
+        if (fn->name != "main") {
+            auto fn_type = fn->type;
+            munit_assert(fn_type->kind == Type_Kind::FUNCTION);
+
+            auto return_type = fn_type->function.return_type;
+            munit_assert(return_type->kind == Type_Kind::VOID);
+
+            munit_assert_ptr_equal(return_type, &builtin_type_void);
+        }
+    }
+
+    return result.result;
 }
 
 START_TESTS(compiler_tests)
