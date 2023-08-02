@@ -162,7 +162,8 @@ void dynamic_array_remove_ordered(Dynamic_Array< Element_Type> *array, s64 index
         return;
     }
 
-    auto copy_size = sizeof(Element_Type) * array->count - 1;
+    auto copy_count = array->count - 1 - index;
+    auto copy_size = sizeof(Element_Type) * copy_count;
 
     zmemmove(&array->data[index], &array->data[index + 1], copy_size);
 
