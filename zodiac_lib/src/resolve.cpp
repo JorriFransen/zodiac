@@ -7,9 +7,13 @@
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 #include "scope.h"
+#include "source_pos.h"
 #include "type.h"
 #include "util/asserts.h"
+#include "util/zstring.h"
 #include "zodiac_context.h"
+
+#include <stdio.h>
 
 namespace Zodiac
 {
@@ -106,6 +110,32 @@ void resolve_file(Resolver *resolver, AST_File *file)
     }
 
 
+}
+
+bool resolver_report_errors(Resolver *resolver)
+{
+    debug_assert(resolver);
+
+    auto c = resolver->ctx;
+
+    bool errors = false;
+
+    for (s64 i = 0; i < c->errors.count; i++) {
+
+        auto err = c->errors[i];
+
+        if (!c->fatal_resolve_error) assert(!err.fatal);
+
+        bool print = c->fatal_resolve_error == err.fatal;
+
+        if (print) {
+            auto start = err.source_range.start;
+            printf("%s:%llu:%llu: error: %s\n", start.name.data, start.line, start.index_in_line, err.message.data);
+            errors = true;
+        }
+    }
+
+    return errors;
 }
 
 void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Declaration *decl, Scope *scope)

@@ -19,7 +19,7 @@
             "configuration": {
                 "request": "launch",
                 "program": "bin/zodiac_tests",
-                "args": [ "BC/Simple_Function_Call" ],
+                "args": [ "CL/Infer_Void_Return" ],
                 "cwd": "${workspaceRoot}",
                 "environment": [],
                 "externalConsole": false,

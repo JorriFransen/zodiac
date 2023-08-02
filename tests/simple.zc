@@ -36,7 +36,7 @@ struct_test :: () {
 }
 
 main :: () -> s64 {
-    a := 8 + 2;
+    aa := 8 + 2;
     z :: 19;
     b := z + x + y + foo;
 

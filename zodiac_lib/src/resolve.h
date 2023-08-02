@@ -75,6 +75,7 @@ ZAPI void resolver_create(Resolver *resolver, Zodiac_Context *ctx);
 ZAPI void resolver_destroy(Resolver *resolver);
 
 ZAPI void resolve_file(Resolver *resolver, AST_File *file);
+ZAPI bool resolver_report_errors(Resolver *resolver);
 ZAPI void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Declaration *decl, Scope *scope);
 ZAPI Resolve_Results resolve_names(Resolver *resolver);
 ZAPI Resolve_Results resolve_types(Resolver *resolver);
