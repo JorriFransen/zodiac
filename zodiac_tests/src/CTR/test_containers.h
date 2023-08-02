@@ -51,7 +51,7 @@ static MunitSuite containers_child_suites[] = {
 };
 
 static MunitSuite containers_suite = {
-    (char *)"CRT/",
+    (char *)"CTR/",
     nullptr,
     containers_child_suites,
     1,
