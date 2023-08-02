@@ -16,11 +16,18 @@ namespace Zodiac
 
 void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser)
 {
-    assert(ctx && lxr && out_parser);
+    debug_assert(ctx && lxr && out_parser);
     out_parser->context = ctx;
     out_parser->lxr = lxr;
     out_parser->error = false;
     queue_create(&dynamic_allocator, &out_parser->peeked_tokens);
+}
+
+void parser_destroy(Parser *parser)
+{
+    debug_assert(parser);
+
+    queue_destroy(&parser->peeked_tokens);
 }
 
 AST_Identifier parse_identifier(Parser *parser)
@@ -35,7 +42,7 @@ AST_Identifier parse_identifier(Parser *parser)
 
 AST_Expression *parse_expr_operand(Parser *parser)
 {
-    assert(parser);
+    debug_assert(parser);
 
     Source_Pos start_pos = cur_tok(parser).range.start;
 
@@ -83,6 +90,8 @@ AST_Expression *parse_expr_operand(Parser *parser)
 
 AST_Expression *parse_expr_base(Parser *parser)
 {
+    debug_assert(parser);
+
     AST_Expression *expr = parse_expr_operand(parser);
 
     auto start_pos = cur_tok(parser).range.start;
@@ -135,6 +144,7 @@ AST_Expression *parse_expr_base(Parser *parser)
 
 AST_Expression *parse_expr_unary(Parser *parser)
 {
+    debug_assert(parser);
     Source_Pos start_pos = cur_tok(parser).range.start;
 
     if (is_token(parser, '+')) {
@@ -170,6 +180,8 @@ file_local AST_Binary_Operator token_kind_to_ast_binop[256] = {
 
 AST_Expression *parse_expr_mul(Parser *parser)
 {
+    debug_assert(parser);
+
     AST_Expression *lhs = parse_expr_unary(parser);
 
     while (is_token(parser, '*') || is_token(parser, '/')) {
@@ -179,7 +191,7 @@ AST_Expression *parse_expr_mul(Parser *parser)
         AST_Expression *rhs = parse_expr_unary(parser);
 
         auto ast_op = token_kind_to_ast_binop[(int)op];
-        assert(ast_op != AST_Binary_Operator::INVALID);
+        debug_assert(ast_op != AST_Binary_Operator::INVALID);
         lhs = ast_binary_expr_new(parser->context, {lhs->range.start, rhs->range.end}, ast_op, lhs, rhs);
     }
 
@@ -188,6 +200,8 @@ AST_Expression *parse_expr_mul(Parser *parser)
 
 AST_Expression *parse_expr_add(Parser *parser)
 {
+    debug_assert(parser);
+
     AST_Expression *lhs = parse_expr_mul(parser);
 
     while (is_token(parser, '+') || is_token(parser, '-')) {
@@ -197,7 +211,7 @@ AST_Expression *parse_expr_add(Parser *parser)
         AST_Expression *rhs = parse_expr_mul(parser);
 
         auto ast_op = token_kind_to_ast_binop[(int)op];
-        assert(ast_op != AST_Binary_Operator::INVALID);
+        debug_assert(ast_op != AST_Binary_Operator::INVALID);
         lhs = ast_binary_expr_new(parser->context, {lhs->range.start, rhs->range.end}, ast_op, lhs, rhs);
     }
 
@@ -206,6 +220,8 @@ AST_Expression *parse_expr_add(Parser *parser)
 
 AST_Expression *parse_expr_cmp(Parser *parser)
 {
+    debug_assert(parser);
+
     AST_Expression *lhs = parse_expr_add(parser);
 
     while (is_token(parser, '<') || is_token(parser, '>') || is_token(parser, TOK_EQ) || is_token(parser, TOK_NEQ) || is_token(parser, TOK_LTEQ) || is_token(parser, TOK_GTEQ)) {
@@ -215,7 +231,7 @@ AST_Expression *parse_expr_cmp(Parser *parser)
         AST_Expression *rhs = parse_expr_add(parser);
 
         auto cmp_op = token_kind_to_ast_binop[(int)op];
-        assert(cmp_op != AST_Binary_Operator::INVALID);
+        debug_assert(cmp_op != AST_Binary_Operator::INVALID);
         lhs = ast_binary_expr_new(parser->context, {lhs->range.start, rhs->range.end}, cmp_op, lhs, rhs);
     }
 
@@ -229,7 +245,7 @@ AST_Expression *parse_expression(Parser *parser)
 
 AST_Statement *parse_keyword_statement(Parser *parser)
 {
-    assert(parser);
+    debug_assert(parser);
 
     Source_Pos start_pos = cur_tok(parser).range.start;
 
@@ -299,7 +315,7 @@ AST_Statement *parse_keyword_statement(Parser *parser)
 
 AST_Statement *parse_statement(Parser *parser)
 {
-    assert(parser);
+    debug_assert(parser);
 
     if (is_token(parser, TOK_KEYWORD)) {
         return parse_keyword_statement(parser);
@@ -359,11 +375,11 @@ AST_Statement *parse_statement(Parser *parser)
     } else {
         expect_token(parser, '=');
         AST_Expression *value = parse_expression(parser);
-        assert(value);
+        debug_assert(value);
         result = ast_assign_stmt_new(parser->context, {start_pos, value->range.end}, expr, value);
     }
 
-    assert(result);
+    debug_assert(result);
 
     expect_token(parser, ';');
 
@@ -372,7 +388,7 @@ AST_Statement *parse_statement(Parser *parser)
 
 AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident)
 {
-    assert(parser);
+    debug_assert(parser);
 
     expect_token(parser, '(');
 
@@ -416,7 +432,7 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
 
     while (!match_token(parser, '}')) {
         AST_Statement *stmt = parse_statement(parser);
-        assert(stmt);
+        debug_assert(stmt);
         dynamic_array_append(&temp_stmts.array, stmt);
     }
 
@@ -427,7 +443,7 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
 
 AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier ident)
 {
-    assert(parser);
+    debug_assert(parser);
 
     AST_Declaration_Kind kind = AST_Declaration_Kind::INVALID;
 
@@ -438,7 +454,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
         kind = AST_Declaration_Kind::UNION;
     }
 
-    assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
+    debug_assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
 
     expect_token(parser, '{');
 
@@ -486,7 +502,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
 AST_Declaration *parse_declaration(Parser *parser)
 {
     AST_Identifier ident = parse_identifier(parser);
-    assert(ident.name.data)
+    debug_assert(ident.name.data)
 
     expect_token(parser, ':');
 
@@ -512,7 +528,7 @@ AST_Declaration *parse_declaration(Parser *parser)
             if ((peek_token(parser).kind == Token_Kind::TOK_NAME && peek_token(parser, 2).kind == ':') ||
                  peek_token(parser).kind == ')') {
 
-                assert(!ts);
+                debug_assert(!ts);
                 return parse_function_declaration(parser, ident);
             }
         }
@@ -584,14 +600,14 @@ AST_File *parse_file(Parser *parser)
 
 bool is_keyword(Parser *parser, Atom keyword)
 {
-    assert(parser && is_keyword(keyword));
+    debug_assert(parser && is_keyword(keyword));
 
     return is_token(parser, TOK_KEYWORD) && cur_tok(parser).atom == keyword;
 }
 
 bool match_keyword(Parser *parser, Atom keyword)
 {
-    assert(parser && is_keyword(keyword));
+    debug_assert(parser && is_keyword(keyword));
 
     if (is_keyword(parser, keyword)) {
         next_token(parser);
@@ -603,7 +619,7 @@ bool match_keyword(Parser *parser, Atom keyword)
 
 bool expect_keyword(Parser *parser, Atom keyword)
 {
-    assert(parser && is_keyword(keyword));
+    debug_assert(parser && is_keyword(keyword));
 
     if (is_keyword(parser, keyword)) {
         next_token(parser);
@@ -615,19 +631,19 @@ bool expect_keyword(Parser *parser, Atom keyword)
 
 bool is_token(Parser *parser, Token_Kind kind)
 {
-    assert(parser);
+    debug_assert(parser);
     return cur_tok(parser).kind == kind;
 }
 
 bool is_token(Parser *parser, char c)
 {
-    assert(parser);
+    debug_assert(parser);
     return (char)cur_tok(parser).kind == c;
 }
 
 bool next_token(Parser *parser)
 {
-    assert(parser && parser->lxr);
+    debug_assert(parser && parser->lxr);
 
     if (!queue_empty(&parser->peeked_tokens)) {
         queue_dequeue(&parser->peeked_tokens);
@@ -639,7 +655,7 @@ bool next_token(Parser *parser)
 
 bool match_token(Parser *parser, Token_Kind kind)
 {
-    assert(parser && parser->lxr);
+    debug_assert(parser && parser->lxr);
 
     if (is_token(parser, kind)) {
         next_token(parser);
@@ -656,7 +672,7 @@ bool match_token(Parser *parser, char c)
 
 bool expect_token(Parser *parser, Token_Kind kind)
 {
-    assert(parser && parser->lxr);
+    debug_assert(parser && parser->lxr);
 
     if (is_token(parser, kind)) {
         next_token(parser);
@@ -676,7 +692,7 @@ bool expect_token(Parser *parser, char c)
 
 Token cur_tok(Parser *parser)
 {
-    assert(parser && parser->lxr);
+    debug_assert(parser && parser->lxr);
 
     if (queue_empty(&parser->peeked_tokens)) {
         return parser->lxr->token;
@@ -687,8 +703,8 @@ Token cur_tok(Parser *parser)
 
 Token peek_token(Parser *parser, u64 offset/*=1*/)
 {
-    assert(parser && parser->lxr);
-    assert(offset >= 1);
+    debug_assert(parser && parser->lxr);
+    debug_assert(offset >= 1);
 
     if (queue_empty(&parser->peeked_tokens)) {
         for (u64 i = 0; i < offset + 1; i++) {
@@ -709,9 +725,9 @@ Token peek_token(Parser *parser, u64 offset/*=1*/)
 
 void syntax_error(Parser *parser, const String_Ref fmt, ...)
 {
-    assert(parser);
-    assert(fmt.length && fmt.data);
-    assert(fmt.data[fmt.length] == '\0');
+    debug_assert(parser);
+    debug_assert(fmt.length && fmt.data);
+    debug_assert(fmt.data[fmt.length] == '\0');
 
     va_list args;
     va_start(args, fmt);
@@ -728,7 +744,7 @@ void syntax_error(Parser *parser, const String_Ref fmt, va_list args)
     auto out_length = string_format(err_msg, fmt, args);
 
     if (out_length + 1 > ZSTRING_FORMAT_STACK_BUFFER_SIZE) {
-        assert(false && "Formatted syntax error does not fit in stack buffer");
+        assert_msg(false, "Formatted syntax error does not fit in stack buffer");
         return;
     }
 
@@ -738,7 +754,7 @@ void syntax_error(Parser *parser, const String_Ref fmt, va_list args)
     out_length = string_format(err_msg, "%s:%i:%i: error: %s", pos.name.data, pos.line, pos.index_in_line, err_msg);
 
     if (out_length + 1 > ZSTRING_FORMAT_STACK_BUFFER_SIZE) {
-        assert(false && "Formatted syntax error does not fit in stack buffer");
+        assert_msg(false, "Formatted syntax error does not fit in stack buffer");
         return;
     }
 

@@ -17,7 +17,6 @@
 #include "parser.h"
 #include "platform/filesystem.h"
 #include "resolve.h"
-#include "scope.h"
 #include "source_pos.h"
 #include "type.h"
 #include "util/asserts.h"
@@ -39,14 +38,16 @@ int main(int argc, const char **argv) {
 
     Zodiac_Context c;
     zodiac_context_create(&c);
+    defer { zodiac_context_destroy(&c); };
 
     auto opts = &c.options;
     parse_command_line_options(opts, argc, argv);
 
     Lexer lexer;
     lexer_create(&c, &lexer);
-    String stream = {};
+    defer { lexer_destroy(&lexer); };
 
+    String stream = {};
     bool read_result = filesystem_read_entire_file(&dynamic_allocator, opts->input_file_name, &stream);
     assert(read_result);
     if (!read_result) {
@@ -57,14 +58,17 @@ int main(int argc, const char **argv) {
 
     Parser parser;
     parser_create(&c, &lexer, &parser);
+    defer { parser_destroy(&parser); };
+
     AST_File *file = parse_file(&parser);
+
     if (parser.error) return 1;
     assert(file);
 
-    Scope *global_scope = scope_new(&dynamic_allocator, Scope_Kind::GLOBAL, nullptr);
 
     Resolver resolver;
-    resolver_create(&resolver, &c, global_scope);
+    resolver_create(&resolver, &c);
+    defer { resolver_destroy(&resolver); };
 
     resolve_file(&resolver, file);
 

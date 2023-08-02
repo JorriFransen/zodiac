@@ -66,12 +66,25 @@ void zodiac_context_create(Zodiac_Context *out_context)
 
     out_context->support_lib_static_path = string_append(c_allocator(), out_context->compiler_exe_dir, static_support_lib_name);
     assert(filesystem_exists(out_context->support_lib_static_path));
-
 }
 
 void zodiac_context_destroy(Zodiac_Context *context)
 {
     atom_table_free(&context->atoms);
+
+    auto ca = c_allocator();
+
+    if (context->options.input_file_name.length) free(ca, context->options.input_file_name.data);
+    if (context->options.output_file_name.length) free(ca, context->options.output_file_name.data);
+
+    dynamic_array_free(&context->errors);
+
+    free(ca, context->compiler_exe_path.data);
+    free(ca, context->compiler_exe_dir.data);
+
+    linear_allocator_destroy(&context->ast_allocator_state);
+    linear_allocator_destroy(&context->bytecode_allocator_state);
+    linear_allocator_destroy(&context->temp_allocator_state.linear_allocator);
 }
 
 }

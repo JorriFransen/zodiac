@@ -1,17 +1,45 @@
 #include "test_bytecode.h"
 
+#include <munit/munit.h>
+
 #include "bytecode/interpreter.h"
 #include "bytecode/llvm_builder.h"
 #include "bytecode/validator.h"
+#include "common.h"
+#include "containers/dynamic_array.h"
+#include "error.h"
+#include "memory/allocator.h"
+#include "memory/temporary_allocator.h"
+#include "platform/filesystem.h"
+#include "platform/platform.h"
 #include "type.h"
+#include "util/asserts.h"
 #include "util/logger.h"
 #include "zodiac_context.h"
+
+#include <string.h>
 
 #if PRINT_BYTECODE_IN_TESTS
 #include "bytecode/printer.h"
 #endif
 
 namespace Zodiac { namespace Bytecode_Tests {
+
+#define assert_zodiac_stream(stream, expected_string) { \
+    auto es = string_append(temp_allocator_allocator(), (expected_string), "\n"); \
+    filesystem_flush(&stream); \
+    u64 length; \
+    filesystem_size(&stream, &length); \
+    const auto _buf_size = 1024; \
+    munit_assert((s64)_buf_size > length); \
+    char _buf[_buf_size]; \
+    u64 read_length; \
+    bool read_res = filesystem_read(&stream, length, (u8 *)_buf, &read_length); \
+    munit_assert_int(read_length, ==, length); \
+    _buf[length] = '\0'; \
+    munit_assert_int((int)strlen(_buf), ==, es.length); \
+    munit_assert_string_equal(_buf, es.data); \
+}
 
 void print_bytecode(const Bytecode_Builder &bb)
 {
@@ -1608,7 +1636,7 @@ MunitResult BC_Callback_From_C(const MunitParameter params[], void *user_data_or
             .flags = BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT,
             .index = -1,
             .type = void_ptr_ty,
-            .value = { .pointer = (uint8_t*)interp.std_out.handle }
+            .value = { .pointer = (u8*)interp.std_out.handle }
         };
         bytecode_emit_push_arg(&bb, stdout_reg);
         bytecode_emit_call(&bb, runtime_set_stdout_fn, 1);
@@ -2106,5 +2134,7 @@ MunitResult String_Literals(const MunitParameter params[], void *user_data_or_fi
 
     return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
+
+#undef assert_zodiac_stream
 
 } }

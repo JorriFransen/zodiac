@@ -46,6 +46,7 @@ ZAPI void allocator_create(Allocator *out_allocator, Alloc_Function alloc_func, 
 ZAPI void *alloc(Allocator *allocator, u64 size);
 ZAPI void *alloc_aligned(Allocator *allocator, u64 size, u64 alignment);
 ZAPI void free(Allocator *allocator, void *memory);
+ZAPI void free(Allocator *allocator, const void *memory);
 ZAPI void free_all(Allocator *allocator);
 
 template <typename Element_Type>

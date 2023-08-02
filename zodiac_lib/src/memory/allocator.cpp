@@ -40,6 +40,11 @@ void free(Allocator *allocator, void *memory)
     }
 }
 
+void free(Allocator *allocator, const void *memory)
+{
+    free(allocator, (void *)memory);
+}
+
 void free_all(Allocator *allocator)
 {
     assert(allocator);
@@ -55,7 +60,7 @@ static void *c_alloc_func(Allocator *allocator, Allocation_Mode mode, u64 size, 
         case Allocation_Mode::ALLOCATE: {
             assert(!old_ptr);
             assert(alignment == 1);
-            return malloc(size);
+            return ::malloc(size);
         }
 
         case Allocation_Mode::REALLOCATE: assert(false); break;

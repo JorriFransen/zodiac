@@ -8,6 +8,7 @@
 #include "BC/test_bytecode.h"
 #include "CTR/test_containers.h"
 #include "MEM/test_memory.h"
+#include "CL/test_compiler.h"
 
 #include "test_atoms.h"
 #include "test_lexer.h"
@@ -58,6 +59,14 @@ static MunitSuite bytecode_suite = {
     MUNIT_SUITE_OPTION_NONE,
 };
 
+static MunitSuite compiler_suite = {
+    (char *)"CL/",
+    Compiler_Tests::compiler_tests,
+    nullptr,
+    1,
+    MUNIT_SUITE_OPTION_NONE,
+};
+
 static MunitSuite main_child_suites[] = {
     string_suite,
     atom_suite,
@@ -66,6 +75,7 @@ static MunitSuite main_child_suites[] = {
     memory_suite,
     lexer_suite,
     bytecode_suite,
+    compiler_suite,
     {},
 };
 

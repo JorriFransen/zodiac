@@ -11,10 +11,12 @@
 namespace Zodiac
 {
 
+static String_Ref default_ouput_file_name = "a.out" ZPLATFORM_DEFAULT_EXE_EXTENSION;
+
 struct Zodiac_Options
 {
     String_Ref input_file_name = {};
-    String_Ref output_file_name = "a.out" ZPLATFORM_DEFAULT_EXE_EXTENSION;
+    String_Ref output_file_name = string_copy(c_allocator(), default_ouput_file_name);
 
     bool dont_emit_binary = false;
 

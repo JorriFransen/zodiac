@@ -14,15 +14,13 @@
 namespace Zodiac
 {
 
-void resolver_create(Resolver *resolver, Zodiac_Context *ctx, Scope *global_scope)
+void resolver_create(Resolver *resolver, Zodiac_Context *ctx)
 {
-    assert(resolver);
-    assert(ctx);
-    assert(global_scope);
-    assert(global_scope->kind == Scope_Kind::GLOBAL);
+    debug_assert(resolver);
+    debug_assert(ctx);
 
     resolver->ctx = ctx;
-    resolver->global_scope = global_scope;
+    resolver->global_scope = scope_new(&ctx->ast_allocator, Scope_Kind::GLOBAL, nullptr);
     resolver->node_allocator = &ctx->ast_allocator;
 
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_name_resolve);
@@ -30,15 +28,22 @@ void resolver_create(Resolver *resolver, Zodiac_Context *ctx, Scope *global_scop
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_emit_bytecode);
 }
 
-#define add_builtin_type_symbol(type)                                                                                                    \
-    {                                                                                                                                    \
-        auto sym = add_typed_symbol(resolver->ctx, resolver->global_scope, Symbol_Kind::TYPE, (SYM_FLAG_BUILTIN), atom_##type, nullptr); \
-        sym->builtin_type = &builtin_type_##type;                                                                                        \
-    }
+void resolver_destroy(Resolver *resolver)
+{
+    dynamic_array_free(&resolver->nodes_to_name_resolve);
+    dynamic_array_free(&resolver->nodes_to_type_resolve);
+    dynamic_array_free(&resolver->nodes_to_emit_bytecode);
+}
+
+#define add_builtin_type_symbol(type)                                                                                                \
+{                                                                                                                                    \
+    auto sym = add_typed_symbol(resolver->ctx, resolver->global_scope, Symbol_Kind::TYPE, (SYM_FLAG_BUILTIN), atom_##type, nullptr); \
+    sym->builtin_type = &builtin_type_##type;                                                                                        \
+}
 
 void resolve_file(Resolver *resolver, AST_File *file)
 {
-    assert(file);
+    debug_assert(file);
 
     add_builtin_type_symbol(u64);
     add_builtin_type_symbol(s64);
@@ -105,9 +110,9 @@ void resolve_file(Resolver *resolver, AST_File *file)
 
 void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Declaration *decl, Scope *scope)
 {
-    assert(resolver);
-    assert(decl);
-    assert(scope);
+    debug_assert(resolver);
+    debug_assert(decl);
+    debug_assert(scope);
 
     auto node = alloc<Flat_Root_Node>(resolver->node_allocator);
     node->root.kind = Flat_Node_Kind::DECL;
@@ -250,7 +255,7 @@ Resolve_Results resolve_types(Resolver *resolver)
 
 void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest)
 {
-    assert(decl && scope && dest);
+    debug_assert(decl && scope && dest);
 
     assert(decl->identifier.name.data);
     auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
@@ -374,7 +379,7 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
 
 void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest)
 {
-    assert(stmt && scope && dest);
+    debug_assert(stmt && scope && dest);
 
     switch (stmt->kind) {
 
@@ -462,7 +467,7 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
 
 void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest, AST_Type_Spec *infer_type_from)
 {
-    assert(expr && scope && dest);
+    debug_assert(expr && scope && dest);
 
     switch (expr->kind) {
 
@@ -543,7 +548,7 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
 
 void flatten_type_spec(AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node> *dest)
 {
-    assert(ts && scope && dest);
+    debug_assert(ts && scope && dest);
 
     switch (ts->kind) {
 
@@ -567,7 +572,7 @@ void flatten_type_spec(AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node>
 
 Flat_Node to_flat_node(AST_Declaration *decl, Scope *scope)
 {
-    assert(decl && scope);
+    debug_assert(decl && scope);
 
     Flat_Node result = {};
     result.kind = Flat_Node_Kind::DECL;
@@ -578,7 +583,7 @@ Flat_Node to_flat_node(AST_Declaration *decl, Scope *scope)
 
 Flat_Node to_flat_node(AST_Statement *stmt, Scope *scope)
 {
-    assert(stmt && scope);
+    debug_assert(stmt && scope);
 
     Flat_Node result = {};
     result.kind = Flat_Node_Kind::STMT;
@@ -589,7 +594,7 @@ Flat_Node to_flat_node(AST_Statement *stmt, Scope *scope)
 
 Flat_Node to_flat_node(AST_Expression *expr, Scope *scope)
 {
-    assert(expr && scope);
+    debug_assert(expr && scope);
 
     Flat_Node result = {};
     result.scope = scope;
@@ -600,7 +605,7 @@ Flat_Node to_flat_node(AST_Expression *expr, Scope *scope)
 
 Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope)
 {
-    assert(ts && scope);
+    debug_assert(ts && scope);
 
     Flat_Node result = {};
     result.kind = Flat_Node_Kind::TS;
@@ -611,8 +616,8 @@ Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope)
 
 Flat_Node to_flat_proto(AST_Declaration *decl, Scope *scope)
 {
-    assert(decl && decl->kind == AST_Declaration_Kind::FUNCTION);
-    assert(scope && scope->kind == Scope_Kind::GLOBAL);
+    debug_assert(decl && decl->kind == AST_Declaration_Kind::FUNCTION);
+    debug_assert(scope && scope->kind == Scope_Kind::GLOBAL);
 
     Flat_Node result = {};
     result.kind = Flat_Node_Kind::FUNCTION_PROTO;
@@ -682,8 +687,8 @@ bool name_resolve_node(Resolver *resolver, Flat_Node *node)
 
 bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
 {
-    assert(resolver);
-    assert(decl && scope);
+    debug_assert(resolver);
+    debug_assert(decl && scope);
 
     assert(decl->identifier.name.data);
     auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
@@ -831,7 +836,7 @@ bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
 
 bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 {
-    assert(expr && scope);
+    debug_assert(expr && scope);
 
     bool result = true;
 
@@ -951,7 +956,7 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 
 bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
 {
-    assert(ts && scope);
+    debug_assert(ts && scope);
 
     bool result = true;
 
@@ -1122,8 +1127,8 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
 
 bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope)
 {
-    assert(decl);
-    assert(scope);
+    debug_assert(decl);
+    debug_assert(scope);
 
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
@@ -1407,9 +1412,9 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
 
 bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 {
-    assert(expr);
-    assert(expr->resolved_type == nullptr);
-    assert(scope);
+    debug_assert(expr);
+    debug_assert(expr->resolved_type == nullptr);
+    debug_assert(scope);
 
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false);
@@ -1618,7 +1623,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
 bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
 {
-    assert(ctx && ts && scope);
+    debug_assert(ctx && ts && scope);
 
     if (ts->resolved_type) return true;
 

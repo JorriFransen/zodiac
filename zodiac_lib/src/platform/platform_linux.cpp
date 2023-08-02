@@ -508,7 +508,7 @@ String platform_dir_name(Allocator *allocator, const String_Ref path)
     assert(filesystem_exists(path));
     assert(path.data[path.length] == '\0');
 
-    // Dirname may copy the passed in string, so copy it first
+    // Dirname may modify the passed in string, so copy it first
     auto _path = string_copy(temp_allocator_allocator(), path);
 
     char *result = dirname((char *)_path.data);
