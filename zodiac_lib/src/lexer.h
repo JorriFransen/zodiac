@@ -74,10 +74,19 @@ struct Lexer
     ZODIAC_KEYWORD(false)   \
     ZODIAC_KEYWORD(null)
 
-// Emit variable declaration for all keywords
+// Emit atom declarations for all keywords
 #define ZODIAC_KEYWORD(n) ZAPI extern Atom keyword_##n;
 ALL_ZODIAC_KEYWORDS
 #undef ZODIAC_KEYWORD
+
+#define ALL_ZODIAC_DIRECTIVES \
+    ZODIAC_DIRECTIVE(run) \
+
+// Emit atom declarations for all directives
+#define ZODIAC_DIRECTIVE(n) ZAPI extern Atom directive_##n;
+ALL_ZODIAC_DIRECTIVES
+#undef ZODIAC_DIRECTIVE
+
 
 ZAPI void zodiac_register_keywords(Atom_Table *at);
 ZAPI bool is_keyword(const Atom &atom);

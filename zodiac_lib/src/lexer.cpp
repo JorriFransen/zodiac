@@ -19,7 +19,7 @@ namespace Zodiac
 file_local bool lex_int(Lexer *lexer);
 file_local bool lex_real(Lexer *lexer);
 
-// Emit variable definition for all keywords
+// Emit atom definitions for all keywords
 #define ZODIAC_KEYWORD(n) Atom keyword_##n;
 ALL_ZODIAC_KEYWORDS
 #undef ZODIAC_KEYWORD
@@ -31,6 +31,11 @@ file_local Atom *all_keywords[] = {
 #undef ZODIAC_KEYWORD
 };
 
+// Emit atom definitions for all directives
+#define ZODIAC_DIRECTIVE(n) Atom directive_##n;
+ALL_ZODIAC_DIRECTIVES
+#undef ZODIAC_DIRECTIVE
+
 void zodiac_register_keywords(Atom_Table *at)
 {
     Atom_Block *block = at->current_block;
@@ -39,6 +44,8 @@ void zodiac_register_keywords(Atom_Table *at)
 #define ZODIAC_KEYWORD(n) keyword_##n = atom_get(at, #n);
     ALL_ZODIAC_KEYWORDS
 #undef ZODIAC_KEYWORD
+
+    assert_msg(false, "TODO Emit directive atom init");
 
     assert_msg(block == at->current_block, "Expected all keyword atoms to fit in the same block...");
 }

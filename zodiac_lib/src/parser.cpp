@@ -435,6 +435,7 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
         debug_assert(stmt);
         dynamic_array_append(&temp_stmts.array, stmt);
     }
+    //
 
     auto statements = temp_array_finalize(&parser->context->ast_allocator, &temp_stmts);
 
@@ -583,12 +584,43 @@ AST_Type_Spec *parse_type_spec(Parser *parser)
     return nullptr;
 }
 
+AST_Directive *parse_directive(Parser *parser)
+{
+    debug_assert(parser);
+
+    if (!expect_token(parser, '#')) return nullptr;
+
+    auto directive_name_tok = cur_tok(parser);
+
+    if (!expect_token(parser, TOK_NAME)) return nullptr;
+
+    // TODO: Use hashes here
+    if (directive_name_tok.atom == directive_run) {
+        assert(false);
+    } else {
+        assert_msg(false, "Unknown directive");
+    }
+
+    assert(directive_name_tok.kind);
+    assert(false);
+
+    return nullptr;
+}
+
 AST_File *parse_file(Parser *parser)
 {
     Dynamic_Array<AST_Declaration *> decls;
     dynamic_array_create(&parser->context->ast_allocator, &decls);
 
     while (!is_token(parser, TOK_EOF)) {
+
+        // Top level directive
+        if (is_token(parser, '#')) {
+            AST_Directive *dir = parse_directive(parser);
+            assert(dir);
+            assert(false);
+        }
+
         AST_Declaration *decl = parse_declaration(parser);
         if (parser->error) break;
 

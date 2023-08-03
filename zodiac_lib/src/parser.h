@@ -55,6 +55,8 @@ ZAPI AST_Declaration *parse_declaration(Parser *parser);
 
 ZAPI AST_Type_Spec *parse_type_spec(Parser *parser);
 
+ZAPI AST_Directive *parse_directive(Parser *parser);
+
 ZAPI AST_File *parse_file(Parser *parser);
 
 ZAPI bool is_keyword(Parser *parser, Atom keyword);

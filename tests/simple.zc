@@ -1,3 +1,4 @@
+#run print("Hello, Zodiac Compiler!");
 
 main :: () -> s64 {
 
@@ -5,3 +6,4 @@ main :: () -> s64 {
 
     return 0;
 }
+

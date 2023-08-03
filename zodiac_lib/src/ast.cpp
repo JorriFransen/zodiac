@@ -354,6 +354,22 @@ void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts)
     out_ts->kind = kind;
 }
 
+void ast_run_directive_create(AST_Expression *expr, AST_Directive *out_dir)
+{
+    debug_assert(expr && out_dir);
+
+    ast_directive_create(AST_Directive_Kind::RUN, out_dir);
+
+    out_dir->run.expr = expr;
+}
+
+void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir)
+{
+    debug_assert(out_dir);
+
+    out_dir->kind = kind;
+}
+
 void ast_file_create(Dynamic_Array<AST_Declaration *> decls, AST_File *out_file)
 {
     debug_assert(out_file);
@@ -668,6 +684,26 @@ AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range range)
     AST_Type_Spec *result = alloc<AST_Type_Spec>(&ctx->ast_allocator);
     result->range = range;
     return result;
+}
+
+AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *expr)
+{
+    debug_assert(ctx && expr);
+
+    AST_Directive *result = ast_directive_new(ctx, range);
+    ast_run_directive_create(expr, result);
+
+    return result;
+}
+
+AST_Directive *ast_directive_new(Zodiac_Context *ctx, Source_Range range)
+{
+    debug_assert(ctx);
+
+    auto dir = alloc<AST_Directive>(&ctx->ast_allocator);
+    dir->range = range;
+
+    return dir;
 }
 
 AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *> decls)

@@ -356,6 +356,28 @@ struct AST_Type_Spec
     };
 };
 
+enum class AST_Directive_Kind
+{
+    INVALID,
+
+    RUN,
+};
+
+struct AST_Directive
+{
+    AST_Directive_Kind kind;
+
+    Source_Range range;
+
+    union
+    {
+        struct
+        {
+            AST_Expression *expr;
+        } run;
+    };
+};
+
 struct AST_File
 {
     Dynamic_Array<AST_Declaration *> declarations;
@@ -399,6 +421,9 @@ ZAPI void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts);
 ZAPI void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts);
 ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
 
+ZAPI void ast_run_directive_create(AST_Expression *expr, AST_Directive *out_dir);
+ZAPI void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir);
+
 ZAPI void ast_file_create(Dynamic_Array<AST_Declaration *> decls, AST_File *out_file);
 
 ZAPI AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Integer_Value value);
@@ -436,6 +461,9 @@ ZAPI AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Range rang
 ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident);
 ZAPI AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *base);
 ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range range);
+
+ZAPI AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *expr);
+ZAPI AST_Directive *ast_directive_new(Zodiac_Context *ctx, Source_Range range);
 
 ZAPI AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *> decls);
 
