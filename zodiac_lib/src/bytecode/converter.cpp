@@ -276,6 +276,8 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
             if (lvalue_reg.kind == Bytecode_Register_Kind::ALLOC) {
                 bytecode_emit_store_alloc(bc->builder, value_reg, lvalue_reg);
+            } else if (lvalue_reg.kind == Bytecode_Register_Kind::GLOBAL) {
+                bytecode_emit_store_global(bc->builder, value_reg, lvalue_reg.index);
             } else if (lvalue_reg.kind == Bytecode_Register_Kind::TEMPORARY) {
                 assert(lvalue_reg.type->kind == Type_Kind::POINTER);
                 assert(lvalue_reg.type->pointer.base == value_reg.type);
@@ -404,13 +406,29 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
             assert(ident_sym->decl);
             assert(ident_sym->decl->kind == AST_Declaration_Kind::VARIABLE);
 
-            assert(!((ident_sym->decl->flags & AST_DECL_FLAG_GLOBAL) == AST_DECL_FLAG_GLOBAL));
+            if ((ident_sym->decl->flags & AST_DECL_FLAG_GLOBAL) == AST_DECL_FLAG_GLOBAL) {
 
-            Bytecode_Register alloc_reg;
-            bool found = hash_table_find(&bc->allocations, ident_sym->decl, &alloc_reg);
-            assert(found);
+                Bytecode_Global_Handle glob_handle;
+                bool found = hash_table_find(&bc->globals, ident_sym->decl, &glob_handle);
+                assert(found);
 
-            return alloc_reg;
+                debug_assert(glob_handle < bc->builder->globals.count);
+                auto global = bc->builder->globals[glob_handle];
+
+                Bytecode_Register global_reg;
+                bool reg_found = hash_table_find(&bc->builder->global_registers, global.atom, &global_reg);
+                assert(reg_found);
+
+                debug_assert(global_reg.kind == Bytecode_Register_Kind::GLOBAL);
+                return global_reg;
+
+            } else {
+                Bytecode_Register alloc_reg;
+                bool found = hash_table_find(&bc->allocations, ident_sym->decl, &alloc_reg);
+                assert(found);
+
+                return alloc_reg;
+            }
         }
 
         case AST_Expression_Kind::MEMBER: {

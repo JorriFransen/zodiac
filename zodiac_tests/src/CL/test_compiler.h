@@ -289,7 +289,7 @@ static MunitResult Modify_Global_Constant(const MunitParameter params[], void* u
 static MunitResult Global_Variable_TS(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
-        global_var : s64 : 42;
+        global_var : s64 = 42;
         main :: () -> s64 {
             return global_var;
         }
@@ -305,7 +305,7 @@ static MunitResult Global_Variable_TS(const MunitParameter params[], void* user_
 static MunitResult Global_Variable_No_TS(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
-        global_var :: 42;
+        global_var := 42;
         main :: () -> s64 {
             return global_var;
         }
@@ -321,9 +321,9 @@ static MunitResult Global_Variable_No_TS(const MunitParameter params[], void* us
 static MunitResult Global_Variable_Assign(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
-        global_var :: 42;
+        global_var := 40;
         main :: () -> s64 {
-            global_var = 10;
+            global_var = global_var + 2;
             return global_var;
         }
     )CODE_STR";
@@ -345,7 +345,7 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Modify_Global_Constant),
     DEFINE_TEST(Global_Variable_TS),
     DEFINE_TEST(Global_Variable_No_TS),
-    // DEFINE_TEST(Global_Variable_Assign),
+    DEFINE_TEST(Global_Variable_Assign),
 END_TESTS()
 
 #undef RESOLVE_ERR
