@@ -108,7 +108,7 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
     emit_bytecode(&resolver, &bc);
     munit_assert(result.context.errors.count == 0);
 
-    // bytecode_print(&result.builder, temp_allocator_allocator());
+    print_bytecode(&result.builder);
 
     Bytecode_Validator validator;
     bytecode_validator_init(&result.context, ta, &validator, result.builder.functions, nullptr);

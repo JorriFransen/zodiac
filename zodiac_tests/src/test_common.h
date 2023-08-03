@@ -7,6 +7,19 @@
 #ifndef BYTECODE_TESTS_VERBOSE
 #define BYTECODE_TESTS_VERBOSE 1
 #endif // BYTECODE_TESTS_VERBOSE
+
+#if PRINT_BYTECODE_IN_TESTS
+#include "bytecode/bytecode.h"
+#endif // PRINT_BYTECODE_IN_TESTS
+
+namespace Zodiac { namespace Bytecode {
+
+struct Bytecode_Builder; 
+
+void print_bytecode(const Bytecode_Builder *bb);
+
+}}
+
 #define START_TESTS(name) \
     static MunitTest (name)[] = {
 

@@ -19,23 +19,7 @@
 
 #include <string.h>
 
-#if PRINT_BYTECODE_IN_TESTS
-#include "bytecode/printer.h"
-#include <stdio.h>
-#endif // PRINT_BYTECODE_IN_TESTS
-
 namespace Zodiac { namespace Bytecode_Tests {
-
-void print_bytecode(const Bytecode_Builder &bb)
-{
-#if PRINT_BYTECODE_IN_TESTS
-
-    printf("\n\n");
-
-    // Assume this uses printf
-    bytecode_print(&bb, temp_allocator_allocator());
-#endif // PRINT_BYTECODE_IN_TESTS
-}
 
 void init_test_context(Zodiac_Context *zc)
 {
@@ -115,7 +99,7 @@ MunitResult Building_1(const MunitParameter params[], void* user_data_or_fixture
     munit_assert_int64(add_instr.b.index, ==, b.index);
     munit_assert_int64(add_instr.dest.index, ==, add_instr.dest.index);
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     return MUNIT_OK;
 }
@@ -151,7 +135,7 @@ MunitResult Simple_Function_Call(const MunitParameter params[], void* user_data_
     bytecode_emit_print(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 42));
     bytecode_emit_return(&bb);
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -237,7 +221,7 @@ MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* use
         bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code));
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -336,7 +320,7 @@ MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_o
         bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code));
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -418,7 +402,7 @@ MunitResult Insert_And_Extract_Value(const MunitParameter params[], void *user_d
 
     bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code));
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -519,7 +503,7 @@ MunitResult Extract_Struct_Value(const MunitParameter params[], void *user_data_
         bytecode_emit_return(&bb, sum);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Interpreter interp = interpreter_create(c_alloc, &zc);
     defer { interpreter_free(&interp); };
@@ -590,7 +574,7 @@ MunitResult Return_Struct(const MunitParameter params[], void *user_data_or_fixt
         bytecode_emit_return(&bb, sum);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -707,7 +691,7 @@ MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_f
     }
 
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -776,7 +760,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
         bytecode_emit_return(&bb, bytecode_emit_load_alloc(&bb, int_alloc));
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -851,7 +835,7 @@ MunitResult Struct_Pointers(const MunitParameter params[], void *user_data_or_fi
         bytecode_emit_return(&bb, sum);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -916,7 +900,7 @@ MunitResult Invalid_Extract_Element(const MunitParameter params[], void *user_da
         bytecode_emit_return(&bb, sum);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -991,7 +975,7 @@ MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data
         bytecode_emit_return(&bb, sum);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -1088,7 +1072,7 @@ MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data
         bytecode_emit_return(&bb, x2);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -1169,7 +1153,7 @@ MunitResult Insert_And_Extract_Element(const MunitParameter params[], void *user
         bytecode_emit_return(&bb, sum);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -1262,7 +1246,7 @@ MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void *user_data
         bytecode_emit_return(&bb, sum);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -1394,7 +1378,7 @@ MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_
         bytecode_emit_return(&bb, r);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -1529,7 +1513,7 @@ MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[], void *us
         bytecode_emit_return(&bb, r);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -1649,7 +1633,7 @@ MunitResult BC_Callback_From_C(const MunitParameter params[], void *user_data_or
         bytecode_emit_return(&bb, r);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -1746,7 +1730,7 @@ MunitResult Non_Return_Error_Simple(const MunitParameter params[], void *user_da
         bytecode_emit_return(&bb);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -1822,7 +1806,7 @@ MunitResult Non_Return_Error_Indirect(const MunitParameter params[], void *user_
         bytecode_emit_jmp(&bb, indirect_loop_b2);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -1890,7 +1874,7 @@ MunitResult Non_Return_Flag(const MunitParameter params[], void *user_data_or_fi
     }
     bytecode_set_insert_point(&bb, non_return2_fn, non_return2_second_block);
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -1951,7 +1935,7 @@ MunitResult Globals(const MunitParameter params[], void *user_data_or_fixture)
         bytecode_emit_return(&bb, global_val);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -2017,7 +2001,7 @@ MunitResult Constants(const MunitParameter params[], void *user_data_or_fixture)
         bytecode_emit_return(&bb, global_const);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
@@ -2082,7 +2066,7 @@ MunitResult String_Literals(const MunitParameter params[], void *user_data_or_fi
         bytecode_emit_return(&bb, return_val);
     }
 
-    print_bytecode(bb);
+    print_bytecode(&bb);
 
     Bytecode_Validator validator;
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
