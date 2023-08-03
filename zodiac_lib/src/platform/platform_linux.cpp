@@ -462,7 +462,7 @@ void platform_console_write(const String_Ref message)
 {
     assert(message.data);
 
-    File_Handle zstdout;
+    File_Handle zstdout = {};
     filesystem_stdout_file(&zstdout);
     platform_file_write(&zstdout, message);
 }
@@ -471,7 +471,7 @@ void platform_console_write(const String_Ref message, Platform_Console_Color col
 {
     assert(message.data);
 
-    File_Handle zstdout;
+    File_Handle zstdout = {};
     filesystem_stdout_file(&zstdout);
     platform_file_write(&zstdout, message, color);
 }
@@ -480,7 +480,7 @@ void platform_console_write_error(const String_Ref message)
 {
     assert(message.data);
 
-    File_Handle zstderr;
+    File_Handle zstderr = {};
     filesystem_stderr_file(&zstderr);
     platform_file_write(&zstderr, message);
 }
@@ -489,7 +489,7 @@ void platform_console_write_error(const String_Ref message, Platform_Console_Col
 {
     assert(message.data);
 
-    File_Handle zstderr;
+    File_Handle zstderr = {};
     filesystem_stderr_file(&zstderr);
     platform_file_write(&zstderr, message, color);
 }
