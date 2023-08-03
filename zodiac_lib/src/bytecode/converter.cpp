@@ -631,6 +631,7 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
         default: assert_msg(false, "Unsupported type in ast_const_expr_to_bytecode()");
 
+        case Type_Kind::UNSIZED_INTEGER:
         case Type_Kind::INTEGER: {
 
             Type *literal_type = type;
@@ -638,7 +639,7 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
                 literal_type = &builtin_type_s64;
             }
 
-            Integer_Value result_value = resolve_constant_integer_expr( expr);
+            Integer_Value result_value = resolve_constant_integer_expr(expr, literal_type);
             return bytecode_integer_literal(bc->builder, literal_type, result_value);
         }
 

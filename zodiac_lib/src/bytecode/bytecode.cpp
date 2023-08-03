@@ -565,10 +565,11 @@ Bytecode_Register bytecode_emit_sqrt(Bytecode_Builder *builder, Bytecode_Registe
 
 Bytecode_Register bytecode_emit_cast(Bytecode_Builder *builder, Type *target_type, Bytecode_Register operand_register)
 {
-#ifndef NDEBUG
     auto op_type = operand_register.type;
-    assert(op_type != target_type);
-#endif
+
+    if (op_type == target_type) {
+        return operand_register;
+    }
 
     switch (target_type->kind) {
         case Type_Kind::INVALID: assert(false); break;

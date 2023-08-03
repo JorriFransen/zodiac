@@ -19,7 +19,7 @@
             "configuration": {
                 "request": "launch",
                 "program": "bin/zodiac_tests",
-                "args": [ "CL/Invalid_Return_Type" ],
+                "args": [ "CL/Global_Constant_Without_Typespec" ],
                 "cwd": "${workspaceRoot}",
                 "environment": [],
                 "externalConsole": false,

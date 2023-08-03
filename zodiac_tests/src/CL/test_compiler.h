@@ -234,6 +234,54 @@ static MunitResult Invalid_Return_Type(const MunitParameter params[], void* user
     return result.result;
 }
 
+static MunitResult Global_Constant_With_Typespec(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        global_const : s64 : 42;
+        main :: () -> s64 { return global_const; }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Global_Constant_Without_Typespec(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        global_const :: 42;
+        main :: () -> s64 { return global_const; }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Modify_Global_Constant(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        global_const :: 42;
+        main :: () -> s64 {
+            global_const = 1;
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = {
+        .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Left side of assignment must be an lvalue")})
+    };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
 #undef RESOLVE_ERR
 
 START_TESTS(compiler_tests)
@@ -241,6 +289,9 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Return_1),
     DEFINE_TEST(Infer_Void_Return),
     DEFINE_TEST(Invalid_Return_Type),
+    DEFINE_TEST(Global_Constant_With_Typespec),
+    DEFINE_TEST(Global_Constant_Without_Typespec),
+    DEFINE_TEST(Modify_Global_Constant),
 END_TESTS()
 
 }}
