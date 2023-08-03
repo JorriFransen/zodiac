@@ -19,7 +19,7 @@
             "configuration": {
                 "request": "launch",
                 "program": "bin/zodiac_tests",
-                "args": [ "CL/Infer_Void_Return" ],
+                "args": [ "CL/Invalid_Return_Type" ],
                 "cwd": "${workspaceRoot}",
                 "environment": [],
                 "externalConsole": false,

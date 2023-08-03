@@ -1454,7 +1454,14 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                 if (infer_from) {
                     assert(infer_from);
                     assert(infer_from->resolved_type);
-                    assert(infer_from->resolved_type->kind == Type_Kind::INTEGER);
+
+                    if (infer_from->resolved_type->kind != Type_Kind::INTEGER) {
+                        Type *inferred_type = infer_from->resolved_type;
+                        fatal_resolve_error(ctx, expr, "Could not convert integer literal to inferred type '%s'",
+                                                       temp_type_string(inferred_type).data);
+                        return false;
+                    }
+
                     // TODO: Make sure the literal fits in this type
 
                     expr->resolved_type = infer_from->resolved_type;

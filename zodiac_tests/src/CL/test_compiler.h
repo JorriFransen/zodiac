@@ -7,7 +7,6 @@
 #include "lexer.h"
 #include "parser.h"
 #include "resolve.h"
-#include "scope.h"
 #include "zodiac_context.h"
 #include "bytecode/bytecode.h"
 #include "bytecode/converter.h"
@@ -19,6 +18,22 @@
 namespace Zodiac { namespace Compiler_Tests {
 
 using namespace Bytecode;
+
+#define RESOLVE_ERR(f, m) (Expected_Error { .kind = ZODIAC_RESOLVE_ERROR, .fatal = (f), .message = (m)})
+
+struct Expected_Error
+{
+    Zodiac_Error_Kind kind;
+    bool fatal;
+    String_Ref message;
+};
+
+struct Expected_Results
+{
+    s64 exit_code = 0;
+
+    Array_Ref<Expected_Error> resolve_errors = {};
+};
 
 struct Compile_Run_Results
 {
@@ -35,7 +50,7 @@ static void free_compile_run_results(Compile_Run_Results *r)
     zodiac_context_destroy(&r->context);
 }
 
-static Compile_Run_Results compile_and_run(String_Ref code_str, s64 exit_code) {
+static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expected_results) {
 
     Compile_Run_Results result = { .result = MUNIT_OK };
 
@@ -65,7 +80,20 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, s64 exit_code) {
 
     resolve_file(&resolver, file);
 
-    munit_assert_false(resolver_report_errors(&resolver));
+    munit_assert_int64(result.context.errors.count, ==, expected_results.resolve_errors.count);
+    if (expected_results.resolve_errors.count) {
+
+        for (s64 i = 0; i < expected_results.resolve_errors.count; i++) {
+            auto expected_err = &expected_results.resolve_errors[i];
+            auto actual_err = &result.context.errors[i];
+
+            munit_assert(expected_err->kind == actual_err->kind);
+            munit_assert(expected_err->fatal == actual_err->fatal);
+            munit_assert_string_equal(expected_err->message.data, actual_err->message.data);
+        }
+
+        return result;
+    }
 
     result.builder = bytecode_builder_create(&result.context.bytecode_allocator, &result.context);
     Bytecode_Converter bc = bytecode_converter_create(&result.context.bytecode_allocator, &result.context, &result.builder);
@@ -98,7 +126,7 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, s64 exit_code) {
     Interpreter_Register result_reg = interpreter_start(&interp, result.program);
     munit_assert(result_reg.type->kind == Type_Kind::INTEGER);
 
-    munit_assert_int64(result_reg.value.integer.s64, ==, exit_code);
+    munit_assert_int64(result_reg.value.integer.s64, ==, expected_results.exit_code);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &result.builder);
     defer { llvm_builder_free(&llvm_builder); };
@@ -116,9 +144,9 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, s64 exit_code) {
     defer { platform_free_process_result(&pr); };
 
     bool expected_result = true;
-    if (exit_code != 0) expected_result = false;
+    if (expected_results.exit_code != 0) expected_result = false;
 
-    munit_assert_int64(pr.exit_code, ==, exit_code);
+    munit_assert_int64(pr.exit_code, ==, expected_results.exit_code);
     munit_assert(pr.success == expected_result);
 
     return result;
@@ -132,7 +160,8 @@ static MunitResult Return_0(const MunitParameter params[], void* user_data_or_fi
         }
     )CODE_STR";
 
-    auto result = compile_and_run(code_string, 0);
+    Expected_Results expected = {};
+    auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };
     return result.result;
 }
@@ -145,7 +174,8 @@ static MunitResult Return_1(const MunitParameter params[], void* user_data_or_fi
         }
     )CODE_STR";
 
-    auto result = compile_and_run(code_string, 1);
+    Expected_Results expected = { .exit_code = 1 };
+    auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };
     return result.result;
 }
@@ -164,7 +194,8 @@ static MunitResult Infer_Void_Return(const MunitParameter params[], void* user_d
         void_return_ts :: () -> void { }
     )CODE_STR";
 
-    auto result = compile_and_run(code_string, 0);
+    Expected_Results expected = {};
+    auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };
 
     for (u64 i = 0; i < result.program.functions.count; i++) {
@@ -185,10 +216,31 @@ static MunitResult Infer_Void_Return(const MunitParameter params[], void* user_d
     return result.result;
 }
 
+static MunitResult Invalid_Return_Type(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () -> s64 { return 0; }
+
+        mismatching_return :: () -> void { return 1; }
+    )CODE_STR";
+
+    Expected_Results expected = {
+        .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Could not convert integer literal to inferred type 'void'")})
+    };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+#undef RESOLVE_ERR
+
 START_TESTS(compiler_tests)
     DEFINE_TEST(Return_0),
     DEFINE_TEST(Return_1),
     DEFINE_TEST(Infer_Void_Return),
+    DEFINE_TEST(Invalid_Return_Type),
 END_TESTS()
 
 }}
