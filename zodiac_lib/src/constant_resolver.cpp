@@ -97,10 +97,10 @@ Integer_Value resolve_constant_integer_binary_expr(AST_Expression *expr, Type *t
 #define EXECUTE_SIZED_BINOP(size, op) { result.u##size = (lhs_val).u##size op (rhs_val).u##size; break; }
 
 #define EXECUTE_BINOP(op) { switch (size) { \
-        case 8:  EXECUTE_SIZED_BINOP(8, +)  \
-        case 16: EXECUTE_SIZED_BINOP(16, +) \
-        case 32: EXECUTE_SIZED_BINOP(32, +) \
-        case 64: EXECUTE_SIZED_BINOP(64, +) \
+        case 8:  EXECUTE_SIZED_BINOP(8, op)  \
+        case 16: EXECUTE_SIZED_BINOP(16, op) \
+        case 32: EXECUTE_SIZED_BINOP(32, op) \
+        case 64: EXECUTE_SIZED_BINOP(64, op) \
     }   break;                              \
 }
 
