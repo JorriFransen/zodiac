@@ -582,6 +582,80 @@ static MunitResult Args_And_Return_Val(const MunitParameter params[], void* user
     return result.result;
 }
 
+static MunitResult If_Statements(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        if_test :: (x: s64) -> s64 {
+            result : s64 = 0;
+            if (x == 1) {
+                result = 1;
+            } else if (x == 2) {
+                result = 2;
+            } else if (x == 3) {
+                return 3;
+            } else {
+                result = 4;
+            }
+
+            print("after if");
+            return result;
+        }
+
+        main :: () -> s64 {
+
+            print(if_test(1));
+            print(if_test(2));
+            print(if_test(3));
+            print(if_test(4));
+            print(if_test(4));
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 0, .std_out = "after if\n1\nafter if\n2\n3\nafter if\n4\nafter if\n4" };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Boolean_If_Statements(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        pbool1 :: (x: bool) {
+            if (x == true) {
+                print("true");
+            } else {
+                print("false");
+            }
+        }
+
+        pbool2 :: (x: bool) {
+            if (x) {
+                print("true");
+            } else {
+                print("false");
+            }
+        }
+
+        main :: () -> s64 {
+
+            pbool1(true);
+            pbool1(false);
+            pbool2(true);
+            pbool2(false);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 0, .std_out = "true\nfalse\ntrue\nfalse" };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
 
 START_TESTS(compiler_tests)
     DEFINE_TEST(Return_0),
@@ -608,6 +682,8 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Local_Variable),
     DEFINE_TEST(Modify_Local_Variable),
     DEFINE_TEST(Args_And_Return_Val),
+    DEFINE_TEST(If_Statements),
+    DEFINE_TEST(Boolean_If_Statements),
 END_TESTS()
 
 #undef RESOLVE_ERR
