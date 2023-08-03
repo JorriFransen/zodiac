@@ -21,6 +21,10 @@ zodiac_disable_msvc_llvm_warnings()
 #include <llvm/ADT/Twine.h>
 #include <llvm/IR/Argument.h>
 #include <llvm/IR/BasicBlock.h>
+
+// iwyu complains about this on some platforms, constantfolder us used by the Create*Cast functions from llvm.
+#include <llvm/IR/ConstantFolder.h> // IWYU pragma: keep
+
 #include <llvm/IR/Constant.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
