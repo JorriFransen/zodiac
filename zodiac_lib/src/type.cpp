@@ -92,6 +92,7 @@ void create_type(Type *type, Type_Kind kind, u64 bit_size, Type_Flags flags/*=TY
     type->kind = kind;
     type->bit_size = bit_size;
     type->flags = flags;
+    type->pointer_to = nullptr;
 }
 
 void create_integer_type(Type *type, u64 bit_size, bool sign)

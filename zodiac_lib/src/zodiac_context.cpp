@@ -70,6 +70,9 @@ void zodiac_context_create(Zodiac_Context *out_context)
 
 void zodiac_context_destroy(Zodiac_Context *context)
 {
+    // TODO: This should not be global state, but part of the context...
+    type_system_initialized = false;
+
     atom_table_free(&context->atoms);
 
     auto ca = c_allocator();
