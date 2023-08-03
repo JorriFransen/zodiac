@@ -4,16 +4,17 @@
 
 #include "test_common.h"
 
+#include "bytecode/bytecode.h"
+#include "bytecode/converter.h"
+#include "bytecode/interpreter.h"
+#include "bytecode/llvm_builder.h"
+#include "bytecode/printer.h"
+#include "bytecode/validator.h"
 #include "lexer.h"
 #include "parser.h"
 #include "resolve.h"
-#include "zodiac_context.h"
-#include "bytecode/bytecode.h"
-#include "bytecode/converter.h"
-#include "bytecode/validator.h"
-#include "bytecode/interpreter.h"
-#include "bytecode/llvm_builder.h"
 #include "type.h"
+#include "zodiac_context.h"
 
 namespace Zodiac { namespace Compiler_Tests {
 
@@ -31,6 +32,8 @@ struct Expected_Error
 struct Expected_Results
 {
     s64 exit_code = 0;
+
+    String_Ref std_out = {};
 
     Array_Ref<Expected_Error> resolve_errors = {};
 };
@@ -124,6 +127,9 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
     Interpreter interp = interpreter_create(c_allocator(), &result.context);
     defer { interpreter_free(&interp); };
 
+    filesystem_temp_file(&interp.std_out);
+    defer { filesystem_close(&interp.std_out); };
+
     munit_assert(result.program.entry_handle == -1);
     result.program.entry_handle= bytecode_find_entry(result.program);
 
@@ -131,6 +137,8 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
     munit_assert(result_reg.type->kind == Type_Kind::INTEGER);
 
     munit_assert_int64(result_reg.value.integer.s64, ==, expected_results.exit_code);
+
+    assert_zodiac_stream(interp.std_out, expected_results.std_out);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &result.builder);
     defer { llvm_builder_free(&llvm_builder); };
@@ -152,6 +160,15 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
 
     munit_assert_int64(pr.exit_code, ==, expected_results.exit_code);
     munit_assert(pr.success == expected_result);
+
+    String_Ref std_out_str("");
+    if (expected_results.std_out.length) {
+        std_out_str = string_append(ta, expected_results.std_out, "\n");
+    }
+
+    munit_assert_int64(pr.result_string.length, ==, std_out_str.length);
+
+    if (pr.result_string.length) munit_assert_string_equal(pr.result_string.data, std_out_str.data);
 
     return result;
 }
@@ -232,6 +249,82 @@ static MunitResult Invalid_Return_Type(const MunitParameter params[], void* user
         .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Could not convert integer literal to inferred type 'void'")})
     };
 
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Print(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () -> s64 {
+            print(42);
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out = "42" };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Binop_Add_Int_Const(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () -> s64 {
+            return 40 + 2;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Binop_Sub_Int_Const(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () -> s64 {
+            return 44 - 2;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Binop_Mul_Int_Const(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () -> s64 {
+            return 21 * 2;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Binop_Div_Int_Const(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () -> s64 {
+            return 84 / 2;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };
 
@@ -335,17 +428,95 @@ static MunitResult Global_Variable_Assign(const MunitParameter params[], void* u
     return result.result;
 }
 
+static MunitResult Local_Constant(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () -> s64 {
+            local_const :: 42;
+            return local_const;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Modify_Local_Constant(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () -> s64 {
+            local_const :: 42;
+            local_const = 1;
+            return local_const;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = {
+        .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Left side of assignment must be an lvalue")})
+    };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Local_Variable(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () -> s64 {
+            local_var := 42;
+            return local_var;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Modify_Local_Variable(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () -> s64 {
+            local_var := 40;
+            local_var = local_var + 2;
+            return local_var;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
 START_TESTS(compiler_tests)
     DEFINE_TEST(Return_0),
     DEFINE_TEST(Return_1),
     DEFINE_TEST(Infer_Void_Return),
     DEFINE_TEST(Invalid_Return_Type),
+    DEFINE_TEST(Print),
+    DEFINE_TEST(Binop_Add_Int_Const),
+    DEFINE_TEST(Binop_Sub_Int_Const),
+    DEFINE_TEST(Binop_Mul_Int_Const),
+    DEFINE_TEST(Binop_Div_Int_Const),
     DEFINE_TEST(Global_Constant_With_Typespec),
     DEFINE_TEST(Global_Constant_Without_Typespec),
     DEFINE_TEST(Modify_Global_Constant),
     DEFINE_TEST(Global_Variable_TS),
     DEFINE_TEST(Global_Variable_No_TS),
     DEFINE_TEST(Global_Variable_Assign),
+    DEFINE_TEST(Local_Constant),
+    DEFINE_TEST(Modify_Local_Constant),
+    DEFINE_TEST(Local_Variable),
+    DEFINE_TEST(Modify_Local_Variable),
 END_TESTS()
 
 #undef RESOLVE_ERR

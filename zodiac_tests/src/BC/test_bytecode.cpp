@@ -25,22 +25,6 @@
 
 namespace Zodiac { namespace Bytecode_Tests {
 
-#define assert_zodiac_stream(stream, expected_string) { \
-    auto es = string_append(temp_allocator_allocator(), (expected_string), "\n"); \
-    filesystem_flush(&stream); \
-    u64 length; \
-    filesystem_size(&stream, &length); \
-    const auto _buf_size = 1024; \
-    munit_assert((s64)_buf_size > length); \
-    char _buf[_buf_size]; \
-    u64 read_length; \
-    bool read_res = filesystem_read(&stream, length, (u8 *)_buf, &read_length); \
-    munit_assert_int(read_length, ==, length); \
-    _buf[length] = '\0'; \
-    munit_assert_int((int)strlen(_buf), ==, es.length); \
-    munit_assert_string_equal(_buf, es.data); \
-}
-
 void print_bytecode(const Bytecode_Builder &bb)
 {
 #if PRINT_BYTECODE_IN_TESTS
