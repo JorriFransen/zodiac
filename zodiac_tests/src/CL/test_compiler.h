@@ -566,6 +566,23 @@ static MunitResult Modify_Local_Variable(const MunitParameter params[], void* us
     return result.result;
 }
 
+static MunitResult Args_And_Return_Val(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        add :: (a: s64, b: s64) -> s64 { return a + b; }
+        main :: () -> s64 {
+            return add(40, 2);
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+
 START_TESTS(compiler_tests)
     DEFINE_TEST(Return_0),
     DEFINE_TEST(Return_1),
@@ -590,6 +607,7 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Modify_Local_Constant),
     DEFINE_TEST(Local_Variable),
     DEFINE_TEST(Modify_Local_Variable),
+    DEFINE_TEST(Args_And_Return_Val),
 END_TESTS()
 
 #undef RESOLVE_ERR
