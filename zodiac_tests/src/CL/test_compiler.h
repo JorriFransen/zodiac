@@ -80,6 +80,10 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
 
     resolve_file(&resolver, file);
 
+    if (resolve_error_count(&result.context) != expected_results.resolve_errors.count) {
+        resolver_report_errors(&resolver);
+    }
+
     munit_assert_int64(result.context.errors.count, ==, expected_results.resolve_errors.count);
     if (expected_results.resolve_errors.count) {
 
@@ -282,7 +286,54 @@ static MunitResult Modify_Global_Constant(const MunitParameter params[], void* u
     return result.result;
 }
 
-#undef RESOLVE_ERR
+static MunitResult Global_Variable_TS(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        global_var : s64 : 42;
+        main :: () -> s64 {
+            return global_var;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Global_Variable_No_TS(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        global_var :: 42;
+        main :: () -> s64 {
+            return global_var;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Global_Variable_Assign(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        global_var :: 42;
+        main :: () -> s64 {
+            global_var = 10;
+            return global_var;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
 
 START_TESTS(compiler_tests)
     DEFINE_TEST(Return_0),
@@ -292,6 +343,11 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Global_Constant_With_Typespec),
     DEFINE_TEST(Global_Constant_Without_Typespec),
     DEFINE_TEST(Modify_Global_Constant),
+    DEFINE_TEST(Global_Variable_TS),
+    DEFINE_TEST(Global_Variable_No_TS),
+    // DEFINE_TEST(Global_Variable_Assign),
 END_TESTS()
+
+#undef RESOLVE_ERR
 
 }}
