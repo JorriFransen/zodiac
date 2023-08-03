@@ -69,7 +69,7 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, s64 exit_code) {
 
     result.builder = bytecode_builder_create(&result.context.bytecode_allocator, &result.context);
     Bytecode_Converter bc = bytecode_converter_create(&result.context.bytecode_allocator, &result.context, &result.builder);
-    // defer { bytecode_converter_destroy(&bc); };
+    defer { bytecode_converter_destroy(&bc); };
 
     emit_bytecode(&resolver, &bc);
     munit_assert(result.context.errors.count == 0);

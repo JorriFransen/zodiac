@@ -31,6 +31,7 @@ struct Bytecode_Converter
 };
 
 ZAPI Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Context *context, Bytecode_Builder *bb);
+ZAPI void bytecode_converter_destroy(Bytecode_Converter *bc);
 
 ZAPI void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc);
 ZAPI void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl);

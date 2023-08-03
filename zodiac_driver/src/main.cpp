@@ -80,6 +80,7 @@ int main(int argc, const char **argv) {
     Bytecode_Builder bb = bytecode_builder_create(&c.bytecode_allocator, &c);
 
     Bytecode_Converter bc = bytecode_converter_create(&c.bytecode_allocator, &c, &bb);
+    defer { bytecode_converter_destroy(&bc); };
 
     emit_bytecode(&resolver, &bc);
     assert(c.errors.count == 0);

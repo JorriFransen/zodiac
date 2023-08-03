@@ -29,6 +29,13 @@ Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Contex
     return result;
 }
 
+void bytecode_converter_destroy(Bytecode_Converter *bc)
+{
+    hash_table_free(&bc->functions);
+    hash_table_free(&bc->allocations);
+    hash_table_free(&bc->globals);
+}
+
 void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
 {
     assert(resolver);
