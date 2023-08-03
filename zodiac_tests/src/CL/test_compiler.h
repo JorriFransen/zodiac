@@ -613,7 +613,7 @@ static MunitResult If_Statements(const MunitParameter params[], void* user_data_
         }
     )CODE_STR";
 
-    Expected_Results expected = { .exit_code = 0, .std_out = "after if\n1\nafter if\n2\n3\nafter if\n4\nafter if\n4" };
+    Expected_Results expected = { .std_out = "after if\n1\nafter if\n2\n3\nafter if\n4\nafter if\n4" };
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };
 
@@ -650,7 +650,99 @@ static MunitResult Boolean_If_Statements(const MunitParameter params[], void* us
         }
     )CODE_STR";
 
-    Expected_Results expected = { .exit_code = 0, .std_out = "true\nfalse\ntrue\nfalse" };
+    Expected_Results expected = { .std_out = "true\nfalse\ntrue\nfalse" };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Define_Struct_Type(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        Vec2 :: struct {
+            x: s32;
+            y: s32;
+        }
+
+        Rect :: struct {
+            pos: Vec2;
+            size: Vec2;
+        }
+
+        main :: () -> s64 {
+            p : Vec2;
+            r : Rect;
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = {};
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Struct_Offset_Ptr(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        Vec2 :: struct {
+            x: s32;
+            y: s32;
+        }
+
+        main :: () -> s64 {
+            p : Vec2;
+
+            p.x = 1;
+            p.y = 2;
+
+            return p.x + p.y;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 3 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Nested_Struct_Offset_Ptr(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        Vec2 :: struct {
+            x: s32;
+            y: s32;
+        }
+
+        Rect :: struct {
+            pos: Vec2;
+            size: Vec2;
+        }
+
+        main :: () -> s64 {
+            r : Rect;
+
+            r.pos.x = 1;
+            r.pos.y = 2;
+            r.size.x = 3;
+            r.size.y = 4;
+
+            result := r.pos.x + r.pos.y + r.size.x + r.size.y;
+
+            r2 : Rect;
+            r2.pos = r.pos;
+            r2.size = r.size;
+
+            result = result + r2.pos.x + r2.pos.y + r2.size.x + r2.size.y;
+
+            return result;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 20 };
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };
 
@@ -684,6 +776,9 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Args_And_Return_Val),
     DEFINE_TEST(If_Statements),
     DEFINE_TEST(Boolean_If_Statements),
+    DEFINE_TEST(Define_Struct_Type),
+    DEFINE_TEST(Struct_Offset_Ptr),
+    DEFINE_TEST(Nested_Struct_Offset_Ptr),
 END_TESTS()
 
 #undef RESOLVE_ERR
