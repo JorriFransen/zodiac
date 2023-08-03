@@ -8,7 +8,6 @@
 #include "bytecode/converter.h"
 #include "bytecode/interpreter.h"
 #include "bytecode/llvm_builder.h"
-#include "bytecode/printer.h"
 #include "bytecode/validator.h"
 #include "lexer.h"
 #include "parser.h"
@@ -144,6 +143,8 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
     defer { llvm_builder_free(&llvm_builder); };
 
     llvm_builder_emit_program(&llvm_builder, &result.program);
+
+    // llvm_builder_print(&llvm_builder);
 
     auto out_file_name = result.context.options.output_file_name;
     llvm_builder_emit_binary(&llvm_builder);
@@ -331,6 +332,74 @@ static MunitResult Binop_Div_Int_Const(const MunitParameter params[], void* user
     return result.result;
 }
 
+static MunitResult Binop_Add_Int(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () -> s64 {
+            a := 40;
+            b := 2;
+            return a + b;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Binop_Sub_Int(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () -> s64 {
+            a := 44;
+            b := 2;
+            return a - b;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Binop_Mul_Int(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () -> s64 {
+            a := 21;
+            b := 2;
+            return a * b;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+static MunitResult Binop_Div_Int(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () -> s64 {
+            a := 84;
+            b := 2;
+            return a / b;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .exit_code = 42 };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
 static MunitResult Global_Constant_With_Typespec(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
@@ -507,6 +576,10 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Binop_Sub_Int_Const),
     DEFINE_TEST(Binop_Mul_Int_Const),
     DEFINE_TEST(Binop_Div_Int_Const),
+    DEFINE_TEST(Binop_Add_Int),
+    DEFINE_TEST(Binop_Sub_Int),
+    DEFINE_TEST(Binop_Mul_Int),
+    DEFINE_TEST(Binop_Div_Int),
     DEFINE_TEST(Global_Constant_With_Typespec),
     DEFINE_TEST(Global_Constant_Without_Typespec),
     DEFINE_TEST(Modify_Global_Constant),

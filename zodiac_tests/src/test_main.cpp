@@ -15,7 +15,6 @@
 #include "test_string_builder.h"
 #include "test_strings.h"
 
-
 namespace Zodiac
 {
 

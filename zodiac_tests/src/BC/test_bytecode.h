@@ -8,14 +8,6 @@
 #include "test_common.h"
 #include "util/zstring.h"
 
-#ifndef PRINT_BYTECODE_IN_TESTS
-#define PRINT_BYTECODE_IN_TESTS 0
-#endif // PRINT_BYTECODE_IN_TESTS
-
-#ifndef BYTECODE_TESTS_VERBOSE
-#define BYTECODE_TESTS_VERBOSE 1
-#endif // BYTECODE_TESTS_VERBOSE
-
 namespace Zodiac {
 
 struct Zodiac_Context;

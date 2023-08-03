@@ -606,8 +606,13 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     return bytecode_emit_sub(bc->builder, lhs_reg, rhs_reg);
                 }
 
-                case AST_Binary_Operator::MUL: assert(false); break;
-                case AST_Binary_Operator::DIV: assert(false); break;
+                case AST_Binary_Operator::MUL: {
+                    return bytecode_emit_mul(bc->builder, lhs_reg, rhs_reg);
+                }
+
+                case AST_Binary_Operator::DIV: {
+                    return bytecode_emit_div(bc->builder, lhs_reg, rhs_reg);
+                }
 
                 case AST_Binary_Operator::EQ: {
                     return bytecode_emit_eq(bc->builder, lhs_reg, rhs_reg);
