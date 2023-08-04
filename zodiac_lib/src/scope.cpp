@@ -188,6 +188,11 @@ Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declar
             }
             break;
         }
+
+        case AST_Declaration_Kind::RUN_DIRECTIVE: {
+            assert(false);
+            break;
+        }
     }
 
     assert(kind != Symbol_Kind::INVALID);

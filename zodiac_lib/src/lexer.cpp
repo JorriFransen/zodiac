@@ -45,7 +45,10 @@ void zodiac_register_keywords(Atom_Table *at)
     ALL_ZODIAC_KEYWORDS
 #undef ZODIAC_KEYWORD
 
-    assert_msg(false, "TODO Emit directive atom init");
+    // Emit init for all directives
+#define ZODIAC_DIRECTIVE(n) directive_##n = atom_get(at, #n);
+    ALL_ZODIAC_DIRECTIVES
+#undef ZODIAC_DIRECTIVE
 
     assert_msg(block == at->current_block, "Expected all keyword atoms to fit in the same block...");
 }

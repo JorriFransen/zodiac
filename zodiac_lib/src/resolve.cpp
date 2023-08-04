@@ -401,6 +401,8 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
 
             break;
         }
+
+        case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
     }
 
     Flat_Node flat_decl = to_flat_node(decl, scope);
@@ -762,53 +764,46 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
 
     bool result = true;
 
-    switch (decl->kind)
-    {
-    case AST_Declaration_Kind::INVALID:
-        assert(false);
+    switch (decl->kind) {
 
-    case AST_Declaration_Kind::VARIABLE:
-    {
-        if (global)
-        {
+        case AST_Declaration_Kind::INVALID: assert(false);
 
-            auto init_expr = decl->variable.value;
-            if (init_expr && !EXPR_IS_CONST(init_expr))
-            {
-                resolve_error(resolver->ctx, init_expr, "Global initializer must be a constant");
-                assert(decl_sym->state == Symbol_State::RESOLVING);
-                decl_sym->state = Symbol_State::UNRESOLVED;
-                return false;
+        case AST_Declaration_Kind::VARIABLE: {
+
+            if (global) {
+
+                auto init_expr = decl->variable.value;
+                if (init_expr && !EXPR_IS_CONST(init_expr)) {
+                    resolve_error(resolver->ctx, init_expr, "Global initializer must be a constant");
+                    assert(decl_sym->state == Symbol_State::RESOLVING);
+                    decl_sym->state = Symbol_State::UNRESOLVED;
+                    return false;
+                }
+            } else {
+                AST_Declaration *func_decl = enclosing_function(scope);
+                dynamic_array_append(&func_decl->function.variables, decl);
             }
-        }
-        else
-        {
-            AST_Declaration *func_decl = enclosing_function(scope);
-            dynamic_array_append(&func_decl->function.variables, decl);
-        }
-        break;
-    };
+            break;
+        };
 
-    case AST_Declaration_Kind::CONSTANT_VARIABLE:
-    case AST_Declaration_Kind::PARAMETER:
-    case AST_Declaration_Kind::FIELD:
-    case AST_Declaration_Kind::FUNCTION:
-    case AST_Declaration_Kind::STRUCT:
-    case AST_Declaration_Kind::UNION:
-    {
-        // Leaf
-        break;
-    }
+        case AST_Declaration_Kind::CONSTANT_VARIABLE:
+        case AST_Declaration_Kind::PARAMETER:
+        case AST_Declaration_Kind::FIELD:
+        case AST_Declaration_Kind::FUNCTION:
+        case AST_Declaration_Kind::STRUCT:
+        case AST_Declaration_Kind::UNION: {
+            // Leaf
+            break;
+        }
+
+        case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
     }
 
     decl_sym = scope_get_symbol(scope, decl->identifier.name);
     assert(decl_sym);
-    if (result)
-    {
+    if (result) {
         decl_sym->state = Symbol_State::RESOLVED;
-    }
-    else
-    {
+    } else {
         decl_sym->state = Symbol_State::UNRESOLVED;
     }
 
@@ -1308,6 +1303,7 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
         }
 
         case AST_Declaration_Kind::UNION: assert(false);
+        case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false);
     }
 
     assert(false);

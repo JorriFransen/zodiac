@@ -11,6 +11,7 @@ namespace Zodiac
 
 struct Allocator;
 struct AST_Declaration;
+struct AST_Directive;
 struct AST_Expression;
 struct AST_Statement;
 struct AST_Type_Spec;
@@ -305,6 +306,8 @@ enum class AST_Declaration_Kind
 
     STRUCT,
     UNION,
+
+    RUN_DIRECTIVE,
 };
 
 typedef u32 AST_Declaration_Flags;
@@ -330,6 +333,7 @@ struct AST_Declaration
         union { AST_Variable_Declaration variable, field, parameter; }; // Also used for constant variables
         AST_Function_Declaration function;
         AST_Aggregate_Declaration aggregate;
+        AST_Directive *directive;
     };
 };
 
@@ -373,7 +377,7 @@ struct AST_Directive
     {
         struct
         {
-            AST_Expression *expr;
+            AST_Statement *stmt;
         } run;
     };
 };
@@ -415,13 +419,14 @@ ZAPI void ast_parameter_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Sou
 ZAPI void ast_field_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range range, AST_Declaration *out_decl);
 ZAPI void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynamic_Array<AST_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl);
 ZAPI void ast_aggregate_decl_create(AST_Identifier *ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Declaration *> fields, AST_Declaration *out_decl);
+ZAPI void ast_run_directive_decl_create(AST_Directive *run_directive, AST_Declaration *out_decl);
 ZAPI void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl);
 
 ZAPI void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts);
 ZAPI void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts);
 ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
 
-ZAPI void ast_run_directive_create(AST_Expression *expr, AST_Directive *out_dir);
+ZAPI void ast_run_directive_create(AST_Statement *stmt, AST_Directive *out_dir);
 ZAPI void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir);
 
 ZAPI void ast_file_create(Dynamic_Array<AST_Declaration *> decls, AST_File *out_file);
@@ -456,13 +461,14 @@ ZAPI AST_Declaration *ast_parameter_decl_new(Zodiac_Context *ctx, Source_Range r
 ZAPI AST_Declaration *ast_field_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts);
 ZAPI AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, Dynamic_Array<AST_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body);
 ZAPI AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Declaration *> fields);
+ZAPI AST_Declaration *ast_run_directive_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Directive *run_directive);
 ZAPI AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Range range);
 
 ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident);
 ZAPI AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *base);
 ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range range);
 
-ZAPI AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *expr);
+ZAPI AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Statement *stmt);
 ZAPI AST_Directive *ast_directive_new(Zodiac_Context *ctx, Source_Range range);
 
 ZAPI AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *> decls);

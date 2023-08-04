@@ -286,6 +286,8 @@ Type *sym_decl_type(Symbol *sym)
             return decl->aggregate.resolved_type;
             break;
         }
+
+        case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
     }
 
     assert(false);

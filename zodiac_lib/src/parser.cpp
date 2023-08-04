@@ -588,6 +588,8 @@ AST_Directive *parse_directive(Parser *parser)
 {
     debug_assert(parser);
 
+    Source_Pos start_pos = cur_tok(parser).range.start;
+
     if (!expect_token(parser, '#')) return nullptr;
 
     auto directive_name_tok = cur_tok(parser);
@@ -596,7 +598,13 @@ AST_Directive *parse_directive(Parser *parser)
 
     // TODO: Use hashes here
     if (directive_name_tok.atom == directive_run) {
-        assert(false);
+
+        AST_Statement *stmt = parse_statement(parser);
+
+        Source_Range range = { start_pos, stmt->range.end };
+
+        return ast_run_directive_new(parser->context, range, stmt);
+
     } else {
         assert_msg(false, "Unknown directive");
     }
@@ -614,15 +622,30 @@ AST_File *parse_file(Parser *parser)
 
     while (!is_token(parser, TOK_EOF)) {
 
+        AST_Directive *directive = nullptr;
+
         // Top level directive
         if (is_token(parser, '#')) {
-            AST_Directive *dir = parse_directive(parser);
-            assert(dir);
-            assert(false);
+            directive = parse_directive(parser);
+            assert(directive);
         }
 
-        AST_Declaration *decl = parse_declaration(parser);
+        AST_Declaration *decl = nullptr;
+
+
+        if (directive) {
+            if (directive->kind == AST_Directive_Kind::RUN) {
+                decl = ast_run_directive_decl_new(parser->context, directive->range, directive);
+            } else {
+                assert(false);
+            }
+        } else {
+            decl = parse_declaration(parser);
+        }
+
         if (parser->error) break;
+
+        assert(decl);
 
         dynamic_array_append(&decls, decl);
     }

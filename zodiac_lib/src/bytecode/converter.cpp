@@ -130,6 +130,8 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
         case AST_Declaration_Kind::UNION:
             // leaf
             break;
+
+        case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
     }
 }
 
@@ -544,6 +546,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                 case AST_Declaration_Kind::FUNCTION: assert(false); break;
                 case AST_Declaration_Kind::STRUCT: assert(false); break;
                 case AST_Declaration_Kind::UNION: assert(false); break;
+                case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
             }
 
             break;

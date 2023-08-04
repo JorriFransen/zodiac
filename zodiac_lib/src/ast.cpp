@@ -321,6 +321,16 @@ void ast_aggregate_decl_create(AST_Identifier ident, AST_Declaration_Kind kind, 
     out_decl->aggregate.resolved_type = nullptr;
 }
 
+void ast_run_directive_decl_create(AST_Directive *run_directive, AST_Declaration *out_decl)
+{
+    debug_assert(run_directive && out_decl);
+    debug_assert(run_directive->kind == AST_Directive_Kind::RUN);
+
+    ast_declaration_create(AST_Declaration_Kind::RUN_DIRECTIVE, out_decl);
+
+    out_decl->directive = run_directive;
+}
+
 void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl)
 {
     debug_assert(out_decl);
@@ -354,13 +364,13 @@ void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts)
     out_ts->kind = kind;
 }
 
-void ast_run_directive_create(AST_Expression *expr, AST_Directive *out_dir)
+void ast_run_directive_create(AST_Statement *stmt, AST_Directive *out_dir)
 {
-    debug_assert(expr && out_dir);
+    debug_assert(stmt && out_dir);
 
     ast_directive_create(AST_Directive_Kind::RUN, out_dir);
 
-    out_dir->run.expr = expr;
+    out_dir->run.stmt = stmt;
 }
 
 void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir)
@@ -635,6 +645,16 @@ AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Range range,
     return decl;
 }
 
+AST_Declaration *ast_run_directive_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Directive *run_directive)
+{
+    debug_assert(ctx && run_directive);
+    debug_assert(run_directive->kind == AST_Directive_Kind::RUN);
+
+    auto decl = ast_declaration_new(ctx, range);
+    ast_run_directive_decl_create(run_directive, decl);
+    return decl;
+}
+
 AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Range range)
 {
     debug_assert(ctx);
@@ -686,12 +706,12 @@ AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range range)
     return result;
 }
 
-AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *expr)
+AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Statement *stmt)
 {
-    debug_assert(ctx && expr);
+    debug_assert(ctx && stmt);
 
     AST_Directive *result = ast_directive_new(ctx, range);
-    ast_run_directive_create(expr, result);
+    ast_run_directive_create(stmt, result);
 
     return result;
 }
@@ -1012,6 +1032,8 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
             string_builder_append(sb, "}");
             break;
         }
+
+        case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
     }
 
     if (semicolon) string_builder_append(sb, ";");
