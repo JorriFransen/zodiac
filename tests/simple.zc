@@ -8,10 +8,10 @@
 //     print(x);
 // }
 
-main :: () -> s64 {
+// main :: () -> s64 {
 
-    print("Hello, Zodiac!");
+//     print("Hello, Zodiac!");
 
-    return 0;
-}
+//     return 0;
+// }
 

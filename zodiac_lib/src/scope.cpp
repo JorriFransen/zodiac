@@ -135,7 +135,7 @@ Symbol *add_typed_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Sy
     return scope_add_symbol(ctx, scope, kind, Symbol_State::TYPED, flags, name, decl);
 }
 
-Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declaration *decl, bool global)
+bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declaration *decl, bool global)
 {
     assert(scope && decl);
 
@@ -165,7 +165,7 @@ Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declar
 
                 auto param_sym = add_unresolved_symbol(ctx, parameter_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param->identifier.name, param, param->identifier.range);
                 if (!param_sym) {
-                    return nullptr;
+                    return false;
                 }
             }
 
@@ -183,15 +183,14 @@ Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declar
                 auto field = decl->aggregate.fields[i];
                 auto mem_sym = add_unresolved_symbol(ctx, aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field->identifier.name, field, field->identifier.range);
                 if (!mem_sym) {
-                    return nullptr;
+                    return false;
                 }
             }
             break;
         }
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
-            assert(false);
-            break;
+            return true;
         }
     }
 
@@ -199,12 +198,12 @@ Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declar
 
     if (global) decl->flags |= AST_DECL_FLAG_GLOBAL;
 
-    Symbol *result = add_unresolved_symbol(ctx, scope, kind, SYM_FLAG_NONE, decl->identifier.name, decl);
-    if (!result) {
-        return nullptr;
+    Symbol *new_sym = add_unresolved_symbol(ctx, scope, kind, SYM_FLAG_NONE, decl->identifier.name, decl);
+    if (!new_sym) {
+        return false;
     }
 
-    switch (result->kind) {
+    switch (new_sym->kind) {
         case Symbol_Kind::INVALID: assert(false);
 
         case Symbol_Kind::VAR:
@@ -220,8 +219,8 @@ Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declar
             assert(local_scope->parent == parameter_scope);
             assert(parameter_scope->parent == scope);
 
-            result->func.parameter_scope = parameter_scope;
-            result->func.local_scope = local_scope;
+            new_sym->func.parameter_scope = parameter_scope;
+            new_sym->func.local_scope = local_scope;
             break;
         }
 
@@ -229,13 +228,13 @@ Symbol *add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declar
             assert(aggregate_scope);
             assert(aggregate_scope->parent == scope);
 
-            result->aggregate.scope = aggregate_scope;
+            new_sym->aggregate.scope = aggregate_scope;
             break;
         }
 
     }
 
-    return result;
+    return true;
 }
 
 AST_Declaration *enclosing_function(Scope *scope)

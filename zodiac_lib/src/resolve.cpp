@@ -287,53 +287,56 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
 {
     debug_assert(decl && scope && dest);
 
-    assert(decl->identifier.name.data);
-    auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
-    if (decl_sym && decl_sym->decl != decl)
-    {
-        report_redecl(ctx, decl_sym->range, decl->identifier.name, decl->identifier.range);
-        return;
-    }
-
-    if (scope->kind == Scope_Kind::GLOBAL && !decl_sym)
-    {
-        assert_msg(decl_sym, "Global symbol should have been registered already");
-    }
-    else if (!decl_sym)
-    {
-        // First time local symbol is encountered
-        if (!add_unresolved_decl_symbol(ctx, scope, decl, false))
-        {
-            return;
-        }
-        decl_sym = scope_get_symbol(scope, decl->identifier);
-    }
-    assert(decl_sym && decl_sym->decl == decl);
-
     Scope *aggregate_scope = nullptr;
     Scope *parameter_scope = nullptr;
     Scope *local_scope = nullptr;
 
-    switch (decl_sym->kind) {
+    if (decl->kind != AST_Declaration_Kind::RUN_DIRECTIVE) {
 
-        default:
-            break;
-
-        case Symbol_Kind::FUNC: {
-            assert(decl_sym->func.parameter_scope && decl_sym->func.local_scope);
-            parameter_scope = decl_sym->func.parameter_scope;
-            local_scope = decl_sym->func.local_scope;
-            break;
+        assert(decl->identifier.name.data);
+        auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
+        if (decl_sym && decl_sym->decl != decl)
+        {
+            report_redecl(ctx, decl_sym->range, decl->identifier.name, decl->identifier.range);
+            return;
         }
 
-        case Symbol_Kind::TYPE: {
-            assert(decl_sym->aggregate.scope);
-            aggregate_scope = decl_sym->aggregate.scope;
-            break;
+        if (scope->kind == Scope_Kind::GLOBAL && !decl_sym) {
+
+            assert_msg(decl_sym, "Global symbol should have been registered already");
+
+        } else if (!decl_sym) { // First time local symbol is encountered
+
+            if (!add_unresolved_decl_symbol(ctx, scope, decl, false)) {
+                return;
+            }
+            decl_sym = scope_get_symbol(scope, decl->identifier);
         }
+
+        assert(decl_sym && decl_sym->decl == decl);
+
+        switch (decl_sym->kind) {
+
+            default:
+                break;
+
+            case Symbol_Kind::FUNC: {
+                assert(decl_sym->func.parameter_scope && decl_sym->func.local_scope);
+                parameter_scope = decl_sym->func.parameter_scope;
+                local_scope = decl_sym->func.local_scope;
+                break;
+            }
+
+            case Symbol_Kind::TYPE: {
+                assert(decl_sym->aggregate.scope);
+                aggregate_scope = decl_sym->aggregate.scope;
+                break;
+            }
+        }
+
+        assert(decl_sym->state == Symbol_State::UNRESOLVED);
+
     }
-
-    assert(decl_sym->state == Symbol_State::UNRESOLVED);
 
     switch (decl->kind) {
 
@@ -402,7 +405,13 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
             break;
         }
 
-        case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
+        case AST_Declaration_Kind::RUN_DIRECTIVE: {
+
+            assert(decl->directive->run.stmt);
+            flatten_statement(ctx, decl->directive->run.stmt, scope, dest);
+
+            break;
+        }
     }
 
     Flat_Node flat_decl = to_flat_node(decl, scope);
@@ -722,44 +731,44 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
     debug_assert(resolver);
     debug_assert(decl && scope);
 
-    assert(decl->identifier.name.data);
-    auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
+    bool global = DECL_IS_GLOBAL(decl);
+    Symbol *decl_sym = nullptr;
 
-    bool global = decl->flags & AST_DECL_FLAG_GLOBAL;
+    if (decl->kind != AST_Declaration_Kind::RUN_DIRECTIVE) {
 
-    assert(global == (scope->kind == Scope_Kind::GLOBAL));
+        assert(decl->identifier.name.data);
+        decl_sym = scope_get_symbol(scope, decl->identifier.name);
 
-    if (!decl_sym)
-    {
-        assert_msg(scope->kind != Scope_Kind::GLOBAL, "Global declaration should have been defined");
-        assert_msg(false, "TODO: local declaration symbol");
-    }
+        assert(global == (scope->kind == Scope_Kind::GLOBAL));
 
-    if (decl_sym->decl != decl)
-    {
-        assert_msg(false, "Redeclaration?");
-        return false;
-    }
+        if (!decl_sym) {
+            assert_msg(scope->kind != Scope_Kind::GLOBAL, "Global declaration should have been defined");
+            assert_msg(false, "TODO: local declaration symbol");
+        }
 
-    assert(decl_sym);
+        if (decl_sym->decl != decl) {
+            assert_msg(false, "Redeclaration?");
+            return false;
+        }
 
-    switch (decl_sym->state)
-    {
+        assert(decl_sym);
 
-    case Symbol_State::UNRESOLVED:
-    {
-        decl_sym->state = Symbol_State::RESOLVING;
-        break;
-    }
+        switch (decl_sym->state) {
 
-    case Symbol_State::RESOLVING:
-        assert_msg(false, "Circular dependency");
+            case Symbol_State::UNRESOLVED: {
+                decl_sym->state = Symbol_State::RESOLVING;
+                break;
+            }
 
-    case Symbol_State::RESOLVED:
-    case Symbol_State::TYPED:
-    {
-        return true;
-    }
+            case Symbol_State::RESOLVING:
+                assert_msg(false, "Circular dependency");
+
+            case Symbol_State::RESOLVED:
+            case Symbol_State::TYPED: {
+                return true;
+            }
+        }
+
     }
 
     bool result = true;
@@ -769,6 +778,8 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
         case AST_Declaration_Kind::INVALID: assert(false);
 
         case AST_Declaration_Kind::VARIABLE: {
+
+            assert(decl_sym);
 
             if (global) {
 
@@ -796,15 +807,19 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
             break;
         }
 
-        case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
+        case AST_Declaration_Kind::RUN_DIRECTIVE: {
+            return true;
+        }
     }
 
-    decl_sym = scope_get_symbol(scope, decl->identifier.name);
-    assert(decl_sym);
-    if (result) {
-        decl_sym->state = Symbol_State::RESOLVED;
-    } else {
-        decl_sym->state = Symbol_State::UNRESOLVED;
+    if (decl_sym) {
+        decl_sym = scope_get_symbol(scope, decl->identifier.name);
+        assert(decl_sym);
+        if (result) {
+            decl_sym->state = Symbol_State::RESOLVED;
+        } else {
+            decl_sym->state = Symbol_State::UNRESOLVED;
+        }
     }
 
     return result;
@@ -1303,7 +1318,11 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
         }
 
         case AST_Declaration_Kind::UNION: assert(false);
-        case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false);
+
+        case AST_Declaration_Kind::RUN_DIRECTIVE: {
+            assert(STMT_IS_TYPED(decl->directive->run.stmt));
+            return true;
+        }
     }
 
     assert(false);
@@ -1314,17 +1333,19 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
 {
     debug_assert(ctx && stmt && scope);
 
+    bool result = true;
+
     switch (stmt->kind) {
         case AST_Statement_Kind::INVALID: assert(false);
 
         case AST_Statement_Kind::BLOCK: {
             // leaf
-            return true;
+            break;
         }
 
         case AST_Statement_Kind::DECLARATION: {
             // This declaration should have been emitted before the statement, and therefore resolved if we got to this point.
-            return true;
+            break;
         }
 
         case AST_Statement_Kind::ASSIGN: {
@@ -1333,6 +1354,8 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
 
             if (!EXPR_IS_LVALUE(lvalue_expr)) {
                 fatal_resolve_error(ctx, lvalue_expr, "Left side of assignment must be an lvalue");
+                result = false;
+                break;
             }
 
             assert(lvalue_expr->resolved_type);
@@ -1342,12 +1365,13 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
                 valid_static_type_conversion(value_expr->resolved_type, lvalue_expr->resolved_type)) {
                 value_expr->resolved_type = lvalue_expr->resolved_type;
             }
-            return true;
+
+            break;
         }
 
         case AST_Statement_Kind::CALL: {
             // leaf
-            return true;
+            break;
         }
 
         case AST_Statement_Kind::IF: {
@@ -1358,7 +1382,7 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
                 assert(if_block.cond->resolved_type->kind == Type_Kind::BOOLEAN);
             }
 
-            return true;
+            break;
         }
 
         case AST_Statement_Kind::WHILE: assert(false);
@@ -1388,7 +1412,8 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
                     bool valid_conversion = valid_static_type_conversion(actual_type, expected_type);
                     if (!valid_conversion) {
                         assert(false); // report error
-                        return false;
+                        result = false;
+                        break;
                     }
 
                     AST_Expression *value_expr = stmt->return_stmt.value;
@@ -1412,7 +1437,8 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
                 fn_decl->function.inferred_return_type = &builtin_type_void;
             }
 
-            return true;
+
+            break;
         }
 
         case AST_Statement_Kind::PRINT: {
@@ -1428,12 +1454,16 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
                    type->kind == Type_Kind::BOOLEAN ||
                    type == &builtin_type_String);
 
-            return true;
+            break;
         }
     }
 
-    assert(false);
-    return false;
+    if (result) {
+        debug_assert(!STMT_IS_TYPED(stmt));
+        stmt->flags |= AST_STMT_FLAG_TYPED;
+    }
+
+    return result;
 }
 
 bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)

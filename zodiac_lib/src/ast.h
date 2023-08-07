@@ -242,9 +242,20 @@ enum class AST_Statement_Kind
     PRINT,
 };
 
+typedef u32 AST_Statement_Flags;
+
+enum AST_Statement_Flag : AST_Statement_Flags
+{
+    AST_STMT_FLAG_NONE  = 0x00,
+    AST_STMT_FLAG_TYPED = 0x01,
+};
+
+#define STMT_IS_TYPED(s) (((s)->flags & AST_STMT_FLAG_TYPED) == AST_STMT_FLAG_TYPED)
+
 struct AST_Statement
 {
     AST_Statement_Kind kind;
+    AST_Statement_Flags flags;
 
     Source_Range range;
 
@@ -317,6 +328,8 @@ enum AST_Declaration_Flag : AST_Declaration_Flags
     AST_DECL_FLAG_NONE   = 0x00,
     AST_DECL_FLAG_GLOBAL = 0x01,
 };
+
+#define DECL_IS_GLOBAL(d) (((d)->flags & AST_DECL_FLAG_GLOBAL) == AST_DECL_FLAG_GLOBAL)
 
 struct AST_Declaration
 

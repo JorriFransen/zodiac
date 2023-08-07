@@ -74,7 +74,7 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
         case AST_Declaration_Kind::VARIABLE: {
 
-            if (decl->flags & AST_DECL_FLAG_GLOBAL) {
+            if (DECL_IS_GLOBAL(decl)) {
 
                 Type *global_type = decl->variable.resolved_type;
                 assert(global_type);
@@ -408,7 +408,7 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
             assert(ident_sym->decl);
             assert(ident_sym->decl->kind == AST_Declaration_Kind::VARIABLE);
 
-            if ((ident_sym->decl->flags & AST_DECL_FLAG_GLOBAL) == AST_DECL_FLAG_GLOBAL) {
+            if (DECL_IS_GLOBAL(ident_sym->decl)) {
 
                 Bytecode_Global_Handle glob_handle;
                 bool found = hash_table_find(&bc->globals, ident_sym->decl, &glob_handle);
@@ -499,7 +499,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                 case AST_Declaration_Kind::VARIABLE: {
                     assert(ident_decl->variable.resolved_type);
 
-                    if (ident_decl->flags & AST_DECL_FLAG_GLOBAL) {
+                    if (DECL_IS_GLOBAL(ident_decl)) {
 
                         Bytecode_Global_Handle global_handle;
                         bool found = hash_table_find(&bc->globals, ident_decl, &global_handle);
