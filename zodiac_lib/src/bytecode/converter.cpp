@@ -134,7 +134,26 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             // leaf
             break;
 
-        case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
+        case AST_Declaration_Kind::RUN_DIRECTIVE: {
+            debug_assert(decl->directive->run.stmt);
+            auto stmt = decl->directive->run.stmt;
+
+            assert(stmt->kind == AST_Statement_Kind::PRINT ||
+                   stmt->kind == AST_Statement_Kind::CALL);
+
+            Atom run_wrapper_name = atom_get(&bc->context->atoms, "run_wrapper");
+            Type *run_wrapper_type = get_function_type(&builtin_type_void, {}, &bc->context->ast_allocator);
+
+
+            auto fn_handle = bytecode_function_create(bc->builder, run_wrapper_name, run_wrapper_type) ;
+            auto entry_block = bytecode_append_block(bc->builder, fn_handle, "entry");
+            bytecode_set_insert_point(bc->builder, fn_handle, entry_block);
+
+            ast_stmt_to_bytecode(bc, stmt);
+            bytecode_emit_return(bc->builder);
+
+            break;
+        }
     }
 }
 

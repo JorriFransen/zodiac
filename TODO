@@ -1,4 +1,5 @@
-- Move some of the test code in simple.zc to the test suite.
+- Base run wrapper names on filename/line
+
 - Calculate/substitute non leaf constant expressions before emitting bytecode (we only do this when emitting bytecode now).
 
 test
