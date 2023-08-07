@@ -10,6 +10,7 @@
 #include "scope.h"
 #include "type.h"
 #include "util/asserts.h"
+#include "util/zstring.h"
 #include "zodiac_context.h"
 
 namespace Zodiac { namespace Bytecode {
@@ -25,6 +26,8 @@ Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Contex
     hash_table_create(allocator, &result.functions);
     hash_table_create(allocator, &result.allocations);
     hash_table_create(allocator, &result.globals);
+
+    result.run_directive_count = 0;
 
     return result;
 }
@@ -141,7 +144,14 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             assert(stmt->kind == AST_Statement_Kind::PRINT ||
                    stmt->kind == AST_Statement_Kind::CALL);
 
-            Atom run_wrapper_name = atom_get(&bc->context->atoms, "run_wrapper");
+
+            char buf[256];
+            auto len = string_format(buf, "run_wrapper_%i", bc->run_directive_count);
+            assert(len < 256);
+
+            bc->run_directive_count += 1;
+            
+            Atom run_wrapper_name = atom_get(&bc->context->atoms, buf);
             Type *run_wrapper_type = get_function_type(&builtin_type_void, {}, &bc->context->ast_allocator);
 
 

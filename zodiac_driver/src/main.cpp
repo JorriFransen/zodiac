@@ -68,7 +68,6 @@ int main(int argc, const char **argv) {
     resolver_add_file(&resolver, file);
     free(&dynamic_allocator, stream.data);
 
-    // Assume this stage won't cause any errors atm
     // This bytecode builder should maybe be part of the context?
     Bytecode_Builder bb = bytecode_builder_create(&c.bytecode_allocator, &c);
     defer { bytecode_builder_free(&bb); };

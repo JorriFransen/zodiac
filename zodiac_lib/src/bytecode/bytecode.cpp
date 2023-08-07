@@ -137,6 +137,13 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
 
     assert(fn_type->kind == Type_Kind::FUNCTION);
 
+    for (s64 i = 0; i < builder->functions.count; i++) {
+        if (builder->functions[i].name == fn_name) {
+            assert_msg(false, "Function with this name already exists");
+            return -1;
+        }
+    }
+
     bool is_foreign = flags & BC_FUNCTION_FLAG_FOREIGN;
 
     if (is_foreign) {

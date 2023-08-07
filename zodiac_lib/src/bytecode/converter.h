@@ -28,6 +28,8 @@ struct Bytecode_Converter
 
     // TODO: should these be separated per file?
     Hash_Table<AST_Declaration *, Bytecode_Global_Handle> globals;
+
+    s64 run_directive_count; // Used to generate unique names
 };
 
 ZAPI Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Context *context, Bytecode_Builder *bb);
