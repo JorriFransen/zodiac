@@ -8,6 +8,7 @@ namespace Zodiac {
 
 struct Allocator;
 struct AST_Declaration;
+struct AST_Directive;
 struct AST_Expression;
 struct AST_Statement;
 struct Resolver;
@@ -30,6 +31,7 @@ struct Bytecode_Converter
     Hash_Table<AST_Declaration *, Bytecode_Global_Handle> globals;
 
     s64 run_directive_count; // Used to generate unique names
+    Hash_Table<AST_Directive *, Bytecode_Function_Handle> run_directives;
 };
 
 ZAPI Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Context *context, Bytecode_Builder *bb);

@@ -61,6 +61,7 @@ struct Resolver
     Dynamic_Array<Flat_Root_Node *> nodes_to_name_resolve;
     Dynamic_Array<Flat_Root_Node *> nodes_to_type_resolve;
     Dynamic_Array<Flat_Root_Node *> nodes_to_emit_bytecode;
+    Dynamic_Array<Flat_Root_Node *> nodes_to_run_bytecode;
 };
 
 typedef u64 Resolve_Results;

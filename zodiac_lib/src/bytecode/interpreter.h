@@ -71,6 +71,7 @@ ZAPI Interpreter interpreter_create(Allocator *allocator, Zodiac_Context *contex
 ZAPI void interpreter_free(Interpreter *interp);
 
 ZAPI Interpreter_Register interpreter_start(Interpreter *interp, Bytecode_Program program);
+ZAPI Interpreter_Register interpreter_start(Interpreter *interp, Bytecode_Program program, Bytecode_Function_Handle entry_handle);
 ZAPI Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytecode_Function> functions, Array_Ref<Bytecode_Function_Handle> foreign_functions, Array_Ref<Bytecode_Global> globals, s64 global_size, Bytecode_Function_Handle fn_handle);
 
 ZAPI Bytecode_Instruction interpreter_fetch_instruction(Interpreter *interp);

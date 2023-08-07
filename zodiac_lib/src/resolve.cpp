@@ -30,6 +30,7 @@ void resolver_create(Resolver *resolver, Zodiac_Context *ctx)
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_name_resolve);
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_type_resolve);
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_emit_bytecode);
+    dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_run_bytecode);
 }
 
 void resolver_destroy(Resolver *resolver)
@@ -37,6 +38,7 @@ void resolver_destroy(Resolver *resolver)
     dynamic_array_free(&resolver->nodes_to_name_resolve);
     dynamic_array_free(&resolver->nodes_to_type_resolve);
     dynamic_array_free(&resolver->nodes_to_emit_bytecode);
+    dynamic_array_free(&resolver->nodes_to_run_bytecode);
 }
 
 #define add_builtin_type_symbol(type)                                                                                                \

@@ -65,6 +65,11 @@ Interpreter_Register interpreter_start(Interpreter *interp, Bytecode_Program pro
     return interpreter_start(interp, program.functions, program.foreign_functions, program.globals, program.required_global_size, program.entry_handle);
 }
 
+Interpreter_Register interpreter_start(Interpreter *interp, Bytecode_Program program, Bytecode_Function_Handle entry_handle)
+{
+    return interpreter_start(interp, program.functions, program.foreign_functions, program.globals, program.required_global_size, entry_handle);
+}
+
 Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytecode_Function> functions, Array_Ref<Bytecode_Function_Handle> foreign_functions, Array_Ref<Bytecode_Global> globals, s64 globals_size, Bytecode_Function_Handle fn_handle)
 {
     assert(interp);

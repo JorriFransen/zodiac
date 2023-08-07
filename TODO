@@ -1,3 +1,4 @@
+- Try to report (fatal) errors before executing run directives
 - Base run wrapper names on filename/line
 
 - Calculate/substitute non leaf constant expressions before emitting bytecode (we only do this when emitting bytecode now).

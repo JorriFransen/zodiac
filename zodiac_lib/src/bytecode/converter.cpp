@@ -26,6 +26,7 @@ Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Contex
     hash_table_create(allocator, &result.functions);
     hash_table_create(allocator, &result.allocations);
     hash_table_create(allocator, &result.globals);
+    hash_table_create(allocator, &result.run_directives);
 
     result.run_directive_count = 0;
 
@@ -37,6 +38,7 @@ void bytecode_converter_destroy(Bytecode_Converter *bc)
     hash_table_free(&bc->functions);
     hash_table_free(&bc->allocations);
     hash_table_free(&bc->globals);
+    hash_table_free(&bc->run_directives);
 }
 
 void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
@@ -66,6 +68,11 @@ void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
 
         dynamic_array_remove_ordered(&resolver->nodes_to_emit_bytecode, i);
         i -= 1;
+
+        if (root_node->root.kind == Flat_Node_Kind::DECL &&
+            root_node->root.decl->kind == AST_Declaration_Kind::RUN_DIRECTIVE) {
+            dynamic_array_append(&resolver->nodes_to_run_bytecode, root_node);
+        }
     }
 }
 
@@ -139,7 +146,8 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
             debug_assert(decl->directive->run.stmt);
-            auto stmt = decl->directive->run.stmt;
+            auto directive = decl->directive;
+            auto stmt = directive->run.stmt;
 
             assert(stmt->kind == AST_Statement_Kind::PRINT ||
                    stmt->kind == AST_Statement_Kind::CALL);
@@ -150,7 +158,7 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             assert(len < 256);
 
             bc->run_directive_count += 1;
-            
+
             Atom run_wrapper_name = atom_get(&bc->context->atoms, buf);
             Type *run_wrapper_type = get_function_type(&builtin_type_void, {}, &bc->context->ast_allocator);
 
@@ -161,6 +169,10 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
             ast_stmt_to_bytecode(bc, stmt);
             bytecode_emit_return(bc->builder);
+
+            debug_assert(!hash_table_find(&bc->run_directives, directive));
+
+            hash_table_add(&bc->run_directives, directive, fn_handle);
 
             break;
         }
