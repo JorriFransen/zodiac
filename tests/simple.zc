@@ -1,17 +1,11 @@
 
 
-#run print("Hello, Zodiac Compiler!");
-// #run custom_print(42);
+    print("Hello, Zodiac!");
+    print(x);
 
 // custom_print :: (x: s64)
 // {
 //     print(x);
 // }
 
-// main :: () -> s64 {
-
-//     print("Hello, Zodiac!");
-
-//     return 0;
-// }
-
+x := 42;

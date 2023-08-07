@@ -65,25 +65,31 @@ int main(int argc, const char **argv) {
     resolver_create(&resolver, &c);
     defer { resolver_destroy(&resolver); };
 
-    resolve_file(&resolver, file);
-
-    if (resolver_report_errors(&resolver)) {
-        return 42;
-    }
-
+    resolver_add_file(&resolver, file);
     free(&dynamic_allocator, stream.data);
-
-    if (opts->print_ast) ast_print_file(file);
 
     // Assume this stage won't cause any errors atm
     // This bytecode builder should maybe be part of the context?
     Bytecode_Builder bb = bytecode_builder_create(&c.bytecode_allocator, &c);
+    defer { bytecode_builder_free(&bb); };
 
     Bytecode_Converter bc = bytecode_converter_create(&c.bytecode_allocator, &c, &bb);
     defer { bytecode_converter_destroy(&bc); };
 
-    emit_bytecode(&resolver, &bc);
-    assert(c.errors.count == 0);
+    bool resolver_done = false;
+    while (!resolver_done) {
+        resolver_done = resolver_cycle(&resolver);
+
+        if (resolver_report_errors(&resolver)) {
+            return 42;
+        }
+
+        assert(c.errors.count == 0);
+        emit_bytecode(&resolver, &bc);
+        assert(c.errors.count == 0);
+    }
+
+    if (opts->print_ast) ast_print_file(file);
 
     if (opts->print_bytecode) bytecode_print(&bb, temp_allocator_allocator());
 

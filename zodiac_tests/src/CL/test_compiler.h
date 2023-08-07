@@ -80,7 +80,21 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
     resolver_create(&resolver, &result.context);
     defer { resolver_destroy(&resolver); };
 
-    resolve_file(&resolver, file);
+    result.builder = bytecode_builder_create(&result.context.bytecode_allocator, &result.context);
+    Bytecode_Converter bc = bytecode_converter_create(&result.context.bytecode_allocator, &result.context, &result.builder);
+    defer { bytecode_converter_destroy(&bc); };
+
+    resolver_add_file(&resolver, file);
+    bool resolver_done = false;
+    while (!resolver_done) {
+        resolver_done = resolver_cycle(&resolver);
+
+        if (result.context.errors.count) break;
+
+        assert(result.context.errors.count == 0);
+        emit_bytecode(&resolver, &bc);
+        assert(result.context.errors.count == 0);
+    }
 
     if (resolve_error_count(&result.context) != expected_results.resolve_errors.count) {
         resolver_report_errors(&resolver);
@@ -100,13 +114,6 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
 
         return result;
     }
-
-    result.builder = bytecode_builder_create(&result.context.bytecode_allocator, &result.context);
-    Bytecode_Converter bc = bytecode_converter_create(&result.context.bytecode_allocator, &result.context, &result.builder);
-    defer { bytecode_converter_destroy(&bc); };
-
-    emit_bytecode(&resolver, &bc);
-    munit_assert(result.context.errors.count == 0);
 
     print_bytecode(&result.builder);
 

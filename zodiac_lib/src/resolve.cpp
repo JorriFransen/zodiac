@@ -45,7 +45,7 @@ void resolver_destroy(Resolver *resolver)
     sym->builtin_type = &builtin_type_##type;                                                                                        \
 }
 
-void resolve_file(Resolver *resolver, AST_File *file)
+void resolver_add_file(Resolver *resolver, AST_File *file)
 {
     debug_assert(file);
 
@@ -79,37 +79,39 @@ void resolve_file(Resolver *resolver, AST_File *file)
     for (s64 i = 0; i < file->declarations.count; i++) {
         resolver_add_declaration(resolver->ctx, resolver, file->declarations[i], resolver->global_scope);
     }
+}
+
+bool resolver_cycle(Resolver *resolver)
+{
+    debug_assert(resolver);
 
     bool done = false;
 
-    while (!done) {
+    Resolve_Results names_result = resolve_names(resolver);
 
-        Resolve_Results names_result = resolve_names(resolver);
+    if (resolver->ctx->fatal_resolve_error) return false;;
 
-        if (resolver->ctx->fatal_resolve_error) break;
+    Resolve_Results types_result = resolve_types(resolver);
 
-        Resolve_Results types_result = resolve_types(resolver);
+    if (resolver->ctx->fatal_resolve_error) return false;
 
-        if (resolver->ctx->fatal_resolve_error) break;
+    done = ((names_result & RESOLVE_RESULT_DONE) == RESOLVE_RESULT_DONE) &&
+           ((types_result & RESOLVE_RESULT_DONE) == RESOLVE_RESULT_DONE);
 
-        done = ((names_result & RESOLVE_RESULT_DONE) == RESOLVE_RESULT_DONE) &&
-               ((types_result & RESOLVE_RESULT_DONE) == RESOLVE_RESULT_DONE);
+    bool progress = ((names_result & RESOLVE_RESULT_PROGRESS) == RESOLVE_RESULT_PROGRESS) &&
+                    ((types_result & RESOLVE_RESULT_PROGRESS) == RESOLVE_RESULT_PROGRESS);
 
-        bool progress = ((names_result & RESOLVE_RESULT_PROGRESS) == RESOLVE_RESULT_PROGRESS) &&
-                        ((types_result & RESOLVE_RESULT_PROGRESS) == RESOLVE_RESULT_PROGRESS);
+    if (done) assert(resolver->ctx->errors.count == 0);
 
-        if (done) assert(resolver->ctx->errors.count == 0);
-
-        if (!progress && !done) {
-            assert(resolver->ctx->errors.count);
-            break;
-        } else if (progress && resolve_error_count(resolver->ctx)) {
-            resolver->ctx->errors.count = 0;
-            temporary_allocator_reset(&resolver->ctx->error_allocator_state);
-        }
+    if (!progress && !done) {
+        assert(resolver->ctx->errors.count);
+        return false;
+    } else if (progress && resolve_error_count(resolver->ctx)) {
+        resolver->ctx->errors.count = 0;
+        temporary_allocator_reset(&resolver->ctx->error_allocator_state);
     }
 
-
+    return done;
 }
 
 bool resolver_report_errors(Resolver *resolver)

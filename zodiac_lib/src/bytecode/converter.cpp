@@ -60,6 +60,9 @@ void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
 
             case Flat_Node_Kind::FUNCTION_PROTO: break;
         }
+
+        dynamic_array_remove_ordered(&resolver->nodes_to_emit_bytecode, i);
+        i -= 1;
     }
 }
 
