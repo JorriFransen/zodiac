@@ -129,20 +129,9 @@ int main(int argc, const char **argv) {
         return 1;
     }
 
-    Interpreter interp = interpreter_create(c_allocator(), &c);
-    auto program = bytecode_get_program(bc.builder);
-
-    assert(program.entry_handle == -1);
-    program.entry_handle= bytecode_find_entry(program);
-
-    Interpreter_Register result_reg = interpreter_start(&interp, program);
-    if (result_reg.type->kind == Type_Kind::INTEGER) {
-        ZTRACE("Entry point returned: %lli", result_reg.value.integer.s64);
-    } else {
-        assert_msg(false, "Unexpected return type from entry point")
-    }
-
     if (!opts->dont_emit_binary) {
+
+        auto program = bytecode_get_program(bc.builder);
         LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
 
         llvm_builder_emit_program(&llvm_builder, &program);
