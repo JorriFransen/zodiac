@@ -327,9 +327,11 @@ enum AST_Declaration_Flag : AST_Declaration_Flags
 {
     AST_DECL_FLAG_NONE   = 0x00,
     AST_DECL_FLAG_GLOBAL = 0x01,
+    AST_DECL_FLAG_TYPED  = 0x02,
 };
 
 #define DECL_IS_GLOBAL(d) (((d)->flags & AST_DECL_FLAG_GLOBAL) == AST_DECL_FLAG_GLOBAL)
+#define DECL_IS_TYPED(d) (((d)->flags & AST_DECL_FLAG_TYPED) == AST_DECL_FLAG_TYPED)
 
 struct AST_Declaration
 

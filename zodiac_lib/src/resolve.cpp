@@ -241,33 +241,30 @@ Resolve_Results resolve_types(Resolver *resolver)
     bool progress = false;
     bool done = true;
 
-    for (u64 flat_index = 0; flat_index < resolver->nodes_to_type_resolve.count; flat_index++)
-    {
+    for (u64 flat_index = 0; flat_index < resolver->nodes_to_type_resolve.count; flat_index++) {
 
         Flat_Root_Node *node = resolver->nodes_to_type_resolve[flat_index];
 
-        for (u64 i = node->type_index; i < node->nodes.count; i++)
-        {
-            if (node->type_index >= node->name_index)
+        for (u64 i = node->type_index; i < node->nodes.count; i++) {
+
+            if (node->type_index >= node->name_index) {
+                done = false;
                 break;
+            }
 
             node->type_index = i;
             bool result = type_resolve_node(resolver->ctx, &node->nodes[i]);
 
-            if (!result)
-            {
+            if (!result) {
                 done = false;
                 break;
-            }
-            else
-            {
+            } else {
                 node->type_index += 1;
                 progress = true;
             }
         }
 
-        if (node->type_index >= node->nodes.count)
-        {
+        if (node->type_index >= node->nodes.count) {
             // Done type resolving, move to bytecode emit
             // node->current_index = 0;
 
@@ -1174,6 +1171,8 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
     debug_assert(decl);
     debug_assert(scope);
 
+    bool result = true;
+
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
 
@@ -1217,7 +1216,9 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             auto sym = scope_get_symbol(scope, decl->identifier.name);
             assert(sym && sym->state == Symbol_State::RESOLVED);
             sym->state = Symbol_State::TYPED;
-            return true;
+
+            result = true;
+            break;
         }
 
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
@@ -1238,7 +1239,9 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             auto sym = scope_get_symbol(scope, decl->identifier.name);
             assert(sym && sym->state == Symbol_State::RESOLVED);
             sym->state = Symbol_State::TYPED;
-            return true;
+
+            result = true;
+            break;
         }
 
         case AST_Declaration_Kind::PARAMETER: {
@@ -1253,7 +1256,9 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             assert(sym && sym->state == Symbol_State::RESOLVED);
             assert(sym->kind == Symbol_Kind::PARAM);
             sym->state = Symbol_State::TYPED;
-            return true;
+
+            result = true;
+            break;
         }
 
         case AST_Declaration_Kind::FIELD: {
@@ -1268,7 +1273,9 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             assert(sym && sym->state == Symbol_State::RESOLVED);
             assert(sym->kind == Symbol_Kind::MEMBER);
             sym->state = Symbol_State::TYPED;
-            return true;
+
+            result = true;
+            break;
         }
 
         case AST_Declaration_Kind::FUNCTION: {
@@ -1294,7 +1301,9 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             }
 
             if (decl->function.type) assert(decl->function.type->kind == Type_Kind::FUNCTION);
-            return decl->function.type != nullptr;
+
+            result = decl->function.type != nullptr;
+            break;
         }
 
         case AST_Declaration_Kind::STRUCT: {
@@ -1318,19 +1327,25 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             assert(sym && sym->state == Symbol_State::RESOLVED);
             assert(sym->kind == Symbol_Kind::TYPE);
             sym->state = Symbol_State::TYPED;
-            return true;
+
+            result = true;
+            break;
         }
 
         case AST_Declaration_Kind::UNION: assert(false);
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
             assert(STMT_IS_TYPED(decl->directive->run.stmt));
-            return true;
+            result = true;
+            break;
         }
     }
 
-    assert(false);
-    return false;
+    if (result) {
+        decl->flags |= AST_DECL_FLAG_TYPED;
+    }
+
+    return result;
 }
 
 bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
@@ -1570,6 +1585,11 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             auto func_sym = scope_get_symbol(ident_expr->identifier.scope, ident_expr->identifier.name);
             assert(func_sym && func_sym->kind == Symbol_Kind::FUNC);
             assert(func_sym->state == Symbol_State::TYPED);
+
+            if (!DECL_IS_TYPED(func_sym->decl)) {
+                resolve_error(ctx, ident_expr, "Waiting for declaration to be typed");
+                return false;
+            }
 
             auto func_decl = func_sym->decl;
             assert(func_decl && func_decl->kind == AST_Declaration_Kind::FUNCTION);
