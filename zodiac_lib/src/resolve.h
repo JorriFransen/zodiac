@@ -8,6 +8,7 @@ namespace Zodiac
 
 struct Allocator;
 struct AST_Declaration;
+struct AST_Directive;
 struct AST_Expression;
 struct AST_File;
 struct AST_Statement;
@@ -84,8 +85,9 @@ ZAPI Resolve_Results resolve_types(Resolver *resolver);
 
 ZAPI void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 ZAPI void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest);
-ZAPI void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest, AST_Type_Spec *infer_type_from);
+ZAPI void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest, AST_Type_Spec *infer_type_from);
 ZAPI void flatten_type_spec(AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node> *dest);
+ZAPI void flatten_directive(Zodiac_Context *ctx, AST_Directive *directive, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 
 ZAPI Flat_Node to_flat_node(AST_Declaration *decl, Scope *scope);
 ZAPI Flat_Node to_flat_node(AST_Statement *stmt, Scope *scope);

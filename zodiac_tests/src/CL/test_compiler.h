@@ -131,6 +131,9 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
             run_interp.std_out = stdout_file;
             interpreter_start(&run_interp, run_prog, wrapper_handle);
         }
+
+        // For now assume runs never fail...
+        resolver.nodes_to_run_bytecode.count = 0;
     }
 
     if (resolve_error_count(&result.context) != expected_results.resolve_errors.count) {

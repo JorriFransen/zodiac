@@ -1,7 +1,7 @@
 
-x := #run add(1, 2);
+x := #run ret_1();
 
-main :: () -> s64 {
-    return 0;
+ret_1 :: () -> s64 {
+    return 1;
 }
 

@@ -95,8 +95,14 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
                 Bytecode_Register initial_value_reg;
                 if (decl->variable.value) {
-                    assert(EXPR_IS_CONST(decl->variable.value))
-                    initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
+
+                    if (EXPR_IS_CONST(decl->variable.value)) {
+                        initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
+                    } else {
+                        assert(decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE);
+                        assert(EXPR_IS_TYPED(decl->variable.value));
+                        assert(false);
+                    }
                 }
 
                 auto global_handle = bytecode_create_global(bc->builder, global_name, global_type, initial_value_reg);
@@ -146,7 +152,6 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
             auto directive = decl->directive;
-
 
             char buf[256];
             auto len = string_format(buf, "run_wrapper_%i", bc->run_directive_count);
@@ -501,6 +506,8 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
         case AST_Expression_Kind::UNARY: assert(false); break;
         case AST_Expression_Kind::BINARY: assert(false); break;
         case AST_Expression_Kind::CAST: assert(false); break;
+        case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
+
     }
 
     assert(false);
@@ -696,6 +703,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             return bytecode_emit_cast(bc->builder, expr->cast.resolved_type, value_reg);
         }
 
+        case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
     }
 
     assert(false);

@@ -147,6 +147,16 @@ void ast_cast_expr_create(Type *type, AST_Expression *value, AST_Expression *out
     out_expr->resolved_type = type;
 }
 
+void ast_run_directive_expr_create(AST_Directive *directive, AST_Expression *out_expr)
+{
+    debug_assert(directive && out_expr);
+    debug_assert(directive->kind == AST_Directive_Kind::RUN);
+
+    ast_expression_create(AST_Expression_Kind::RUN_DIRECTIVE, AST_EXPR_FLAG_NONE, out_expr);
+
+    out_expr->directive = directive;
+}
+
 void ast_expression_create(AST_Expression_Kind kind, AST_Expression_Flags flags, AST_Expression *out_expr)
 {
     debug_assert(out_expr);
@@ -511,6 +521,17 @@ AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range range, Type 
     return expr;
 }
 
+AST_Expression *ast_run_directive_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Directive *directive)
+{
+    debug_assert(ctx && directive);
+
+    debug_assert(directive->kind == AST_Directive_Kind::RUN);
+
+    auto expr = ast_expression_new(ctx, range);
+    ast_run_directive_expr_create(directive, expr);
+    return expr;
+}
+
 AST_Expression *ast_expression_new(Zodiac_Context *ctx, Source_Range range)
 {
     AST_Expression *result = alloc<AST_Expression>(&ctx->ast_allocator);
@@ -836,6 +857,8 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
             string_builder_append(sb, ")");
             break;
         }
+
+        case AST_Expression_Kind::RUN_DIRECTIVE: assert(false) break;
 
     }
 }

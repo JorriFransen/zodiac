@@ -545,6 +545,8 @@ AST_Declaration *parse_declaration(Parser *parser)
         AST_Expression *value = nullptr;
         AST_Directive *directive = nullptr;
 
+        Source_Range range = ident.range;
+
         if (match_token(parser, '=')) {
 
             if (is_token(parser, '#')) {
@@ -557,12 +559,15 @@ AST_Declaration *parse_declaration(Parser *parser)
         }
         expect_token(parser, ';');
 
-        if (value) {
-            return ast_variable_decl_new(parser->context, ident.range, ident, ts, value);
-        } else {
-            assert(directive);
-            assert(false);
+        if (directive) {
+            assert(!value);
+            value = ast_run_directive_expr_new(parser->context, directive->range, directive);
         }
+
+        if (value) {
+            range.end = value->range.end;
+        }
+        return ast_variable_decl_new(parser->context, range, ident, ts, value);
     }
 
     fatal_syntax_error(parser, "Unexpected token: '%s' when parsing declaration", cur_tok(parser).atom.data);

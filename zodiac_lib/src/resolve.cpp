@@ -354,7 +354,7 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
             if (ts)
                 flatten_type_spec(ts, scope, dest);
             if (val)
-                flatten_expression(val, scope, dest, ts);
+                flatten_expression(ctx, val, scope, dest, ts);
 
             assert(decl->identifier.scope == nullptr);
             decl->identifier.scope = scope;
@@ -407,25 +407,7 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
         }
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
-
-            assert(decl->directive->kind == AST_Directive_Kind::RUN);
-
-            switch (decl->directive->run.kind) {
-
-                case AST_Run_Directive_Kind::INVALID: assert(false); break;
-                case AST_Run_Directive_Kind::EXPR: {
-
-                    flatten_expression(decl->directive->run.expr, scope, dest, nullptr);
-                    break;
-                }
-
-                case AST_Run_Directive_Kind::STMT: {
-                    flatten_statement(ctx, decl->directive->run.stmt, scope, dest);
-                    break;
-                }
-            }
-
-
+            flatten_directive(ctx, decl->directive, scope, dest);
             break;
         }
     }
@@ -459,13 +441,13 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
         }
 
         case AST_Statement_Kind::ASSIGN: {
-            flatten_expression(stmt->assign.dest, scope, dest, nullptr);
-            flatten_expression(stmt->assign.value, scope, dest, nullptr);
+            flatten_expression(ctx, stmt->assign.dest, scope, dest, nullptr);
+            flatten_expression(ctx, stmt->assign.value, scope, dest, nullptr);
             break;
         }
 
         case AST_Statement_Kind::CALL: {
-            flatten_expression(stmt->call.call, scope, dest, nullptr);
+            flatten_expression(ctx, stmt->call.call, scope, dest, nullptr);
             break;
         }
 
@@ -474,7 +456,7 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
             for (s64 i = 0; i < stmt->if_stmt.blocks.count; i++) {
                 auto if_block = &stmt->if_stmt.blocks[i];
 
-                flatten_expression(if_block->cond, scope, dest, nullptr);
+                flatten_expression(ctx, if_block->cond, scope, dest, nullptr);
 
                 auto then_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
                 assert(if_block->then_scope == nullptr);
@@ -507,13 +489,13 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
 
                 stmt->return_stmt.scope = scope;
 
-                flatten_expression(stmt->return_stmt.value, scope, dest, infer_from);
+                flatten_expression(ctx, stmt->return_stmt.value, scope, dest, infer_from);
             }
             break;
         }
 
         case AST_Statement_Kind::PRINT: {
-            flatten_expression(stmt->print_expr, scope, dest, nullptr);
+            flatten_expression(ctx, stmt->print_expr, scope, dest, nullptr);
             break;
         }
     }
@@ -522,9 +504,9 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
     dynamic_array_append(dest, flat_stmt);
 }
 
-void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest, AST_Type_Spec *infer_type_from)
+void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest, AST_Type_Spec *infer_type_from)
 {
-    debug_assert(expr && scope && dest);
+    debug_assert(ctx && expr && scope && dest);
 
     switch (expr->kind) {
 
@@ -550,7 +532,7 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
         }
 
         case AST_Expression_Kind::MEMBER: {
-            flatten_expression(expr->member.base, scope, dest, nullptr);
+            flatten_expression(ctx, expr->member.base, scope, dest, nullptr);
             break;
         }
 
@@ -558,10 +540,10 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
             assert(false);
 
         case AST_Expression_Kind::CALL: {
-            flatten_expression(expr->call.base, scope, dest, nullptr);
+            flatten_expression(ctx, expr->call.base, scope, dest, nullptr);
 
             for (u64 i = 0; i < expr->call.args.count; i++) {
-                flatten_expression(expr->call.args[i], scope, dest, nullptr);
+                flatten_expression(ctx, expr->call.args[i], scope, dest, nullptr);
             }
             break;
         }
@@ -577,14 +559,14 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
                 infer_from = nullptr;
             }
 
-            flatten_expression(expr->binary.lhs, scope, dest, infer_from);
+            flatten_expression(ctx, expr->binary.lhs, scope, dest, infer_from);
 
             infer_from = infer_type_from;
             if (expr->binary.rhs->kind == AST_Expression_Kind::INTEGER_LITERAL) {
                 infer_from = nullptr;
             }
 
-            flatten_expression(expr->binary.rhs, scope, dest, infer_from);
+            flatten_expression(ctx, expr->binary.rhs, scope, dest, infer_from);
 
             expr->infer_type_from = infer_type_from;
             break;
@@ -594,9 +576,15 @@ void flatten_expression(AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_N
         case AST_Expression_Kind::CAST: {
             assert(expr->cast.type_spec);
             flatten_type_spec(expr->cast.type_spec, scope, dest);
-            flatten_expression(expr->cast.value, scope, dest, nullptr);
+            flatten_expression(ctx, expr->cast.value, scope, dest, nullptr);
             break;
         }
+
+        case AST_Expression_Kind::RUN_DIRECTIVE: {
+            flatten_directive(ctx, expr->directive, scope, dest);
+            break;
+        }
+
     }
 
     Flat_Node flat_expr = to_flat_node(expr, scope);
@@ -625,6 +613,28 @@ void flatten_type_spec(AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node>
 
     Flat_Node flat_ts = to_flat_node(ts, scope);
     dynamic_array_append(dest, flat_ts);
+}
+
+void flatten_directive(Zodiac_Context *ctx, AST_Directive *directive, Scope *scope, Dynamic_Array<Flat_Node> *dest)
+{
+    debug_assert(ctx && directive && scope && dest);
+    debug_assert(directive->kind == AST_Directive_Kind::RUN);
+
+    switch (directive->run.kind) {
+
+        case AST_Run_Directive_Kind::INVALID: assert(false); break;
+
+        case AST_Run_Directive_Kind::EXPR: {
+
+            flatten_expression(ctx, directive->run.expr, scope, dest, nullptr);
+            break;
+        }
+
+        case AST_Run_Directive_Kind::STMT: {
+            flatten_statement(ctx, directive->run.stmt, scope, dest);
+            break;
+        }
+    }
 }
 
 Flat_Node to_flat_node(AST_Declaration *decl, Scope *scope)
@@ -800,7 +810,7 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
             if (global) {
 
                 auto init_expr = decl->variable.value;
-                if (init_expr && !EXPR_IS_CONST(init_expr)) {
+                if (init_expr && !EXPR_IS_CONST(init_expr) && init_expr->kind != AST_Expression_Kind::RUN_DIRECTIVE) {
                     resolve_error(resolver->ctx, init_expr, "Global initializer must be a constant");
                     assert(decl_sym->state == Symbol_State::RESOLVING);
                     decl_sym->state = Symbol_State::UNRESOLVED;
@@ -1005,6 +1015,11 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
         case AST_Expression_Kind::INDEX: assert(false); break;
         case AST_Expression_Kind::UNARY: assert(false); break;
         case AST_Expression_Kind::CAST: assert(false); break;
+
+        case AST_Expression_Kind::RUN_DIRECTIVE: {
+            // leaf
+            break;
+        }
     }
 
     return result;
@@ -1225,7 +1240,7 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             assert(decl->variable.resolved_type);
 
             if (decl->variable.value && scope->kind == Scope_Kind::GLOBAL) {
-                assert(EXPR_IS_CONST(decl->variable.value));
+                assert(EXPR_IS_CONST(decl->variable.value) || decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE);
             }
 
             auto sym = scope_get_symbol(scope, decl->identifier.name);
@@ -1719,6 +1734,25 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
         }
 
         case AST_Expression_Kind::CAST: assert(false); break;
+
+        case AST_Expression_Kind::RUN_DIRECTIVE: {
+            assert(expr->directive->kind == AST_Directive_Kind::RUN);
+            auto dir = expr->directive;
+
+            Type *type = nullptr;
+
+            switch (dir->run.kind) {
+
+                case AST_Run_Directive_Kind::INVALID: assert(false); break;
+                case AST_Run_Directive_Kind::EXPR: type = dir->run.expr->resolved_type; break;
+                case AST_Run_Directive_Kind::STMT: assert(false); break;
+            }
+
+            assert(type);
+            expr->resolved_type = type;
+            break;
+        }
+
     }
 
     assert(result);

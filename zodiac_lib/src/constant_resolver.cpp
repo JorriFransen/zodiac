@@ -64,6 +64,7 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
         }
 
         case AST_Expression_Kind::CAST: assert(false); break;
+        case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
     }
 
     assert(false);
