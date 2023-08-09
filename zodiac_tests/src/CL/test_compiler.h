@@ -114,22 +114,14 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
 
             assert(root_node->root.kind == Flat_Node_Kind::DECL);
             auto decl = root_node->root.decl;
-
             assert(decl->kind == AST_Declaration_Kind::RUN_DIRECTIVE);
-            auto directive = decl->directive;
-            assert(directive->kind == AST_Directive_Kind::RUN);
+            assert(decl->directive->kind == AST_Directive_Kind::RUN);
 
             Bytecode_Function_Handle wrapper_handle;
-            bool found = hash_table_find(&bc.run_directives, directive, &wrapper_handle);
+            bool found = hash_table_find(&bc.run_directives, decl->directive, &wrapper_handle);
             assert(found);
 
-            Interpreter run_interp = interpreter_create(c_allocator(), &result.context);
-            defer { interpreter_free(&run_interp); };
-
-            auto run_prog = bytecode_get_program(bc.builder);
-
-            run_interp.std_out = stdout_file;
-            interpreter_start(&run_interp, run_prog, wrapper_handle);
+            execute_run_wrapper(&bc, wrapper_handle, stdout_file);
         }
 
         // For now assume runs never fail...

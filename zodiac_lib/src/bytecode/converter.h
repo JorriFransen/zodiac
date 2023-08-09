@@ -1,8 +1,9 @@
 #pragma once
 
-#include "defines.h"
-#include "containers/hash_table.h"
 #include "bytecode/bytecode.h"
+#include "bytecode/interpreter.h"
+#include "containers/hash_table.h"
+#include "defines.h"
 
 namespace Zodiac {
 
@@ -46,5 +47,10 @@ ZAPI Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expres
 ZAPI Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr);
 
 ZAPI Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr);
+
+ZAPI Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directive *run_directive);
+
+ZAPI Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle);
+ZAPI Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle, File_Handle stdout_file);
 
 } }

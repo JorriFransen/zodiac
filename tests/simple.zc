@@ -2,6 +2,12 @@
 x := #run ret_1();
 
 ret_1 :: () -> s64 {
+    print("calling ret_1");
     return 1;
 }
 
+main :: () {
+    print("Hello zodiac!");
+    print(x);
+    return 0;
+}

@@ -101,7 +101,9 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                     } else {
                         assert(decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE);
                         assert(EXPR_IS_TYPED(decl->variable.value));
-                        assert(false);
+
+                        Bytecode_Function_Handle wrapper_handle = create_run_wrapper(bc, decl->variable.value->directive);
+                        execute_run_wrapper(bc, wrapper_handle);
                     }
                 }
 
@@ -151,45 +153,11 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             break;
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
+
             auto directive = decl->directive;
-
-            char buf[256];
-            auto len = string_format(buf, "run_wrapper_%i", bc->run_directive_count);
-            assert(len < 256);
-
-            bc->run_directive_count += 1;
-
-            Atom run_wrapper_name = atom_get(&bc->context->atoms, buf);
-            Type *run_wrapper_type = get_function_type(&builtin_type_void, {}, &bc->context->ast_allocator);
-
-
-            auto fn_handle = bytecode_function_create(bc->builder, run_wrapper_name, run_wrapper_type) ;
-            auto entry_block = bytecode_append_block(bc->builder, fn_handle, "entry");
-            bytecode_set_insert_point(bc->builder, fn_handle, entry_block);
-
-            switch (directive->run.kind) {
-
-                case AST_Run_Directive_Kind::INVALID: assert(false); break;
-
-                case AST_Run_Directive_Kind::EXPR: {
-                    assert(directive->run.expr->kind == AST_Expression_Kind::CALL);
-                    ast_expr_to_bytecode(bc, directive->run.expr);
-                    break;
-                }
-
-                case AST_Run_Directive_Kind::STMT: {
-                    auto stmt = directive->run.stmt;
-                    assert(stmt->kind == AST_Statement_Kind::BLOCK ||
-                           stmt->kind == AST_Statement_Kind::PRINT);
-                    ast_stmt_to_bytecode(bc, stmt);
-                    break;
-                }
-            }
-
-            bytecode_emit_return(bc->builder);
+            Bytecode_Function_Handle fn_handle = create_run_wrapper(bc, directive);
 
             debug_assert(!hash_table_find(&bc->run_directives, directive));
-
             hash_table_add(&bc->run_directives, directive, fn_handle);
 
             break;
@@ -743,6 +711,85 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
     assert(false);
     return {};
+}
+
+Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directive *run_directive)
+{
+    debug_assert(bc && run_directive);
+    debug_assert(run_directive->kind == AST_Directive_Kind::RUN);
+
+    char buf[256];
+    auto len = string_format(buf, "run_wrapper_%i", bc->run_directive_count);
+    assert(len < 256);
+
+    bc->run_directive_count += 1;
+
+    Type *return_type = &builtin_type_void;
+
+    bool return_value = false;
+
+    if (run_directive->run.kind == AST_Run_Directive_Kind::EXPR) {
+        return_type = run_directive->run.expr->resolved_type;
+        if (return_type != &builtin_type_void) return_value = true;
+    }
+
+    Type *run_wrapper_type = get_function_type(return_type, {}, &bc->context->ast_allocator);
+
+    Atom run_wrapper_name = atom_get(&bc->context->atoms, buf);
+    auto fn_handle = bytecode_function_create(bc->builder, run_wrapper_name, run_wrapper_type) ;
+    auto entry_block = bytecode_append_block(bc->builder, fn_handle, "entry");
+    bytecode_set_insert_point(bc->builder, fn_handle, entry_block);
+
+    Bytecode_Register result_register;
+
+    switch (run_directive->run.kind) {
+
+        case AST_Run_Directive_Kind::INVALID: assert(false); break;
+
+        case AST_Run_Directive_Kind::EXPR: {
+            assert(run_directive->run.expr->kind == AST_Expression_Kind::CALL);
+            result_register = ast_expr_to_bytecode(bc, run_directive->run.expr);
+            break;
+        }
+
+        case AST_Run_Directive_Kind::STMT: {
+            auto stmt = run_directive->run.stmt;
+            assert(stmt->kind == AST_Statement_Kind::BLOCK ||
+                   stmt->kind == AST_Statement_Kind::PRINT);
+            ast_stmt_to_bytecode(bc, stmt);
+            break;
+        }
+    }
+
+    if (return_value) {
+        bytecode_emit_return(bc->builder, result_register);
+    } else {
+        bytecode_emit_return(bc->builder);
+    }
+
+    return fn_handle;
+}
+
+Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle)
+{
+    File_Handle stdout_file;
+    filesystem_stdout_file(&stdout_file);
+    return execute_run_wrapper(bc, fn_handle, stdout_file);
+}
+
+Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle, File_Handle stdout_file)
+{
+    debug_assert(bc && fn_handle && stdout_file.valid);
+
+    Interpreter run_interp = interpreter_create(c_allocator(), bc->context);
+    defer { interpreter_free(&run_interp); };
+
+    auto run_prog = bytecode_get_program(bc->builder);
+
+    run_interp.std_out = stdout_file;
+    Interpreter_Register result = interpreter_start(&run_interp, run_prog, fn_handle);
+
+    return result;
 }
 
 } }
