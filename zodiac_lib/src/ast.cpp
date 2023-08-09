@@ -1033,7 +1033,11 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
             break;
         }
 
-        case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
+        case AST_Declaration_Kind::RUN_DIRECTIVE: {
+            string_builder_append(sb, "#run ");
+            ast_print_statement(sb, decl->directive->run.stmt, indent);
+            break;
+        }
     }
 
     if (semicolon) string_builder_append(sb, ";");

@@ -1,11 +1,5 @@
 
-#run print("Hello, Zodiac Compiler!");
-#run custom_print(42);
-
-custom_print :: (x: s64)
-{
-    print(x);
-}
+#run main();
 
 main :: () -> s64 {
 
@@ -15,5 +9,4 @@ main :: () -> s64 {
     return 0;
 }
 
-#run main();
 x := 42;
