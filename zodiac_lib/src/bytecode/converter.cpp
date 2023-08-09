@@ -779,7 +779,7 @@ Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Functi
 
 Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle, File_Handle stdout_file)
 {
-    debug_assert(bc && fn_handle && stdout_file.valid);
+    debug_assert(bc && fn_handle >= 0 && stdout_file.valid);
 
     Interpreter run_interp = interpreter_create(c_allocator(), bc->context);
     defer { interpreter_free(&run_interp); };

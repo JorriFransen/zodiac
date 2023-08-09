@@ -795,7 +795,6 @@ static MunitResult Top_Level_Run(const MunitParameter params[], void* user_data_
             #run main();
             main :: () -> s64 {
                 print("main");
-
                 return 0;
             }
         )CODE_STR";
@@ -818,7 +817,6 @@ static MunitResult Top_Level_Run(const MunitParameter params[], void* user_data_
             #run print(42);
             main :: () -> s64 {
                 print("main");
-
                 return 0;
             }
         )CODE_STR";
