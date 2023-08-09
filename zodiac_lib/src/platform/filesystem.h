@@ -11,7 +11,7 @@ struct Allocator;
 struct File_Handle
 {
     void *handle;
-    bool valid;
+    bool valid = false;
 };
 
 enum File_Mode : u32

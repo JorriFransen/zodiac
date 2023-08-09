@@ -94,7 +94,7 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
     Bytecode_Converter bc = bytecode_converter_create(&result.context.bytecode_allocator, &result.context, &result.builder);
     defer { bytecode_converter_destroy(&bc); };
 
-    File_Handle stdout_file;
+    File_Handle stdout_file = {};
     filesystem_temp_file(&stdout_file);
     defer { filesystem_close(&stdout_file); };
 
