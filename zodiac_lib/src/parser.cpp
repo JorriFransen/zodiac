@@ -543,11 +543,12 @@ AST_Declaration *parse_declaration(Parser *parser)
 
         // Variable
         AST_Expression *value = nullptr;
+        AST_Directive *directive = nullptr;
 
         if (match_token(parser, '=')) {
 
             if (is_token(parser, '#')) {
-                AST_Directive *directive = parse_directive(parser);
+                directive = parse_directive(parser, false);
                 assert(directive);
                 assert(directive->kind == AST_Directive_Kind::RUN);
             } else {
@@ -556,8 +557,12 @@ AST_Declaration *parse_declaration(Parser *parser)
         }
         expect_token(parser, ';');
 
-        assert(value);
-        return ast_variable_decl_new(parser->context, ident.range, ident, ts, value);
+        if (value) {
+            return ast_variable_decl_new(parser->context, ident.range, ident, ts, value);
+        } else {
+            assert(directive);
+            assert(false);
+        }
     }
 
     fatal_syntax_error(parser, "Unexpected token: '%s' when parsing declaration", cur_tok(parser).atom.data);
@@ -594,7 +599,7 @@ AST_Type_Spec *parse_type_spec(Parser *parser)
     return nullptr;
 }
 
-AST_Directive *parse_directive(Parser *parser)
+AST_Directive *parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
 {
     debug_assert(parser);
 
@@ -616,7 +621,7 @@ AST_Directive *parse_directive(Parser *parser)
         } else {
 
             AST_Expression *expr = parse_expression(parser);
-            match_token(parser, ';');
+            if (eat_semicolon) match_token(parser, ';');
             return ast_run_directive_new(parser->context, { start_pos, expr->range.end }, expr);
         }
 
