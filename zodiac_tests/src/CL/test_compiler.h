@@ -32,7 +32,9 @@ struct Expected_Results
 {
     s64 exit_code = 0;
 
-    String_Ref std_out = {};
+    String_Ref std_out = {}; // If this is set, expect the same at compile/runtime
+    String_Ref compiletime_std_out = {};
+    String_Ref runtime_std_out = {};
 
     Array_Ref<Expected_Error> resolve_errors = {};
 };
@@ -53,6 +55,14 @@ static void free_compile_run_results(Compile_Run_Results *r)
 }
 
 static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expected_results) {
+
+    if (expected_results.std_out.length) {
+        munit_assert_int64(expected_results.compiletime_std_out.length, ==, 0);
+        munit_assert_int64(expected_results.runtime_std_out.length, ==, 0);
+
+        expected_results.compiletime_std_out = expected_results.std_out;
+        expected_results.runtime_std_out = expected_results.std_out;
+    }
 
     Compile_Run_Results result = { .result = MUNIT_OK };
 
@@ -84,6 +94,10 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
     Bytecode_Converter bc = bytecode_converter_create(&result.context.bytecode_allocator, &result.context, &result.builder);
     defer { bytecode_converter_destroy(&bc); };
 
+    File_Handle stdout_file;
+    filesystem_temp_file(&stdout_file);
+    defer { filesystem_close(&stdout_file); };
+
     resolver_add_file(&resolver, file);
     bool resolver_done = false;
     while (!resolver_done) {
@@ -94,6 +108,29 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
         assert(result.context.errors.count == 0);
         emit_bytecode(&resolver, &bc);
         assert(result.context.errors.count == 0);
+
+        for (s64 i = 0; i < resolver.nodes_to_run_bytecode.count; i++) {
+            Flat_Root_Node *root_node = resolver.nodes_to_run_bytecode[i];
+
+            assert(root_node->root.kind == Flat_Node_Kind::DECL);
+            auto decl = root_node->root.decl;
+
+            assert(decl->kind == AST_Declaration_Kind::RUN_DIRECTIVE);
+            auto directive = decl->directive;
+            assert(directive->kind == AST_Directive_Kind::RUN);
+
+            Bytecode_Function_Handle wrapper_handle;
+            bool found = hash_table_find(&bc.run_directives, directive, &wrapper_handle);
+            assert(found);
+
+            Interpreter run_interp = interpreter_create(c_allocator(), &result.context);
+            defer { interpreter_free(&run_interp); };
+
+            auto run_prog = bytecode_get_program(bc.builder);
+
+            run_interp.std_out = stdout_file;
+            interpreter_start(&run_interp, run_prog, wrapper_handle);
+        }
     }
 
     if (resolve_error_count(&result.context) != expected_results.resolve_errors.count) {
@@ -133,8 +170,7 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
     Interpreter interp = interpreter_create(c_allocator(), &result.context);
     defer { interpreter_free(&interp); };
 
-    filesystem_temp_file(&interp.std_out);
-    defer { filesystem_close(&interp.std_out); };
+    interp.std_out = stdout_file;
 
     munit_assert(result.program.entry_handle == -1);
     result.program.entry_handle= bytecode_find_entry(result.program);
@@ -144,7 +180,7 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
 
     munit_assert_int64(result_reg.value.integer.s64, ==, expected_results.exit_code);
 
-    assert_zodiac_stream(interp.std_out, expected_results.std_out);
+    assert_zodiac_stream(stdout_file, expected_results.compiletime_std_out);
 
     LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &result.builder);
     defer { llvm_builder_free(&llvm_builder); };
@@ -170,8 +206,8 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
     munit_assert(pr.success == expected_result);
 
     String_Ref std_out_str("");
-    if (expected_results.std_out.length) {
-        std_out_str = string_append(ta, expected_results.std_out, "\n");
+    if (expected_results.runtime_std_out.length) {
+        std_out_str = string_append(ta, expected_results.runtime_std_out, "\n");
     }
 
     munit_assert_int64(pr.result_string.length, ==, std_out_str.length);
@@ -756,6 +792,108 @@ static MunitResult Nested_Struct_Offset_Ptr(const MunitParameter params[], void*
     return result.result;
 }
 
+static MunitResult Top_Level_Run(const MunitParameter params[], void* user_data_or_fixture) {
+
+    // Running main
+    {
+        String_Ref code_string = R"CODE_STR(
+            #run main();
+            main :: () -> s64 {
+                print("main");
+
+                return 0;
+            }
+        )CODE_STR";
+
+        // Compile and run will always run main at compile time, so account for that in the output
+        Expected_Results expected = {
+            .compiletime_std_out = "main\nmain",
+            .runtime_std_out = "main"
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+        if (result.result != MUNIT_OK) return result.result;
+    }
+
+    // print
+    {
+        String_Ref code_string = R"CODE_STR(
+            #run print(42);
+            main :: () -> s64 {
+                print("main");
+
+                return 0;
+            }
+        )CODE_STR";
+
+        // Compile and run will always run main at compile time, so account for that in the output
+        Expected_Results expected = {
+            .compiletime_std_out = "42\nmain",
+            .runtime_std_out = "main"
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+        if (result.result != MUNIT_OK) return result.result;
+    }
+
+    // print 2
+    {
+        String_Ref code_string = R"CODE_STR(
+            #run print(x);
+            main :: () -> s64 {
+                print("main");
+
+                return 0;
+            }
+            x := 42;
+        )CODE_STR";
+
+        // Compile and run will always run main at compile time, so account for that in the output
+        Expected_Results expected = {
+            .compiletime_std_out = "42\nmain",
+            .runtime_std_out = "main"
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+        if (result.result != MUNIT_OK) return result.result;
+    }
+
+    // block
+    {
+        String_Ref code_string = R"CODE_STR(
+            #run {
+                main();
+                print(x);
+                print(1);
+            }
+            main :: () -> s64 {
+                print("main");
+
+                return 0;
+            }
+            x := 42;
+        )CODE_STR";
+
+        // Compile and run will always run main at compile time, so account for that in the output
+        Expected_Results expected = {
+            .compiletime_std_out = "main\n42\n1\nmain",
+            .runtime_std_out = "main"
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+        if (result.result != MUNIT_OK) return result.result;
+    }
+    return MUNIT_OK;
+}
+
 START_TESTS(compiler_tests)
     DEFINE_TEST(Return_0),
     DEFINE_TEST(Return_1),
@@ -786,6 +924,7 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Define_Struct_Type),
     DEFINE_TEST(Struct_Offset_Ptr),
     DEFINE_TEST(Nested_Struct_Offset_Ptr),
+    DEFINE_TEST(Top_Level_Run),
 END_TESTS()
 
 #undef RESOLVE_ERR
