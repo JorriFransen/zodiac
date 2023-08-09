@@ -141,11 +141,13 @@ typedef u32 AST_Expression_Flags;
 enum AST_Expression_Flag : AST_Expression_Flags
 {
     AST_EXPR_FLAG_NONE   = 0x00,
-    AST_EXPR_FLAG_CONST  = 0x01,
-    AST_EXPR_FLAG_LVALUE = 0x02,
+    AST_EXPR_FLAG_TYPED  = 0x01,
+    AST_EXPR_FLAG_CONST  = 0x02,
+    AST_EXPR_FLAG_LVALUE = 0x04,
 };
 
 
+#define EXPR_IS_TYPED(e) (((e)->flags & AST_EXPR_FLAG_TYPED) == AST_EXPR_FLAG_TYPED)
 #define EXPR_IS_CONST(e) (((e)->flags & AST_EXPR_FLAG_CONST) == AST_EXPR_FLAG_CONST)
 #define EXPR_IS_LVALUE(e) (((e)->flags & AST_EXPR_FLAG_LVALUE) == AST_EXPR_FLAG_LVALUE)
 
@@ -392,7 +394,7 @@ struct AST_Directive
     {
         struct
         {
-            AST_Statement *stmt;
+            AST_Expression *expr;
         } run;
     };
 };
@@ -441,7 +443,7 @@ ZAPI void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts);
 ZAPI void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts);
 ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
 
-ZAPI void ast_run_directive_create(AST_Statement *stmt, AST_Directive *out_dir);
+ZAPI void ast_run_directive_create(AST_Expression *expr, AST_Directive *out_dir);
 ZAPI void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir);
 
 ZAPI void ast_file_create(Dynamic_Array<AST_Declaration *> decls, AST_File *out_file);
@@ -483,7 +485,7 @@ ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range range, AST
 ZAPI AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *base);
 ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range range);
 
-ZAPI AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Statement *stmt);
+ZAPI AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *expr);
 ZAPI AST_Directive *ast_directive_new(Zodiac_Context *ctx, Source_Range range);
 
 ZAPI AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *> decls);

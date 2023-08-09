@@ -540,13 +540,23 @@ AST_Declaration *parse_declaration(Parser *parser)
         return ast_constant_variable_decl_new(parser->context, ident.range, ident, ts, const_value);
 
     } else if (is_token(parser, '=') || is_token(parser, ';')) {
+
         // Variable
         AST_Expression *value = nullptr;
+
         if (match_token(parser, '=')) {
-            value = parse_expression(parser);
+
+            if (is_token(parser, '#')) {
+                AST_Directive *directive = parse_directive(parser);
+                assert(directive);
+                assert(directive->kind == AST_Directive_Kind::RUN);
+            } else {
+                value = parse_expression(parser);
+            }
         }
         expect_token(parser, ';');
 
+        assert(value);
         return ast_variable_decl_new(parser->context, ident.range, ident, ts, value);
     }
 
@@ -599,11 +609,13 @@ AST_Directive *parse_directive(Parser *parser)
     // TODO: Use hashes here
     if (directive_name_tok.atom == directive_run) {
 
-        AST_Statement *stmt = parse_statement(parser);
+        AST_Expression *expr = parse_expression(parser);
 
-        Source_Range range = { start_pos, stmt->range.end };
+        match_token(parser, ';');
 
-        return ast_run_directive_new(parser->context, range, stmt);
+        Source_Range range = { start_pos, expr->range.end };
+
+        return ast_run_directive_new(parser->context, range, expr);
 
     } else {
         assert_msg(false, "Unknown directive");

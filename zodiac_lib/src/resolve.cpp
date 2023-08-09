@@ -408,8 +408,8 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
 
-            assert(decl->directive->run.stmt);
-            flatten_statement(ctx, decl->directive->run.stmt, scope, dest);
+            assert(decl->directive->run.expr);
+            flatten_expression(decl->directive->run.expr, scope, dest, nullptr);
 
             break;
         }
@@ -1335,7 +1335,7 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
         case AST_Declaration_Kind::UNION: assert(false);
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
-            assert(STMT_IS_TYPED(decl->directive->run.stmt));
+            assert(EXPR_IS_TYPED(decl->directive->run.expr));
             result = true;
             break;
         }
@@ -1490,6 +1490,8 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
     debug_assert(expr);
     debug_assert(expr->resolved_type == nullptr);
     debug_assert(scope);
+
+    bool result = true;
 
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false);
@@ -1704,8 +1706,14 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
         case AST_Expression_Kind::CAST: assert(false); break;
     }
 
+    assert(result);
     assert(expr->resolved_type);
-    return true;
+
+    if (result) {
+        expr->flags |= AST_EXPR_FLAG_TYPED;
+    }
+
+    return result;
 }
 
 bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)

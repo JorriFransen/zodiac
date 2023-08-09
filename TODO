@@ -1,3 +1,4 @@
+- Support multiple adjacent function parameters with the same typespec (parser). Like we do for struct fields.
 - Try to report (fatal) errors before executing run directives
 - Base run wrapper names on filename/line
 

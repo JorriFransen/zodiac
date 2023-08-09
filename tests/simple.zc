@@ -1,17 +1,26 @@
 
-add :: (a, b: s64) {
+#run main()
+#run add(2, 4);
+// #run {
+//     add(8, 8);
+//     add(8, 9);
+// }
+
+add :: (a: s64, b: s64) {
+    print(a + b);
     return a + b;
 }
 
-#run main();
 
 main :: () -> s64 {
 
     print("Hello, Zodiac!");
     print(x);
-    print(add(40, 2));
+    print(add(1, 2));
 
     return 0;
 }
 
 x := 42;
+
+// x := #run add(1, 2);

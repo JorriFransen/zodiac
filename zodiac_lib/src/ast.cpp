@@ -364,13 +364,13 @@ void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts)
     out_ts->kind = kind;
 }
 
-void ast_run_directive_create(AST_Statement *stmt, AST_Directive *out_dir)
+void ast_run_directive_create(AST_Expression *expr, AST_Directive *out_dir)
 {
-    debug_assert(stmt && out_dir);
+    debug_assert(expr && out_dir);
 
     ast_directive_create(AST_Directive_Kind::RUN, out_dir);
 
-    out_dir->run.stmt = stmt;
+    out_dir->run.expr = expr;
 }
 
 void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir)
@@ -706,12 +706,12 @@ AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range range)
     return result;
 }
 
-AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Statement *stmt)
+AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *expr)
 {
-    debug_assert(ctx && stmt);
+    debug_assert(ctx && expr);
 
     AST_Directive *result = ast_directive_new(ctx, range);
-    ast_run_directive_create(stmt, result);
+    ast_run_directive_create(expr, result);
 
     return result;
 }
@@ -1035,7 +1035,7 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
             string_builder_append(sb, "#run ");
-            ast_print_statement(sb, decl->directive->run.stmt, indent);
+            ast_print_expression(sb, decl->directive->run.expr);
             break;
         }
     }
