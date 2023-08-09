@@ -534,7 +534,19 @@ AST_Declaration *parse_declaration(Parser *parser)
             }
         }
 
-        AST_Expression *const_value = parse_expression(parser);
+        AST_Expression *const_value = nullptr;
+        AST_Directive *directive = nullptr;
+
+        if (is_token(parser, '#')) {
+            directive = parse_directive(parser, false);
+        } else {
+            const_value = parse_expression(parser);
+        }
+
+        if (directive) {
+            const_value = ast_run_directive_expr_new(parser->context, directive->range, directive);
+        }
+
         expect_token(parser, ';');
 
         return ast_constant_variable_decl_new(parser->context, ident.range, ident, ts, const_value);

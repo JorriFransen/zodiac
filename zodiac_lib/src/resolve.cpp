@@ -72,7 +72,7 @@ void resolver_add_file(Resolver *resolver, AST_File *file)
         auto decl = file->declarations[i];
         if (!add_unresolved_decl_symbol(resolver->ctx, resolver->global_scope, decl, true)) {
             assert(resolver->ctx->fatal_resolve_error);
-            assert(false);
+            // assert(false);
             return;
         }
     }
@@ -913,8 +913,9 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
         case AST_Expression_Kind::INTEGER_LITERAL:
         case AST_Expression_Kind::STRING_LITERAL:
         case AST_Expression_Kind::NULL_LITERAL:
-        case AST_Expression_Kind::BOOL_LITERAL: {
-            assert((expr->flags & AST_EXPR_FLAG_CONST) == AST_EXPR_FLAG_CONST);
+        case AST_Expression_Kind::BOOL_LITERAL:
+        case AST_Expression_Kind::RUN_DIRECTIVE: {
+            debug_assert(EXPR_IS_CONST(expr));
             // Leaf
             break;
         }
@@ -1016,10 +1017,6 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
         case AST_Expression_Kind::UNARY: assert(false); break;
         case AST_Expression_Kind::CAST: assert(false); break;
 
-        case AST_Expression_Kind::RUN_DIRECTIVE: {
-            // leaf
-            break;
-        }
     }
 
     return result;

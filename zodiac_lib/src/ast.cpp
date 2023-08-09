@@ -152,7 +152,7 @@ void ast_run_directive_expr_create(AST_Directive *directive, AST_Expression *out
     debug_assert(directive && out_expr);
     debug_assert(directive->kind == AST_Directive_Kind::RUN);
 
-    ast_expression_create(AST_Expression_Kind::RUN_DIRECTIVE, AST_EXPR_FLAG_NONE, out_expr);
+    ast_expression_create(AST_Expression_Kind::RUN_DIRECTIVE, AST_EXPR_FLAG_CONST, out_expr);
 
     out_expr->directive.directive = directive;
     out_expr->directive.generated_expression = nullptr;

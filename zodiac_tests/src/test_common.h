@@ -14,7 +14,7 @@
 
 namespace Zodiac { namespace Bytecode {
 
-struct Bytecode_Builder; 
+struct Bytecode_Builder;
 
 void print_bytecode(const Bytecode_Builder *bb);
 

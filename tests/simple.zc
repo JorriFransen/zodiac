@@ -4,15 +4,20 @@
 main :: () {
     print("Hello zodiac!");
     print(x);
+    print(y);
     return 0;
 }
 
 x := #run ret_1();
+y :: #run ret_x(40) + 1;
 
 ret_1 :: () -> s64 {
     return 1;
 }
 
+ret_x :: (lx: s64) -> s64 {
+    return lx;
+}
 print_hi :: () {
     print("hi");
 }

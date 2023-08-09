@@ -99,10 +99,10 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                 Bytecode_Register initial_value_reg;
                 if (decl->variable.value) {
 
-                    if (EXPR_IS_CONST(decl->variable.value)) {
+                    if (decl->variable.value->kind != AST_Expression_Kind::RUN_DIRECTIVE) {
+                        assert(EXPR_IS_CONST(decl->variable.value));
                         initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
                     } else {
-                        assert(decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE);
                         assert(EXPR_IS_TYPED(decl->variable.value));
 
                         auto directive = &decl->variable.value->directive;
@@ -145,6 +145,29 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
         }
 
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
+
+            if (decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE) {
+                assert(EXPR_IS_TYPED(decl->variable.value));
+
+                auto directive = &decl->variable.value->directive;
+
+                Bytecode_Function_Handle wrapper_handle = create_run_wrapper(bc, directive->directive);
+                Interpreter_Register result = execute_run_wrapper(bc, wrapper_handle);
+                assert(result.type);
+                assert(result.type == decl->variable.resolved_type);
+
+                Source_Range range = decl->variable.value->range;
+
+                Scope *scope = decl->identifier.scope;
+                assert(scope);
+
+                AST_Expression *new_expr = interpreter_register_to_ast_expression(bc, result, scope, range);
+                assert(new_expr->resolved_type);
+                assert(EXPR_IS_CONST(new_expr));
+
+                directive->generated_expression = new_expr;
+                break;
+            }
 
             if (decl->variable.resolved_type->kind == Type_Kind::INTEGER ||
                 decl->variable.resolved_type == &builtin_type_unsized_integer) {
@@ -507,7 +530,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
     assert(expr);
 
     if (expr->kind != AST_Expression_Kind::INTEGER_LITERAL &&
-        expr->kind != AST_Expression_Kind::STRING_LITERAL && EXPR_IS_CONST(expr)) {
+        expr->kind != AST_Expression_Kind::STRING_LITERAL &&
+        expr->kind != AST_Expression_Kind::RUN_DIRECTIVE && EXPR_IS_CONST(expr)) {
         assert_msg(expr->resolved_type->kind == Type_Kind::INTEGER ||
                    expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER ||
                    expr->resolved_type->kind == Type_Kind::BOOLEAN,
@@ -766,7 +790,6 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
         case AST_Run_Directive_Kind::INVALID: assert(false); break;
 
         case AST_Run_Directive_Kind::EXPR: {
-            assert(run_directive->run.expr->kind == AST_Expression_Kind::CALL);
             result_register = ast_expr_to_bytecode(bc, run_directive->run.expr);
             break;
         }
