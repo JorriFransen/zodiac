@@ -787,7 +787,7 @@ static MunitResult Nested_Struct_Offset_Ptr(const MunitParameter params[], void*
     return result.result;
 }
 
-static MunitResult Top_Level_Run(const MunitParameter params[], void* user_data_or_fixture) {
+static MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void* user_data_or_fixture) {
 
     // Running main
     {
@@ -887,6 +887,38 @@ static MunitResult Top_Level_Run(const MunitParameter params[], void* user_data_
     return MUNIT_OK;
 }
 
+static MunitResult Global_Run_Directive(const MunitParameter params[], void* user_data_or_fixture) {
+
+    // Running main depending on return value of another run
+    {
+        String_Ref code_string = R"CODE_STR(
+            #run main();
+            main :: () {
+                print("Hello zodiac!");
+                print(x);
+                return 0;
+            }
+            x := #run ret_1();
+            ret_1 :: () -> s64 {
+                return 1;
+            }
+        )CODE_STR";
+
+        // Compile and run will always run main at compile time, so account for that in the output
+        Expected_Results expected = {
+            .compiletime_std_out = "Hello zodiac!\n1\nHello zodiac!\n1",
+            .runtime_std_out = "Hello zodiac!\n1"
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+        if (result.result != MUNIT_OK) return result.result;
+    }
+
+    return MUNIT_OK;
+}
+
 START_TESTS(compiler_tests)
     DEFINE_TEST(Return_0),
     DEFINE_TEST(Return_1),
@@ -917,7 +949,8 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Define_Struct_Type),
     DEFINE_TEST(Struct_Offset_Ptr),
     DEFINE_TEST(Nested_Struct_Offset_Ptr),
-    DEFINE_TEST(Top_Level_Run),
+    DEFINE_TEST(Global_Run_Directive_Return_Void),
+    DEFINE_TEST(Global_Run_Directive),
 END_TESTS()
 
 #undef RESOLVE_ERR

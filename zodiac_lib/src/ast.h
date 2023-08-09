@@ -116,6 +116,12 @@ struct AST_Cast_Expression
     Type *resolved_type;
 };
 
+struct AST_Directive_Expression
+{
+    AST_Directive *directive;
+    AST_Expression *generated_expression;
+};
+
 enum class AST_Expression_Kind
 {
     INVALID,
@@ -175,7 +181,7 @@ struct AST_Expression
         AST_Unary_Expression unary;
         AST_Binary_Expression binary;
         AST_Cast_Expression cast;
-        AST_Directive *directive;
+        AST_Directive_Expression directive;
     };
 };
 

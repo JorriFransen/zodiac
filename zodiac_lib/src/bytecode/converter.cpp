@@ -6,8 +6,11 @@
 #include "constant_resolver.h"
 #include "containers/dynamic_array.h"
 #include "error.h"
+#include "memory/allocator.h"
+#include "platform/filesystem.h"
 #include "resolve.h"
 #include "scope.h"
+#include "source_pos.h"
 #include "type.h"
 #include "util/asserts.h"
 #include "util/zstring.h"
@@ -102,8 +105,24 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                         assert(decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE);
                         assert(EXPR_IS_TYPED(decl->variable.value));
 
-                        Bytecode_Function_Handle wrapper_handle = create_run_wrapper(bc, decl->variable.value->directive);
-                        execute_run_wrapper(bc, wrapper_handle);
+                        auto directive = &decl->variable.value->directive;
+
+                        Bytecode_Function_Handle wrapper_handle = create_run_wrapper(bc, directive->directive);
+                        Interpreter_Register result = execute_run_wrapper(bc, wrapper_handle);
+                        assert(result.type);
+                        assert(result.type == global_type);
+
+                        Source_Range range = decl->variable.value->range;
+
+                        Scope *scope = decl->identifier.scope;
+                        assert(scope);
+
+                        AST_Expression *new_expr = interpreter_register_to_ast_expression(bc, result, scope, range);
+                        assert(new_expr->resolved_type);
+                        assert(EXPR_IS_CONST(new_expr));
+
+                        initial_value_reg = ast_expr_to_bytecode(bc, new_expr);
+                        directive->generated_expression = new_expr;
                     }
                 }
 
@@ -788,6 +807,43 @@ Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Functi
 
     run_interp.std_out = stdout_file;
     Interpreter_Register result = interpreter_start(&run_interp, run_prog, fn_handle);
+
+    return result;
+}
+
+AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, Interpreter_Register &reg, Scope *scope, Source_Range range)
+{
+    debug_assert(bc);
+    debug_assert(reg.type);
+
+    auto ctx = bc->context;
+
+    AST_Expression *result = nullptr;
+
+    switch (reg.type->kind) {
+
+        case Type_Kind::INVALID: assert(false); break;
+        case Type_Kind::VOID: assert(false); break;
+        case Type_Kind::UNSIZED_INTEGER: assert(false); break;
+
+        case Type_Kind::INTEGER: {
+             result = ast_integer_literal_expr_new(ctx, range, reg.value.integer);
+             break;
+        }
+
+        case Type_Kind::FLOAT: assert(false); break;
+        case Type_Kind::BOOLEAN: assert(false); break;
+        case Type_Kind::POINTER: assert(false); break;
+        case Type_Kind::STRUCTURE: assert(false); break;
+        case Type_Kind::STATIC_ARRAY: assert(false); break;
+        case Type_Kind::FUNCTION: assert(false); break;
+    }
+
+    assert(result);
+
+    name_resolve_expr(ctx, result, scope);
+    type_resolve_expression(ctx, result, scope);
+
 
     return result;
 }

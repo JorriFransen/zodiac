@@ -1,7 +1,6 @@
 #include "ast.h"
 #include "bytecode/bytecode.h"
 #include "bytecode/converter.h"
-#include "bytecode/interpreter.h"
 #include "bytecode/llvm_builder.h"
 #include "bytecode/printer.h"
 #include "bytecode/validator.h"

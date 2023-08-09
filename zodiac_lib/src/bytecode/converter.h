@@ -12,7 +12,10 @@ struct AST_Declaration;
 struct AST_Directive;
 struct AST_Expression;
 struct AST_Statement;
+struct File_Handle;
 struct Resolver;
+struct Scope;
+struct Source_Range;
 struct Zodiac_Context;
 
 namespace Bytecode {
@@ -52,5 +55,7 @@ ZAPI Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Dir
 
 ZAPI Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle);
 ZAPI Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle, File_Handle stdout_file);
+
+ZAPI AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, Interpreter_Register &reg, Scope *scope, Source_Range range);
 
 } }

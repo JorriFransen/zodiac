@@ -154,7 +154,8 @@ void ast_run_directive_expr_create(AST_Directive *directive, AST_Expression *out
 
     ast_expression_create(AST_Expression_Kind::RUN_DIRECTIVE, AST_EXPR_FLAG_NONE, out_expr);
 
-    out_expr->directive = directive;
+    out_expr->directive.directive = directive;
+    out_expr->directive.generated_expression = nullptr;
 }
 
 void ast_expression_create(AST_Expression_Kind kind, AST_Expression_Flags flags, AST_Expression *out_expr)
@@ -858,7 +859,17 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
             break;
         }
 
-        case AST_Expression_Kind::RUN_DIRECTIVE: assert(false) break;
+        case AST_Expression_Kind::RUN_DIRECTIVE: {
+            string_builder_append(sb, "#run ");
+            ast_print_expression(sb, expr->directive.directive->run.expr);
+
+            if (expr->directive.generated_expression) {
+                string_builder_append(sb, "; //(generated: ");
+                ast_print_expression(sb, expr->directive.generated_expression);
+                string_builder_append(sb, ")");
+            }
+            break;
+        }
 
     }
 }

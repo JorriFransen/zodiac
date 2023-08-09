@@ -100,7 +100,7 @@ bool resolver_cycle(Resolver *resolver)
     done = ((names_result & RESOLVE_RESULT_DONE) == RESOLVE_RESULT_DONE) &&
            ((types_result & RESOLVE_RESULT_DONE) == RESOLVE_RESULT_DONE);
 
-    bool progress = ((names_result & RESOLVE_RESULT_PROGRESS) == RESOLVE_RESULT_PROGRESS) &&
+    bool progress = ((names_result & RESOLVE_RESULT_PROGRESS) == RESOLVE_RESULT_PROGRESS) ||
                     ((types_result & RESOLVE_RESULT_PROGRESS) == RESOLVE_RESULT_PROGRESS);
 
     if (done) assert(resolver->ctx->errors.count == 0);
@@ -581,7 +581,7 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
         }
 
         case AST_Expression_Kind::RUN_DIRECTIVE: {
-            flatten_directive(ctx, expr->directive, scope, dest);
+            flatten_directive(ctx, expr->directive.directive, scope, dest);
             break;
         }
 
@@ -1736,8 +1736,8 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
         case AST_Expression_Kind::CAST: assert(false); break;
 
         case AST_Expression_Kind::RUN_DIRECTIVE: {
-            assert(expr->directive->kind == AST_Directive_Kind::RUN);
-            auto dir = expr->directive;
+            assert(expr->directive.directive->kind == AST_Directive_Kind::RUN);
+            auto dir = expr->directive.directive;
 
             Type *type = nullptr;
 
