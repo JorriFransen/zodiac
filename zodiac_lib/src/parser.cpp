@@ -609,13 +609,16 @@ AST_Directive *parse_directive(Parser *parser)
     // TODO: Use hashes here
     if (directive_name_tok.atom == directive_run) {
 
-        AST_Expression *expr = parse_expression(parser);
+        if (is_token(parser, '{') || is_keyword(parser, keyword_print)) {
 
-        match_token(parser, ';');
+            AST_Statement *stmt = parse_statement(parser);
+            return ast_run_directive_new(parser->context, { start_pos, stmt->range.end }, stmt);
+        } else {
 
-        Source_Range range = { start_pos, expr->range.end };
-
-        return ast_run_directive_new(parser->context, range, expr);
+            AST_Expression *expr = parse_expression(parser);
+            match_token(parser, ';');
+            return ast_run_directive_new(parser->context, { start_pos, expr->range.end }, expr);
+        }
 
     } else {
         assert_msg(false, "Unknown directive");

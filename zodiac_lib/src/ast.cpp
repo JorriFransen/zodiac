@@ -370,7 +370,18 @@ void ast_run_directive_create(AST_Expression *expr, AST_Directive *out_dir)
 
     ast_directive_create(AST_Directive_Kind::RUN, out_dir);
 
+    out_dir->run.kind = AST_Run_Directive_Kind::EXPR;
     out_dir->run.expr = expr;
+}
+
+void ast_run_directive_create(AST_Statement *stmt, AST_Directive *out_dir)
+{
+    debug_assert(stmt && out_dir);
+
+    ast_directive_create(AST_Directive_Kind::RUN, out_dir);
+
+    out_dir->run.kind = AST_Run_Directive_Kind::STMT;
+    out_dir->run.stmt = stmt;
 }
 
 void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir)
@@ -712,6 +723,16 @@ AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AS
 
     AST_Directive *result = ast_directive_new(ctx, range);
     ast_run_directive_create(expr, result);
+
+    return result;
+}
+
+AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Statement *stmt)
+{
+    debug_assert(ctx && stmt);
+
+    AST_Directive *result = ast_directive_new(ctx, range);
+    ast_run_directive_create(stmt, result);
 
     return result;
 }

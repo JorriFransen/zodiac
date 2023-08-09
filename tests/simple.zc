@@ -1,10 +1,13 @@
 
 #run main()
 #run add(2, 4);
-// #run {
-//     add(8, 8);
-//     add(8, 9);
-// }
+#run {
+    add(8, 8);
+    add(8, 9);
+    print("Hello compiler!");
+}
+
+#run print("abc");
 
 add :: (a: s64, b: s64) {
     print(a + b);

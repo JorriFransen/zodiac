@@ -145,11 +145,7 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             break;
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
-            debug_assert(decl->directive->run.expr);
             auto directive = decl->directive;
-            auto expr = directive->run.expr;
-
-            assert(expr->kind == AST_Expression_Kind::CALL);
 
 
             char buf[256];
@@ -166,7 +162,25 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             auto entry_block = bytecode_append_block(bc->builder, fn_handle, "entry");
             bytecode_set_insert_point(bc->builder, fn_handle, entry_block);
 
-            ast_expr_to_bytecode(bc, expr);
+            switch (directive->run.kind) {
+
+                case AST_Run_Directive_Kind::INVALID: assert(false); break;
+
+                case AST_Run_Directive_Kind::EXPR: {
+                    assert(directive->run.expr->kind == AST_Expression_Kind::CALL);
+                    ast_expr_to_bytecode(bc, directive->run.expr);
+                    break;
+                }
+
+                case AST_Run_Directive_Kind::STMT: {
+                    auto stmt = directive->run.stmt;
+                    assert(stmt->kind == AST_Statement_Kind::BLOCK ||
+                           stmt->kind == AST_Statement_Kind::PRINT);
+                    ast_stmt_to_bytecode(bc, stmt);
+                    break;
+                }
+            }
+
             bytecode_emit_return(bc->builder);
 
             debug_assert(!hash_table_find(&bc->run_directives, directive));

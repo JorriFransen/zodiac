@@ -408,8 +408,23 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
 
-            assert(decl->directive->run.expr);
-            flatten_expression(decl->directive->run.expr, scope, dest, nullptr);
+            assert(decl->directive->kind == AST_Directive_Kind::RUN);
+
+            switch (decl->directive->run.kind) {
+
+                case AST_Run_Directive_Kind::INVALID: assert(false); break;
+                case AST_Run_Directive_Kind::EXPR: {
+
+                    flatten_expression(decl->directive->run.expr, scope, dest, nullptr);
+                    break;
+                }
+
+                case AST_Run_Directive_Kind::STMT: {
+                    flatten_statement(ctx, decl->directive->run.stmt, scope, dest);
+                    break;
+                }
+            }
+
 
             break;
         }
