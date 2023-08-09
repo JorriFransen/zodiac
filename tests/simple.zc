@@ -1,10 +1,15 @@
 
+add :: (a, b: s64) {
+    return a + b;
+}
+
 #run main();
 
 main :: () -> s64 {
 
     print("Hello, Zodiac!");
     print(x);
+    print(add(40, 2));
 
     return 0;
 }

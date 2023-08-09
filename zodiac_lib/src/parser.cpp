@@ -761,17 +761,24 @@ Token peek_token(Parser *parser, u64 offset/*=1*/)
     debug_assert(parser && parser->lxr);
     debug_assert(offset >= 1);
 
-    if (queue_empty(&parser->peeked_tokens)) {
-        for (u64 i = 0; i < offset + 1; i++) {
-            queue_enqueue(&parser->peeked_tokens, parser->lxr->token);
-            next_token(parser->lxr);
-        }
-    } else {
-        u64 peeked_count = queue_used(&parser->peeked_tokens);
+    auto queued_token_count = queue_used(&parser->peeked_tokens);
 
-        for (u64 i = 0; i < (offset + 1) - peeked_count; i++) {
-            queue_enqueue(&parser->peeked_tokens, parser->lxr->token);
-            next_token(parser->lxr);
+    if (queued_token_count < offset + 1) {
+
+        if (queue_empty(&parser->peeked_tokens)) {
+            for (s64 i = 0; i < offset + 1; i++) {
+                queue_enqueue(&parser->peeked_tokens, parser->lxr->token);
+                next_token(parser->lxr);
+            }
+        } else {
+            s64 peeked_count = queue_used(&parser->peeked_tokens);
+
+            s64 add_count = (offset + 1) - peeked_count;
+
+            for (s64 i = 0; i < add_count; i++) {
+                queue_enqueue(&parser->peeked_tokens, parser->lxr->token);
+                next_token(parser->lxr);
+            }
         }
     }
 
