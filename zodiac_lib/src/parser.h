@@ -34,7 +34,8 @@ ZAPI void parser_destroy(Parser *parser);
 // expr_mul = expr_unary ([/*] expr_unary)*
 // expr_add = expr_mul ([+-] expr_mul)*
 // expr_cmp = expr_add (([<>] | '==' | '!=' | '<=' | '>=') expr_add )*
-// expr = expr_cmp;
+// expr_run = #run expr_cmp
+// expr = expr_cmp | expr_run
 
 ZAPI AST_Identifier parse_identifier(Parser *parser);
 

@@ -3,13 +3,18 @@
 
 main :: () {
     print("Hello zodiac!");
-    print(x);
-    print(y);
+
+    print(X);
+    print(Y);
+
+    // x := #run ret_1() + 1;
+    // print(x);
+
     return 0;
 }
 
-x := #run ret_1();
-y :: #run ret_x(40) + 1;
+X := #run ret_1();
+Y :: #run ret_x(40) + 1;
 
 ret_1 :: () -> s64 {
     return 1;

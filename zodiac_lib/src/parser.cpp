@@ -240,7 +240,15 @@ AST_Expression *parse_expr_cmp(Parser *parser)
 
 AST_Expression *parse_expression(Parser *parser)
 {
-    return parse_expr_cmp(parser);
+    if (is_token(parser, '#')) {
+        AST_Directive *directive = parse_directive(parser, false);
+        assert(directive);
+        assert(directive->kind == AST_Directive_Kind::RUN);
+        assert(directive->run.kind == AST_Run_Directive_Kind::EXPR);
+        return ast_run_directive_expr_new(parser->context, directive->range, directive);
+    } else {
+        return parse_expr_cmp(parser);
+    }
 }
 
 AST_Statement *parse_keyword_statement(Parser *parser)
@@ -534,19 +542,8 @@ AST_Declaration *parse_declaration(Parser *parser)
             }
         }
 
-        AST_Expression *const_value = nullptr;
-        AST_Directive *directive = nullptr;
-
-        if (is_token(parser, '#')) {
-            directive = parse_directive(parser, false);
-        } else {
-            const_value = parse_expression(parser);
-        }
-
-        if (directive) {
-            const_value = ast_run_directive_expr_new(parser->context, directive->range, directive);
-        }
-
+        AST_Expression *const_value = parse_expression(parser);
+        assert(const_value);
         expect_token(parser, ';');
 
         return ast_constant_variable_decl_new(parser->context, ident.range, ident, ts, const_value);
@@ -555,31 +552,16 @@ AST_Declaration *parse_declaration(Parser *parser)
 
         // Variable
         AST_Expression *value = nullptr;
-        AST_Directive *directive = nullptr;
-
-        Source_Range range = ident.range;
 
         if (match_token(parser, '=')) {
+            value = parse_expression(parser);
+            assert(value);
 
-            if (is_token(parser, '#')) {
-                directive = parse_directive(parser, false);
-                assert(directive);
-                assert(directive->kind == AST_Directive_Kind::RUN);
-            } else {
-                value = parse_expression(parser);
-            }
         }
+        auto end = cur_tok(parser).range.end;
         expect_token(parser, ';');
 
-        if (directive) {
-            assert(!value);
-            value = ast_run_directive_expr_new(parser->context, directive->range, directive);
-        }
-
-        if (value) {
-            range.end = value->range.end;
-        }
-        return ast_variable_decl_new(parser->context, range, ident, ts, value);
+        return ast_variable_decl_new(parser->context, Source_Range { ident.range.start, end }, ident, ts, value);
     }
 
     fatal_syntax_error(parser, "Unexpected token: '%s' when parsing declaration", cur_tok(parser).atom.data);
