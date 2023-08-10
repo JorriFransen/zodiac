@@ -984,6 +984,53 @@ static MunitResult Local_Run_Directives(const MunitParameter params[], void* use
     return MUNIT_OK;
 }
 
+static MunitResult Run_Directive_Types(const MunitParameter params[], void* user_data_or_fixture) {
+
+    // Running main depending on constant depending on return value of another run
+    {
+        String_Ref code_string = R"CODE_STR(
+            signed_integer := #run return_signed_integer(7);
+            unsigned_integer := #run return_unsigned_integer(8);
+            // float := #run return_float(4.2);
+            bool_true := #run return_bool(true);
+            bool_false := #run return_bool(false);
+            // vector := #run make_vector(2, 3);
+            #run main();
+            main :: () {
+                print(signed_integer);
+                print(unsigned_integer);
+                // print(float);
+                print(bool_true);
+                print(bool_false);
+                return 0;
+            }
+            return_signed_integer :: (x: s64) -> s64 { return x; }
+            return_unsigned_integer :: (x: u64) -> u64 { return x; }
+            return_float :: (x: r32) -> r32 { return x; }
+            return_bool :: (x: bool) -> bool { return x; }
+
+            // Vec2 :: struct { x, y: s64; }
+            // make_vector :: (x: s64, y: s64) -> Vec2 {
+            //     result : Vec2;
+            //     return result;
+            // }
+        )CODE_STR";
+
+        // Compile and run will always run main at compile time, so account for that in the output
+        Expected_Results expected = {
+            .compiletime_std_out = "7\n8\ntrue\nfalse\n7\n8\ntrue\nfalse",
+            .runtime_std_out = "7\n8\ntrue\nfalse"
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+        if (result.result != MUNIT_OK) return result.result;
+    }
+
+    return MUNIT_OK;
+}
+
 START_TESTS(compiler_tests)
     DEFINE_TEST(Return_0),
     DEFINE_TEST(Return_1),
@@ -1018,6 +1065,7 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Global_Run_Directive_Variable),
     DEFINE_TEST(Global_Run_Directive_Constant),
     DEFINE_TEST(Local_Run_Directives),
+    DEFINE_TEST(Run_Directive_Types),
 END_TESTS()
 
 #undef RESOLVE_ERR

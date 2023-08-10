@@ -859,7 +859,12 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
         }
 
         case Type_Kind::FLOAT: assert(false); break;
-        case Type_Kind::BOOLEAN: assert(false); break;
+
+        case Type_Kind::BOOLEAN: {
+            result = ast_bool_literal_expr_new(ctx, range, reg.value.boolean);
+            break;
+        }
+
         case Type_Kind::POINTER: assert(false); break;
         case Type_Kind::STRUCTURE: assert(false); break;
         case Type_Kind::STATIC_ARRAY: assert(false); break;

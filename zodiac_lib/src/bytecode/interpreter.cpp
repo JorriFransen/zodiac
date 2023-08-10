@@ -49,8 +49,6 @@ Interpreter interpreter_create(Allocator *allocator, Zodiac_Context *context)
 
 void interpreter_free(Interpreter *interp)
 {
-    assert(!(interp->start_return_value.type->flags & TYPE_FLAG_AGGREGATE));
-
     stack_free(&interp->frames);
     stack_free(&interp->arg_stack);
 
