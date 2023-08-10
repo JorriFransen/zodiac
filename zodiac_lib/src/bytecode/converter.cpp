@@ -139,7 +139,10 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                     bool found = hash_table_find(&bc->allocations, decl, &alloc_reg);
                     assert(found)
 
+                    bool store = false;
+
                     if (decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE) {
+                        store = true;
                         // FIXME: Copy pasta from above
                         assert(EXPR_IS_TYPED(decl->variable.value));
 
@@ -162,13 +165,14 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                         value_reg = ast_expr_to_bytecode(bc, new_expr);
                         directive->generated_expression = new_expr;
 
-                    } else {
-                        assert(!EXPR_IS_CONST(decl->variable.value));
+                    } else if (!EXPR_IS_CONST(decl->variable.value)) { // Constant should have been emitted when registering the allocation
+                        store = true;
                         value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
-
                     }
 
-                    bytecode_emit_store_alloc(bc->builder, value_reg, alloc_reg);
+                    if (store) {
+                        bytecode_emit_store_alloc(bc->builder, value_reg, alloc_reg);
+                    }
                 }
             }
             break;
