@@ -1,4 +1,6 @@
-- Infer real types for literals in function calls (etc.) correctly.
+
+- Struct literal expressions
+- Convert structs returned from run directives into ast expression (struct literal).
 
 - Ensure #run expressions are constant (report error)
 
