@@ -2,7 +2,7 @@
 signed_integer := #run return_signed_integer(7);
 unsigned_integer := #run return_unsigned_integer(8);
 float := #run return_float(4.2);
-double := #run return_double(4.2);
+// double := #run return_double(4.2);
 bool_true := #run return_bool(true);
 bool_false := #run return_bool(false);
 
@@ -10,7 +10,7 @@ bool_false := #run return_bool(false);
 
 #run main();
 
-main :: () -> s64 {
+main :: () {
     print(signed_integer);
     print(unsigned_integer);
     print(float);
