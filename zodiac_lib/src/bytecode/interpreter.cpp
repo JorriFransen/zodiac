@@ -1306,7 +1306,12 @@ Interpreter_Register interpreter_load_pointer(Interpreter *interp, u8 *source, T
         }
 
         case Type_Kind::FUNCTION: assert(false); break;
-        case Type_Kind::BOOLEAN: assert(false); break;
+
+        case Type_Kind::BOOLEAN: {
+            // @Cleanup: @TODO: @FIXME: alignment?
+            result.value.boolean = *((bool *)source);
+            break;
+        }
 
         case Type_Kind::STRUCTURE:
         case Type_Kind::STATIC_ARRAY: {
@@ -1410,7 +1415,12 @@ void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source,
         }
 
         case Type_Kind::FUNCTION: assert(false); break;
-        case Type_Kind::BOOLEAN: assert(false); break;
+
+        case Type_Kind::BOOLEAN: {
+            // @Cleanup: @TODO: @FIXME: alignment?
+            *((bool *)dest) = source.value.boolean;
+            break;
+        }
 
         case Type_Kind::STRUCTURE:
         case Type_Kind::STATIC_ARRAY: {
