@@ -7,8 +7,11 @@ main :: () {
     print(X);
     print(Y);
 
-    // x := #run ret_1() + 1;
-    // print(x);
+    x := #run ret_1() + 1;
+    y :: #run Y + ret_1();
+
+    print(x);
+    print(y);
 
     return 0;
 }
