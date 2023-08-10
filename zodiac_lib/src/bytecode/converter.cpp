@@ -868,7 +868,10 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
              break;
         }
 
-        case Type_Kind::FLOAT: assert(false); break;
+        case Type_Kind::FLOAT: {
+            result = ast_real_literal_expr_new(ctx, range, reg.value.real);
+            break;
+        }
 
         case Type_Kind::BOOLEAN: {
             result = ast_bool_literal_expr_new(ctx, range, reg.value.boolean);

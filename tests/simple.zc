@@ -1,51 +1,26 @@
 
 signed_integer := #run return_signed_integer(7);
 unsigned_integer := #run return_unsigned_integer(8);
-// float := #run return_float(4.2);
+float := #run return_float(4.2);
+double := #run return_double(4.2);
 bool_true := #run return_bool(true);
 bool_false := #run return_bool(false);
 
 // vector := #run make_vector(2, 3);
 
 #run main();
+
 main :: () {
     print(signed_integer);
     print(unsigned_integer);
-    // print(float);
+    print(float);
     print(bool_true);
     print(bool_false);
-
-    print(4.2);
-
-    float : r32 = 1.2;
-    double : r64 = 2.3;
-
-    print(float);
-    print(double);
-
-    print(X);
-    print(Y);
-
-    x := #run ret_1() + 1;
-    y :: #run Y + ret_1();
-
-    print(x);
-    print(y);
-
-    print(#run 3 * 4);
 
     return 0;
 }
 
-return_signed_integer :: (x: s64) -> s64 {
-    return x;
-}
-
-return_unsigned_integer :: (x: u64) -> u64 {
-    return x;
-}
-
-return_float :: (x: r32) -> r32 {
+return_double :: (x: r64) -> r64 {
     return x;
 }
 
