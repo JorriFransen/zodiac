@@ -513,7 +513,8 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
         case AST_Expression_Kind::INVALID:
             assert(false);
 
-        case AST_Expression_Kind::INTEGER_LITERAL: {
+        case AST_Expression_Kind::INTEGER_LITERAL:
+        case AST_Expression_Kind::REAL_LITERAL: {
             expr->infer_type_from = infer_type_from;
             break;
         }
@@ -913,6 +914,7 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             assert(false);
 
         case AST_Expression_Kind::INTEGER_LITERAL:
+        case AST_Expression_Kind::REAL_LITERAL:
         case AST_Expression_Kind::STRING_LITERAL:
         case AST_Expression_Kind::NULL_LITERAL:
         case AST_Expression_Kind::BOOL_LITERAL:
@@ -1499,6 +1501,7 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
             }
 
             assert(type->kind == Type_Kind::INTEGER ||
+                   type->kind == Type_Kind::FLOAT   ||
                    type->kind == Type_Kind::BOOLEAN ||
                    type == &builtin_type_String);
 
@@ -1528,7 +1531,6 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
         case AST_Expression_Kind::INTEGER_LITERAL: {
                 AST_Type_Spec *infer_from = expr->infer_type_from;
                 if (infer_from) {
-                    assert(infer_from);
                     assert(infer_from->resolved_type);
 
                     if (infer_from->resolved_type->kind != Type_Kind::INTEGER) {
@@ -1544,6 +1546,19 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                 } else {
                     expr->resolved_type = &builtin_type_unsized_integer;
                 }
+            break;
+        }
+
+        case AST_Expression_Kind::REAL_LITERAL: {
+            AST_Type_Spec *infer_from = expr->infer_type_from;
+            if (infer_from) {
+                assert(infer_from->resolved_type);
+                assert(infer_from->resolved_type->kind == Type_Kind::FLOAT);
+                expr->resolved_type = infer_from->resolved_type;
+            } else {
+                expr->resolved_type = &builtin_type_r32;
+            }
+            assert(expr->resolved_type);
             break;
         }
 

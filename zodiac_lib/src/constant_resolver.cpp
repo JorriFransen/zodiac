@@ -30,6 +30,7 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
             return expr->integer_literal.value;
         }
 
+        case AST_Expression_Kind::REAL_LITERAL: assert(false); break;
         case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
         case AST_Expression_Kind::BOOL_LITERAL: assert(false); break;

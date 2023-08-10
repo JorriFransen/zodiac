@@ -30,6 +30,16 @@ void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_ex
     out_expr->integer_literal.value = value;
 }
 
+
+void ast_real_literal_expr_create(Real_Value value, AST_Expression *out_expr)
+{
+    debug_assert(out_expr);
+
+    ast_expression_create(AST_Expression_Kind::REAL_LITERAL, AST_EXPR_FLAG_CONST, out_expr);
+
+    out_expr->real_literal.value = value;
+}
+
 void ast_string_literal_expr_create(Atom atom, AST_Expression *out_expr)
 {
     debug_assert(out_expr);
@@ -419,6 +429,15 @@ AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Source_Range r
     return expr;
 }
 
+AST_Expression *ast_real_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Real_Value value)
+{
+    debug_assert(ctx);
+
+    auto expr = ast_expression_new(ctx, range);
+    ast_real_literal_expr_create(value, expr);
+    return expr;
+}
+
 AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Atom atom)
 {
     debug_assert(ctx);
@@ -788,6 +807,10 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
             string_builder_append(sb, "%i", expr->integer_literal.value.u64);
+            break;
+        }
+        case AST_Expression_Kind::REAL_LITERAL: {
+            string_builder_append(sb, "%f", expr->real_literal.value.r64);
             break;
         }
 

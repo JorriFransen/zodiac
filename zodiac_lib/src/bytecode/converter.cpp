@@ -416,6 +416,7 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
         case AST_Statement_Kind::PRINT: {
             auto type = stmt->print_expr->resolved_type;
             assert(type->kind == Type_Kind::INTEGER ||
+                   type->kind == Type_Kind::FLOAT   ||
                    type->kind == Type_Kind::BOOLEAN ||
                    type == &builtin_type_String);
             Bytecode_Register value_reg = ast_expr_to_bytecode(bc, stmt->print_expr);
@@ -433,6 +434,7 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false); break;
         case AST_Expression_Kind::INTEGER_LITERAL: assert(false); break;
+        case AST_Expression_Kind::REAL_LITERAL: assert(false); break;
         case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
         case AST_Expression_Kind::BOOL_LITERAL: assert(false); break;
@@ -494,12 +496,14 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
     assert(expr);
 
     if (expr->kind != AST_Expression_Kind::INTEGER_LITERAL &&
+        expr->kind != AST_Expression_Kind::REAL_LITERAL &&
         expr->kind != AST_Expression_Kind::STRING_LITERAL &&
         expr->kind != AST_Expression_Kind::RUN_DIRECTIVE && EXPR_IS_CONST(expr)) {
         assert_msg(expr->resolved_type->kind == Type_Kind::INTEGER ||
                    expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER ||
+                   expr->resolved_type->kind == Type_Kind::FLOAT ||
                    expr->resolved_type->kind == Type_Kind::BOOLEAN,
-                   "Non integer constant expression substitution is not supported yet");
+                   "Constant expression substition not supported for this type");
 
         return ast_const_expr_to_bytecode(bc, expr);
     }
@@ -514,6 +518,12 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             }
             assert(literal_type->kind == Type_Kind::INTEGER);
             return bytecode_integer_literal(bc->builder, literal_type, expr->integer_literal.value);
+        }
+
+        case AST_Expression_Kind::REAL_LITERAL: {
+            Type *literal_type = expr->resolved_type;
+            assert(literal_type->kind == Type_Kind::FLOAT);
+            return bytecode_real_literal(bc->builder, literal_type, expr->real_literal.value);
         }
 
         case AST_Expression_Kind::STRING_LITERAL: {

@@ -53,7 +53,9 @@ AST_Expression *parse_expr_operand(Parser *parser)
     if (is_token(parser, TOK_INT)) {
         next_token(parser);
         return ast_integer_literal_expr_new(parser->context, range,  { .u64 = ct.integer });
-
+    } else if (is_token(parser, TOK_REAL)) {
+        next_token(parser);
+        return ast_real_literal_expr_new(parser->context, range, ct.real);
     } else if (is_token(parser, TOK_NAME)) {
         next_token(parser);
         return ast_identifier_expr_new(parser->context, range, ct.atom);
