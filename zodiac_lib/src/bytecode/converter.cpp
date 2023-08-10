@@ -774,7 +774,7 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
     Type *run_wrapper_type = get_function_type(return_type, {}, &bc->context->ast_allocator);
 
     Atom run_wrapper_name = atom_get(&bc->context->atoms, buf);
-    auto fn_handle = bytecode_function_create(bc->builder, run_wrapper_name, run_wrapper_type) ;
+    auto fn_handle = bytecode_function_create(bc->builder, run_wrapper_name, run_wrapper_type, BC_FUNCTION_FLAG_RUN_WRAPPER);
     auto entry_block = bytecode_append_block(bc->builder, fn_handle, "entry");
     bytecode_set_insert_point(bc->builder, fn_handle, entry_block);
 

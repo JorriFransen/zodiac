@@ -148,12 +148,16 @@ void llvm_builder_emit_program(LLVM_Builder *builder, Bytecode_Program *program)
     }
 
     for (s64 i = 0; i < program->functions.count; i++) {
-        llvm_builder_register_function(builder, i);
+        if (!(program->functions[i].flags & BC_FUNCTION_FLAG_RUN_WRAPPER)) {
+            llvm_builder_register_function(builder, i);
+        }
     }
 
     for (s64 i = 0; i < program->functions.count; i++) {
-        bool result = llvm_builder_emit_function(builder, i);
-        assert(result);
+        if (!(program->functions[i].flags & BC_FUNCTION_FLAG_RUN_WRAPPER)) {
+            bool result = llvm_builder_emit_function(builder, i);
+            assert(result);
+        }
     }
 }
 

@@ -1,5 +1,3 @@
-- Don't convert run wrappers to llvm ir
-
 - Ensure #run expressions are constant (report error)
 
 - Report error for #run on statement level when not in global scope
