@@ -864,8 +864,17 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
 
     assert(result);
 
-    name_resolve_expr(ctx, result, scope);
-    type_resolve_expression(ctx, result, scope);
+#ifndef NDEBUG
+    bool resolved_name =
+#endif // NDEBUG
+        name_resolve_expr(ctx, result, scope);
+    debug_assert(resolved_name);
+
+#ifndef NDEBUG
+    bool resolved_type =
+#endif // NDEBUg
+        type_resolve_expression(ctx, result, scope);
+    debug_assert(resolved_type);
 
 
     return result;
