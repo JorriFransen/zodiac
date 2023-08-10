@@ -749,7 +749,33 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             return bytecode_emit_cast(bc->builder, expr->cast.resolved_type, value_reg);
         }
 
-        case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
+        case AST_Expression_Kind::RUN_DIRECTIVE: {
+
+            assert(EXPR_IS_TYPED(expr));
+            assert(expr->directive.directive->kind == AST_Directive_Kind::RUN);
+            assert(expr->directive.directive->run.kind == AST_Run_Directive_Kind::EXPR);
+
+            auto directive = &expr->directive;
+
+            Bytecode_Function_Handle wrapper_handle = create_run_wrapper(bc, directive->directive);
+            Interpreter_Register result = execute_run_wrapper(bc, wrapper_handle);
+            assert(result.type);
+            assert(result.type == expr->resolved_type);
+
+            Source_Range range = expr->range;
+
+            Scope *scope = directive->directive->run.scope;
+            assert(scope);
+
+            AST_Expression *new_expr = interpreter_register_to_ast_expression(bc, result, scope, range);
+            assert(new_expr->resolved_type);
+            assert(EXPR_IS_CONST(new_expr));
+
+            Bytecode_Register value_reg = ast_expr_to_bytecode(bc, new_expr);
+            directive->generated_expression = new_expr;
+
+            return value_reg;
+        }
     }
 
     assert(false);

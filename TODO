@@ -1,9 +1,16 @@
 - Report error for #run on statement level when not in global scope
+
 - Fix crash when passing in folder name instead of file name on command line
+
 - Validate bytecode for runs
+
 - Support multiple adjacent function parameters with the same typespec (parser). Like we do for struct fields.
+
 - Try to report (fatal) errors before executing run directives
+
 - Base run wrapper names on filename/line
+
+
 
 - Calculate/substitute non leaf constant expressions before emitting bytecode (we only do this when emitting bytecode now).
 

@@ -13,6 +13,8 @@ main :: () {
     print(x);
     print(y);
 
+    print(#run 3 * 4);
+
     return 0;
 }
 

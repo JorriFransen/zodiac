@@ -412,6 +412,7 @@ struct AST_Directive
         struct
         {
             AST_Run_Directive_Kind kind;
+            Scope *scope;
             union {
                 AST_Expression *expr;
                 AST_Statement *stmt;

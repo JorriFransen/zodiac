@@ -582,6 +582,8 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
 
         case AST_Expression_Kind::RUN_DIRECTIVE: {
             flatten_directive(ctx, expr->directive.directive, scope, dest);
+            assert(!expr->directive.directive->run.scope);
+            expr->directive.directive->run.scope = scope;
             break;
         }
 
