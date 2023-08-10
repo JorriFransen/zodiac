@@ -10,14 +10,27 @@ bool_false := #run return_bool(false);
 
 #run main();
 
-main :: () {
+main :: () -> s64 {
     print(signed_integer);
     print(unsigned_integer);
     print(float);
+    // print(double);
     print(bool_true);
     print(bool_false);
 
     return 0;
+}
+
+return_signed_integer :: (x: s64) -> s64 {
+    return x;
+}
+
+return_unsigned_integer :: (x: u64) -> u64 {
+    return x;
+}
+
+return_float :: (x: r32) -> r32 {
+    return x;
 }
 
 return_double :: (x: r64) -> r64 {
