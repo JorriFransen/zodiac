@@ -951,6 +951,39 @@ static MunitResult Global_Run_Directive_Constant(const MunitParameter params[], 
     return MUNIT_OK;
 }
 
+static MunitResult Local_Run_Directives(const MunitParameter params[], void* user_data_or_fixture) {
+
+    // Running main depending on constant depending on return value of another run
+    {
+        String_Ref code_string = R"CODE_STR(
+            #run main();
+            main :: () {
+                x := #run 20 * 2;
+                y :: #run ret_x(2);
+                print(x + y);
+                print(#run y * 21);
+                return 0;
+            }
+            ret_x :: (x: s64) -> s64 {
+                return x;
+            }
+        )CODE_STR";
+
+        // Compile and run will always run main at compile time, so account for that in the output
+        Expected_Results expected = {
+            .compiletime_std_out = "42\n42\n42\n42",
+            .runtime_std_out = "42\n42"
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+        if (result.result != MUNIT_OK) return result.result;
+    }
+
+    return MUNIT_OK;
+}
+
 START_TESTS(compiler_tests)
     DEFINE_TEST(Return_0),
     DEFINE_TEST(Return_1),
@@ -984,6 +1017,7 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Global_Run_Directive_Return_Void),
     DEFINE_TEST(Global_Run_Directive_Variable),
     DEFINE_TEST(Global_Run_Directive_Constant),
+    DEFINE_TEST(Local_Run_Directives),
 END_TESTS()
 
 #undef RESOLVE_ERR

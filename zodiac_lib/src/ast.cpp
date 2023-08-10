@@ -865,15 +865,32 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
             ast_print_expression(sb, expr->directive.directive->run.expr);
 
             if (expr->directive.generated_expression) {
-                string_builder_append(sb, "; //(generated: ");
+                string_builder_append(sb, " /* (generated: ");
                 ast_print_expression(sb, expr->directive.generated_expression);
-                string_builder_append(sb, ")");
+                string_builder_append(sb, ") */");
             }
             break;
         }
 
     }
 }
+
+String ast_print_expression(AST_Expression *expr, Allocator *allocator)
+{
+    debug_assert(expr && allocator);
+
+    String_Builder sb;
+    string_builder_create(&sb, allocator);
+
+    ast_print_expression(&sb, expr);
+
+    String result = string_builder_to_string(&sb);
+
+    string_builder_destroy(&sb);
+
+    return result;
+}
+
 
 void ast_print_indent(String_Builder *sb, int indent) {
     for (int i = 0; i < indent; i++) {

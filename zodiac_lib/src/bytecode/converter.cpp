@@ -13,6 +13,7 @@
 #include "source_pos.h"
 #include "type.h"
 #include "util/asserts.h"
+#include "util/logger.h"
 #include "util/zstring.h"
 #include "zodiac_context.h"
 
@@ -891,6 +892,12 @@ Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Functi
 Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle, File_Handle stdout_file)
 {
     debug_assert(bc && fn_handle >= 0 && stdout_file.valid);
+
+#ifndef NDEBUG
+    debug_assert(fn_handle >= 0 && fn_handle < bc->builder->functions.count);
+    auto fn = &bc->builder->functions[fn_handle];
+    ZTRACE("Executing run wrapper: '%s'", fn->name.data);
+#endif // NDEBUG
 
     Interpreter run_interp = interpreter_create(c_allocator(), bc->context);
     defer { interpreter_free(&run_interp); };

@@ -517,6 +517,8 @@ ZAPI AST_Directive *ast_directive_new(Zodiac_Context *ctx, Source_Range range);
 ZAPI AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *> decls);
 
 ZAPI void ast_print_expression(String_Builder *sb, AST_Expression *expr);
+ZAPI String ast_print_expression(AST_Expression *expr, Allocator *allocator);
+
 ZAPI void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent = 0);
 
 ZAPI void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent = 0);
