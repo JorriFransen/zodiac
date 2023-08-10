@@ -5,6 +5,7 @@
 #include "containers/dynamic_array.h"
 #include "defines.h"
 #include "source_pos.h"
+#include "util/zstring.h"
 
 namespace Zodiac
 {

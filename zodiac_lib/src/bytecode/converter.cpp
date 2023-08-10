@@ -97,34 +97,9 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                 assert(global_type);
                 auto global_name = decl->identifier.name;
 
-                Bytecode_Register initial_value_reg;
+                Bytecode_Register initial_value_reg = {};
                 if (decl->variable.value) {
-
-                    if (decl->variable.value->kind != AST_Expression_Kind::RUN_DIRECTIVE) {
-                        assert(EXPR_IS_CONST(decl->variable.value));
-                        initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
-                    } else {
-                        assert(EXPR_IS_TYPED(decl->variable.value));
-
-                        auto directive = &decl->variable.value->directive;
-
-                        Bytecode_Function_Handle wrapper_handle = create_run_wrapper(bc, directive->directive);
-                        Interpreter_Register result = execute_run_wrapper(bc, wrapper_handle);
-                        assert(result.type);
-                        assert(result.type == global_type);
-
-                        Source_Range range = decl->variable.value->range;
-
-                        Scope *scope = decl->identifier.scope;
-                        assert(scope);
-
-                        AST_Expression *new_expr = interpreter_register_to_ast_expression(bc, result, scope, range);
-                        assert(new_expr->resolved_type);
-                        assert(EXPR_IS_CONST(new_expr));
-
-                        initial_value_reg = ast_expr_to_bytecode(bc, new_expr);
-                        directive->generated_expression = new_expr;
-                    }
+                    initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
                 }
 
                 auto global_handle = bytecode_create_global(bc->builder, global_name, global_type, initial_value_reg);
@@ -134,44 +109,12 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             } else {
                 if (decl->variable.value) {
 
-                    Bytecode_Register value_reg;
-
                     Bytecode_Register alloc_reg;
                     bool found = hash_table_find(&bc->allocations, decl, &alloc_reg);
                     assert(found)
 
-                    bool store = false;
-
-                    if (decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE) {
-                        store = true;
-                        // FIXME: Copy pasta from above
-                        assert(EXPR_IS_TYPED(decl->variable.value));
-
-                        auto directive = &decl->variable.value->directive;
-
-                        Bytecode_Function_Handle wrapper_handle = create_run_wrapper(bc, directive->directive);
-                        Interpreter_Register result = execute_run_wrapper(bc, wrapper_handle);
-                        assert(result.type);
-                        assert(result.type == decl->variable.resolved_type);
-
-                        Source_Range range = decl->variable.value->range;
-
-                        Scope *scope = decl->identifier.scope;
-                        assert(scope);
-
-                        AST_Expression *new_expr = interpreter_register_to_ast_expression(bc, result, scope, range);
-                        assert(new_expr->resolved_type);
-                        assert(EXPR_IS_CONST(new_expr));
-
-                        value_reg = ast_expr_to_bytecode(bc, new_expr);
-                        directive->generated_expression = new_expr;
-
-                    } else if (!EXPR_IS_CONST(decl->variable.value)) { // Constant should have been emitted when registering the allocation
-                        store = true;
-                        value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
-                    }
-
-                    if (store) {
+                    if (!EXPR_IS_CONST(decl->variable.value) || decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE) { // Constant should have been emitted when registering the allocation
+                        Bytecode_Register value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
                         bytecode_emit_store_alloc(bc->builder, value_reg, alloc_reg);
                     }
                 }
@@ -182,26 +125,11 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
 
             if (decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE) {
-                // FIXME: Copy pasta from above
-                assert(EXPR_IS_TYPED(decl->variable.value));
-
-                auto directive = &decl->variable.value->directive;
-
-                Bytecode_Function_Handle wrapper_handle = create_run_wrapper(bc, directive->directive);
-                Interpreter_Register result = execute_run_wrapper(bc, wrapper_handle);
-                assert(result.type);
-                assert(result.type == decl->variable.resolved_type);
-
-                Source_Range range = decl->variable.value->range;
-
-                Scope *scope = decl->identifier.scope;
-                assert(scope);
-
-                AST_Expression *new_expr = interpreter_register_to_ast_expression(bc, result, scope, range);
-                assert(new_expr->resolved_type);
-                assert(EXPR_IS_CONST(new_expr));
-
-                directive->generated_expression = new_expr;
+                // This will ensure then generated_expression on the directive is set
+                //   to the expression generated by the run directive. We don't need
+                //   the result register because constants are emitted as literals
+                //   via the constant resolver.
+                ast_expr_to_bytecode(bc, decl->variable.value);
                 break;
             }
 
