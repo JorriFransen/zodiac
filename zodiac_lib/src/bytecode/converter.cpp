@@ -63,7 +63,7 @@ void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
 
             case Flat_Node_Kind::STMT: assert(false); break;
             case Flat_Node_Kind::EXPR: assert(false); break;
-            case Flat_Node_Kind::TS: assert(false); break;
+            case Flat_Node_Kind::TYPE_SPEC: assert(false); break;
             case Flat_Node_Kind::PARAM_DECL: assert(false); break;
             case Flat_Node_Kind::FIELD_DECL: assert(false); break;
 
@@ -856,6 +856,7 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
     auto ctx = bc->context;
 
     AST_Expression *result = nullptr;
+    Infer_Node infer_node = create_infer_node(reg.type);
 
     switch (reg.type->kind) {
 
@@ -895,7 +896,7 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
 #ifndef NDEBUG
     bool resolved_type =
 #endif // NDEBUg
-        type_resolve_expression(ctx, result, scope);
+        type_resolve_expression(ctx, result, scope, infer_node);
     debug_assert(resolved_type);
 
 

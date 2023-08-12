@@ -284,6 +284,39 @@ Resolve_Results resolve_types(Resolver *resolver)
     return result;
 }
 
+Infer_Node create_infer_node(AST_Type_Spec *ts)
+{
+    debug_assert(ts);
+
+    return {
+        .kind = Infer_Node_kind::TYPE_SPEC,
+        .type_spec = ts,
+    };
+}
+
+Infer_Node create_infer_node(Type *type)
+{
+    debug_assert(type);
+
+    return {
+        .kind = Infer_Node_kind::TYPE,
+        .type = type,
+    };
+}
+
+Infer_Node create_infer_node(AST_Expression *call_base_expr, s64 arg_index)
+{
+    debug_assert(call_base_expr);
+
+    return {
+        .kind = Infer_Node_kind::ARGUMENT,
+        .argument = {
+            .call_base_expr = call_base_expr,
+            .arg_index = arg_index,
+        },
+    };
+}
+
 void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest)
 {
     debug_assert(decl && scope && dest);
@@ -351,10 +384,14 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
             auto ts = decl->variable.type_spec;
             auto val = decl->variable.value;
 
-            if (ts)
+            Infer_Node infer_from = {};
+
+            if (ts) {
                 flatten_type_spec(ts, scope, dest);
+                infer_from = create_infer_node(ts);
+            }
             if (val)
-                flatten_expression(ctx, val, scope, dest, ts);
+                flatten_expression(ctx, val, scope, dest, infer_from);
 
             assert(decl->identifier.scope == nullptr);
             decl->identifier.scope = scope;
@@ -441,13 +478,13 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
         }
 
         case AST_Statement_Kind::ASSIGN: {
-            flatten_expression(ctx, stmt->assign.dest, scope, dest, nullptr);
-            flatten_expression(ctx, stmt->assign.value, scope, dest, nullptr);
+            flatten_expression(ctx, stmt->assign.dest, scope, dest);
+            flatten_expression(ctx, stmt->assign.value, scope, dest);
             break;
         }
 
         case AST_Statement_Kind::CALL: {
-            flatten_expression(ctx, stmt->call.call, scope, dest, nullptr);
+            flatten_expression(ctx, stmt->call.call, scope, dest);
             break;
         }
 
@@ -456,7 +493,7 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
             for (s64 i = 0; i < stmt->if_stmt.blocks.count; i++) {
                 auto if_block = &stmt->if_stmt.blocks[i];
 
-                flatten_expression(ctx, if_block->cond, scope, dest, nullptr);
+                flatten_expression(ctx, if_block->cond, scope, dest);
 
                 auto then_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
                 assert(if_block->then_scope == nullptr);
@@ -481,10 +518,10 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
                 AST_Declaration *func_decl = enclosing_function(scope);
                 assert(func_decl);
 
-                AST_Type_Spec *infer_from = nullptr;
+                Infer_Node infer_from = {};
 
                 if (func_decl->function.return_ts) {
-                    infer_from = func_decl->function.return_ts;
+                    infer_from = create_infer_node(func_decl->function.return_ts);
                 }
 
                 stmt->return_stmt.scope = scope;
@@ -495,7 +532,7 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
         }
 
         case AST_Statement_Kind::PRINT: {
-            flatten_expression(ctx, stmt->print_expr, scope, dest, nullptr);
+            flatten_expression(ctx, stmt->print_expr, scope, dest);
             break;
         }
     }
@@ -504,7 +541,7 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
     dynamic_array_append(dest, flat_stmt);
 }
 
-void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest, AST_Type_Spec *infer_type_from)
+void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest, Infer_Node infer_node/*={}*/)
 {
     debug_assert(ctx && expr && scope && dest);
 
@@ -514,11 +551,7 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
             assert(false);
 
         case AST_Expression_Kind::INTEGER_LITERAL:
-        case AST_Expression_Kind::REAL_LITERAL: {
-            expr->infer_type_from = infer_type_from;
-            break;
-        }
-
+        case AST_Expression_Kind::REAL_LITERAL:
         case AST_Expression_Kind::STRING_LITERAL:
         case AST_Expression_Kind::NULL_LITERAL:
         case AST_Expression_Kind::BOOL_LITERAL: {
@@ -533,7 +566,7 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
         }
 
         case AST_Expression_Kind::MEMBER: {
-            flatten_expression(ctx, expr->member.base, scope, dest, nullptr);
+            flatten_expression(ctx, expr->member.base, scope, dest);
             break;
         }
 
@@ -541,10 +574,11 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
             assert(false);
 
         case AST_Expression_Kind::CALL: {
-            flatten_expression(ctx, expr->call.base, scope, dest, nullptr);
+            flatten_expression(ctx, expr->call.base, scope, dest);
 
-            for (u64 i = 0; i < expr->call.args.count; i++) {
-                flatten_expression(ctx, expr->call.args[i], scope, dest, nullptr);
+            for (s64 i = 0; i < expr->call.args.count; i++) {
+                Infer_Node arg_infer_node = create_infer_node(expr->call.base, i);
+                flatten_expression(ctx, expr->call.args[i], scope, dest, arg_infer_node);
             }
             break;
         }
@@ -555,21 +589,19 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
         case AST_Expression_Kind::BINARY: {
             // assert(infer_type_from);
 
-            AST_Type_Spec *infer_from = infer_type_from;
+            Infer_Node infer_from = infer_node;
             if (expr->binary.lhs->kind == AST_Expression_Kind::INTEGER_LITERAL) {
-                infer_from = nullptr;
+                infer_from = {};
             }
 
             flatten_expression(ctx, expr->binary.lhs, scope, dest, infer_from);
 
-            infer_from = infer_type_from;
+            infer_from = infer_node;
             if (expr->binary.rhs->kind == AST_Expression_Kind::INTEGER_LITERAL) {
-                infer_from = nullptr;
+                infer_from = {};
             }
 
             flatten_expression(ctx, expr->binary.rhs, scope, dest, infer_from);
-
-            expr->infer_type_from = infer_type_from;
             break;
         }
 
@@ -577,7 +609,7 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
         case AST_Expression_Kind::CAST: {
             assert(expr->cast.type_spec);
             flatten_type_spec(expr->cast.type_spec, scope, dest);
-            flatten_expression(ctx, expr->cast.value, scope, dest, nullptr);
+            flatten_expression(ctx, expr->cast.value, scope, dest);
             break;
         }
 
@@ -590,7 +622,7 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
 
     }
 
-    Flat_Node flat_expr = to_flat_node(expr, scope);
+    Flat_Node flat_expr = to_flat_node(expr, scope, infer_node);
     dynamic_array_append(dest, flat_expr);
 }
 
@@ -629,7 +661,7 @@ void flatten_directive(Zodiac_Context *ctx, AST_Directive *directive, Scope *sco
 
         case AST_Run_Directive_Kind::EXPR: {
 
-            flatten_expression(ctx, directive->run.expr, scope, dest, nullptr);
+            flatten_expression(ctx, directive->run.expr, scope, dest);
             break;
         }
 
@@ -662,14 +694,15 @@ Flat_Node to_flat_node(AST_Statement *stmt, Scope *scope)
     return result;
 }
 
-Flat_Node to_flat_node(AST_Expression *expr, Scope *scope)
+Flat_Node to_flat_node(AST_Expression *expr, Scope *scope, Infer_Node infer_type_from/*={}*/)
 {
     debug_assert(expr && scope);
 
     Flat_Node result = {};
     result.scope = scope;
     result.kind = Flat_Node_Kind::EXPR;
-    result.expr = expr;
+    result.expr.expr = expr;
+    result.expr.infer_type_from = infer_type_from;
     return result;
 }
 
@@ -678,7 +711,7 @@ Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope)
     debug_assert(ts && scope);
 
     Flat_Node result = {};
-    result.kind = Flat_Node_Kind::TS;
+    result.kind = Flat_Node_Kind::TYPE_SPEC;
     result.scope = scope;
     result.ts = ts;
     return result;
@@ -712,10 +745,10 @@ bool name_resolve_node(Resolver *resolver, Flat_Node *node)
         }
 
         case Flat_Node_Kind::EXPR: {
-            return name_resolve_expr(resolver->ctx, node->expr, node->scope);
+            return name_resolve_expr(resolver->ctx, node->expr.expr, node->scope);
         }
 
-        case Flat_Node_Kind::TS: {
+        case Flat_Node_Kind::TYPE_SPEC: {
             return name_resolve_ts(resolver->ctx, node->ts, node->scope);
         }
 
@@ -1096,11 +1129,11 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
         }
 
         case Flat_Node_Kind::EXPR: {
-            return type_resolve_expression(ctx, node->expr, node->scope);
+            return type_resolve_expression(ctx, node->expr.expr, node->scope, node->expr.infer_type_from);
             break;
         }
 
-        case Flat_Node_Kind::TS: {
+        case Flat_Node_Kind::TYPE_SPEC: {
             return type_resolve_ts(ctx, node->ts, node->scope);
         }
 
@@ -1517,7 +1550,7 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
     return result;
 }
 
-bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
+bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope, Infer_Node infer_type_from)
 {
     debug_assert(expr);
     debug_assert(expr->resolved_type == nullptr);
@@ -1525,16 +1558,69 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
     bool result = true;
 
+    Type *inferred_type = nullptr;
+
+    switch (infer_type_from.kind) {
+
+        case Infer_Node_kind::INVALID: break;
+
+        case Infer_Node_kind::TYPE: {
+            inferred_type = infer_type_from.type;
+            break;
+        }
+
+        case Infer_Node_kind::TYPE_SPEC: {
+            auto infer_from = infer_type_from.type_spec;
+            assert(infer_from);
+            if (!infer_from->resolved_type) {
+                resolve_error(ctx, expr, "Waiting for type spec to be typed");
+                resolve_error(ctx, infer_from, "Type spec is here");
+                return false;
+            }
+
+            assert(infer_from->resolved_type);
+            inferred_type = infer_from->resolved_type;
+            break;
+        }
+
+        case Infer_Node_kind::ARGUMENT: {
+            auto call_base_expr = infer_type_from.argument.call_base_expr;
+            assert(call_base_expr->kind == AST_Expression_Kind::IDENTIFIER);
+            assert(EXPR_IS_TYPED(call_base_expr));
+
+            auto func_sym = scope_get_symbol(call_base_expr->identifier.scope, call_base_expr->identifier.name);
+            assert(func_sym && func_sym->kind == Symbol_Kind::FUNC);
+            assert(func_sym->state == Symbol_State::TYPED);
+
+            assert(func_sym->decl->kind == AST_Declaration_Kind::FUNCTION);
+            assert(DECL_IS_TYPED(func_sym->decl));
+
+            auto func_decl = func_sym->decl;
+
+            auto arg_index = infer_type_from.argument.arg_index;
+            assert(arg_index >= 0 && func_decl->function.params.count > arg_index);
+
+            auto param_decl = func_decl->function.params[arg_index];
+            assert(param_decl);
+            assert(DECL_IS_TYPED(param_decl));
+
+            inferred_type = param_decl->parameter.resolved_type;
+            break;
+        }
+    }
+
+    if (infer_type_from.kind != Infer_Node_kind::INVALID) {
+        assert(inferred_type);
+    }
+
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false);
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
-                AST_Type_Spec *infer_from = expr->infer_type_from;
-                if (infer_from) {
-                    assert(infer_from->resolved_type);
 
-                    if (infer_from->resolved_type->kind != Type_Kind::INTEGER) {
-                        Type *inferred_type = infer_from->resolved_type;
+                if (inferred_type) {
+
+                    if (inferred_type->kind != Type_Kind::INTEGER) {
                         fatal_resolve_error(ctx, expr, "Could not convert integer literal to inferred type '%s'",
                                                        temp_type_string(inferred_type).data);
                         return false;
@@ -1542,7 +1628,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
                     // TODO: Make sure the literal fits in this type
 
-                    expr->resolved_type = infer_from->resolved_type;
+                    expr->resolved_type = inferred_type;
                 } else {
                     expr->resolved_type = &builtin_type_unsized_integer;
                 }
@@ -1550,11 +1636,9 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
         }
 
         case AST_Expression_Kind::REAL_LITERAL: {
-            AST_Type_Spec *infer_from = expr->infer_type_from;
-            if (infer_from) {
-                assert(infer_from->resolved_type);
-                assert(infer_from->resolved_type->kind == Type_Kind::FLOAT);
-                expr->resolved_type = infer_from->resolved_type;
+            if (inferred_type) {
+                assert(inferred_type->kind == Type_Kind::FLOAT);
+                expr->resolved_type = inferred_type;
             } else {
                 expr->resolved_type = &builtin_type_r32;
             }
@@ -1563,7 +1647,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
         }
 
         case AST_Expression_Kind::STRING_LITERAL: {
-            assert(!expr->infer_type_from);
+            assert(!inferred_type);
             expr->resolved_type = &builtin_type_String;
             break;
         }
@@ -1571,7 +1655,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
 
         case AST_Expression_Kind::BOOL_LITERAL: {
-            assert(!expr->infer_type_from);
+            if (inferred_type) assert(inferred_type->kind == Type_Kind::BOOLEAN);
             expr->resolved_type = &builtin_type_bool;
             break;
         }
@@ -1626,6 +1710,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
         case AST_Expression_Kind::CALL: {
 
+            assert(expr->call.base->kind == AST_Expression_Kind::IDENTIFIER);
             auto ident_expr = expr->call.base;
 
             auto func_sym = scope_get_symbol(ident_expr->identifier.scope, ident_expr->identifier.name);
@@ -1715,11 +1800,9 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                             rhs->resolved_type->kind == Type_Kind::INTEGER) {
                     assert(lhs->resolved_type == rhs->resolved_type);
                     expr->resolved_type = lhs->resolved_type;
-                } else if (expr->infer_type_from){
-                    assert(expr->infer_type_from);
-                    assert(expr->infer_type_from->resolved_type);
-                    assert(expr->infer_type_from->resolved_type->kind == Type_Kind::INTEGER);
-                    expr->resolved_type = expr->infer_type_from->resolved_type;
+                } else if (inferred_type){
+                    assert(inferred_type->kind == Type_Kind::INTEGER);
+                    expr->resolved_type = inferred_type;
                 } else {
                     assert(lhs->resolved_type == &builtin_type_unsized_integer);
                     assert(rhs->resolved_type == &builtin_type_unsized_integer);

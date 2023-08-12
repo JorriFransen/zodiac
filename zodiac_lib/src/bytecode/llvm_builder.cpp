@@ -1360,7 +1360,6 @@ void llvm_builder_emit_binary(LLVM_Builder *builder)
     assert(llvm_target);
 
 
-
     auto cpu = "generic";
     auto features = "";
     llvm::TargetOptions opt;

@@ -175,7 +175,6 @@ void ast_expression_create(AST_Expression_Kind kind, AST_Expression_Flags flags,
     out_expr->kind = kind;
     out_expr->flags = flags;
     out_expr->resolved_type = nullptr;
-    out_expr->infer_type_from = nullptr;
 }
 
 void ast_block_stmt_create(Dynamic_Array<AST_Statement *> statements, AST_Statement *out_stmt)
@@ -888,7 +887,7 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
             ast_print_expression(sb, expr->directive.directive->run.expr);
 
             if (expr->directive.generated_expression) {
-                string_builder_append(sb, " /* (generated: ");
+                string_builder_append(sb, " /* (generated: (%s) ", temp_type_string(expr->directive.generated_expression->resolved_type));
                 ast_print_expression(sb, expr->directive.generated_expression);
                 string_builder_append(sb, ") */");
             }

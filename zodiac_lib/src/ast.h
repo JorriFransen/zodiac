@@ -174,7 +174,6 @@ struct AST_Expression
     Source_Range range;
 
     Type *resolved_type;
-    AST_Type_Spec *infer_type_from;
 
     union
     {
