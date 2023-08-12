@@ -66,7 +66,7 @@ jobs:
   timeout: 3600
   postBuildActions:
   - !SendNotificationAction
-    condition: failed or cancelled or timed out
+    condition: failed or timed out
     receivers: committers
   - !SendNotificationAction
     condition: successful and previous is failed
