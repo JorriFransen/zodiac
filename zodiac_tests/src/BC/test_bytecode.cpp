@@ -32,6 +32,8 @@ void init_test_context(Zodiac_Context *zc)
 #endif // BYTECODE_TESTS_VERBOSE
 }
 
+#define PRINT_NEWLINE bytecode_emit_print(&bb, bytecode_string_literal(&bb, "\n"));
+
 MunitResult execute_and_verify(String_Ref out_file_name, s64 return_code/*=0*/, String_Ref stdout_str_/*=""*/)
 {
     auto ta = temp_allocator_allocator();
@@ -133,6 +135,7 @@ MunitResult Simple_Function_Call(const MunitParameter params[], void* user_data_
 
     bytecode_set_insert_point(&bb, print_fn_handle, print_entry_handle);
     bytecode_emit_print(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 42));
+    PRINT_NEWLINE;
     bytecode_emit_return(&bb);
 
     print_bytecode(&bb);
@@ -196,6 +199,7 @@ MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* use
         auto a2 = bytecode_emit_load_argument(&bb, 1);
         auto add_result = bytecode_emit_add(&bb, a1, a2);
         bytecode_emit_print(&bb, add_result);
+        PRINT_NEWLINE;
         bytecode_emit_return(&bb, add_result);
     }
 
@@ -217,6 +221,7 @@ MunitResult Arguments_And_Return_Values(const MunitParameter params[], void* use
 
         auto result = bytecode_emit_call(&bb, add_fn_handle, 2);
         bytecode_emit_print(&bb, result);
+        PRINT_NEWLINE;
 
         bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code));
     }
@@ -283,6 +288,7 @@ MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_o
         auto a1 = bytecode_emit_load_argument(&bb, 0);
         auto cond = bytecode_emit_gt(&bb, a1, bytecode_integer_literal(&bb, &builtin_type_s64, 0));
         bytecode_emit_print(&bb, cond);
+        PRINT_NEWLINE;
         bytecode_emit_jmp_if(&bb, cond, recurse_block, return_block);
 
         bytecode_set_insert_point(&bb, recursive_fn_handle, recurse_block);
@@ -317,6 +323,7 @@ MunitResult Recursion_And_Jumps(const MunitParameter params[], void* user_data_o
 
         bytecode_set_insert_point(&bb, main_fn_handle, return_block);
         bytecode_emit_print(&bb, result);
+        PRINT_NEWLINE;
         bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code));
     }
 
@@ -398,7 +405,9 @@ MunitResult Insert_And_Extract_Value(const MunitParameter params[], void *user_d
     auto y = bytecode_emit_extract_value(&bb, sv, 1);
 
     bytecode_emit_print(&bb, x);
+    PRINT_NEWLINE;
     bytecode_emit_print(&bb, y);
+    PRINT_NEWLINE;
 
     bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code));
 
@@ -494,9 +503,13 @@ MunitResult Extract_Struct_Value(const MunitParameter params[], void *user_data_
         auto x2 = bytecode_emit_extract_value(&bb, p2, 0);
         auto y2 = bytecode_emit_extract_value(&bb, p2, 1);
         bytecode_emit_print(&bb, x1);
+        PRINT_NEWLINE;
         bytecode_emit_print(&bb, y1);
+        PRINT_NEWLINE;
         bytecode_emit_print(&bb, x2);
+        PRINT_NEWLINE;
         bytecode_emit_print(&bb, y2);
+        PRINT_NEWLINE;
         auto sum = bytecode_emit_add(&bb, x1, y1);
         sum = bytecode_emit_add(&bb, sum, x2);
         sum = bytecode_emit_add(&bb, sum, y2);
@@ -569,7 +582,9 @@ MunitResult Return_Struct(const MunitParameter params[], void *user_data_or_fixt
         auto x = bytecode_emit_extract_value(&bb, result, 0);
         auto y = bytecode_emit_extract_value(&bb, result, 1);
         bytecode_emit_print(&bb, x);
+        PRINT_NEWLINE;
         bytecode_emit_print(&bb, y);
+        PRINT_NEWLINE;
         auto sum = bytecode_emit_add(&bb, x, y);
         bytecode_emit_return(&bb, sum);
     }
@@ -669,7 +684,9 @@ MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_f
         auto x = bytecode_emit_extract_value(&bb, vec, 0);
         auto y = bytecode_emit_extract_value(&bb, vec, 1);
         bytecode_emit_print(&bb, x);
+        PRINT_NEWLINE;
         bytecode_emit_print(&bb, y);
+        PRINT_NEWLINE;
         bytecode_emit_return(&bb);
     }
 
@@ -687,6 +704,7 @@ MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_f
         bytecode_emit_push_arg(&bb, v);
         auto v_len = bytecode_emit_call(&bb, vec2_len_fn, 1);
         bytecode_emit_print(&bb, v_len);
+        PRINT_NEWLINE;
         bytecode_emit_return(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code));
     }
 
@@ -753,6 +771,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
         auto int_alloc_addr = bytecode_emit_address_of_alloc(&bb, int_alloc);
         auto int_value = bytecode_emit_load_pointer(&bb, int_alloc_addr);
         bytecode_emit_print(&bb, int_value);
+        PRINT_NEWLINE;
 
         int_value = bytecode_emit_add(&bb, int_value, bytecode_integer_literal(&bb, &builtin_type_s64, 1));
         bytecode_emit_store_pointer(&bb, int_value, int_alloc_addr);
@@ -961,6 +980,7 @@ MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data
         auto sum = bytecode_emit_add(&bb, x, y);
 
         bytecode_emit_print(&bb, sum);
+        PRINT_NEWLINE;
 
         auto struct_ptr = bytecode_emit_address_of_alloc(&bb, struct_alloc);
         x_ptr = bytecode_emit_aggregate_offset_pointer(&bb, struct_ptr, 0);
@@ -971,6 +991,7 @@ MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data
         auto sum2 = bytecode_emit_add(&bb, x, y);
         sum = bytecode_emit_add(&bb, sum, sum2);
         bytecode_emit_print(&bb, sum);
+        PRINT_NEWLINE;
 
         bytecode_emit_return(&bb, sum);
     }
@@ -1065,9 +1086,13 @@ MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data
         auto y2 = bytecode_emit_extract_value(&bb, p2, 1);
 
         bytecode_emit_print(&bb, x1);
+        PRINT_NEWLINE;
         bytecode_emit_print(&bb, y1);
+        PRINT_NEWLINE;
         bytecode_emit_print(&bb, x2);
+        PRINT_NEWLINE;
         bytecode_emit_print(&bb, y2);
+        PRINT_NEWLINE;
 
         bytecode_emit_return(&bb, x2);
     }
@@ -1145,10 +1170,12 @@ MunitResult Insert_And_Extract_Element(const MunitParameter params[], void *user
         for (s64 i = array_type->static_array.count - 1; i >= 0; i--) {
             auto elem_val = bytecode_emit_extract_element(&bb, array_val, i);
             bytecode_emit_print(&bb, elem_val);
+            PRINT_NEWLINE;
             sum = bytecode_emit_add(&bb, sum ,elem_val);
         }
 
         bytecode_emit_print(&bb, sum);
+        PRINT_NEWLINE;
 
         bytecode_emit_return(&bb, sum);
     }
@@ -1228,6 +1255,7 @@ MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void *user_data
             auto elem = bytecode_emit_load_pointer(&bb, elem_ptr);
 
             bytecode_emit_print(&bb, elem);
+            PRINT_NEWLINE;
             sum = bytecode_emit_add(&bb, sum, elem);
         }
 
@@ -1238,10 +1266,12 @@ MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void *user_data
             auto elem = bytecode_emit_load_pointer(&bb, elem_ptr);
 
             bytecode_emit_print(&bb, elem);
+            PRINT_NEWLINE;
             sum = bytecode_emit_add(&bb, sum, elem);
         }
 
         bytecode_emit_print(&bb, sum);
+        PRINT_NEWLINE;
 
         bytecode_emit_return(&bb, sum);
     }
@@ -1341,6 +1371,7 @@ MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_
         bytecode_emit_push_arg(&bb, b);
         auto r3 = bytecode_emit_call(&bb, add_fn, 2);
         bytecode_emit_print(&bb, r3);
+        PRINT_NEWLINE;
 
         // Calling bytecode function trough pointer
         auto add_fn_ptr = bytecode_emit_address_of_function(&bb, add_fn);
@@ -1348,12 +1379,14 @@ MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_
         bytecode_emit_push_arg(&bb, b);
         auto r4 = bytecode_emit_call_pointer(&bb, add_fn_ptr, 2);
         bytecode_emit_print(&bb, r4);
+        PRINT_NEWLINE;
 
         // Calling foreign function trough ffi
         bytecode_emit_push_arg(&bb, a);
         bytecode_emit_push_arg(&bb, b);
         auto r = bytecode_emit_call(&bb, foreign_add_fn, 2);
         bytecode_emit_print(&bb, r);
+        PRINT_NEWLINE;
 
          //Calling foreign function trough ffi via pointer
         auto foreign_add_fn_ptr = bytecode_emit_address_of_function(&bb, foreign_add_fn);
@@ -1361,12 +1394,14 @@ MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_
         bytecode_emit_push_arg(&bb, b);
         auto r2 = bytecode_emit_call_pointer(&bb, foreign_add_fn_ptr, 2);
         bytecode_emit_print(&bb, r2);
+        PRINT_NEWLINE;
 
         // Calling add32 trough bytecode
         bytecode_emit_push_arg(&bb, a32);
         bytecode_emit_push_arg(&bb, b32);
         auto r32 = bytecode_emit_call(&bb, add32_fn, 2);
         bytecode_emit_print(&bb, r32);
+        PRINT_NEWLINE;
 
         // Calling add32 trough a pointer
         auto add32_fn_ptr = bytecode_emit_address_of_function(&bb, add32_fn);
@@ -1374,6 +1409,7 @@ MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_
         bytecode_emit_push_arg(&bb, b32);
         r32 = bytecode_emit_call_pointer(&bb, add32_fn_ptr, 2);
         bytecode_emit_print(&bb, r32);
+        PRINT_NEWLINE;
 
         bytecode_emit_return(&bb, r);
     }
@@ -1454,7 +1490,9 @@ MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[], void *us
         auto y = bytecode_emit_extract_value(&bb, vec, 1);
 
         bytecode_emit_print(&bb, x);
+        PRINT_NEWLINE;
         bytecode_emit_print(&bb, y);
+        PRINT_NEWLINE;
         bytecode_emit_return(&bb);
     }
 
@@ -1486,6 +1524,7 @@ MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[], void *us
 
             r = bytecode_emit_add(&bb, a, b);
             bytecode_emit_print(&bb, r);
+            PRINT_NEWLINE;
         }
 
         // Calling make_vec2 trough pointer
@@ -1507,6 +1546,7 @@ MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[], void *us
 
             r = bytecode_emit_add(&bb, a, b);
             bytecode_emit_print(&bb, r);
+            PRINT_NEWLINE;
          }
 
         assert(r.type && r.type == &builtin_type_s64);
@@ -1620,6 +1660,7 @@ MunitResult BC_Callback_From_C(const MunitParameter params[], void *user_data_or
         bytecode_emit_push_arg(&bb, b);
         auto r1 = bytecode_emit_call(&bb, call_binop_ptr_fn, 3);
         bytecode_emit_print(&bb, r1);
+        PRINT_NEWLINE;
 
         // Passing and calling a bytecode function to a c function
         auto bc_add_addr = bytecode_emit_address_of_function(&bb, add_fn);
@@ -1628,6 +1669,7 @@ MunitResult BC_Callback_From_C(const MunitParameter params[], void *user_data_or
         bytecode_emit_push_arg(&bb, b);
         auto r2 = bytecode_emit_call(&bb, call_binop_ptr_fn, 3);
         bytecode_emit_print(&bb, r2);
+        PRINT_NEWLINE;
 
         auto r = r2;
         bytecode_emit_return(&bb, r);
@@ -1679,6 +1721,7 @@ MunitResult Non_Return_Error_Simple(const MunitParameter params[], void *user_da
 
         auto r = bytecode_emit_add(&bb, a, b);
         bytecode_emit_print(&bb, r);
+        PRINT_NEWLINE;
 
         bytecode_emit_return(&bb, r);
     }
@@ -1774,6 +1817,7 @@ MunitResult Non_Return_Error_Indirect(const MunitParameter params[], void *user_
 
         auto r = bytecode_emit_add(&bb, a, b);
         bytecode_emit_print(&bb, r);
+        PRINT_NEWLINE;
 
         bytecode_emit_return(&bb, r);
     }
@@ -1851,6 +1895,7 @@ MunitResult Non_Return_Flag(const MunitParameter params[], void *user_data_or_fi
 
         auto r = bytecode_emit_add(&bb, a, b);
         bytecode_emit_print(&bb, r);
+        PRINT_NEWLINE;
 
         bytecode_emit_return(&bb, r);
     }
@@ -1927,10 +1972,11 @@ MunitResult Globals(const MunitParameter params[], void *user_data_or_fixture)
         bytecode_emit_store_global(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code), global_var);
         auto global_val = bytecode_emit_load_global(&bb, global_var);
         bytecode_emit_print(&bb, global_val);
+        PRINT_NEWLINE;
 
         auto global_val2 = bytecode_emit_load_global(&bb, global_var2);
         bytecode_emit_print(&bb, global_val2);
-
+        PRINT_NEWLINE;
 
         bytecode_emit_return(&bb, global_val);
     }
@@ -1998,6 +2044,7 @@ MunitResult Constants(const MunitParameter params[], void *user_data_or_fixture)
     bytecode_set_insert_point(&bb, main_fn, main_entry_block);
     {
         bytecode_emit_print(&bb, global_const);
+        PRINT_NEWLINE;
         bytecode_emit_return(&bb, global_const);
     }
 
@@ -2062,6 +2109,7 @@ MunitResult String_Literals(const MunitParameter params[], void *user_data_or_fi
     {
         auto str_lit_val = bytecode_string_literal(&bb, stdout_str);
         bytecode_emit_print(&bb, str_lit_val);
+        PRINT_NEWLINE;
         auto return_val = bytecode_integer_literal(&bb, &builtin_type_s64, exit_code);
         bytecode_emit_return(&bb, return_val);
     }
@@ -2105,5 +2153,6 @@ MunitResult String_Literals(const MunitParameter params[], void *user_data_or_fi
 }
 
 #undef assert_zodiac_stream
+#undef PRINT_NEWLINE
 
 } }
