@@ -423,7 +423,8 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
 
                     case Type_Kind::STRUCTURE: {
                         if (reg.type == &builtin_type_String) {
-                            string_builder_append(sb, "\"%.*s\"", (int)reg.value.string.length, reg.value.string.data);
+                            auto escaped_string = convert_special_characters_to_escape_characters(temp_allocator_allocator(), reg.value.string);
+                            string_builder_append(sb, "\"%.*s\"", (int)escaped_string.length, escaped_string.data);
                         } else {
                             assert(false && !"Unsupported literal type register for printing");
                         }

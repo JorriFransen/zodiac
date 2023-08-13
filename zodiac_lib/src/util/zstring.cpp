@@ -337,4 +337,56 @@ double string_to_double(const String_Ref &string)
     return result;
 }
 
+file_local char special_characters[] = {
+    '\n',
+};
+
+file_local char escape_characters[] = {
+    'n',
+};
+
+file_local s64 is_special_character(char c) {
+
+    for (s64 i = 0; i < sizeof(special_characters) / sizeof(special_characters[0]); i++) {
+        if (c  == special_characters[i]) return i;
+    }
+
+    return -1;
+}
+
+String convert_special_characters_to_escape_characters(Allocator *allocator, const String_Ref str)
+{
+    s64 special_count = 0;
+
+    for (s64 i = 0; i < str.length; i++) {
+        auto c = str[i];
+
+        if (is_special_character(c) != -1) {
+            special_count += 1;
+            break;
+        }
+    }
+
+    if (!special_count) {
+        return string_copy(allocator, str);
+    }
+
+    auto new_length = str.length + special_count;
+
+    String result(alloc_array<char>(allocator, new_length + 1), new_length);
+
+    s64 ni = 0;
+    for (s64 i = 0; i < str.length; i++) {
+        auto index = is_special_character(str[i]);
+        if (index != -1) {
+            result[ni++] = '\\';
+            result[ni++] = escape_characters[i];
+        } else {
+            result[ni++] = str[i];
+        }
+    }
+
+    return result;
+}
+
 }

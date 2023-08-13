@@ -124,4 +124,5 @@ ZAPI Real_Value string_to_real(const String_Ref &string);
 ZAPI float string_to_float(const String_Ref &string);
 ZAPI double string_to_double(const String_Ref &string);
 
+ZAPI String convert_special_characters_to_escape_characters(Allocator *allocator, const String_Ref str);
 }
