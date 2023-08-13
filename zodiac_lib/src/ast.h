@@ -128,6 +128,11 @@ struct AST_Directive_Expression
     AST_Expression *generated_expression;
 };
 
+struct AST_Compound_Expression
+{
+    Dynamic_Array<AST_Expression *> expressions;
+};
+
 enum class AST_Expression_Kind
 {
     INVALID,
@@ -150,21 +155,25 @@ enum class AST_Expression_Kind
     CAST,
 
     RUN_DIRECTIVE,
+
+    COMPOUND,
 };
 
 typedef u32 AST_Expression_Flags;
 enum AST_Expression_Flag : AST_Expression_Flags
 {
-    AST_EXPR_FLAG_NONE   = 0x00,
-    AST_EXPR_FLAG_TYPED  = 0x01,
-    AST_EXPR_FLAG_CONST  = 0x02,
-    AST_EXPR_FLAG_LVALUE = 0x04,
+    AST_EXPR_FLAG_NONE     = 0x00,
+    AST_EXPR_FLAG_TYPED    = 0x01,
+    AST_EXPR_FLAG_CONST    = 0x02,
+    AST_EXPR_FLAG_LITERAL  = 0x04,
+    AST_EXPR_FLAG_LVALUE   = 0x08,
 };
 
 
-#define EXPR_IS_TYPED(e) (((e)->flags & AST_EXPR_FLAG_TYPED) == AST_EXPR_FLAG_TYPED)
-#define EXPR_IS_CONST(e) (((e)->flags & AST_EXPR_FLAG_CONST) == AST_EXPR_FLAG_CONST)
-#define EXPR_IS_LVALUE(e) (((e)->flags & AST_EXPR_FLAG_LVALUE) == AST_EXPR_FLAG_LVALUE)
+#define EXPR_IS_TYPED(e) ((e)->flags & AST_EXPR_FLAG_TYPED)
+#define EXPR_IS_CONST(e) ((e)->flags & AST_EXPR_FLAG_CONST)
+#define EXPR_IS_LITERAL(e) ((e)->flags & AST_EXPR_FLAG_LITERAL)
+#define EXPR_IS_LVALUE(e) ((e)->flags & AST_EXPR_FLAG_LVALUE)
 
 struct AST_Expression
 {
@@ -189,6 +198,7 @@ struct AST_Expression
         AST_Binary_Expression binary;
         AST_Cast_Expression cast;
         AST_Directive_Expression directive;
+        AST_Compound_Expression compound;
     };
 };
 
@@ -453,6 +463,7 @@ ZAPI void ast_binary_expr_create(AST_Binary_Operator op, AST_Expression *lhs, AS
 ZAPI void ast_cast_expr_create(AST_Type_Spec *ts, AST_Expression *value, AST_Expression *out_expr);
 ZAPI void ast_cast_expr_create(Type *type, AST_Expression *value, AST_Expression *out_expr);
 ZAPI void ast_run_directive_expr_create(AST_Directive *directive, AST_Expression *out_expr);
+ZAPI void ast_compound_expr_create(Dynamic_Array<AST_Expression *> expressions, AST_Expression *out_expr);
 ZAPI void ast_expression_create(AST_Expression_Kind kind, AST_Expression_Flags flags, AST_Expression *out_expr);
 
 ZAPI void ast_block_stmt_create(Dynamic_Array<AST_Statement *> statements, AST_Statement *out_stmt);
@@ -498,6 +509,7 @@ ZAPI AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, Source_Range range
 ZAPI AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *ts, AST_Expression *value);
 ZAPI AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range range, Type *type, AST_Expression *value);
 ZAPI AST_Expression *ast_run_directive_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Directive *directive);
+ZAPI AST_Expression *ast_compound_expr_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> expressions);
 ZAPI AST_Expression *ast_expression_new(Zodiac_Context *ctx, Source_Range range);
 
 ZAPI AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Statement *> statements);

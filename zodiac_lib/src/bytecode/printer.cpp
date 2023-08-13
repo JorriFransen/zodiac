@@ -7,6 +7,7 @@
 #include "common.h"
 #include "containers/dynamic_array.h"
 #include "memory/allocator.h"
+#include "memory/temporary_allocator.h"
 #include "type.h"
 #include "util/asserts.h"
 #include "util/string_builder.h"
@@ -426,7 +427,12 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
                             auto escaped_string = convert_special_characters_to_escape_characters(temp_allocator_allocator(), reg.value.string);
                             string_builder_append(sb, "\"%.*s\"", (int)escaped_string.length, escaped_string.data);
                         } else {
-                            assert(false && !"Unsupported literal type register for printing");
+                            string_builder_append(sb, "{ ");
+                            for (s64 i = 0; i < reg.value.compound.count; i++) {
+                                if (i != 0) string_builder_append(sb, ", ");
+                                bytecode_print_register(builder, fn, reg.value.compound[i], sb);
+                            }
+                            string_builder_append(sb, " }");
                         }
                         break;
                     }

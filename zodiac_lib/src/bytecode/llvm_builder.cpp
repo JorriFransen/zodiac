@@ -1103,7 +1103,10 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
                     return llvm_builder_emit_bool_literal(builder, bc_reg.type, bc_reg.value.boolean);
                 }
 
-                case Type_Kind::STRUCTURE: { assert(false); break; }
+                case Type_Kind::STRUCTURE: {
+                    return llvm_builder_emit_struct_literal(builder, bc_reg.type, bc_reg.value.compound);
+                }
+
                 case Type_Kind::STATIC_ARRAY: { assert(false); break; }
             }
             break;
@@ -1216,6 +1219,26 @@ llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_R
 }
 
 
+llvm::Constant *llvm_builder_emit_struct_literal(LLVM_Builder *builder, Type *type, Dynamic_Array<Bytecode_Register> compound)
+{
+    debug_assert(builder && type && compound.count);
+    assert(type->flags & TYPE_FLAG_AGGREGATE);
+    assert(type->kind == Type_Kind::STRUCTURE);
+
+    llvm::Type *_llvm_struct_type = llvm_type_from_ast_type(builder, type);
+    auto *llvm_struct_type = static_cast<llvm::StructType *>(_llvm_struct_type);
+
+    Dynamic_Array<llvm::Constant *> members;
+    dynamic_array_create(builder->allocator, &members, compound.count);
+
+    for (s64 i = 0; i < compound.count; i++) {
+        auto mem_val = llvm_builder_emit_constant(builder, compound[i]);
+        dynamic_array_append(&members, mem_val);
+    }
+
+    return llvm::ConstantStruct::get(llvm_struct_type, { members.data, (size_t)members.count });
+}
+
 void llvm_builder_store_result(LLVM_Builder *builder, const Bytecode_Register &bc_dest_reg, llvm::Value *result_val)
 {
     assert(bc_dest_reg.kind == Bytecode_Register_Kind::TEMPORARY);
@@ -1229,7 +1252,7 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
 {
     assert(builder->llvm_module);
 
-    auto ast_allocator = &builder->zodiac_context->ast_allocator;
+    auto ast_allocator = builder->allocator;
 
     switch (ast_type->kind) {
         case Type_Kind::INVALID: assert(false); break;

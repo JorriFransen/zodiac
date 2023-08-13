@@ -34,7 +34,7 @@ u64 hash_key(Bytecode_Instruction_Handle handle)
 
 Bytecode_Builder bytecode_builder_create(Allocator *allocator, Zodiac_Context *cu)
 {
-    assert(allocator);
+    debug_assert(allocator);
 
     Bytecode_Builder result {
         .allocator = allocator,
@@ -74,7 +74,7 @@ Bytecode_Program bytecode_get_program(Bytecode_Builder *builder)
 
 Bytecode_Function_Handle bytecode_find_entry(Bytecode_Program program)
 {
-    assert(program.entry_handle == -1);
+    debug_assert(program.entry_handle == -1);
 
     for (s64 i = 0; i < program.functions.count; i++) {
 
@@ -90,7 +90,7 @@ Bytecode_Function_Handle bytecode_find_entry(Bytecode_Program program)
 
 bool bytecode_instruction_is_terminator(Bytecode_Instruction *inst)
 {
-    assert(inst);
+    debug_assert(inst);
 
     auto op = inst->op;
 
@@ -102,7 +102,7 @@ bool bytecode_instruction_is_terminator(Bytecode_Instruction *inst)
 
 bool bytecode_block_is_terminated(Bytecode_Block *block)
 {
-    assert(block);
+    debug_assert(block);
 
     if (block->instructions.count) {
         return block->terminated;
@@ -113,7 +113,7 @@ bool bytecode_block_is_terminated(Bytecode_Block *block)
 
 bool bytecode_block_is_terminated(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Bytecode_Block_Handle block_handle)
 {
-    assert(builder);
+    debug_assert(builder);
 
     assert(fn_handle >= 0 && fn_handle < builder->functions.count);
 
@@ -133,9 +133,8 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, con
 Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Atom fn_name, Type *fn_type, BC_Function_Flag flags/*=BC_FUNCTION_FLAG_NONE*/)
 {
     auto index = builder->functions.count;
-    assert(index >= 0);
 
-    assert(fn_type->kind == Type_Kind::FUNCTION);
+    debug_assert(fn_type->kind == Type_Kind::FUNCTION);
 
     for (s64 i = 0; i < builder->functions.count; i++) {
         if (builder->functions[i].name == fn_name) {
@@ -267,7 +266,6 @@ Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_
     auto fn = &builder->functions[fn_handle];
 
     auto index = fn->blocks.count;
-    assert(index >= 0);
 
     bool duplicate = false;
     for (s64 i = 0; i < fn->blocks.count; i++) {
@@ -328,7 +326,7 @@ void bytecode_set_insert_point(Bytecode_Builder *builder, Bytecode_Function_Hand
 
 Bytecode_Block *bytecode_get_insert_block(Bytecode_Builder *builder)
 {
-    assert(builder);
+    debug_assert(builder);
 
     assert(builder->insert_fn_index >= 0 && builder->insert_fn_index < builder->functions.count);
 
@@ -346,7 +344,7 @@ Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type
 
 Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type, Integer_Value iv)
 {
-    assert(builder);
+    debug_assert(builder);
     assert(type->kind == Type_Kind::INTEGER);
 
     auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, type, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT);
@@ -391,6 +389,26 @@ Bytecode_Register bytecode_string_literal(Bytecode_Builder *bb, String_Ref str)
     return result;
 }
 
+Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Dynamic_Array<Bytecode_Register> members, Type *type)
+{
+    debug_assert(bb && members.count && type);
+    assert(type->flags & TYPE_FLAG_AGGREGATE);
+    assert(type->kind == Type_Kind::STRUCTURE);
+
+#ifndef NDEBUG
+    for (s64 i = 0; i < members.count; i++) {
+        debug_assert(members[i].flags & BC_REGISTER_FLAG_LITERAL);
+        debug_assert(members[i].flags & BC_REGISTER_FLAG_CONSTANT);
+    }
+#endif // NDEBUG
+
+    auto result = bytecode_register_create(bb, Bytecode_Register_Kind::TEMPORARY, type, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT);
+
+    result.value.compound = members;
+
+    return result;
+}
+
 Bytecode_Register bytecode_block_value(Bytecode_Builder *builder, Bytecode_Block_Handle block_handle)
 {
     auto result = bytecode_register_create(builder, Bytecode_Register_Kind::BLOCK, nullptr, BC_REGISTER_FLAG_NONE);
@@ -408,7 +426,7 @@ Bytecode_Register bytecode_type_value(Bytecode_Builder *builder, Type *type)
 
 Bytecode_Register bytecode_register_create(Bytecode_Builder *builder, Bytecode_Register_Kind kind, Type *type, Bytecode_Register_Flags flags /*=BC_REGISTER_FLAG_NONE*/)
 {
-    assert(builder);
+    debug_assert(builder);
     assert(kind != Bytecode_Register_Kind::INVALID);
 
     bool literal = flags & BC_REGISTER_FLAG_LITERAL;
@@ -708,7 +726,7 @@ Bytecode_Register bytecode_emit_call(Bytecode_Builder *builder, Bytecode_Functio
 Bytecode_Register bytecode_emit_call(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle,
                                      s64 arg_count)
 {
-    assert(arg_count >= 0);
+    debug_assert(arg_count >= 0);
 
     auto arg_count_register = bytecode_integer_literal(builder, &builtin_type_s64, arg_count);
     return bytecode_emit_call(builder, fn_handle, arg_count_register);
@@ -1080,7 +1098,7 @@ void bytecode_emit_jmp_if(Bytecode_Builder *builder, Bytecode_Register cond, Byt
 
 Bytecode_Instruction_Handle bytecode_emit_instruction(Bytecode_Builder *builder, Bytecode_Opcode op, Bytecode_Register a, Bytecode_Register b, Bytecode_Register result)
 {
-    assert(builder);
+    debug_assert(builder);
     assert(builder->insert_fn_index >= 0 &&
            builder->insert_fn_index < builder->functions.count);
     auto fn = &builder->functions[builder->insert_fn_index];

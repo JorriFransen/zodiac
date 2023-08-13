@@ -337,6 +337,7 @@ double string_to_double(const String_Ref &string)
     return result;
 }
 
+// TODO: FIXME: Emit these arrays with a macro
 file_local char special_characters[] = {
     '\n',
 };

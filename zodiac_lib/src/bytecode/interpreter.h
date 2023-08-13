@@ -15,8 +15,16 @@ struct Zodiac_Context;
 
 namespace Bytecode {
 
+typedef u64 Interpreter_Register_Flags;
+enum Interpreter_Register_Flags_ : Interpreter_Register_Flags
+{
+    INTERP_REG_FLAG_NONE              = 0x00,
+    INTERP_REG_FLAG_AGGREGATE_LITERAL = 0x01,
+};
+
 struct Interpreter_Register
 {
+    Interpreter_Register_Flags flags = INTERP_REG_FLAG_NONE;
     Type *type = nullptr;
 
     union
@@ -90,5 +98,7 @@ ZAPI void interpreter_store_pointer(Interpreter* interp, Interpreter_Register so
 ZAPI void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle fn_handle,
                                   s64 arg_count, s64 result_index);
 ZAPI Interpreter_Stack_Frame interpreter_pop_stack_frame(Interpreter *interp);
+
+ZAPI void interpreter_copy_aggregate_literal_into_memory(Interpreter *interp, u8 *dest, Interpreter_Register source);
 
 }}

@@ -508,6 +508,7 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
         case AST_Expression_Kind::BINARY: assert(false); break;
         case AST_Expression_Kind::CAST: assert(false); break;
         case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
+        case AST_Expression_Kind::COMPOUND: assert(false); break;
 
     }
 
@@ -527,7 +528,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
         assert_msg(expr->resolved_type->kind == Type_Kind::INTEGER ||
                    expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER ||
                    expr->resolved_type->kind == Type_Kind::FLOAT ||
-                   expr->resolved_type->kind == Type_Kind::BOOLEAN,
+                   expr->resolved_type->kind == Type_Kind::BOOLEAN ||
+                   expr->resolved_type->kind == Type_Kind::STRUCTURE && expr->kind == AST_Expression_Kind::COMPOUND,
                    "Constant expression substition not supported for this type");
 
         return ast_const_expr_to_bytecode(bc, expr);
@@ -740,6 +742,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
             return value_reg;
         }
+
+        case Zodiac::AST_Expression_Kind::COMPOUND: assert(false); break;
     }
 
     assert(false);
@@ -774,6 +778,21 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
             Type *bool_type = type;
             assert(bool_type->kind == Type_Kind::BOOLEAN);
             return bytecode_boolean_literal(bc->builder, bool_type, expr->bool_literal);
+        }
+
+        case Type_Kind::STRUCTURE: {
+
+            Dynamic_Array<Bytecode_Register> members;
+            dynamic_array_create<Bytecode_Register>(bc->allocator, &members, expr->compound.expressions.count);
+
+            for (s64 i = 0; i < expr->compound.expressions.count; i++) {
+                auto member_expr = expr->compound.expressions[i];
+                assert(EXPR_IS_CONST(member_expr));
+                Bytecode_Register member_reg = ast_const_expr_to_bytecode(bc, member_expr);
+                dynamic_array_append(&members, member_reg);
+            }
+
+            return bytecode_aggregate_literal(bc->builder, members, type);
         }
     }
 

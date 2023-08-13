@@ -1,6 +1,8 @@
 
-- When printing bytecode, convert special characters to esacpe sequences
 - Struct literal expressions
+    - Nested structs
+    - Test with different types
+
 - Convert structs returned from run directives into ast expression (struct literal).
 
 - Ensure #run expressions are constant (report error)

@@ -317,6 +317,19 @@ Infer_Node create_infer_node(AST_Expression *call_base_expr, s64 arg_index)
     };
 }
 
+Infer_Node create_infer_node(AST_Type_Spec *aggregate_ts, s64 member_index)
+{
+    debug_assert(aggregate_ts);
+
+    return {
+        .kind = Infer_Node_kind::MEMBER,
+        .member = {
+            .aggregate_ts = aggregate_ts,
+            .member_index = member_index,
+        },
+    };
+}
+
 void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest)
 {
     debug_assert(decl && scope && dest);
@@ -620,6 +633,16 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
             assert(!expr->directive.directive->run.scope);
             expr->directive.directive->run.scope = scope;
             break;
+        }
+
+        case AST_Expression_Kind::COMPOUND: {
+
+            assert(infer_node.kind == Infer_Node_kind::TYPE_SPEC);
+
+            for (s64 i = 0; i < expr->compound.expressions.count; i++) {
+                Infer_Node infer_from = create_infer_node(infer_node.type_spec, i);
+                flatten_expression(ctx, expr->compound.expressions[i], scope, dest, infer_from);
+            }
         }
 
     }
@@ -1055,6 +1078,11 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
         case AST_Expression_Kind::INDEX: assert(false); break;
         case AST_Expression_Kind::UNARY: assert(false); break;
         case AST_Expression_Kind::CAST: assert(false); break;
+
+        case AST_Expression_Kind::COMPOUND: {
+            // leaf
+            break;
+        }
 
     }
 
@@ -1616,6 +1644,23 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             inferred_type = param_decl->parameter.resolved_type;
             break;
         }
+
+        case Infer_Node_kind::MEMBER: {
+
+            auto ts = infer_type_from.member.aggregate_ts;
+            if (!ts->resolved_type) {
+                resolve_error(ctx, expr, "Waiting for type spec to be typed");
+                resolve_error(ctx, ts, "Type spec is here");
+                return false;
+            }
+
+            assert(ts->resolved_type->flags & TYPE_FLAG_AGGREGATE);
+            assert(ts->resolved_type->kind == Type_Kind::STRUCTURE);
+            assert(ts->resolved_type->structure.member_types.count > infer_type_from.member.member_index);
+
+            inferred_type = ts->resolved_type->structure.member_types[infer_type_from.member.member_index];
+            break;
+        }
     }
 
     if (infer_type_from.kind != Infer_Node_kind::INVALID) {
@@ -1859,6 +1904,38 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             break;
         }
 
+        case AST_Expression_Kind::COMPOUND: {
+            assert(inferred_type);
+
+            auto aggregate_type = inferred_type;
+            assert(aggregate_type->flags & TYPE_FLAG_AGGREGATE);
+            assert(aggregate_type->kind == Type_Kind::STRUCTURE);
+
+            auto aggregate_member_count = aggregate_type->structure.member_types.count;
+            auto compound_member_count = expr->compound.expressions.count;
+
+            if (aggregate_member_count != compound_member_count) {
+                fatal_resolve_error(ctx, expr, "Mismatching expression count, expected %i, got %i",  aggregate_member_count, compound_member_count);
+                return false;
+            }
+
+            for (s64 i = 0; i < aggregate_member_count; i++) {
+                Type *aggregate_member_type = aggregate_type->structure.member_types[i];
+                auto compound_member_expr = expr->compound.expressions[i];
+                Type *compound_member_type = compound_member_expr->resolved_type;
+                assert(compound_member_type);
+
+                if (aggregate_member_type != compound_member_type) {
+                    fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
+                    fatal_resolve_error(ctx, compound_member_expr, "    Expected: %s", temp_type_string(aggregate_member_type));
+                    fatal_resolve_error(ctx, compound_member_expr, "    Got: %s", temp_type_string(compound_member_type));
+                    return false;
+                }
+            }
+
+            expr->resolved_type = inferred_type;
+            break;
+        }
     }
 
     assert(result);

@@ -5,6 +5,7 @@
 
 #include "common.h"
 #include "memory/allocator.h"
+#include "memory/zmemory.h"
 #include "platform/platform.h"
 #include "type.h"
 #include "util/asserts.h"
@@ -631,7 +632,7 @@ switch (operand.type->bit_size) { \
             frame->sp += size;
 
             Interpreter_Register alloc_register = {
-                instruction.a.type,
+                .type = instruction.a.type,
                 { .pointer = ptr },
             };
 
@@ -1231,7 +1232,12 @@ Interpreter_Register interpreter_load_register(Interpreter *interp,
 
         if (bc_reg.flags & BC_REGISTER_FLAG_LITERAL) {
 
-            return { .type = bc_reg.type, .value = bc_reg.value };
+            Interpreter_Register_Flags flags = INTERP_REG_FLAG_NONE;
+            if (bc_reg.type->flags & TYPE_FLAG_AGGREGATE) {
+                flags |= INTERP_REG_FLAG_AGGREGATE_LITERAL;
+            }
+
+            return { .flags = flags, .type = bc_reg.type, .value = bc_reg.value };
 
         } else {
 
@@ -1325,7 +1331,7 @@ Interpreter_Register interpreter_load_pointer(Interpreter *interp, u8 *source, T
 
             result.pointer = ptr;
 
-            memcpy(ptr, source, size);
+            zmemcpy(ptr, source, size);
             break;
         }
     }
@@ -1422,11 +1428,16 @@ void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source,
 
         case Type_Kind::STRUCTURE:
         case Type_Kind::STATIC_ARRAY: {
-            // @Cleanup: @TODO: @FIXME: alignment?
-            assert (t->bit_size % 8 == 0);
-            auto size = t->bit_size / 8;
 
-            memcpy(dest, source.pointer, size);
+            if (source.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
+                interpreter_copy_aggregate_literal_into_memory(interp, dest, source);
+            } else {
+                // @Cleanup: @TODO: @FIXME: alignment?
+                assert (t->bit_size % 8 == 0);
+                auto size = t->bit_size / 8;
+
+                zmemcpy(dest, source.pointer, size);
+            }
             break;
         }
     }
@@ -1514,4 +1525,61 @@ Interpreter_Stack_Frame interpreter_pop_stack_frame(Interpreter *interp)
     return old_frame;
 }
 
+void interpreter_copy_aggregate_literal_into_memory(Interpreter *interp, u8 *dest, Interpreter_Register source)
+{
+    debug_assert(interp && dest);
+
+    assert(source.type->flags & TYPE_FLAG_AGGREGATE);
+    assert(source.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL);
+
+    auto aggregate_type = source.type;
+    assert(aggregate_type->kind == Type_Kind::STRUCTURE);
+
+    assert(aggregate_type->structure.member_types.count == source.value.compound.count);
+
+    u8 *dest_cursor = dest;
+
+    for (s64 i = 0; i < source.value.compound.count; i++) {
+        Type *member_type = aggregate_type->structure.member_types[i];
+        Bytecode_Register bc_mem_reg = source.value.compound[i];
+
+        assert(member_type == bc_mem_reg.type);
+
+        Interpreter_Register mem_reg = interpreter_load_register(interp, bc_mem_reg);
+        auto copy_size = mem_reg.type->bit_size / 8;
+
+        switch (mem_reg.type->kind) {
+
+            case Type_Kind::INVALID: assert(false); break;
+            case Type_Kind::VOID: assert(false); break;
+
+
+#define COPY_INT_CASE(size) case size: zmemcpy(dest_cursor, &mem_reg.value.integer.u##size, copy_size); break;
+            case Type_Kind::UNSIZED_INTEGER:
+            case Type_Kind::INTEGER: {
+
+                switch (mem_reg.type->bit_size) {
+                    COPY_INT_CASE(8)
+                    COPY_INT_CASE(16)
+                    COPY_INT_CASE(32)
+                    COPY_INT_CASE(64)
+                    default: assert_msg(false, "Unsupported integer size");
+                }
+
+                break;
+            }
+#undef COPY_INT_CASE
+
+            case Type_Kind::FLOAT: assert(false); break;
+            case Type_Kind::BOOLEAN: assert(false); break;
+            case Type_Kind::POINTER: assert(false); break;
+            case Type_Kind::STRUCTURE: assert(false); break;
+            case Type_Kind::STATIC_ARRAY: assert(false); break;
+            case Type_Kind::FUNCTION: assert(false); break;
+        }
+
+        // @Cleanup: @TODO: @FIXME: alignment?
+        dest_cursor += copy_size;
+    }
+}
 }}

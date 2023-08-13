@@ -168,6 +168,37 @@ void ast_run_directive_expr_create(AST_Directive *directive, AST_Expression *out
     out_expr->directive.generated_expression = nullptr;
 }
 
+void ast_compound_expr_create(Dynamic_Array<AST_Expression *> expressions, AST_Expression *out_expr)
+{
+    debug_assert(expressions.count && out_expr);
+
+    AST_Expression_Flags flags = AST_EXPR_FLAG_NONE;
+
+    bool all_const = true;
+    bool all_literal = true;
+
+    for (s64 i = 0; i < expressions.count; i++) {
+        if (!EXPR_IS_CONST(expressions[i])) {
+            all_const = false;
+        }
+
+        if (!EXPR_IS_LITERAL(expressions[i])) {
+            all_literal = false;
+        }
+
+        if (!all_const && !all_literal) {
+            break;
+        }
+    }
+
+    if (all_const) flags |= AST_EXPR_FLAG_CONST;
+    if (all_literal) flags |= AST_EXPR_FLAG_LITERAL;
+
+    ast_expression_create(AST_Expression_Kind::COMPOUND, flags, out_expr);
+
+    out_expr->compound.expressions = expressions;
+}
+
 void ast_expression_create(AST_Expression_Kind kind, AST_Expression_Flags flags, AST_Expression *out_expr)
 {
     debug_assert(out_expr);
@@ -552,6 +583,15 @@ AST_Expression *ast_run_directive_expr_new(Zodiac_Context *ctx, Source_Range ran
     return expr;
 }
 
+AST_Expression *ast_compound_expr_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> expressions)
+{
+    debug_assert(ctx && expressions.count);
+
+    auto expr = ast_expression_new(ctx, range);
+    ast_compound_expr_create(expressions, expr);
+    return expr;
+}
+
 AST_Expression *ast_expression_new(Zodiac_Context *ctx, Source_Range range)
 {
     AST_Expression *result = alloc<AST_Expression>(&ctx->ast_allocator);
@@ -891,6 +931,21 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
                 ast_print_expression(sb, expr->directive.generated_expression);
                 string_builder_append(sb, ") */");
             }
+            break;
+        }
+
+        case AST_Expression_Kind::COMPOUND: {
+            string_builder_append(sb, "{ ");
+
+            for (s64 i = 0; i < expr->compound.expressions.count; i++) {
+                if (i != 0) {
+                    string_builder_append(sb, ", ");
+                }
+
+                ast_print_expression(sb, expr->compound.expressions[i]);
+            }
+
+            string_builder_append(sb, " }");
             break;
         }
 

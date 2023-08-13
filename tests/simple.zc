@@ -1,61 +1,67 @@
 
-signed_integer := #run return_signed_integer(7);
-unsigned_integer := #run return_unsigned_integer(8);
-float := #run return_float(4.2);
-double := #run return_double(4.2);
-bool_true := #run return_bool(true);
-bool_false := #run return_bool(false);
+// signed_integer := #run return_signed_integer(7);
+// unsigned_integer := #run return_unsigned_integer(8);
+// float := #run return_float(4.2);
+// double := #run return_double(4.2);
+// bool_true := #run return_bool(true);
+// bool_false := #run return_bool(false);
 
-// vector := #run make_vector(2, 3);
+// // vector := #run make_vector(2, 3);
 
-#run main();
+// #run main();
+// main :: () {
 
-main :: () {
+//     print("\n");
 
-    print("\n");
+//     print(signed_integer);
+//     print(unsigned_integer);
+//     print(float);
+//     print(double);
+//     print(bool_true);
+//     print(bool_false);
 
-    print(signed_integer);
-    print(unsigned_integer);
-    print(float);
-    print(double);
-    print(bool_true);
-    print(bool_false);
+//     vector := make_vector(2, 3);
+//     print_vector(vector);
 
-    vector := make_vector(2, 3);
-    print_vector(vector);
+//     return 0;
+// }
 
-    return 0;
-}
+// return_signed_integer :: (x: s64) -> s64 {
+//     return x;
+// }
 
-return_signed_integer :: (x: s64) -> s64 {
-    return x;
-}
+// return_unsigned_integer :: (x: u64) -> u64 {
+//     return x;
+// }
 
-return_unsigned_integer :: (x: u64) -> u64 {
-    return x;
-}
+// return_float :: (x: r32) -> r32 {
+//     return x;
+// }
 
-return_float :: (x: r32) -> r32 {
-    return x;
-}
+// return_double :: (x: r64) -> r64 {
+//     return x;
+// }
 
-return_double :: (x: r64) -> r64 {
-    return x;
-}
-
-return_bool :: (x: bool) -> bool {
-    return x;
-}
+// return_bool :: (x: bool) -> bool {
+//     return x;
+// }
 
 Vec2 :: struct {
     x, y: s64;
 }
 
-make_vector :: (x: s64, y: s64) -> Vec2 {
-    result : Vec2;
-    result.x = x;
-    result.y = y;
-    return result;
+// make_vector :: (x: s64, y: s64) -> Vec2 {
+//     result : Vec2;
+//     result.x = x;
+//     result.y = y;
+//     return result;
+// }
+
+#run main();
+main :: () {
+    v : Vec2 = { 2, 3 };
+    print_vector(v);
+    return 0;
 }
 
 print_vector :: (_v: Vec2) {

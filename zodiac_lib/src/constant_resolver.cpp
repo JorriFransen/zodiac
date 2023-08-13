@@ -70,6 +70,8 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
             assert(expr->directive.generated_expression);
             return resolve_constant_integer_expr(expr->directive.generated_expression, type);
         }
+
+        case AST_Expression_Kind::COMPOUND: assert(false); break;
     }
 
     assert(false);

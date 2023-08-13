@@ -40,6 +40,34 @@ AST_Identifier parse_identifier(Parser *parser)
     return result;
 }
 
+AST_Expression *parse_expr_compound(Parser *parser)
+{
+    debug_assert(parser);
+
+    Source_Pos start_pos = cur_tok(parser).range.start;
+
+    if (!expect_token(parser, '{')) return nullptr;
+
+    auto temp_exprs = temp_array_create<AST_Expression *>(&parser->context->temp_allocator);
+
+    Source_Pos end_pos = cur_tok(parser).range.end;
+
+    while (!match_token(parser, '}')) {
+
+        if (temp_exprs.array.count != 0) {
+            expect_token(parser, ',');
+        }
+
+        AST_Expression *expr = parse_expression(parser);
+        dynamic_array_append(&temp_exprs.array, expr);
+
+        end_pos = cur_tok(parser).range.end;
+    }
+
+    auto exprs = temp_array_finalize(&parser->context->ast_allocator, &temp_exprs);
+    return ast_compound_expr_new(parser->context, { start_pos, end_pos }, exprs);
+}
+
 AST_Expression *parse_expr_operand(Parser *parser)
 {
     debug_assert(parser);
@@ -76,6 +104,10 @@ AST_Expression *parse_expr_operand(Parser *parser)
         } else if (match_keyword(parser, keyword_false)) {
             return ast_bool_literal_expr_new(parser->context, range, false);
         }
+
+    } else if (is_token(parser, '{')) {
+
+        return parse_expr_compound(parser);
 
     } else {
 

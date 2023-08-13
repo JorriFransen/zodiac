@@ -27,7 +27,7 @@ struct Parser
 ZAPI void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser);
 ZAPI void parser_destroy(Parser *parser);
 
-// expr_operand = INT | REAL | NAME | '(' expr ')' | 'null' | 'true' | 'false'
+// expr_operand = INT | REAL | NAME | COMPOUND | '(' expr ')' | 'null' | 'true' | 'false'
 // call_args = (expr ( ',' expr )* )*
 // expr_base = expr_operand ( '(' call_args ')' | '[' expr ']' | '.' NAME )*
 // expr_unary = ([+-] expr_unary) | expr_base
@@ -39,6 +39,7 @@ ZAPI void parser_destroy(Parser *parser);
 
 ZAPI AST_Identifier parse_identifier(Parser *parser);
 
+ZAPI AST_Expression *parse_expr_compound(Parser *parser);
 ZAPI AST_Expression *parse_expr_operand(Parser *parser);
 ZAPI AST_Expression *parse_expr_base(Parser *parser);
 ZAPI AST_Expression *parse_expr_unary(Parser *parser);

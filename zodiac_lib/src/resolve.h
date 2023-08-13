@@ -23,6 +23,7 @@ enum class Infer_Node_kind
     TYPE,
     TYPE_SPEC,
     ARGUMENT,
+    MEMBER,
 };
 
 struct Infer_Node
@@ -33,10 +34,17 @@ struct Infer_Node
     {
         Type *type;
         AST_Type_Spec *type_spec;
+
         struct {
             AST_Expression *call_base_expr;
             s64 arg_index;
         } argument;
+
+        struct {
+            AST_Type_Spec *aggregate_ts;
+            s64 member_index;
+        } member;
+
     };
 };
 
@@ -113,6 +121,7 @@ ZAPI Resolve_Results resolve_types(Resolver *resolver);
 ZAPI Infer_Node create_infer_node(AST_Type_Spec *ts);
 ZAPI Infer_Node create_infer_node(Type *type);
 ZAPI Infer_Node create_infer_node(AST_Expression *call_base_expr, s64 arg_index);
+ZAPI Infer_Node create_infer_node(AST_Type_Spec *aggregate_ts, s64 member_index);
 
 ZAPI void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 ZAPI void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest);
