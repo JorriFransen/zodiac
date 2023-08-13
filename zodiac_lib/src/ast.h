@@ -241,6 +241,11 @@ struct AST_Return_Statement
     Scope *scope;
 };
 
+struct AST_Print_Expression
+{
+    Dynamic_Array<AST_Expression *> expressions;
+};
+
 enum class AST_Statement_Kind
 {
     INVALID,
@@ -286,8 +291,7 @@ struct AST_Statement
         AST_If_Statement if_stmt;
         AST_While_Statement while_stmt;
         AST_Return_Statement return_stmt;
-
-        AST_Expression *print_expr;
+        AST_Print_Expression print_expr;
     };
 };
 
@@ -458,7 +462,7 @@ ZAPI void ast_call_stmt_create(AST_Expression *call, AST_Statement *out_stmt);
 ZAPI void ast_if_stmt_create(Dynamic_Array<AST_If_Block> blocks, AST_Statement *else_stmt, AST_Statement *out_stmt);
 ZAPI void ast_while_stmt_create(AST_Expression *cond, AST_Statement *do_stmt, AST_Statement *out_stmt);
 ZAPI void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt);
-ZAPI void ast_print_stmt_create(AST_Expression *print_expr, AST_Statement *out_stmt);
+ZAPI void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, AST_Statement *out_stmt);
 ZAPI void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt);
 
 ZAPI void ast_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
@@ -503,7 +507,7 @@ ZAPI AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, Source_Range range, A
 ZAPI AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_If_Block> blocks, AST_Statement *else_stmt);
 ZAPI AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *cond, AST_Statement *do_stmt);
 ZAPI AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *value);
-ZAPI AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *print_expr);
+ZAPI AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> exprs);
 ZAPI AST_Statement *ast_statement_new(Zodiac_Context *ctx, Source_Range range);
 
 ZAPI AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value);

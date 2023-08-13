@@ -414,13 +414,18 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
         }
 
         case AST_Statement_Kind::PRINT: {
-            auto type = stmt->print_expr->resolved_type;
-            assert(type->kind == Type_Kind::INTEGER ||
-                   type->kind == Type_Kind::FLOAT   ||
-                   type->kind == Type_Kind::BOOLEAN ||
-                   type == &builtin_type_String);
-            Bytecode_Register value_reg = ast_expr_to_bytecode(bc, stmt->print_expr);
-            bytecode_emit_print(bc->builder, value_reg);
+            for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
+                auto type = stmt->print_expr.expressions[i]->resolved_type;
+                assert(type->kind == Type_Kind::INTEGER ||
+                       type->kind == Type_Kind::FLOAT   ||
+                       type->kind == Type_Kind::BOOLEAN ||
+                       type == &builtin_type_String);
+                Bytecode_Register value_reg = ast_expr_to_bytecode(bc, stmt->print_expr.expressions[i]);
+                bytecode_emit_print(bc->builder, value_reg);
+            }
+
+            auto newline_value_reg = bytecode_string_literal(bc->builder, "\n");
+            bytecode_emit_print(bc->builder, newline_value_reg);
             break;
         }
     }
@@ -444,30 +449,50 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
             Symbol *ident_sym = scope_get_symbol(expr->identifier.scope, expr->identifier);
             assert(ident_sym);
             assert(ident_sym->decl);
-            assert(ident_sym->decl->kind == AST_Declaration_Kind::VARIABLE);
+            // assert(ident_sym->decl->kind == AST_Declaration_Kind::VARIABLE);
 
-            if (DECL_IS_GLOBAL(ident_sym->decl)) {
+            switch (ident_sym->decl->kind) {
 
-                Bytecode_Global_Handle glob_handle;
-                bool found = hash_table_find(&bc->globals, ident_sym->decl, &glob_handle);
-                assert(found);
+                case AST_Declaration_Kind::INVALID: assert(false); break;
 
-                debug_assert(glob_handle < bc->builder->globals.count);
-                auto global = bc->builder->globals[glob_handle];
+                case AST_Declaration_Kind::VARIABLE: {
+                    if (DECL_IS_GLOBAL(ident_sym->decl)) {
 
-                Bytecode_Register global_reg;
-                bool reg_found = hash_table_find(&bc->builder->global_registers, global.atom, &global_reg);
-                assert(reg_found);
+                        Bytecode_Global_Handle glob_handle;
+                        bool found = hash_table_find(&bc->globals, ident_sym->decl, &glob_handle);
+                        assert(found);
 
-                debug_assert(global_reg.kind == Bytecode_Register_Kind::GLOBAL);
-                return global_reg;
+                        debug_assert(glob_handle < bc->builder->globals.count);
+                        auto global = bc->builder->globals[glob_handle];
 
-            } else {
-                Bytecode_Register alloc_reg;
-                bool found = hash_table_find(&bc->allocations, ident_sym->decl, &alloc_reg);
-                assert(found);
+                        Bytecode_Register global_reg;
+                        bool reg_found = hash_table_find(&bc->builder->global_registers, global.atom, &global_reg);
+                        assert(reg_found);
 
-                return alloc_reg;
+                        debug_assert(global_reg.kind == Bytecode_Register_Kind::GLOBAL);
+                        return global_reg;
+
+                    } else {
+                        Bytecode_Register alloc_reg;
+                        bool found = hash_table_find(&bc->allocations, ident_sym->decl, &alloc_reg);
+                        assert(found);
+
+                        return alloc_reg;
+                    }
+                }
+
+                case AST_Declaration_Kind::CONSTANT_VARIABLE: assert(false); break;
+
+                case AST_Declaration_Kind::PARAMETER: {
+                    assert(false); // We need to store arguments in local variables to make this work.
+                    break;
+                }
+
+                case AST_Declaration_Kind::FIELD: assert(false); break;
+                case AST_Declaration_Kind::FUNCTION: assert(false); break;
+                case AST_Declaration_Kind::STRUCT: assert(false); break;
+                case AST_Declaration_Kind::UNION: assert(false); break;
+                case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
             }
         }
 

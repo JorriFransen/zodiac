@@ -480,7 +480,7 @@ switch (operand.type->bit_size) { \
             auto out_handle = (FILE *)interp->std_out.handle;
 
             if (operand.type == &builtin_type_String) {
-                fprintf(out_handle, "%.*s\n", (int)operand.value.string.length, operand.value.string.data);
+                fprintf(out_handle, "%.*s", (int)operand.value.string.length, operand.value.string.data);
                 break;
             }
 
@@ -491,18 +491,18 @@ switch (operand.type->bit_size) { \
                     if (operand.type->integer.sign) {
                         switch (operand.type->bit_size) {
                             default: assert(false); break;
-                            case 8: fprintf(out_handle, "%d\n", operand.value.integer.s8); break;
-                            case 16: fprintf(out_handle, "%d\n", operand.value.integer.s16); break;
-                            case 32: fprintf(out_handle, "%d\n", operand.value.integer.s32); break;
-                            case 64: fprintf(out_handle, "%lld\n", operand.value.integer.s64); break;
+                            case 8: fprintf(out_handle, "%d", operand.value.integer.s8); break;
+                            case 16: fprintf(out_handle, "%d", operand.value.integer.s16); break;
+                            case 32: fprintf(out_handle, "%d", operand.value.integer.s32); break;
+                            case 64: fprintf(out_handle, "%lld", operand.value.integer.s64); break;
                         }
                     } else {
                         switch (operand.type->bit_size) {
                             default: assert(false); break;
-                            case 8: fprintf(out_handle, "%u\n", operand.value.integer.u8); break;
-                            case 16: fprintf(out_handle, "%u\n", operand.value.integer.u16); break;
-                            case 32: fprintf(out_handle, "%u\n", operand.value.integer.u32); break;
-                            case 64: fprintf(out_handle, "%llu\n", operand.value.integer.u64); break;
+                            case 8: fprintf(out_handle, "%u", operand.value.integer.u8); break;
+                            case 16: fprintf(out_handle, "%u", operand.value.integer.u16); break;
+                            case 32: fprintf(out_handle, "%u", operand.value.integer.u32); break;
+                            case 64: fprintf(out_handle, "%llu", operand.value.integer.u64); break;
                         }
                     }
                     break;
@@ -511,19 +511,19 @@ switch (operand.type->bit_size) { \
                 case Type_Kind::FLOAT: {
                     switch (operand.type->bit_size) {
                         default: assert(false && !"Unhandled float bit size for print instruction"); break;
-                        case 32: fprintf(out_handle, "%f\n", operand.value.real.r32); break;
-                        case 64: fprintf(out_handle, "%f\n", operand.value.real.r64); break;
+                        case 32: fprintf(out_handle, "%f", operand.value.real.r32); break;
+                        case 64: fprintf(out_handle, "%f", operand.value.real.r64); break;
                     }
                     break;
                 }
 
                 case Type_Kind::BOOLEAN: {
-                    fprintf(out_handle, "%s\n", operand.value.boolean ? "true" : "false");
+                    fprintf(out_handle, "%s", operand.value.boolean ? "true" : "false");
                     break;
                 }
 
                 case Zodiac::Type_Kind::POINTER: {
-                    fprintf(out_handle, "%p\n", operand.value.pointer);
+                    fprintf(out_handle, "%p", operand.value.pointer);
                     break;
                 }
             }

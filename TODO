@@ -1,4 +1,5 @@
 
+- When printing bytecode, convert special characters to esacpe sequences
 - Struct literal expressions
 - Convert structs returned from run directives into ast expression (struct literal).
 

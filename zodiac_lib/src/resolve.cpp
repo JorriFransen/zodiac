@@ -532,7 +532,9 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
         }
 
         case AST_Statement_Kind::PRINT: {
-            flatten_expression(ctx, stmt->print_expr, scope, dest);
+            for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
+                flatten_expression(ctx, stmt->print_expr.expressions[i], scope, dest);
+            }
             break;
         }
     }
@@ -1525,18 +1527,21 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
         }
 
         case AST_Statement_Kind::PRINT: {
-            auto type = stmt->print_expr->resolved_type;
-            assert(type);
+            for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
+                auto type = stmt->print_expr.expressions[i]->resolved_type;
+                assert(type);
 
-            if (type->kind == Type_Kind::UNSIZED_INTEGER) {
-                type = &builtin_type_s64;
-                stmt->print_expr->resolved_type = &builtin_type_s64;
+                if (type->kind == Type_Kind::UNSIZED_INTEGER) {
+                    type = &builtin_type_s64;
+                    stmt->print_expr.expressions[1]->resolved_type = &builtin_type_s64;
+                }
+
+                assert(type->kind == Type_Kind::INTEGER ||
+                       type->kind == Type_Kind::FLOAT   ||
+                       type->kind == Type_Kind::BOOLEAN ||
+                       type == &builtin_type_String);
+
             }
-
-            assert(type->kind == Type_Kind::INTEGER ||
-                   type->kind == Type_Kind::FLOAT   ||
-                   type->kind == Type_Kind::BOOLEAN ||
-                   type == &builtin_type_String);
 
             break;
         }
@@ -1593,7 +1598,11 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             assert(func_sym->state == Symbol_State::TYPED);
 
             assert(func_sym->decl->kind == AST_Declaration_Kind::FUNCTION);
-            assert(DECL_IS_TYPED(func_sym->decl));
+            if (!DECL_IS_TYPED(func_sym->decl)) {
+                resolve_error(ctx, expr, "Waiting for function to be typed");
+                resolve_error(ctx, func_sym->decl, "Function is here")
+                return false;
+            }
 
             auto func_decl = func_sym->decl;
 

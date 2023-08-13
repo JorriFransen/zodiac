@@ -11,12 +11,16 @@ bool_false := #run return_bool(false);
 #run main();
 
 main :: () {
+
     print(signed_integer);
     print(unsigned_integer);
     print(float);
     print(double);
     print(bool_true);
     print(bool_false);
+
+    vector := make_vector(2, 3);
+    print_vector(vector);
 
     return 0;
 }
@@ -41,11 +45,18 @@ return_bool :: (x: bool) -> bool {
     return x;
 }
 
-// Vec2 :: struct {
-//     x, y: s64;
-// }
+Vec2 :: struct {
+    x, y: s64;
+}
 
-// make_vector :: (x: s64, y: s64) -> Vec2 {
-//     result : Vec2;
-//     return result;
-// }
+make_vector :: (x: s64, y: s64) -> Vec2 {
+    result : Vec2;
+    result.x = x;
+    result.y = y;
+    return result;
+}
+
+print_vector :: (_v: Vec2) {
+    v := _v;
+    print( "{ ", v.x, ", ", v.y, " }");
+}

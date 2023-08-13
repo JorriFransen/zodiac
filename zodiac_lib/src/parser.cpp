@@ -309,13 +309,28 @@ AST_Statement *parse_keyword_statement(Parser *parser)
 
     } else if (match_keyword(parser, keyword_print)) {
 
+        auto temp_print_exprs = temp_array_create<AST_Expression *>(&parser->context->temp_allocator);
+
         expect_token(parser, '(');
-        AST_Expression *print_expr = parse_expression(parser);
-        expect_token(parser, ')');
+
         auto end_pos = cur_tok(parser).range.end;
+
+        while (!match_token(parser, ')')) {
+            if (temp_print_exprs.array.count != 0) {
+                expect_token(parser, ',');
+            }
+
+            AST_Expression *print_expr = parse_expression(parser);
+            dynamic_array_append(&temp_print_exprs.array, print_expr);
+
+            end_pos = cur_tok(parser).range.end;
+        }
+
         expect_token(parser, ';');
 
-        return ast_print_statement_new(parser->context, { start_pos, end_pos }, print_expr);
+        auto print_exprs = temp_array_finalize(&parser->context->ast_allocator, &temp_print_exprs);
+
+        return ast_print_statement_new(parser->context, { start_pos, end_pos }, print_exprs);
     }
 
     Token t = cur_tok(parser);

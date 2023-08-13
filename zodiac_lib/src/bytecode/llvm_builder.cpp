@@ -490,7 +490,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
                     llvm::Value *llvm_args[] = { llvm_val };
                     llvm::Value *llvm_bool_str = irb->CreateCall(bool_to_str_fn, llvm_args);
 
-                    llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, "%s\n");
+                    llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, "%s");
                     dynamic_array_append(llvm_print_args, fmt_str_lit);
                     dynamic_array_append(llvm_print_args, llvm_bool_str);
                     break;
@@ -503,18 +503,18 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
                     if (bc_inst.a.type->integer.sign) {
                         switch (bc_inst.a.type->bit_size) {
                             default: assert(false); break;
-                            case 8: fmt_str = "%i\n"; break;
-                            case 16: fmt_str = "%i\n"; break;
-                            case 32: fmt_str = "%i\n"; break;
-                            case 64: fmt_str = "%i\n"; break;
+                            case 8: fmt_str = "%i"; break;
+                            case 16: fmt_str = "%i"; break;
+                            case 32: fmt_str = "%i"; break;
+                            case 64: fmt_str = "%i"; break;
                         }
                     } else {
                         switch (bc_inst.a.type->bit_size) {
                             default: assert(false); break;
-                            case 8: fmt_str = "%u\n"; break;
-                            case 16: fmt_str = "%u\n"; break;
-                            case 32: fmt_str = "%u\n"; break;
-                            case 64: fmt_str = "%u\n"; break;
+                            case 8: fmt_str = "%u"; break;
+                            case 16: fmt_str = "%u"; break;
+                            case 32: fmt_str = "%u"; break;
+                            case 64: fmt_str = "%u"; break;
                         }
 
                     }
@@ -535,11 +535,11 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
                         case 32: {
                             llvm::Type *llvm_r64_ty = llvm_type_from_ast_type(builder, &builtin_type_r64);;
                             llvm_val = irb->CreateFPCast(llvm_val, llvm_r64_ty);
-                            fmt_str = "%f\n";
+                            fmt_str = "%f";
                             break;
                         }
 
-                        case 64: fmt_str = "%f\n"; break;
+                        case 64: fmt_str = "%f"; break;
                     }
 
                     assert(fmt_str);
@@ -550,7 +550,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
                 }
 
                 case Type_Kind::POINTER: {
-                    auto fmt_str = "%p\n";
+                    auto fmt_str = "%p";
                     llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
                     dynamic_array_append(llvm_print_args, fmt_str_lit);
                     dynamic_array_append(llvm_print_args, llvm_val);
@@ -559,7 +559,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
                 case Type_Kind::STRUCTURE: {
                     if (bc_inst.a.type == &builtin_type_String) {
-                        auto fmt_str = "%.*s\n";
+                        auto fmt_str = "%.*s";
                         llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
                         llvm::Value *llvm_str_len = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, {bc_inst.a.value.string.length});
                         dynamic_array_append(llvm_print_args, fmt_str_lit);

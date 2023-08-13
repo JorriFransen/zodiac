@@ -247,13 +247,13 @@ void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
     out_stmt->return_stmt.scope = nullptr;
 }
 
-void ast_print_stmt_create(AST_Expression *print_expr, AST_Statement *out_stmt)
+void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, AST_Statement *out_stmt)
 {
-    debug_assert(print_expr && out_stmt);
+    debug_assert(exprs.count && exprs.data && out_stmt);
 
     ast_statement_create(AST_Statement_Kind::PRINT, out_stmt);
 
-    out_stmt->print_expr = print_expr;
+    out_stmt->print_expr.expressions = exprs;
 }
 
 void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
@@ -622,12 +622,12 @@ AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_
     return stmt;
 }
 
-AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *print_expr)
+AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> exprs)
 {
     debug_assert(ctx);
 
     auto stmt = ast_statement_new(ctx, range);
-    ast_print_stmt_create(print_expr, stmt);
+    ast_print_stmt_create(exprs, stmt);
     return stmt;
 }
 
@@ -1032,7 +1032,8 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
 
         case AST_Statement_Kind::PRINT: {
             string_builder_append(sb, "print(");
-            ast_print_expression(sb, stmt->print_expr);
+            assert(stmt->print_expr.expressions.count == 1);
+            ast_print_expression(sb, stmt->print_expr.expressions[0]);
             string_builder_append(sb, ")");
             break;
         }
