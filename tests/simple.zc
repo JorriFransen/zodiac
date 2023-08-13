@@ -1,70 +1,89 @@
 
-// signed_integer := #run return_signed_integer(7);
-// unsigned_integer := #run return_unsigned_integer(8);
-// float := #run return_float(4.2);
-// double := #run return_double(4.2);
-// bool_true := #run return_bool(true);
-// bool_false := #run return_bool(false);
+signed_integer := #run return_signed_integer(7);
+unsigned_integer := #run return_unsigned_integer(8);
+float := #run return_float(4.2);
+double := #run return_double(4.2);
+bool_true := #run return_bool(true);
+bool_false := #run return_bool(false);
 
-// // vector := #run make_vector(2, 3);
+// vector := #run make_vector(2, 3);
 
-// #run main();
-// main :: () {
+#run main();
+main :: () {
 
-//     print("\n");
+    print(signed_integer);
+    print(unsigned_integer);
+    print(float);
+    print(double);
+    print(bool_true);
+    print(bool_false);
 
-//     print(signed_integer);
-//     print(unsigned_integer);
-//     print(float);
-//     print(double);
-//     print(bool_true);
-//     print(bool_false);
+    vector : Vec2 = { 2, 3 };
+    print_vector(vector);
+    // print_vector({1, 2}); // Need nested infer nodes for this
 
-//     vector := make_vector(2, 3);
-//     print_vector(vector);
+    return 0;
+}
 
-//     return 0;
-// }
+return_signed_integer :: (x: s64) -> s64 {
+    return x;
+}
 
-// return_signed_integer :: (x: s64) -> s64 {
-//     return x;
-// }
+return_unsigned_integer :: (x: u64) -> u64 {
+    return x;
+}
 
-// return_unsigned_integer :: (x: u64) -> u64 {
-//     return x;
-// }
+return_float :: (x: r32) -> r32 {
+    return x;
+}
 
-// return_float :: (x: r32) -> r32 {
-//     return x;
-// }
+return_double :: (x: r64) -> r64 {
+    return x;
+}
 
-// return_double :: (x: r64) -> r64 {
-//     return x;
-// }
-
-// return_bool :: (x: bool) -> bool {
-//     return x;
-// }
+return_bool :: (x: bool) -> bool {
+    return x;
+}
 
 Vec2 :: struct {
     x, y: s64;
 }
 
-// make_vector :: (x: s64, y: s64) -> Vec2 {
-//     result : Vec2;
-//     result.x = x;
-//     result.y = y;
-//     return result;
+// AABB :: struct {
+//     pos, size: Vec2;
 // }
 
-#run main();
-main :: () {
-    v : Vec2 = { 2, 3 };
-    print_vector(v);
-    return 0;
+make_vector :: (x: s64, y: s64) -> Vec2 {
+    result : Vec2;
+    result.x = x;
+    result.y = y;
+    return result;
 }
+
+// #run main();
+// main :: () {
+//     v : Vec2 = { 2, 3 };
+//     print_vector(v);
+
+//     r : AABB;
+//     // r.pos = { 1, 2 }; // Need nested infer nodes for this
+//     // r.size = { 3, 4 };
+
+//     r.pos.x = 1;
+//     r.pos.y = 2;
+//     r.size.x = 3;
+//     r.size.y = 4;
+
+//     print_aabb(r);
+//     return 0;
+// }
 
 print_vector :: (_v: Vec2) {
     v := _v;
-    print( "Vec2{ ", v.x, ", ", v.y, " }");
+    print("Vec2{ ", v.x, ", ", v.y, " }");
 }
+
+// print_aabb :: (_r: AABB) {
+//     r := _r;
+//     print("AABB{ pos: Vec2{ ", r.pos.x, ", ", r.pos.y, " }, size: Vec2{ ", r.size.x, ", ", r.size.y, "} }");
+// }

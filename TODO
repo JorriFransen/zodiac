@@ -1,7 +1,11 @@
 
+- Create compound literal expression from pointer returned by run (when returning a struct)
+- Test rundirectives with different types and with constants
+
 - Struct literal expressions
     - Nested structs
     - Test with different types
+    - With non constant values
 
 - Convert structs returned from run directives into ast expression (struct literal).
 

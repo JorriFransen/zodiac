@@ -882,12 +882,13 @@ Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Functi
 #endif // NDEBUG
 
     Interpreter run_interp = interpreter_create(c_allocator(), bc->context);
-    defer { interpreter_free(&run_interp); };
-
     auto run_prog = bytecode_get_program(bc->builder);
 
     run_interp.std_out = stdout_file;
     Interpreter_Register result = interpreter_start(&run_interp, run_prog, fn_handle);
+
+    assert_msg(!(result.type->flags & TYPE_FLAG_AGGREGATE), "If we expect an aggregate value or array as return value, we can't free this yet");
+    interpreter_free(&run_interp);
 
     return result;
 }
@@ -939,7 +940,7 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
 
 #ifndef NDEBUG
     bool resolved_type =
-#endif // NDEBUg
+#endif // NDEBUG
         type_resolve_expression(ctx, result, scope, infer_node);
     debug_assert(resolved_type);
 
