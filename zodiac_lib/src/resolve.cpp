@@ -1533,7 +1533,7 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
 
                 if (type->kind == Type_Kind::UNSIZED_INTEGER) {
                     type = &builtin_type_s64;
-                    stmt->print_expr.expressions[1]->resolved_type = &builtin_type_s64;
+                    stmt->print_expr.expressions[i]->resolved_type = &builtin_type_s64;
                 }
 
                 assert(type->kind == Type_Kind::INTEGER ||
