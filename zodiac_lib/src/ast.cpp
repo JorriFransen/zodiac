@@ -1032,8 +1032,12 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
 
         case AST_Statement_Kind::PRINT: {
             string_builder_append(sb, "print(");
-            assert(stmt->print_expr.expressions.count == 1);
-            ast_print_expression(sb, stmt->print_expr.expressions[0]);
+            for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
+                if (i > 0) {
+                    string_builder_append(sb, ", ");
+                }
+                ast_print_expression(sb, stmt->print_expr.expressions[i]);
+            }
             string_builder_append(sb, ")");
             break;
         }
