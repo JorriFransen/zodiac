@@ -181,7 +181,7 @@ void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Decla
         dynamic_array_append(&resolver->nodes_to_type_resolve, proto_node);
     }
 
-    flatten_declaration(ctx, decl, resolver->global_scope, &node->nodes);
+    flatten_declaration(resolver, decl, resolver->global_scope, &node->nodes);
 
     dynamic_array_append(&resolver->nodes_to_name_resolve, node);
     dynamic_array_append(&resolver->nodes_to_type_resolve, node);
@@ -284,55 +284,65 @@ Resolve_Results resolve_types(Resolver *resolver)
     return result;
 }
 
-Infer_Node create_infer_node(AST_Type_Spec *ts)
+Infer_Node *infer_node_new(Zodiac_Context *ctx, Infer_Source source, Infer_Target target)
 {
-    debug_assert(ts);
+    debug_assert(ctx);
 
-    return {
-        .kind = Infer_Node_kind::TYPE_SPEC,
-        .type_spec = ts,
-    };
+    auto result = alloc<Infer_Node>(&ctx->ast_allocator);
+    result->source_kind = source;
+    result->target_kind = target;
+    return result;
 }
 
-Infer_Node create_infer_node(Type *type)
+Infer_Node *infer_node_new(Zodiac_Context *ctx, AST_Type_Spec *ts)
 {
-    debug_assert(type);
+    debug_assert(ctx && ts);
 
-    return {
-        .kind = Infer_Node_kind::TYPE,
-        .type = type,
-    };
+    auto result = infer_node_new(ctx, Infer_Source::TYPE_SPEC, Infer_Target::DEFAULT);
+    result->source.type_spec = ts;
+
+    return result;
 }
 
-Infer_Node create_infer_node(AST_Expression *call_base_expr, s64 arg_index)
+Infer_Node *infer_node_new(Zodiac_Context *ctx, Type *type)
 {
-    debug_assert(call_base_expr);
+    debug_assert(ctx && type);
 
-    return {
-        .kind = Infer_Node_kind::ARGUMENT,
-        .argument = {
-            .call_base_expr = call_base_expr,
-            .arg_index = arg_index,
-        },
-    };
+    auto result = infer_node_new(ctx, Infer_Source::TYPE, Infer_Target::DEFAULT);
+    result->source.type = type;
+
+    return result;
 }
 
-Infer_Node create_infer_node(AST_Type_Spec *aggregate_ts, s64 member_index)
+Infer_Node *arg_infer_node_new(Zodiac_Context *ctx, AST_Expression *call_base_expr, s64 arg_index)
 {
-    debug_assert(aggregate_ts);
+    debug_assert(ctx && call_base_expr);
+    assert(arg_index >= 0);
 
-    return {
-        .kind = Infer_Node_kind::MEMBER,
-        .member = {
-            .aggregate_ts = aggregate_ts,
-            .member_index = member_index,
-        },
-    };
+    auto result = infer_node_new(ctx, Infer_Source::EXPR, Infer_Target::ARGUMENT);
+    result->source.expr = call_base_expr;
+    result->target.index = arg_index;
+
+    return result;
 }
 
-void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest)
+Infer_Node *member_infer_node_new(Zodiac_Context *ctx, AST_Type_Spec *ag_ts, s64 member_index)
 {
-    debug_assert(decl && scope && dest);
+    debug_assert(ctx && ag_ts);
+    assert(member_index >= 0);
+
+    auto result = infer_node_new(ctx, Infer_Source::TYPE_SPEC, Infer_Target::MEMBER);
+    result->source.type_spec = ag_ts;
+    result->target.index = member_index;
+
+    return result;
+}
+
+void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest)
+{
+    debug_assert(resolver && decl && scope && dest);
+
+    auto ctx = resolver->ctx;
 
     Scope *aggregate_scope = nullptr;
     Scope *parameter_scope = nullptr;
@@ -397,14 +407,14 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
             auto ts = decl->variable.type_spec;
             auto val = decl->variable.value;
 
-            Infer_Node infer_from = {};
+            Infer_Node *infer_from = nullptr;
 
             if (ts) {
                 flatten_type_spec(ts, scope, dest);
-                infer_from = create_infer_node(ts);
+                infer_from = infer_node_new(resolver->ctx, ts);
             }
             if (val)
-                flatten_expression(ctx, val, scope, dest, infer_from);
+                flatten_expression(resolver, val, scope, dest, infer_from);
 
             assert(decl->identifier.scope == nullptr);
             decl->identifier.scope = scope;
@@ -434,7 +444,7 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
             }
 
             for (u64 i = 0; i < decl->function.body.count; i++) {
-                flatten_statement(ctx, decl->function.body[i], local_scope, dest);
+                flatten_statement(resolver, decl->function.body[i], local_scope, dest);
             }
 
             break;
@@ -457,7 +467,7 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
         }
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
-            flatten_directive(ctx, decl->directive, scope, dest);
+            flatten_directive(resolver, decl->directive, scope, dest);
             break;
         }
     }
@@ -466,9 +476,9 @@ void flatten_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scop
     dynamic_array_append(dest, flat_decl);
 }
 
-void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest)
+void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest)
 {
-    debug_assert(stmt && scope && dest);
+    debug_assert(resolver && stmt && scope && dest);
 
     switch (stmt->kind) {
 
@@ -480,24 +490,24 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
             stmt->block.scope = block_scope;
 
             for (u64 i = 0; i < stmt->block.statements.count; i++) {
-                flatten_statement(ctx, stmt->block.statements[i], block_scope, dest);
+                flatten_statement(resolver, stmt->block.statements[i], block_scope, dest);
             }
             break;
         }
 
         case AST_Statement_Kind::DECLARATION: {
-            flatten_declaration(ctx, stmt->decl.decl, scope, dest);
+            flatten_declaration(resolver, stmt->decl.decl, scope, dest);
             break;
         }
 
         case AST_Statement_Kind::ASSIGN: {
-            flatten_expression(ctx, stmt->assign.dest, scope, dest);
-            flatten_expression(ctx, stmt->assign.value, scope, dest);
+            flatten_expression(resolver, stmt->assign.dest, scope, dest);
+            flatten_expression(resolver, stmt->assign.value, scope, dest);
             break;
         }
 
         case AST_Statement_Kind::CALL: {
-            flatten_expression(ctx, stmt->call.call, scope, dest);
+            flatten_expression(resolver, stmt->call.call, scope, dest);
             break;
         }
 
@@ -506,17 +516,17 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
             for (s64 i = 0; i < stmt->if_stmt.blocks.count; i++) {
                 auto if_block = &stmt->if_stmt.blocks[i];
 
-                flatten_expression(ctx, if_block->cond, scope, dest);
+                flatten_expression(resolver, if_block->cond, scope, dest);
 
                 auto then_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
                 assert(if_block->then_scope == nullptr);
                 if_block->then_scope = then_scope;
-                flatten_statement(ctx, if_block->then, then_scope, dest);
+                flatten_statement(resolver, if_block->then, then_scope, dest);
             }
 
             if (stmt->if_stmt.else_stmt) {
                 auto else_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
-                flatten_statement(ctx, stmt->if_stmt.else_stmt, else_scope, dest);
+                flatten_statement(resolver, stmt->if_stmt.else_stmt, else_scope, dest);
                 assert(stmt->if_stmt.else_scope == nullptr);
                 stmt->if_stmt.else_scope = else_scope;
             }
@@ -531,22 +541,22 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
                 AST_Declaration *func_decl = enclosing_function(scope);
                 assert(func_decl);
 
-                Infer_Node infer_from = {};
+                Infer_Node *infer_from = nullptr;
 
                 if (func_decl->function.return_ts) {
-                    infer_from = create_infer_node(func_decl->function.return_ts);
+                    infer_from = infer_node_new(resolver->ctx, func_decl->function.return_ts);
                 }
 
                 stmt->return_stmt.scope = scope;
 
-                flatten_expression(ctx, stmt->return_stmt.value, scope, dest, infer_from);
+                flatten_expression(resolver, stmt->return_stmt.value, scope, dest, infer_from);
             }
             break;
         }
 
         case AST_Statement_Kind::PRINT: {
             for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
-                flatten_expression(ctx, stmt->print_expr.expressions[i], scope, dest);
+                flatten_expression(resolver, stmt->print_expr.expressions[i], scope, dest);
             }
             break;
         }
@@ -556,9 +566,9 @@ void flatten_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope, D
     dynamic_array_append(dest, flat_stmt);
 }
 
-void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest, Infer_Node infer_node/*={}*/)
+void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest, Infer_Node *infer_node/*=nullptr*/)
 {
-    debug_assert(ctx && expr && scope && dest);
+    debug_assert(resolver && expr && scope && dest);
 
     switch (expr->kind) {
 
@@ -581,7 +591,7 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
         }
 
         case AST_Expression_Kind::MEMBER: {
-            flatten_expression(ctx, expr->member.base, scope, dest);
+            flatten_expression(resolver, expr->member.base, scope, dest);
             break;
         }
 
@@ -589,11 +599,11 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
             assert(false);
 
         case AST_Expression_Kind::CALL: {
-            flatten_expression(ctx, expr->call.base, scope, dest);
+            flatten_expression(resolver, expr->call.base, scope, dest);
 
             for (s64 i = 0; i < expr->call.args.count; i++) {
-                Infer_Node arg_infer_node = create_infer_node(expr->call.base, i);
-                flatten_expression(ctx, expr->call.args[i], scope, dest, arg_infer_node);
+                Infer_Node *arg_infer_node = arg_infer_node_new(resolver->ctx, expr->call.base, i);
+                flatten_expression(resolver, expr->call.args[i], scope, dest, arg_infer_node);
             }
             break;
         }
@@ -604,19 +614,19 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
         case AST_Expression_Kind::BINARY: {
             // assert(infer_type_from);
 
-            Infer_Node infer_from = infer_node;
+            Infer_Node *infer_from = infer_node;
             if (expr->binary.lhs->kind == AST_Expression_Kind::INTEGER_LITERAL) {
-                infer_from = {};
+                infer_from = nullptr;
             }
 
-            flatten_expression(ctx, expr->binary.lhs, scope, dest, infer_from);
+            flatten_expression(resolver, expr->binary.lhs, scope, dest, infer_from);
 
             infer_from = infer_node;
             if (expr->binary.rhs->kind == AST_Expression_Kind::INTEGER_LITERAL) {
-                infer_from = {};
+                infer_from = nullptr;
             }
 
-            flatten_expression(ctx, expr->binary.rhs, scope, dest, infer_from);
+            flatten_expression(resolver, expr->binary.rhs, scope, dest, infer_from);
             break;
         }
 
@@ -624,12 +634,12 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
         case AST_Expression_Kind::CAST: {
             assert(expr->cast.type_spec);
             flatten_type_spec(expr->cast.type_spec, scope, dest);
-            flatten_expression(ctx, expr->cast.value, scope, dest);
+            flatten_expression(resolver, expr->cast.value, scope, dest);
             break;
         }
 
         case AST_Expression_Kind::RUN_DIRECTIVE: {
-            flatten_directive(ctx, expr->directive.directive, scope, dest);
+            flatten_directive(resolver, expr->directive.directive, scope, dest);
             assert(!expr->directive.directive->run.scope);
             expr->directive.directive->run.scope = scope;
             break;
@@ -637,11 +647,12 @@ void flatten_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope,
 
         case AST_Expression_Kind::COMPOUND: {
 
-            assert(infer_node.kind == Infer_Node_kind::TYPE_SPEC);
+            assert(infer_node->source_kind == Infer_Source::TYPE_SPEC);
+            assert(infer_node->target_kind == Infer_Target::DEFAULT);
 
             for (s64 i = 0; i < expr->compound.expressions.count; i++) {
-                Infer_Node infer_from = create_infer_node(infer_node.type_spec, i);
-                flatten_expression(ctx, expr->compound.expressions[i], scope, dest, infer_from);
+                Infer_Node *infer_from = member_infer_node_new(resolver->ctx, infer_node->source.type_spec, i);
+                flatten_expression(resolver, expr->compound.expressions[i], scope, dest, infer_from);
             }
         }
 
@@ -675,9 +686,9 @@ void flatten_type_spec(AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node>
     dynamic_array_append(dest, flat_ts);
 }
 
-void flatten_directive(Zodiac_Context *ctx, AST_Directive *directive, Scope *scope, Dynamic_Array<Flat_Node> *dest)
+void flatten_directive(Resolver *resolver, AST_Directive *directive, Scope *scope, Dynamic_Array<Flat_Node> *dest)
 {
-    debug_assert(ctx && directive && scope && dest);
+    debug_assert(resolver && directive && scope && dest);
     debug_assert(directive->kind == AST_Directive_Kind::RUN);
 
     switch (directive->run.kind) {
@@ -686,12 +697,12 @@ void flatten_directive(Zodiac_Context *ctx, AST_Directive *directive, Scope *sco
 
         case AST_Run_Directive_Kind::EXPR: {
 
-            flatten_expression(ctx, directive->run.expr, scope, dest);
+            flatten_expression(resolver, directive->run.expr, scope, dest);
             break;
         }
 
         case AST_Run_Directive_Kind::STMT: {
-            flatten_statement(ctx, directive->run.stmt, scope, dest);
+            flatten_statement(resolver, directive->run.stmt, scope, dest);
             break;
         }
     }
@@ -719,7 +730,7 @@ Flat_Node to_flat_node(AST_Statement *stmt, Scope *scope)
     return result;
 }
 
-Flat_Node to_flat_node(AST_Expression *expr, Scope *scope, Infer_Node infer_type_from/*={}*/)
+Flat_Node to_flat_node(AST_Expression *expr, Scope *scope, Infer_Node *infer_type_from/*nullptr*/)
 {
     debug_assert(expr && scope);
 
@@ -1583,7 +1594,7 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
     return result;
 }
 
-bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope, Infer_Node infer_type_from)
+bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope, Infer_Node *infer_type_from)
 {
     debug_assert(expr);
     debug_assert(expr->resolved_type == nullptr);
@@ -1593,77 +1604,132 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
     Type *inferred_type = nullptr;
 
-    switch (infer_type_from.kind) {
+    if (infer_type_from) {
 
-        case Infer_Node_kind::INVALID: break;
+        switch (infer_type_from->source_kind) {
 
-        case Infer_Node_kind::TYPE: {
-            inferred_type = infer_type_from.type;
-            break;
-        }
+            case Infer_Source::TYPE: inferred_type = infer_type_from->source.type; break;
 
-        case Infer_Node_kind::TYPE_SPEC: {
-            auto infer_from = infer_type_from.type_spec;
-            assert(infer_from);
-            if (!infer_from->resolved_type) {
-                resolve_error(ctx, expr, "Waiting for type spec to be typed");
-                resolve_error(ctx, infer_from, "Type spec is here");
-                return false;
+            case Infer_Source::TYPE_SPEC: {
+                auto ts = infer_type_from->source.type_spec;
+                if (!ts->resolved_type) {
+                    resolve_error(ctx, expr, "Waiting for type spec to be typed");
+                    resolve_error(ctx, ts, "Type spec is here");
+                    return false;
+                }
+                inferred_type = ts->resolved_type;
+                break;
             }
 
-            assert(infer_from->resolved_type);
-            inferred_type = infer_from->resolved_type;
-            break;
+            case Infer_Source::EXPR: {
+                auto expr = infer_type_from->source.expr;
+                assert(EXPR_IS_TYPED(expr));
+
+                inferred_type = expr->resolved_type;
+                break;
+            }
         }
 
-        case Infer_Node_kind::ARGUMENT: {
-            auto call_base_expr = infer_type_from.argument.call_base_expr;
-            assert(call_base_expr->kind == AST_Expression_Kind::IDENTIFIER);
-            assert(EXPR_IS_TYPED(call_base_expr));
+        assert(inferred_type);
 
-            auto func_sym = scope_get_symbol(call_base_expr->identifier.scope, call_base_expr->identifier.name);
-            assert(func_sym && func_sym->kind == Symbol_Kind::FUNC);
-            assert(func_sym->state == Symbol_State::TYPED);
+        switch (infer_type_from->target_kind) {
 
-            assert(func_sym->decl->kind == AST_Declaration_Kind::FUNCTION);
-            if (!DECL_IS_TYPED(func_sym->decl)) {
-                resolve_error(ctx, expr, "Waiting for function to be typed");
-                resolve_error(ctx, func_sym->decl, "Function is here")
-                return false;
+            case Infer_Target::DEFAULT: break;
+
+            case Infer_Target::ARGUMENT: {
+                assert(inferred_type->kind == Type_Kind::FUNCTION);
+
+                auto index = infer_type_from->target.index;
+                assert(inferred_type->function.parameter_types.count > infer_type_from->target.index);
+
+                inferred_type = inferred_type->function.parameter_types[index];
+                break;
             }
 
-            auto func_decl = func_sym->decl;
+            case Infer_Target::MEMBER: {
+                assert(inferred_type->flags & TYPE_FLAG_AGGREGATE);
+                assert(inferred_type->kind == Type_Kind::STRUCTURE);
 
-            auto arg_index = infer_type_from.argument.arg_index;
-            assert(arg_index >= 0 && func_decl->function.params.count > arg_index);
+                auto index = infer_type_from->target.index;
+                assert(inferred_type->structure.member_types.count > infer_type_from->target.index);
 
-            auto param_decl = func_decl->function.params[arg_index];
-            assert(param_decl);
-            assert(DECL_IS_TYPED(param_decl));
-
-            inferred_type = param_decl->parameter.resolved_type;
-            break;
-        }
-
-        case Infer_Node_kind::MEMBER: {
-
-            auto ts = infer_type_from.member.aggregate_ts;
-            if (!ts->resolved_type) {
-                resolve_error(ctx, expr, "Waiting for type spec to be typed");
-                resolve_error(ctx, ts, "Type spec is here");
-                return false;
+                inferred_type = inferred_type->structure.member_types[index];
+                break;
             }
-
-            assert(ts->resolved_type->flags & TYPE_FLAG_AGGREGATE);
-            assert(ts->resolved_type->kind == Type_Kind::STRUCTURE);
-            assert(ts->resolved_type->structure.member_types.count > infer_type_from.member.member_index);
-
-            inferred_type = ts->resolved_type->structure.member_types[infer_type_from.member.member_index];
-            break;
         }
     }
 
-    if (infer_type_from.kind != Infer_Node_kind::INVALID) {
+    // switch (infer_type_from->) {
+
+    //     case Infer_Node_kind::INVALID: break;
+
+    //     case Infer_Node_kind::TYPE: {
+    //         inferred_type = infer_type_from->type;
+    //         break;
+    //     }
+
+    //     case Infer_Node_kind::TYPE_SPEC: {
+    //         auto infer_from = infer_type_from->type_spec;
+    //         assert(infer_from);
+    //         if (!infer_from->resolved_type) {
+    //             resolve_error(ctx, expr, "Waiting for type spec to be typed");
+    //             resolve_error(ctx, infer_from, "Type spec is here");
+    //             return false;
+    //         }
+
+    //         assert(infer_from->resolved_type);
+    //         inferred_type = infer_from->resolved_type;
+    //         break;
+    //     }
+
+    //     case Infer_Node_kind::ARGUMENT: {
+    //         auto call_base_expr = infer_type_from->argument.call_base_expr;
+    //         assert(call_base_expr->kind == AST_Expression_Kind::IDENTIFIER);
+    //         assert(EXPR_IS_TYPED(call_base_expr));
+
+    //         auto func_sym = scope_get_symbol(call_base_expr->identifier.scope, call_base_expr->identifier.name);
+    //         assert(func_sym && func_sym->kind == Symbol_Kind::FUNC);
+    //         assert(func_sym->state == Symbol_State::TYPED);
+
+    //         assert(func_sym->decl->kind == AST_Declaration_Kind::FUNCTION);
+    //         if (!DECL_IS_TYPED(func_sym->decl)) {
+    //             resolve_error(ctx, expr, "Waiting for function to be typed");
+    //             resolve_error(ctx, func_sym->decl, "Function is here")
+    //             return false;
+    //         }
+
+    //         auto func_decl = func_sym->decl;
+
+    //         auto arg_index = infer_type_from->argument.arg_index;
+    //         assert(arg_index >= 0 && func_decl->function.params.count > arg_index);
+
+    //         auto param_decl = func_decl->function.params[arg_index];
+    //         assert(param_decl);
+    //         assert(DECL_IS_TYPED(param_decl));
+
+    //         inferred_type = param_decl->parameter.resolved_type;
+    //         break;
+    //     }
+
+    //     case Infer_Node_kind::MEMBER: {
+
+    //         auto ts = infer_type_from->member.aggregate_ts;
+    //         if (!ts->resolved_type) {
+    //             resolve_error(ctx, expr, "Waiting for type spec to be typed");
+    //             resolve_error(ctx, ts, "Type spec is here");
+    //             return false;
+    //         }
+
+    //         assert(ts->resolved_type->flags & TYPE_FLAG_AGGREGATE);
+    //         assert(ts->resolved_type->kind == Type_Kind::STRUCTURE);
+    //         assert(ts->resolved_type->structure.member_types.count > infer_type_from->member.member_index);
+
+    //         inferred_type = ts->resolved_type->structure.member_types[infer_type_from->member.member_index];
+    //         break;
+    //     }
+    // }
+
+    if (infer_type_from) {
         assert(inferred_type);
     }
 

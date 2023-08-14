@@ -901,7 +901,7 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
     auto ctx = bc->context;
 
     AST_Expression *result = nullptr;
-    Infer_Node infer_node = create_infer_node(reg.type);
+    Infer_Node *infer_node = infer_node_new(bc->context, reg.type);
 
     switch (reg.type->kind) {
 
