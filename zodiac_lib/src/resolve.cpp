@@ -1657,79 +1657,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                 break;
             }
         }
-    }
 
-    // switch (infer_type_from->) {
-
-    //     case Infer_Node_kind::INVALID: break;
-
-    //     case Infer_Node_kind::TYPE: {
-    //         inferred_type = infer_type_from->type;
-    //         break;
-    //     }
-
-    //     case Infer_Node_kind::TYPE_SPEC: {
-    //         auto infer_from = infer_type_from->type_spec;
-    //         assert(infer_from);
-    //         if (!infer_from->resolved_type) {
-    //             resolve_error(ctx, expr, "Waiting for type spec to be typed");
-    //             resolve_error(ctx, infer_from, "Type spec is here");
-    //             return false;
-    //         }
-
-    //         assert(infer_from->resolved_type);
-    //         inferred_type = infer_from->resolved_type;
-    //         break;
-    //     }
-
-    //     case Infer_Node_kind::ARGUMENT: {
-    //         auto call_base_expr = infer_type_from->argument.call_base_expr;
-    //         assert(call_base_expr->kind == AST_Expression_Kind::IDENTIFIER);
-    //         assert(EXPR_IS_TYPED(call_base_expr));
-
-    //         auto func_sym = scope_get_symbol(call_base_expr->identifier.scope, call_base_expr->identifier.name);
-    //         assert(func_sym && func_sym->kind == Symbol_Kind::FUNC);
-    //         assert(func_sym->state == Symbol_State::TYPED);
-
-    //         assert(func_sym->decl->kind == AST_Declaration_Kind::FUNCTION);
-    //         if (!DECL_IS_TYPED(func_sym->decl)) {
-    //             resolve_error(ctx, expr, "Waiting for function to be typed");
-    //             resolve_error(ctx, func_sym->decl, "Function is here")
-    //             return false;
-    //         }
-
-    //         auto func_decl = func_sym->decl;
-
-    //         auto arg_index = infer_type_from->argument.arg_index;
-    //         assert(arg_index >= 0 && func_decl->function.params.count > arg_index);
-
-    //         auto param_decl = func_decl->function.params[arg_index];
-    //         assert(param_decl);
-    //         assert(DECL_IS_TYPED(param_decl));
-
-    //         inferred_type = param_decl->parameter.resolved_type;
-    //         break;
-    //     }
-
-    //     case Infer_Node_kind::MEMBER: {
-
-    //         auto ts = infer_type_from->member.aggregate_ts;
-    //         if (!ts->resolved_type) {
-    //             resolve_error(ctx, expr, "Waiting for type spec to be typed");
-    //             resolve_error(ctx, ts, "Type spec is here");
-    //             return false;
-    //         }
-
-    //         assert(ts->resolved_type->flags & TYPE_FLAG_AGGREGATE);
-    //         assert(ts->resolved_type->kind == Type_Kind::STRUCTURE);
-    //         assert(ts->resolved_type->structure.member_types.count > infer_type_from->member.member_index);
-
-    //         inferred_type = ts->resolved_type->structure.member_types[infer_type_from->member.member_index];
-    //         break;
-    //     }
-    // }
-
-    if (infer_type_from) {
         assert(inferred_type);
     }
 
