@@ -1,6 +1,33 @@
 
+- Make a infer_node a source for infer nodes, so we don't have to do stuff like this:
+
+(in flatten_expression)
+case AST_Expression_Kind::COMPOUND: {
+
+        assert(infer_node);
+        assert(infer_node->target_kind == Infer_Target::DEFAULT);
+
+        for (s64 i = 0; i < expr->compound.expressions.count; i++) {
+
+            Infer_Node *infer_from = nullptr;
+
+            switch (infer_node->source_kind) {
+
+                case Infer_Source::TYPE: infer_from = member_infer_node_new(resolver->ctx, infer_node->source.type, i); break;
+                case Infer_Source::TYPE_SPEC: infer_from = member_infer_node_new(resolver->ctx, infer_node->source.type_spec, i); break;
+                case Infer_Source::EXPR: infer_from = member_infer_node_new(resolver->ctx, infer_node->source.expr, i); break;
+            }
+
+            assert(infer_from);
+            flatten_expression(resolver, expr->compound.expressions[i], scope, dest, infer_from);
+        }
+    }
+
+
 - Create compound literal expression from pointer returned by run (when returning a struct)
 - Test rundirectives with different types and with constants
+- Test compound literals
+ - global (constants)
 
 - Struct literal expressions
     - Nested structs

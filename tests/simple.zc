@@ -66,13 +66,8 @@ main :: () {
     print_vector(v);
 
     r : AABB;
-    // r.pos = { 1, 2 }; // Need nested infer nodes for this
-    // r.size = { 3, 4 };
-
-    r.pos.x = 1;
-    r.pos.y = 2;
-    r.size.x = 3;
-    r.size.y = 4;
+    r.pos = { 1, 2 };
+    r.size = { 3, 4 };
 
     print_aabb(r);
     return 0;

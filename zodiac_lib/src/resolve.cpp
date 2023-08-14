@@ -314,6 +314,16 @@ Infer_Node *infer_node_new(Zodiac_Context *ctx, Type *type)
     return result;
 }
 
+Infer_Node *infer_node_new(Zodiac_Context *ctx, AST_Expression *expr)
+{
+    debug_assert(ctx && expr);
+
+    auto result = infer_node_new(ctx, Infer_Source::EXPR, Infer_Target::DEFAULT);
+    result->source.expr = expr;
+
+    return result;
+}
+
 Infer_Node *arg_infer_node_new(Zodiac_Context *ctx, AST_Expression *call_base_expr, s64 arg_index)
 {
     debug_assert(ctx && call_base_expr);
@@ -326,6 +336,18 @@ Infer_Node *arg_infer_node_new(Zodiac_Context *ctx, AST_Expression *call_base_ex
     return result;
 }
 
+Infer_Node *member_infer_node_new(Zodiac_Context *ctx, Type *type, s64 member_index)
+{
+    debug_assert(ctx && type);
+    assert(member_index >= 0);
+
+    auto result = infer_node_new(ctx, Infer_Source::TYPE, Infer_Target::MEMBER);
+    result->source.type = type;
+    result->target.index = member_index;
+
+    return result;
+}
+
 Infer_Node *member_infer_node_new(Zodiac_Context *ctx, AST_Type_Spec *ag_ts, s64 member_index)
 {
     debug_assert(ctx && ag_ts);
@@ -333,6 +355,18 @@ Infer_Node *member_infer_node_new(Zodiac_Context *ctx, AST_Type_Spec *ag_ts, s64
 
     auto result = infer_node_new(ctx, Infer_Source::TYPE_SPEC, Infer_Target::MEMBER);
     result->source.type_spec = ag_ts;
+    result->target.index = member_index;
+
+    return result;
+}
+
+Infer_Node *member_infer_node_new(Zodiac_Context *ctx, AST_Expression *expr, s64 member_index)
+{
+    debug_assert(ctx && expr);
+    assert(member_index >= 0);
+
+    auto result = infer_node_new(ctx, Infer_Source::EXPR, Infer_Target::MEMBER);
+    result->source.expr = expr;
     result->target.index = member_index;
 
     return result;
@@ -502,7 +536,8 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
 
         case AST_Statement_Kind::ASSIGN: {
             flatten_expression(resolver, stmt->assign.dest, scope, dest);
-            flatten_expression(resolver, stmt->assign.value, scope, dest);
+            Infer_Node *infer_node = infer_node_new(resolver->ctx, stmt->assign.dest);
+            flatten_expression(resolver, stmt->assign.value, scope, dest, infer_node);
             break;
         }
 
@@ -647,11 +682,21 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
 
         case AST_Expression_Kind::COMPOUND: {
 
-            assert(infer_node->source_kind == Infer_Source::TYPE_SPEC);
+            assert(infer_node);
             assert(infer_node->target_kind == Infer_Target::DEFAULT);
 
             for (s64 i = 0; i < expr->compound.expressions.count; i++) {
-                Infer_Node *infer_from = member_infer_node_new(resolver->ctx, infer_node->source.type_spec, i);
+
+                Infer_Node *infer_from = nullptr;
+
+                switch (infer_node->source_kind) {
+
+                    case Infer_Source::TYPE: infer_from = member_infer_node_new(resolver->ctx, infer_node->source.type, i); break;
+                    case Infer_Source::TYPE_SPEC: infer_from = member_infer_node_new(resolver->ctx, infer_node->source.type_spec, i); break;
+                    case Infer_Source::EXPR: infer_from = member_infer_node_new(resolver->ctx, infer_node->source.expr, i); break;
+                }
+
+                assert(infer_from);
                 flatten_expression(resolver, expr->compound.expressions[i], scope, dest, infer_from);
             }
         }
@@ -1668,7 +1713,9 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
                 if (inferred_type) {
 
-                    if (inferred_type->kind != Type_Kind::INTEGER) {
+                    if (inferred_type->kind == Type_Kind::UNSIZED_INTEGER) {
+                        inferred_type = &builtin_type_s64;
+                    } else if (inferred_type->kind != Type_Kind::INTEGER) {
                         fatal_resolve_error(ctx, expr, "Could not convert integer literal to inferred type '%s'",
                                                        temp_type_string(inferred_type).data);
                         return false;
