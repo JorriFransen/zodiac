@@ -18,8 +18,8 @@ LLVM_LD_FLAGS := $(shell llvm-config --ldflags)
 
 include Makefile.dyncall_vars.linux.mak
 
-COMMON_COMPILER_FLAGS := -ggdb -Og -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC
-COMMON_LINKER_FLAGS := -ggdb -Og
+COMMON_COMPILER_FLAGS := -g3 -Og -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC
+COMMON_LINKER_FLAGS := -g3 -Og
 
 COMPILER_FLAGS := $(COMMON_COMPILER_FLAGS) $(LLVM_CXX_FLAGS)
 INCLUDE_FLAGS := -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
