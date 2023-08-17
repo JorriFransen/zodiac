@@ -48,27 +48,28 @@ Vec2 :: struct {
     x, y: s64;
 }
 
-AABB :: struct {
-    pos, size: Vec2;
-}
+// AABB :: struct {
+//     pos, size: Vec2;
+// }
 
-make_vector :: (x: s64, y: s64) -> Vec2 {
-    result : Vec2;
-    result.x = x;
-    result.y = y;
-    return result;
-}
+// make_vector :: (x: s64, y: s64) -> Vec2 {
+//     result : Vec2;
+//     result.x = x;
+//     result.y = y;
+//     return result;
+// }
 
 #run main();
 main :: () {
     v : Vec2 = { 2, 3 };
     print_vector(v);
+    print_vector({4, 2});
 
-    r : AABB;
-    r.pos = { 1, 2 };
-    r.size = { 3, 4 };
+    // r : AABB;
+    // r.pos = { 1, 2 };
+    // r.size = { 3, 4 };
 
-    print_aabb(r);
+    // print_aabb(r);
     return 0;
 }
 
@@ -77,7 +78,7 @@ print_vector :: (_v: Vec2) {
     print("Vec2{ ", v.x, ", ", v.y, " }");
 }
 
-print_aabb :: (_r: AABB) {
-    r := _r;
-    print("AABB{ pos: Vec2{ ", r.pos.x, ", ", r.pos.y, " }, size: Vec2{ ", r.size.x, ", ", r.size.y, "} }");
-}
+// print_aabb :: (_r: AABB) {
+//     r := _r;
+//     print("AABB{ pos: Vec2{ ", r.pos.x, ", ", r.pos.y, " }, size: Vec2{ ", r.size.x, ", ", r.size.y, "} }");
+// }
