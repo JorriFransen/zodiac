@@ -2,6 +2,7 @@
 
 #include "containers/dynamic_array.h"
 #include "defines.h"
+#include "source_pos.h"
 
 namespace Zodiac
 {
@@ -121,10 +122,13 @@ ZAPI Infer_Node *infer_node_new(Zodiac_Context *ctx, Infer_Source source, Infer_
 ZAPI Infer_Node *infer_node_new(Zodiac_Context *ctx, AST_Type_Spec *ts);
 ZAPI Infer_Node *infer_node_new(Zodiac_Context *ctx, Type *type);
 ZAPI Infer_Node *infer_node_new(Zodiac_Context *ctx, AST_Expression *expr);
+
 ZAPI Infer_Node *arg_infer_node_new(Zodiac_Context *ctx, AST_Expression *call_base_expr, s64 arg_index);
 ZAPI Infer_Node *member_infer_node_new(Zodiac_Context *ctx, Type *type, s64 member_index);
 ZAPI Infer_Node *member_infer_node_new(Zodiac_Context *ctx, AST_Type_Spec *ag_ts, s64 member_index);
 ZAPI Infer_Node *member_infer_node_new(Zodiac_Context *ctx, AST_Expression *expr, s64 member_index);
+
+ZAPI Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error_loc);
 
 ZAPI void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 ZAPI void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest);

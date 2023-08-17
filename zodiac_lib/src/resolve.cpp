@@ -372,6 +372,69 @@ Infer_Node *member_infer_node_new(Zodiac_Context *ctx, AST_Expression *expr, s64
     return result;
 }
 
+Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error_loc)
+{
+    debug_assert(ctx && infer_node);
+
+    Type *inferred_type = nullptr;
+
+    switch (infer_node->source_kind) {
+
+        case Infer_Source::TYPE: inferred_type = infer_node->source.type; break;
+
+        case Infer_Source::TYPE_SPEC: {
+            auto ts = infer_node->source.type_spec;
+            if (!ts->resolved_type) {
+                resolve_error(ctx, error_loc, "Waiting for type spec to be typed");
+                resolve_error(ctx, ts, "Type spec is here");
+                return nullptr;
+            }
+            inferred_type = ts->resolved_type;
+            break;
+        }
+
+        case Infer_Source::EXPR: {
+            auto expr = infer_node->source.expr;
+            assert(EXPR_IS_TYPED(expr));
+
+            inferred_type = expr->resolved_type;
+            break;
+        }
+    }
+
+    assert(inferred_type);
+
+    switch (infer_node->target_kind) {
+
+        case Infer_Target::DEFAULT: break;
+
+        case Infer_Target::ARGUMENT: {
+            assert(inferred_type->kind == Type_Kind::FUNCTION);
+
+            auto index = infer_node->target.index;
+            assert(inferred_type->function.parameter_types.count > infer_node->target.index);
+
+            inferred_type = inferred_type->function.parameter_types[index];
+            break;
+        }
+
+        case Infer_Target::MEMBER: {
+            assert(inferred_type->flags & TYPE_FLAG_AGGREGATE);
+            assert(inferred_type->kind == Type_Kind::STRUCTURE);
+
+            auto index = infer_node->target.index;
+            assert(inferred_type->structure.member_types.count > infer_node->target.index);
+
+            inferred_type = inferred_type->structure.member_types[index];
+            break;
+        }
+    }
+
+    assert(inferred_type);
+
+    return inferred_type;
+}
+
 void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest)
 {
     debug_assert(resolver && decl && scope && dest);
@@ -1648,62 +1711,9 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
     bool result = true;
 
     Type *inferred_type = nullptr;
-
     if (infer_type_from) {
-
-        switch (infer_type_from->source_kind) {
-
-            case Infer_Source::TYPE: inferred_type = infer_type_from->source.type; break;
-
-            case Infer_Source::TYPE_SPEC: {
-                auto ts = infer_type_from->source.type_spec;
-                if (!ts->resolved_type) {
-                    resolve_error(ctx, expr, "Waiting for type spec to be typed");
-                    resolve_error(ctx, ts, "Type spec is here");
-                    return false;
-                }
-                inferred_type = ts->resolved_type;
-                break;
-            }
-
-            case Infer_Source::EXPR: {
-                auto expr = infer_type_from->source.expr;
-                assert(EXPR_IS_TYPED(expr));
-
-                inferred_type = expr->resolved_type;
-                break;
-            }
-        }
-
-        assert(inferred_type);
-
-        switch (infer_type_from->target_kind) {
-
-            case Infer_Target::DEFAULT: break;
-
-            case Infer_Target::ARGUMENT: {
-                assert(inferred_type->kind == Type_Kind::FUNCTION);
-
-                auto index = infer_type_from->target.index;
-                assert(inferred_type->function.parameter_types.count > infer_type_from->target.index);
-
-                inferred_type = inferred_type->function.parameter_types[index];
-                break;
-            }
-
-            case Infer_Target::MEMBER: {
-                assert(inferred_type->flags & TYPE_FLAG_AGGREGATE);
-                assert(inferred_type->kind == Type_Kind::STRUCTURE);
-
-                auto index = infer_type_from->target.index;
-                assert(inferred_type->structure.member_types.count > infer_type_from->target.index);
-
-                inferred_type = inferred_type->structure.member_types[index];
-                break;
-            }
-        }
-
-        assert(inferred_type);
+        inferred_type = infer_type(ctx, infer_type_from, expr->range);
+        if (!inferred_type) return false;
     }
 
     switch (expr->kind) {
