@@ -1,4 +1,3 @@
-
 // signed_integer := #run return_signed_integer(7);
 // unsigned_integer := #run return_unsigned_integer(8);
 // float := #run return_float(4.2);

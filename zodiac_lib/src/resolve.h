@@ -2,7 +2,6 @@
 
 #include "containers/dynamic_array.h"
 #include "defines.h"
-#include "source_pos.h"
 
 namespace Zodiac
 {
@@ -15,6 +14,7 @@ struct AST_File;
 struct AST_Statement;
 struct AST_Type_Spec;
 struct Scope;
+struct Source_Range;
 struct Type;
 struct Zodiac_Context;
 
@@ -23,6 +23,7 @@ enum class Infer_Source
     TYPE,
     TYPE_SPEC,
     EXPR,
+    INFER_NODE,
 };
 
 enum class Infer_Target
@@ -41,6 +42,7 @@ struct Infer_Node
         Type *type;
         AST_Type_Spec *type_spec;
         AST_Expression *expr;
+        Infer_Node *infer_node;
     } source;
 
     union {
@@ -123,10 +125,8 @@ ZAPI Infer_Node *infer_node_new(Zodiac_Context *ctx, AST_Type_Spec *ts);
 ZAPI Infer_Node *infer_node_new(Zodiac_Context *ctx, Type *type);
 ZAPI Infer_Node *infer_node_new(Zodiac_Context *ctx, AST_Expression *expr);
 
-ZAPI Infer_Node *arg_infer_node_new(Zodiac_Context *ctx, AST_Expression *call_base_expr, s64 arg_index);
-ZAPI Infer_Node *member_infer_node_new(Zodiac_Context *ctx, Type *type, s64 member_index);
-ZAPI Infer_Node *member_infer_node_new(Zodiac_Context *ctx, AST_Type_Spec *ag_ts, s64 member_index);
-ZAPI Infer_Node *member_infer_node_new(Zodiac_Context *ctx, AST_Expression *expr, s64 member_index);
+ZAPI Infer_Node *arg_infer_node_new(Zodiac_Context *ctx, Infer_Node *infer_node, s64 arg_index);
+ZAPI Infer_Node *member_infer_node_new(Zodiac_Context *ctx, Infer_Node *infer_node, s64 member_index);
 
 ZAPI Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error_loc);
 

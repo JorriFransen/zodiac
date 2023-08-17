@@ -324,49 +324,24 @@ Infer_Node *infer_node_new(Zodiac_Context *ctx, AST_Expression *expr)
     return result;
 }
 
-Infer_Node *arg_infer_node_new(Zodiac_Context *ctx, AST_Expression *call_base_expr, s64 arg_index)
+Infer_Node *arg_infer_node_new(Zodiac_Context *ctx, Infer_Node *infer_node, s64 arg_index)
 {
-    debug_assert(ctx && call_base_expr);
+    debug_assert(ctx && infer_node);
     assert(arg_index >= 0);
 
-    auto result = infer_node_new(ctx, Infer_Source::EXPR, Infer_Target::ARGUMENT);
-    result->source.expr = call_base_expr;
+    auto result = infer_node_new(ctx, Infer_Source::INFER_NODE, Infer_Target::ARGUMENT);
+    result->source.infer_node = infer_node;
     result->target.index = arg_index;
 
     return result;
 }
 
-Infer_Node *member_infer_node_new(Zodiac_Context *ctx, Type *type, s64 member_index)
+Infer_Node *member_infer_node_new(Zodiac_Context *ctx, Infer_Node *infer_node, s64 member_index)
 {
-    debug_assert(ctx && type);
-    assert(member_index >= 0);
+    debug_assert(ctx && infer_node);
 
-    auto result = infer_node_new(ctx, Infer_Source::TYPE, Infer_Target::MEMBER);
-    result->source.type = type;
-    result->target.index = member_index;
-
-    return result;
-}
-
-Infer_Node *member_infer_node_new(Zodiac_Context *ctx, AST_Type_Spec *ag_ts, s64 member_index)
-{
-    debug_assert(ctx && ag_ts);
-    assert(member_index >= 0);
-
-    auto result = infer_node_new(ctx, Infer_Source::TYPE_SPEC, Infer_Target::MEMBER);
-    result->source.type_spec = ag_ts;
-    result->target.index = member_index;
-
-    return result;
-}
-
-Infer_Node *member_infer_node_new(Zodiac_Context *ctx, AST_Expression *expr, s64 member_index)
-{
-    debug_assert(ctx && expr);
-    assert(member_index >= 0);
-
-    auto result = infer_node_new(ctx, Infer_Source::EXPR, Infer_Target::MEMBER);
-    result->source.expr = expr;
+    auto result = infer_node_new(ctx, Infer_Source::INFER_NODE, Infer_Target::MEMBER);
+    result->source.infer_node = infer_node;
     result->target.index = member_index;
 
     return result;
@@ -395,9 +370,20 @@ Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error
 
         case Infer_Source::EXPR: {
             auto expr = infer_node->source.expr;
-            assert(EXPR_IS_TYPED(expr));
+            if (!EXPR_IS_TYPED(expr)) {
+                resolve_error(ctx, error_loc, "Waiting for expression to be typed");
+                resolve_error(ctx, expr, "Expression is here");
+                return nullptr;
+            }
 
             inferred_type = expr->resolved_type;
+            break;
+        }
+
+        case Infer_Source::INFER_NODE: {
+            inferred_type = infer_type(ctx, infer_node->source.infer_node, error_loc);
+            if (!inferred_type)
+                return nullptr;
             break;
         }
     }
@@ -699,10 +685,15 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
         case AST_Expression_Kind::CALL: {
             flatten_expression(resolver, expr->call.base, scope, dest);
 
+            // We can't always use the passed in infer node, it might point
+            //  to the return value type of the function. We need the function type here.
+            auto fn_infer_node = infer_node_new(resolver->ctx, expr->call.base);
+
             for (s64 i = 0; i < expr->call.args.count; i++) {
-                Infer_Node *arg_infer_node = arg_infer_node_new(resolver->ctx, expr->call.base, i);
+                Infer_Node *arg_infer_node = arg_infer_node_new(resolver->ctx, fn_infer_node, i);
                 flatten_expression(resolver, expr->call.args[i], scope, dest, arg_infer_node);
             }
+
             break;
         }
 
@@ -749,17 +740,7 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
             assert(infer_node->target_kind == Infer_Target::DEFAULT);
 
             for (s64 i = 0; i < expr->compound.expressions.count; i++) {
-
-                Infer_Node *infer_from = nullptr;
-
-                switch (infer_node->source_kind) {
-
-                    case Infer_Source::TYPE: infer_from = member_infer_node_new(resolver->ctx, infer_node->source.type, i); break;
-                    case Infer_Source::TYPE_SPEC: infer_from = member_infer_node_new(resolver->ctx, infer_node->source.type_spec, i); break;
-                    case Infer_Source::EXPR: infer_from = member_infer_node_new(resolver->ctx, infer_node->source.expr, i); break;
-                }
-
-                assert(infer_from);
+                Infer_Node *infer_from = member_infer_node_new(resolver->ctx, infer_node, i);
                 flatten_expression(resolver, expr->compound.expressions[i], scope, dest, infer_from);
             }
         }
@@ -804,7 +785,6 @@ void flatten_directive(Resolver *resolver, AST_Directive *directive, Scope *scop
         case AST_Run_Directive_Kind::INVALID: assert(false); break;
 
         case AST_Run_Directive_Kind::EXPR: {
-
             flatten_expression(resolver, directive->run.expr, scope, dest);
             break;
         }
