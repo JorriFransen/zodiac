@@ -7,7 +7,7 @@ BASE_DIR := zodiac_driver
 SRC_DIR := $(BASE_DIR)/src
 ASSEMBLY := zodiac
 EXTENSION :=
-COMPILER_FLAGS := -g -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC
+COMPILER_FLAGS := -g3 -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec
 INCLUDE_FLAGS := -Izodiac_lib/src -I$(SRC_DIR) -I$(BASE_DIR)/cxxopts $(DYNCALL_INCLUDE_FLAGS)
 LINKER_FLAGS := -L$(BUILD_DIR) -lzodiac -Wl,-rpath,'$$ORIGIN/.'
 DEFINES := -D_DEBUG -DZIMPORT
@@ -31,7 +31,7 @@ compile:
 
 $(OBJ_DIR)/%.cpp.o: %.cpp
 	@echo "$< -> $@"
-	@clang++ $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+	clang++ $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
 
 .PHONY: link
 link: $(FULL_ASSEMBLY_PATH)

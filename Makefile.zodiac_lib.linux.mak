@@ -18,8 +18,8 @@ LLVM_LD_FLAGS := $(shell llvm-config --ldflags)
 
 include Makefile.dyncall_vars.linux.mak
 
-COMMON_COMPILER_FLAGS := -g -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC
-COMMON_LINKER_FLAGS := -g
+COMMON_COMPILER_FLAGS := -g3 -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC
+COMMON_LINKER_FLAGS := -g3
 
 COMPILER_FLAGS := $(COMMON_COMPILER_FLAGS) $(LLVM_CXX_FLAGS)
 INCLUDE_FLAGS := -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
@@ -57,14 +57,14 @@ compile:
 
 $(OBJ_DIR)/%.cpp.o: %.cpp
 	@echo "$< -> $@"
-	@clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+	clang++ $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
 
 .PHONY: link
 link: $(FULL_ASSEMBLY_PATH) $(SUPPORT_ASSEMBLY_DYN_PATH) $(SUPPORT_ASSEMBLY_STAT_PATH)
 
 $(SUPPORT_ASSEMBLY_DYN_PATH): $(SUPPORT_OBJ_FILES)
 	@echo Linking $(SUPPORT_ASSEMBLY_DYN)
-	clang $(SUPPORT_OBJ_FILES) $(COMMON_COMPILER_FLAGS) -o $@ $(DEFINES) $(COMMON_LINKER_FLAGS) -shared
+	clang++ $(SUPPORT_OBJ_FILES) $(COMMON_COMPILER_FLAGS) -o $@ $(DEFINES) $(COMMON_LINKER_FLAGS) -shared
 
 $(SUPPORT_ASSEMBLY_STAT_PATH): $(SUPPORT_OBJ_FILES)
 	@echo Linking $(SUPPORT_ASSEMBLY_STAT)
@@ -72,7 +72,7 @@ $(SUPPORT_ASSEMBLY_STAT_PATH): $(SUPPORT_OBJ_FILES)
 
 $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 	@echo Linking $(ASSEMBLY)
-	@clang $(OBJ_FILES) $(COMPILER_FLAGS) -o $@ $(DEFINES) $(LINKER_FLAGS)
+	clang++ $(OBJ_FILES) $(COMPILER_FLAGS) -o $@ $(DEFINES) $(LINKER_FLAGS)
 
 
 .PHONY: clean

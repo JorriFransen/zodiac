@@ -737,7 +737,6 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
         case AST_Expression_Kind::COMPOUND: {
 
             assert(infer_node);
-            assert(infer_node->target_kind == Infer_Target::DEFAULT);
 
             for (s64 i = 0; i < expr->compound.expressions.count; i++) {
                 Infer_Node *infer_from = member_infer_node_new(resolver->ctx, infer_node, i);

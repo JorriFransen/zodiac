@@ -9,7 +9,7 @@ EXTENSION :=
 
 include Makefile.dyncall_vars.linux.mak
 
-COMPILER_FLAGS := -g -MD -MP -Werror=vla -fdeclspec -fPIC
+COMPILER_FLAGS := -g3 -MD -MP -Werror=vla -fdeclspec -fPIC
 INCLUDE_FLAGS := -Izodiac_lib/src -I$(BASE_DIR)/munit -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
 LINKER_FLAGS := -L$(BUILD_DIR) -lzodiac -Wl,-rpath,'$$ORIGIN/.'
 DEFINES := -D_DEBUG -DZIMPORT
@@ -38,11 +38,11 @@ compile:
 
 $(OBJ_DIR)/%.cpp.o: %.cpp
 	@echo "$< -> $@"
-	@clang++ $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+	clang++ $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
 
 $(OBJ_DIR)/%.c.o: %.c
 	@echo "$< -> $@"
-	@clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+	clang $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
 
 .PHONY: link
 link: $(FULL_ASSEMBLY_PATH)

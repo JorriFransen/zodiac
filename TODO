@@ -5,6 +5,7 @@
  - global (constants)
 
 - Struct literal expressions
+    - As function arguments
     - Nested structs
     - Test with different types
     - With non constant values
