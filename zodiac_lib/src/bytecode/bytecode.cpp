@@ -167,23 +167,6 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
         dynamic_array_create(builder->allocator, &phi_args);
     }
 
-    // We can only compute this for arguments at this point.
-    //  When instructions are added that require more stack size, this is increased.
-    s64 required_stack_size = 0;
-
-    for (s64 i = 0; i < fn_type->function.parameter_types.count; i++) {
-        auto param_type = fn_type->function.parameter_types[i];
-        if (param_type->flags & TYPE_FLAG_AGGREGATE) {
-            // @Cleanup: @TODO: @FIXME: alignment
-            assert(param_type->bit_size % 8 == 0);
-            required_stack_size += param_type->bit_size / 8;
-        }
-
-        if (param_type->flags & TYPE_FLAG_ARRAY) {
-            assert(false);
-        }
-    }
-
     Bytecode_Function result = {
         .flags = flags,
         .name = fn_name,
@@ -191,7 +174,7 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
         .registers = registers,
         .blocks = blocks,
         .phi_args = phi_args,
-        .required_stack_size = required_stack_size,
+        .required_stack_size = 0,
     };
 
     if (!is_foreign) {
