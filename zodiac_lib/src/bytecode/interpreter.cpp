@@ -1492,15 +1492,46 @@ void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle 
 
     stack_push(&interp->frames, new_frame);
 
+    auto frame = stack_top_ptr(&interp->frames);
+
     for (s64 i = 0; i < arg_count; i++) {
         Interpreter_Register arg_source = stack_peek(&interp->arg_stack, (arg_count - 1) - i);
+
         Bytecode_Register arg_dest = {
             .kind = Bytecode_Register_Kind::TEMPORARY,
             .flags = BC_REGISTER_FLAG_NONE,
             .index = i,
             .type = arg_source.type,
         };
-        interpreter_store_register(interp, arg_source, arg_dest);
+
+        if (arg_source.type->flags & TYPE_FLAG_AGGREGATE) {
+            assert(arg_source.pointer);
+
+            // @Cleanup: @TODO: @FIXME: alignment?
+            assert (arg_source.type->bit_size % 8 == 0);
+            auto size = arg_source.type->bit_size / 8;
+            assert(frame->sp + size <= frame->stack_mem.data + frame->stack_mem.count);
+
+            u8 *ptr = frame->sp;
+            frame->sp += size;
+
+            interpreter_store_pointer(interp, arg_source, ptr);
+
+            Interpreter_Register target_reg = {
+                .type = arg_source.type,
+                .pointer = ptr,
+            };
+
+            interpreter_store_register(interp, target_reg, arg_dest);
+
+        } else {
+
+            if (arg_source.type->flags & TYPE_FLAG_ARRAY) {
+                assert(false);
+            }
+
+            interpreter_store_register(interp, arg_source, arg_dest);
+        }
     }
 
     if (arg_count) stack_pop(&interp->arg_stack, arg_count);

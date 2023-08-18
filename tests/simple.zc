@@ -63,7 +63,7 @@ Vec2 :: struct {
 main :: () {
     v : Vec2 = { 2, 3 };
     print_vector(v);
-    print_vector({4, 2});
+    // print_vector({4, 2});
 
     // r : AABB;
     // r.pos = { 1, 2 };
@@ -75,7 +75,9 @@ main :: () {
 
 print_vector :: (_v: Vec2) {
     v := _v;
-    print("Vec2{ ", v.x, ", ", v.y, " }");
+    // print("Vec2{ ", v.x, ", ", v.y, " }");
+    print(v.x);
+    // print(v.y);
 }
 
 // print_aabb :: (_r: AABB) {
