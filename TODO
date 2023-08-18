@@ -2,14 +2,13 @@
 - Create compound literal expression from pointer returned by run (when returning a struct)
 - Free the interpreter after running a run wrapper (execute_run_wrapper will need to return a reference to the interpreter).
 - Test rundirectives with different types and with constants
-- Test compound literals
- - global (constants)
 
-- Struct literal expressions
+- Struct literal expressions (add as tests)
     - As function arguments
     - Nested structs
     - Test with different types
     - With non constant values
+    - global (constants)
 
 - Convert structs returned from run directives into ast expression (struct literal).
 
