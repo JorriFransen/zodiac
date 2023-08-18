@@ -184,12 +184,24 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     Bytecode_Function_Handle fn_handle = bytecode_function_create(bc->builder, decl->identifier.name, decl->function.type);
     hash_table_add(&bc->functions, decl, fn_handle);
 
-    if (decl->function.variables.count) {
+    if (decl->function.variables.count || decl->function.params.count) {
 
         Bytecode_Block_Handle allocs_block_handle = bytecode_append_block(bc->builder, fn_handle, "allocs");
         bytecode_set_insert_point(bc->builder, fn_handle, allocs_block_handle);
 
         bool has_inits = false;
+
+        for (s64 i = 0; i < decl->function.params.count; i++) {
+            AST_Declaration *param_decl = decl->function.params[i];
+            assert(param_decl->variable.resolved_type);
+
+            Type *param_type = param_decl->variable.resolved_type;
+            auto alloc_name = string_append(bc->allocator, "arg_", param_decl->identifier.name.data);
+            auto alloc_reg = bytecode_emit_alloc(bc->builder, param_type, alloc_name.data);
+
+            debug_assert(!hash_table_find(&bc->allocations, param_decl));
+            hash_table_add(&bc->allocations, param_decl, alloc_reg);
+        }
 
         for (s64 i = 0; i < decl->function.variables.count; i++) {
             AST_Declaration *var_decl = decl->function.variables[i];
@@ -226,6 +238,18 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                 }
             }
         }
+
+        for (s64 i = 0; i < decl->function.params.count; i++) {
+            auto param_decl = decl->function.params[i];
+
+            Bytecode_Register alloc_reg;
+            bool found = hash_table_find(&bc->allocations, param_decl, &alloc_reg);
+            assert(found);
+
+            auto arg_reg = bytecode_emit_load_argument(bc->builder, i);
+            bytecode_emit_store_alloc(bc->builder, arg_reg, alloc_reg);
+        }
+
         Bytecode_Block_Handle start_block_handle = bytecode_append_block(bc->builder, fn_handle, "start");
         bytecode_emit_jmp(bc->builder, start_block_handle);
         bytecode_set_insert_point(bc->builder, fn_handle, start_block_handle);
@@ -484,8 +508,11 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
                 case AST_Declaration_Kind::CONSTANT_VARIABLE: assert(false); break;
 
                 case AST_Declaration_Kind::PARAMETER: {
-                    assert(false); // We need to store arguments in local variables to make this work.
-                    break;
+                    Bytecode_Register alloc_reg;
+                    bool found = hash_table_find(&bc->allocations, ident_sym->decl, &alloc_reg);
+                    assert(found);
+
+                    return alloc_reg;
                 }
 
                 case AST_Declaration_Kind::FIELD: assert(false); break;
@@ -600,21 +627,11 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                 case Zodiac::AST_Declaration_Kind::PARAMETER: {
                     assert(ident_decl->parameter.resolved_type);
 
-                    auto func_decl = enclosing_function(expr->identifier.scope);
-                    assert(func_decl);
-                    assert(func_decl->kind == AST_Declaration_Kind::FUNCTION);
+                    Bytecode_Register alloc_reg;
+                    bool found = hash_table_find(&bc->allocations, ident_decl, &alloc_reg);
+                    assert(found);
 
-                    s64 param_index = -1;
-                    for (s64 i = 0; i < func_decl->function.params.count; i++) {
-                        if (func_decl->function.params[i]->identifier.name == expr->identifier.name) {
-                            param_index = i;
-                            break;
-                        }
-                    }
-
-                    assert(param_index >= 0);
-
-                    return bytecode_emit_load_argument(bc->builder, param_index);
+                    return bytecode_emit_load_alloc(bc->builder, alloc_reg);
                 }
 
                 case Zodiac::AST_Declaration_Kind::FIELD: assert(false); break;

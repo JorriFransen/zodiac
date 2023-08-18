@@ -1348,6 +1348,8 @@ void interpreter_store_register(Interpreter *interp, Interpreter_Register source
     assert(dest.index <= frame->registers.count);
     auto dest_ptr = &frame->registers[dest.index];
 
+    bool agg_lit = source.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL;
+
     assert(dest_ptr->type == source.type);
 
     if (dest.kind == Bytecode_Register_Kind::TEMPORARY) {
@@ -1362,10 +1364,17 @@ void interpreter_store_register(Interpreter *interp, Interpreter_Register source
         }
 #endif
 
+        Interpreter_Register_Flags flags = INTERP_REG_FLAG_NONE;
+        if (agg_lit) {
+            flags |= INTERP_REG_FLAG_AGGREGATE_LITERAL;
+        }
+
         dest_ptr->value = source.value;
+        dest_ptr->flags = flags;
 
     } else if (dest.kind == Bytecode_Register_Kind::ALLOC) {
-
+        assert(!agg_lit);
+        assert(source.pointer);
         dest_ptr->pointer = source.pointer;
 
     } else {
