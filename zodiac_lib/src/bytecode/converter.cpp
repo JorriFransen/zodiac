@@ -904,8 +904,8 @@ Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Functi
     run_interp.std_out = stdout_file;
     Interpreter_Register result = interpreter_start(&run_interp, run_prog, fn_handle);
 
-    assert_msg(!(result.type->flags & TYPE_FLAG_AGGREGATE), "If we expect an aggregate value or array as return value, we can't free this yet");
-    interpreter_free(&run_interp);
+    // assert_msg(!(result.type->flags & TYPE_FLAG_AGGREGATE), "If we expect an aggregate value or array as return value, we can't free this yet");
+    // interpreter_free(&run_interp);
 
     return result;
 }
@@ -942,7 +942,56 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
         }
 
         case Type_Kind::POINTER: assert(false); break;
-        case Type_Kind::STRUCTURE: assert(false); break;
+
+        case Type_Kind::STRUCTURE: {
+            auto struct_type = reg.type;
+            assert(struct_type->kind == Type_Kind::STRUCTURE);
+
+            assert(reg.pointer);
+            u8 *cursor = reg.pointer;
+
+            Dynamic_Array<AST_Expression *> expressions;
+            dynamic_array_create(&ctx->ast_allocator, &expressions, struct_type->structure.member_types.count);
+
+            for (s64 i = 0; i < struct_type->structure.member_types.count; i++) {
+                auto mem_type = struct_type->structure.member_types[i];
+
+                switch (mem_type->kind) {
+
+                    case Type_Kind::INVALID: assert(false); break;
+                    case Type_Kind::VOID: assert(false); break;
+
+                    case Type_Kind::UNSIZED_INTEGER:
+                    case Type_Kind::INTEGER: {
+                        Integer_Value val;
+                        switch (mem_type->bit_size) {
+                            case 64: {
+                                val.u64 = *(u64*)cursor;
+                                cursor += mem_type->bit_size / 8;
+                                break;
+                            }
+                        }
+
+                        AST_Expression *expr = ast_integer_literal_expr_new(ctx, range, val);
+                        assert(false) // Turn this into a recursive call, so all members will be resolved in the end
+
+                        dynamic_array_append(&expressions, expr);
+                        break;
+                    }
+
+                    case Type_Kind::FLOAT: assert(false); break;
+                    case Type_Kind::BOOLEAN: assert(false); break;
+                    case Type_Kind::POINTER: assert(false); break;
+                    case Type_Kind::STRUCTURE: assert(false); break;
+                    case Type_Kind::STATIC_ARRAY: assert(false); break;
+                    case Type_Kind::FUNCTION: assert(false); break;
+                }
+            }
+
+            result = ast_compound_expr_new(ctx, range, expressions);
+            break;
+        }
+
         case Type_Kind::STATIC_ARRAY: assert(false); break;
         case Type_Kind::FUNCTION: assert(false); break;
     }
