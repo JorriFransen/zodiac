@@ -9,9 +9,9 @@ EXTENSION :=
 
 include Makefile.dyncall_vars.linux.mak
 
-COMPILER_FLAGS := -g3 -Og -MD -MP -Werror=vla -fdeclspec
+COMPILER_FLAGS := -g3 -O0 -MD -MP -Werror=vla -fdeclspec
 INCLUDE_FLAGS := -Izodiac_lib/src -I$(BASE_DIR)/munit -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
-LINKER_FLAGS := -g3 -Og -L$(BUILD_DIR) -lzodiac -Wl,-rpath,'$$ORIGIN'
+LINKER_FLAGS := -g3 -O0 -L$(BUILD_DIR) -lzodiac -Wl,-rpath,'$$ORIGIN'
 DEFINES := -D_DEBUG -DZIMPORT
 
 SRC_FILES := $(shell find $(SRC_DIR) -name *.cpp)
