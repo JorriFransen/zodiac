@@ -1,5 +1,3 @@
-
-- Free the interpreter after running a run wrapper (execute_run_wrapper will need to return a reference to the interpreter).
 - Test rundirectives with different types and with constants
 
 - Struct literal expressions (add as tests)

@@ -39,6 +39,13 @@ struct Bytecode_Converter
     Hash_Table<AST_Directive *, Bytecode_Function_Handle> run_directives;
 };
 
+struct Run_Wrapper_Result
+{
+    Allocator *allocator;
+    Interpreter *interpreter;
+    Interpreter_Register value;
+};
+
 ZAPI Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Context *context, Bytecode_Builder *bb);
 ZAPI void bytecode_converter_destroy(Bytecode_Converter *bc);
 
@@ -54,8 +61,10 @@ ZAPI Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Ex
 
 ZAPI Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directive *run_directive);
 
-ZAPI Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle);
-ZAPI Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle, File_Handle stdout_file);
+ZAPI Run_Wrapper_Result execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle);
+ZAPI Run_Wrapper_Result execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle, File_Handle stdout_file);
+
+ZAPI void free_run_wrapper_result(Run_Wrapper_Result *result);
 
 ZAPI AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, Interpreter_Register &reg, Scope *scope, Source_Range range);
 ZAPI AST_Expression *interpreter_memory_to_ast_expression(Bytecode_Converter *bc, u8* mem, Type *type, Scope *scope, Source_Range range);

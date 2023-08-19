@@ -16,36 +16,41 @@ namespace Zodiac { namespace Bytecode {
 
 Interpreter interpreter_create(Allocator *allocator, Zodiac_Context *context)
 {
-    Interpreter result = {
-        .allocator = allocator,
-        .context = context,
-        .functions = {},
-    };
+    Interpreter result;
+    interpreter_init(allocator, context, &result);
+    return result;
+}
 
-    result.running = false;
-    result.start_return_value = {};
-    result.jumped_from_block = -1;
+void interpreter_init(Allocator *allocator, Zodiac_Context *context, Interpreter *out_interp)
+{
+    debug_assert(allocator && context && out_interp);
 
-    stack_init(allocator, &result.frames);
-    stack_init(allocator, &result.arg_stack);
+    out_interp->allocator = allocator;
+    out_interp->context = context;
+    out_interp->functions = {};
 
-    dynamic_array_create(allocator, &result.globals);
+    out_interp->running = false;
+    out_interp->start_return_value = {};
+    out_interp->jumped_from_block = -1;
+
+    stack_init(allocator, &out_interp->frames);
+    stack_init(allocator, &out_interp->arg_stack);
+
+    dynamic_array_create(allocator, &out_interp->globals);
 
     const auto register_count = 64;
-    result.registers.data = alloc_array<Interpreter_Register>(allocator, register_count);
-    result.registers.count = register_count;
-    result.used_register_count = 0;
+    out_interp->registers.data = alloc_array<Interpreter_Register>(allocator, register_count);
+    out_interp->registers.count = register_count;
+    out_interp->used_register_count = 0;
 
     const auto stack_mem_size = MEBIBYTE(1);
-    result.stack_mem.data = alloc_array<u8>(allocator, stack_mem_size);
-    result.stack_mem.count = stack_mem_size;
-    result.stack_mem_used = 0;
+    out_interp->stack_mem.data = alloc_array<u8>(allocator, stack_mem_size);
+    out_interp->stack_mem.count = stack_mem_size;
+    out_interp->stack_mem_used = 0;
 
-    filesystem_stdout_file(&result.std_out);
+    filesystem_stdout_file(&out_interp->std_out);
 
-    result.ffi = ffi_create(allocator, context, true, interpreter_handle_ffi_callback);
-
-    return result;
+    out_interp->ffi = ffi_create(allocator, context, true, interpreter_handle_ffi_callback);
 }
 
 void interpreter_free(Interpreter *interp)

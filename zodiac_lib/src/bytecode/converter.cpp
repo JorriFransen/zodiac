@@ -741,7 +741,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             auto directive = &expr->directive;
 
             Bytecode_Function_Handle wrapper_handle = create_run_wrapper(bc, directive->directive);
-            Interpreter_Register result = execute_run_wrapper(bc, wrapper_handle);
+            Run_Wrapper_Result run_result = execute_run_wrapper(bc, wrapper_handle);
+            auto result = run_result.value;
             assert(result.type);
             assert(result.type == expr->resolved_type);
 
@@ -756,6 +757,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
             Bytecode_Register value_reg = ast_expr_to_bytecode(bc, new_expr);
             directive->generated_expression = new_expr;
+
+            free_run_wrapper_result(&run_result);
 
             return value_reg;
         }
@@ -881,14 +884,14 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
     return fn_handle;
 }
 
-Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle)
+Run_Wrapper_Result execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle)
 {
     File_Handle stdout_file;
     filesystem_stdout_file(&stdout_file);
     return execute_run_wrapper(bc, fn_handle, stdout_file);
 }
 
-Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle, File_Handle stdout_file)
+Run_Wrapper_Result execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle, File_Handle stdout_file)
 {
     debug_assert(bc && fn_handle >= 0 && stdout_file.valid);
 
@@ -898,16 +901,24 @@ Interpreter_Register execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Functi
     ZTRACE("Executing run wrapper: '%s'", fn->name.data);
 #endif // NDEBUG
 
-    Interpreter run_interp = interpreter_create(c_allocator(), bc->context);
+    auto ca = c_allocator();
+    Interpreter *run_interp = alloc<Interpreter>(ca);
+    interpreter_init(ca, bc->context, run_interp);
+
     auto run_prog = bytecode_get_program(bc->builder);
 
-    run_interp.std_out = stdout_file;
-    Interpreter_Register result = interpreter_start(&run_interp, run_prog, fn_handle);
+    run_interp->std_out = stdout_file;
+    Interpreter_Register result = interpreter_start(run_interp, run_prog, fn_handle);
 
-    // assert_msg(!(result.type->flags & TYPE_FLAG_AGGREGATE), "If we expect an aggregate value or array as return value, we can't free this yet");
-    // interpreter_free(&run_interp);
+    return { ca, run_interp, result };
+}
 
-    return result;
+void free_run_wrapper_result(Run_Wrapper_Result *result)
+{
+    debug_assert(result);
+
+    interpreter_free(result->interpreter);
+    free(result->allocator, result->interpreter);
 }
 
 AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, Interpreter_Register &reg, Scope *scope, Source_Range range)

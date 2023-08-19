@@ -121,7 +121,8 @@ static Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results
             bool found = hash_table_find(&bc.run_directives, decl->directive, &wrapper_handle);
             assert(found);
 
-            execute_run_wrapper(&bc, wrapper_handle, stdout_file);
+            auto run_res = execute_run_wrapper(&bc, wrapper_handle, stdout_file);
+            free_run_wrapper_result(&run_res);
         }
 
         // For now assume runs never fail...

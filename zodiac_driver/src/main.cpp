@@ -98,7 +98,8 @@ int main(int argc, const char **argv) {
             bool found = hash_table_find(&bc.run_directives, decl->directive, &wrapper_handle);
             assert(found);
 
-            execute_run_wrapper(&bc, wrapper_handle);
+            auto run_res = execute_run_wrapper(&bc, wrapper_handle);
+            free_run_wrapper_result(&run_res);
         }
 
         // For now assume runs never fail...

@@ -76,6 +76,7 @@ struct Interpreter
 };
 
 ZAPI Interpreter interpreter_create(Allocator *allocator, Zodiac_Context *context);
+ZAPI void interpreter_init(Allocator *allocator, Zodiac_Context *context, Interpreter *out_interp);
 ZAPI void interpreter_free(Interpreter *interp);
 
 ZAPI Interpreter_Register interpreter_start(Interpreter *interp, Bytecode_Program program);
