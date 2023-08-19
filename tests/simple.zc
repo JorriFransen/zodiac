@@ -6,6 +6,7 @@ bool_true := #run return_bool(true);
 bool_false := #run return_bool(false);
 
 vector := #run make_vector(2, 3);
+aabb := #run make_aabb(vector, {3, 4});
 
 #run main();
 main :: () {
@@ -18,6 +19,7 @@ main :: () {
     print(bool_false);
 
     print_vector(vector);
+    print_aabb(aabb);
 
     return 0;
 }
@@ -57,25 +59,18 @@ make_vector :: (x: s64, y: s64) -> Vec2 {
     return result;
 }
 
-// #run main();
-// main :: () {
-//     v : Vec2 = { 2, 3 };
-//     print_vector(v);
-//     print_vector({4, 2});
-
-//     r : AABB;
-//     r.pos = { 1, 2 };
-//     r.size = { 3, 4 };
-
-//     print_aabb(r);
-//     return 0;
-// }
+make_aabb :: (pos: Vec2, size: Vec2) -> AABB {
+    result : AABB;
+    result.pos = pos;
+    result.size = size;
+    return result;
+}
 
 print_vector :: (v: Vec2) {
     print("Vec2{ ", v.x, ", ", v.y, " }");
 }
 
-// print_aabb :: (_r: AABB) {
-//     r := _r;
-//     print("AABB{ pos: Vec2{ ", r.pos.x, ", ", r.pos.y, " }, size: Vec2{ ", r.size.x, ", ", r.size.y, "} }");
-// }
+print_aabb :: (_r: AABB) {
+    r := _r;
+    print("AABB{ pos: Vec2{ ", r.pos.x, ", ", r.pos.y, " }, size: Vec2{ ", r.size.x, ", ", r.size.y, "} }");
+}

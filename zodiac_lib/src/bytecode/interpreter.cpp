@@ -1555,9 +1555,9 @@ void interpreter_copy_aggregate_literal_into_memory(Interpreter *interp, u8 *des
 
     u8 *dest_cursor = dest;
 
-    for (s64 i = 0; i < source.value.compound.count; i++) {
-        Type *member_type = aggregate_type->structure.member_types[i];
-        Bytecode_Register bc_mem_reg = source.value.compound[i];
+    for (s64 cmi = 0; cmi < source.value.compound.count; cmi++) {
+        Type *member_type = aggregate_type->structure.member_types[cmi];
+        Bytecode_Register bc_mem_reg = source.value.compound[cmi];
 
         assert(member_type == bc_mem_reg.type);
 
@@ -1589,7 +1589,19 @@ void interpreter_copy_aggregate_literal_into_memory(Interpreter *interp, u8 *des
             case Type_Kind::FLOAT: assert(false); break;
             case Type_Kind::BOOLEAN: assert(false); break;
             case Type_Kind::POINTER: assert(false); break;
-            case Type_Kind::STRUCTURE: assert(false); break;
+
+            case Type_Kind::STRUCTURE: {
+                assert(mem_reg.type->flags & TYPE_FLAG_AGGREGATE);
+                assert(mem_reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL);
+
+                auto agg_mem_type = mem_reg.type;
+                assert(agg_mem_type->kind == Type_Kind::STRUCTURE);
+                assert(agg_mem_type->structure.member_types.count == mem_reg.value.compound.count);
+
+                interpreter_copy_aggregate_literal_into_memory(interp, dest_cursor, mem_reg);
+                break;
+            }
+
             case Type_Kind::STATIC_ARRAY: assert(false); break;
             case Type_Kind::FUNCTION: assert(false); break;
         }

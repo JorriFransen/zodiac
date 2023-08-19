@@ -997,7 +997,8 @@ static MunitResult Run_Directive_Global_Var_Types(const MunitParameter params[],
             bool_true := #run return_bool(true);
             bool_false := #run return_bool(false);
             vector := #run make_vector(2, 3);
-            #run main();
+            aabb := #run make_aabb(vector, {3, 4});
+
             main :: () {
                 print(signed_integer);
                 print(unsigned_integer);
@@ -1006,6 +1007,7 @@ static MunitResult Run_Directive_Global_Var_Types(const MunitParameter params[],
                 print(bool_true);
                 print(bool_false);
                 print_vector(vector);
+                print_aabb(aabb);
                 return 0;
             }
             return_signed_integer :: (x: s64) -> s64 { return x; }
@@ -1024,12 +1026,23 @@ static MunitResult Run_Directive_Global_Var_Types(const MunitParameter params[],
             print_vector :: (v: Vec2) {
                 print(v.x, ", ", v.y);
             }
+
+            AABB :: struct { pos, size: Vec2; }
+            make_aabb :: (pos: Vec2, size: Vec2) -> AABB {
+                result: AABB;
+                result.pos = pos;
+                result.size = size;
+                return result;
+            }
+            print_aabb :: (r: AABB) {
+                print(r.pos.x, ", ", r.pos.y, ", ", r.size.x, ", ", r.size.y);
+            }
         )CODE_STR";
 
         // Compile and run will always run main at compile time, so account for that in the output
         Expected_Results expected = {
-            .compiletime_std_out = "7\n8\n4.200000\n8.400000\ntrue\nfalse\n2, 3\n7\n8\n4.200000\n8.400000\ntrue\nfalse\n2, 3",
-            .runtime_std_out = "7\n8\n4.200000\n8.400000\ntrue\nfalse\n2, 3"
+            .compiletime_std_out = "7\n8\n4.200000\n8.400000\ntrue\nfalse\n2, 3\n2, 3, 3, 4",
+            .runtime_std_out = "7\n8\n4.200000\n8.400000\ntrue\nfalse\n2, 3\n2, 3, 3, 4"
         };
 
         auto result = compile_and_run(code_string, expected);

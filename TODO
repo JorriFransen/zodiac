@@ -4,6 +4,8 @@
     - return {2, 3} (Vec2)
     - result : Vec2 { 2, 3 };
 
+    - result.pos = {px, py}; (make_aabb, non literals)
+
     - As function arguments
     - Nested structs
     - Test with different types
