@@ -16,6 +16,7 @@ struct File_Handle;
 struct Resolver;
 struct Scope;
 struct Source_Range;
+struct Type;
 struct Zodiac_Context;
 
 namespace Bytecode {
