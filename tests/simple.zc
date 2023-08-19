@@ -17,9 +17,7 @@ main :: () {
     print(bool_true);
     print(bool_false);
 
-    // vector : Vec2 = { 2, 3 };
     print_vector(vector);
-    // print_vector({1, 2}); // Need nested infer nodes for this
 
     return 0;
 }

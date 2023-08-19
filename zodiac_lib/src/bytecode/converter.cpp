@@ -920,6 +920,8 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
     AST_Expression *result = nullptr;
     Infer_Node *infer_node = infer_node_new(bc->context, reg.type);
 
+    bool needs_resolving = true;
+
     switch (reg.type->kind) {
 
         case Type_Kind::INVALID: assert(false); break;
@@ -944,51 +946,11 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
         case Type_Kind::POINTER: assert(false); break;
 
         case Type_Kind::STRUCTURE: {
-            auto struct_type = reg.type;
-            assert(struct_type->kind == Type_Kind::STRUCTURE);
+            assert(reg.value.pointer);
+            result = interpreter_memory_to_ast_expression(bc, reg.pointer, reg.type, scope, range);
 
-            assert(reg.pointer);
-            u8 *cursor = reg.pointer;
-
-            Dynamic_Array<AST_Expression *> expressions;
-            dynamic_array_create(&ctx->ast_allocator, &expressions, struct_type->structure.member_types.count);
-
-            for (s64 i = 0; i < struct_type->structure.member_types.count; i++) {
-                auto mem_type = struct_type->structure.member_types[i];
-
-                switch (mem_type->kind) {
-
-                    case Type_Kind::INVALID: assert(false); break;
-                    case Type_Kind::VOID: assert(false); break;
-
-                    case Type_Kind::UNSIZED_INTEGER:
-                    case Type_Kind::INTEGER: {
-                        Integer_Value val;
-                        switch (mem_type->bit_size) {
-                            case 64: {
-                                val.u64 = *(u64*)cursor;
-                                cursor += mem_type->bit_size / 8;
-                                break;
-                            }
-                        }
-
-                        AST_Expression *expr = ast_integer_literal_expr_new(ctx, range, val);
-                        assert(false) // Turn this into a recursive call, so all members will be resolved in the end
-
-                        dynamic_array_append(&expressions, expr);
-                        break;
-                    }
-
-                    case Type_Kind::FLOAT: assert(false); break;
-                    case Type_Kind::BOOLEAN: assert(false); break;
-                    case Type_Kind::POINTER: assert(false); break;
-                    case Type_Kind::STRUCTURE: assert(false); break;
-                    case Type_Kind::STATIC_ARRAY: assert(false); break;
-                    case Type_Kind::FUNCTION: assert(false); break;
-                }
-            }
-
-            result = ast_compound_expr_new(ctx, range, expressions);
+            needs_resolving = false;
+            assert(EXPR_IS_TYPED(result));
             break;
         }
 
@@ -998,6 +960,82 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
 
     assert(result);
 
+    if (needs_resolving) {
+#ifndef NDEBUG
+        bool resolved_name =
+#endif // NDEBUG
+            name_resolve_expr(ctx, result, scope);
+        debug_assert(resolved_name);
+
+#ifndef NDEBUG
+        bool resolved_type =
+#endif // NDEBUG
+            type_resolve_expression(ctx, result, scope, infer_node);
+        debug_assert(resolved_type);
+    }
+
+
+    return result;
+}
+
+AST_Expression *interpreter_memory_to_ast_expression(Bytecode_Converter *bc, u8* mem, Type *type, Scope *scope, Source_Range range)
+{
+    debug_assert(bc && mem && type && scope);
+
+    auto ctx = bc->context;
+
+    AST_Expression *result = nullptr;
+    Infer_Node *infer_node = infer_node_new(bc->context, type);
+
+    switch (type->kind) {
+
+        case Type_Kind::INVALID: assert(false); break;
+        case Type_Kind::VOID: assert(false); break;
+
+        case Type_Kind::UNSIZED_INTEGER:
+        case Type_Kind::INTEGER: {
+            Integer_Value val;
+            switch (type->bit_size) {
+                case 64: {
+                    val.u64 = *(u64*)mem;
+                    break;
+                }
+            }
+
+            result = ast_integer_literal_expr_new(ctx, range, val);
+            break;
+        }
+
+        case Type_Kind::FLOAT: assert(false); break;
+        case Type_Kind::BOOLEAN: assert(false); break;
+        case Type_Kind::POINTER: assert(false); break;
+
+        case Type_Kind::STRUCTURE: {
+
+            u8 *cursor = mem;
+
+            Dynamic_Array<AST_Expression *> member_exprs;
+            dynamic_array_create(&bc->context->ast_allocator, &member_exprs, type->structure.member_types.count);
+
+            for (s64 i = 0; i < type->structure.member_types.count; i++) {
+                auto member_type = type->structure.member_types[i];
+                assert(member_type->bit_size % 8 == 0);
+                auto size = member_type->bit_size / 8;
+
+                auto member_expr =  interpreter_memory_to_ast_expression(bc, cursor, member_type, scope, range);
+                cursor += size;
+                dynamic_array_append(&member_exprs, member_expr);
+            }
+
+            result = ast_compound_expr_new(bc->context, range, member_exprs);
+            break;
+        }
+
+        case Type_Kind::STATIC_ARRAY: assert(false); break;
+        case Type_Kind::FUNCTION: assert(false); break;
+    }
+
+    assert(result);
 #ifndef NDEBUG
     bool resolved_name =
 #endif // NDEBUG

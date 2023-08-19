@@ -1112,8 +1112,10 @@ Bytecode_Instruction_Handle bytecode_emit_instruction(Bytecode_Builder *builder,
          (result.type->flags & TYPE_FLAG_ARRAY) ||
           op == Bytecode_Opcode::ALLOC)) {
 
+        // These should be all the instructions that require stack size for their result
         assert(op == Bytecode_Opcode::ALLOC ||
                op == Bytecode_Opcode::LOAD_A ||
+               op == Bytecode_Opcode::LOAD_G ||
                op == Bytecode_Opcode::INSERT_VALUE ||
                op == Bytecode_Opcode::EXTRACT_VALUE ||
                op == Bytecode_Opcode::CALL ||

@@ -1,9 +1,11 @@
 
-- Create compound literal expression from pointer returned by run (when returning a struct)
 - Free the interpreter after running a run wrapper (execute_run_wrapper will need to return a reference to the interpreter).
 - Test rundirectives with different types and with constants
 
 - Struct literal expressions (add as tests)
+    - return {2, 3} (Vec2)
+    - result : Vec2 { 2, 3 };
+
     - As function arguments
     - Nested structs
     - Test with different types
