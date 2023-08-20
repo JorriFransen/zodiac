@@ -409,6 +409,26 @@ Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Dynamic_Array
     return result;
 }
 
+Bytecode_Register bytecode_array_literal(Bytecode_Builder *bb, Dynamic_Array<Bytecode_Register> values, Type *type)
+{
+    debug_assert(bb && values.count && type);
+    assert(type->flags & TYPE_FLAG_STATIC_ARRAY);
+    assert(type->kind == Type_Kind::STATIC_ARRAY);
+
+#ifndef NDEBUG
+    for (s64 i = 0; i < values.count; i++) {
+        debug_assert(values[i].flags & BC_REGISTER_FLAG_LITERAL);
+        debug_assert(values[i].flags & BC_REGISTER_FLAG_CONSTANT);
+    }
+#endif // NDEBUG
+
+    auto result = bytecode_register_create(bb, Bytecode_Register_Kind::TEMPORARY, type, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT);
+
+    result.value.compound = values;
+
+    return result;
+}
+
 Bytecode_Register bytecode_block_value(Bytecode_Builder *builder, Bytecode_Block_Handle block_handle)
 {
     auto result = bytecode_register_create(builder, Bytecode_Register_Kind::BLOCK, nullptr, BC_REGISTER_FLAG_NONE);

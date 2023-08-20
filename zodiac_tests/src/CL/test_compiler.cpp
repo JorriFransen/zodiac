@@ -773,19 +773,15 @@ MunitResult Static_Array_Basics(const MunitParameter params[], void* user_data_o
             print(global_ints[0]);
             print(global_ints[i1]);
 
-            v := arr_create(3, 1);
+            v : [2]s64 = { 3, 1 };
             arr_print(v);
             v = arr_add(v, 1);
             arr_print(v);
+            arr_print({1, 2});
+            v = { 44, 22 };
+            arr_print(v);
 
             return 0;
-        }
-
-        arr_create :: (x0: s64, x1: s64) -> [2]s64 {
-            result: [2]s64;
-            result[0] = x0;
-            result[1] = x1;
-            return result;
         }
 
         arr_add :: (a: [2]s64, x: s64) -> [2]s64 {
@@ -799,7 +795,7 @@ MunitResult Static_Array_Basics(const MunitParameter params[], void* user_data_o
         }
     )CODE_STR";
 
-    Expected_Results expected = { .std_out = "1\n2\n1\n2\n3, 1\n4, 2" };
+    Expected_Results expected = { .std_out = "1\n2\n1\n2\n3, 1\n4, 2\n1, 2\n44, 22" };
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };
 

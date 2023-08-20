@@ -1240,7 +1240,7 @@ Interpreter_Register interpreter_load_register(Interpreter *interp,
         if (bc_reg.flags & BC_REGISTER_FLAG_LITERAL) {
 
             Interpreter_Register_Flags flags = INTERP_REG_FLAG_NONE;
-            if (bc_reg.type->flags & TYPE_FLAG_AGGREGATE) {
+            if (bc_reg.type->flags & (TYPE_FLAG_AGGREGATE | TYPE_FLAG_STATIC_ARRAY)) {
                 flags |= INTERP_REG_FLAG_AGGREGATE_LITERAL;
             }
 
@@ -1446,7 +1446,7 @@ void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source,
         case Type_Kind::STATIC_ARRAY: {
 
             if (source.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
-                interpreter_copy_aggregate_literal_into_memory(interp, dest, source);
+                interpreter_copy_compound_literal_into_memory(interp, dest, source);
             } else {
                 // @Cleanup: @TODO: @FIXME: alignment?
                 assert (t->bit_size % 8 == 0);
@@ -1543,22 +1543,37 @@ Interpreter_Stack_Frame interpreter_pop_stack_frame(Interpreter *interp)
     return old_frame;
 }
 
-void interpreter_copy_aggregate_literal_into_memory(Interpreter *interp, u8 *dest, Interpreter_Register source)
+void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest, Interpreter_Register source)
 {
     debug_assert(interp && dest);
 
-    assert(source.type->flags & TYPE_FLAG_AGGREGATE);
+    assert((source.type->flags & TYPE_FLAG_AGGREGATE) ||
+           (source.type->flags & TYPE_FLAG_STATIC_ARRAY));
+
     assert(source.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL);
 
-    auto aggregate_type = source.type;
-    assert(aggregate_type->kind == Type_Kind::STRUCTURE);
+    auto compound_type = source.type;
+    assert(compound_type->kind == Type_Kind::STRUCTURE ||
+           compound_type->kind == Type_Kind::STATIC_ARRAY);
 
-    assert(aggregate_type->structure.member_types.count == source.value.compound.count);
+    bool is_array = compound_type->kind == Type_Kind::STATIC_ARRAY;
+
+    Type *member_type = nullptr;
+
+    if (is_array) {
+        assert(compound_type->static_array.count == source.value.compound.count);
+        member_type = compound_type->static_array.element_type;
+    } else {
+        assert(compound_type->structure.member_types.count == source.value.compound.count);
+    }
+
 
     u8 *dest_cursor = dest;
 
     for (s64 cmi = 0; cmi < source.value.compound.count; cmi++) {
-        Type *member_type = aggregate_type->structure.member_types[cmi];
+        if (!is_array) {
+            member_type = compound_type->structure.member_types[cmi];
+        }
         Bytecode_Register bc_mem_reg = source.value.compound[cmi];
 
         assert(member_type == bc_mem_reg.type);
@@ -1600,7 +1615,7 @@ void interpreter_copy_aggregate_literal_into_memory(Interpreter *interp, u8 *des
                 assert(agg_mem_type->kind == Type_Kind::STRUCTURE);
                 assert(agg_mem_type->structure.member_types.count == mem_reg.value.compound.count);
 
-                interpreter_copy_aggregate_literal_into_memory(interp, dest_cursor, mem_reg);
+                interpreter_copy_compound_literal_into_memory(interp, dest_cursor, mem_reg);
                 break;
             }
 

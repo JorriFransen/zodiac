@@ -1,3 +1,4 @@
+- Do we actually need TYPE_FLAG_STATIC_ARRAY??
 - Test rundirectives with different types and with constants
 
 - Struct literal expressions (add as tests)

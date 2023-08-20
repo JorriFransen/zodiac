@@ -1109,7 +1109,9 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
                     return llvm_builder_emit_struct_literal(builder, bc_reg.type, bc_reg.value.compound);
                 }
 
-                case Type_Kind::STATIC_ARRAY: { assert(false); break; }
+                case Type_Kind::STATIC_ARRAY: {
+                    return llvm_builder_emit_array_literal(builder, bc_reg.type, bc_reg.value.compound);
+                }
             }
             break;
         }
@@ -1228,7 +1230,7 @@ llvm::Constant *llvm_builder_emit_struct_literal(LLVM_Builder *builder, Type *ty
     assert(type->kind == Type_Kind::STRUCTURE);
 
     llvm::Type *_llvm_struct_type = llvm_type_from_ast_type(builder, type);
-    auto *llvm_struct_type = static_cast<llvm::StructType *>(_llvm_struct_type);
+    auto llvm_struct_type = static_cast<llvm::StructType *>(_llvm_struct_type);
 
     Dynamic_Array<llvm::Constant *> members;
     dynamic_array_create(builder->allocator, &members, compound.count);
@@ -1239,6 +1241,26 @@ llvm::Constant *llvm_builder_emit_struct_literal(LLVM_Builder *builder, Type *ty
     }
 
     return llvm::ConstantStruct::get(llvm_struct_type, { members.data, (size_t)members.count });
+}
+
+llvm::Constant *llvm_builder_emit_array_literal(LLVM_Builder *builder, Type *type, Dynamic_Array<Bytecode_Register> compound)
+{
+    debug_assert(builder && type && compound.count);
+    assert(type->flags & TYPE_FLAG_STATIC_ARRAY);
+    assert(type->kind == Type_Kind::STATIC_ARRAY);
+
+    llvm::Type *_llvm_array_type = llvm_type_from_ast_type(builder, type);
+    auto llvm_array_type = static_cast<llvm::ArrayType *>(_llvm_array_type);
+
+    Dynamic_Array<llvm::Constant *> members;
+    dynamic_array_create(builder->allocator, &members, compound.count);
+
+    for (s64 i = 0; i < compound.count; i++) {
+        auto mem_val = llvm_builder_emit_constant(builder, compound[i]);
+        dynamic_array_append(&members, mem_val);
+    }
+
+    return llvm::ConstantArray::get(llvm_array_type, { members.data, (size_t)members.count });
 }
 
 void llvm_builder_store_result(LLVM_Builder *builder, const Bytecode_Register &bc_dest_reg, llvm::Value *result_val)

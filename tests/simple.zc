@@ -1,44 +1,19 @@
 
-global_ints : [4]s64;
+Vec2 :: struct { x, y: s64; }
 
 main :: () {
-    ints : [5]s64;
 
-    ints[0] = 1;
-    global_ints[0] = 1;
-
-    i1 : s64 = 1;
-    ints[i1] = 2;
-    global_ints[i1] = 2;
-
-    print(ints[0]);
-    print(ints[i1]);
-    print(global_ints[0]);
-    print(global_ints[i1]);
-
-    v := arr_create(3, 1);
-    arr_print(v);
-    v = arr_add(v, 1);
-    arr_print(v);
+    ints : [5]s64 = { 1, 2, 3, 4, 5 };
+    arr_print(ints);
+    
 
     return 0;
 }
 
-arr_create :: (x0: s64, x1: s64) -> [2]s64 {
-    result: [2]s64;
-    result[0] = x0;
-    result[1] = x1;
-    return result;
-}
 
-arr_add :: (a: [2]s64, x: s64) -> [2]s64 {
-    a[0] = a[0] + x;
-    a[1] = a[1] + x;
-    return a;
-}
 
-arr_print :: (a: [2]s64) {
-    print(a[0], ", ", a[1]);
+arr_print :: (a: [5]s64) {
+    print(a[0], ", ", a[1], ", ", a[2], ", ", a[3], ", ", a[4]);
 }
 
 #run main();

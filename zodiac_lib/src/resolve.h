@@ -30,7 +30,7 @@ enum class Infer_Target
 {
     DEFAULT,
     ARGUMENT,
-    MEMBER,
+    COMPOUND,
 };
 
 struct Infer_Node
@@ -126,7 +126,7 @@ ZAPI Infer_Node *infer_node_new(Zodiac_Context *ctx, Type *type);
 ZAPI Infer_Node *infer_node_new(Zodiac_Context *ctx, AST_Expression *expr);
 
 ZAPI Infer_Node *arg_infer_node_new(Zodiac_Context *ctx, Infer_Node *infer_node, s64 arg_index);
-ZAPI Infer_Node *member_infer_node_new(Zodiac_Context *ctx, Infer_Node *infer_node, s64 member_index);
+ZAPI Infer_Node *compound_infer_node_new(Zodiac_Context *ctx, Infer_Node *infer_node, s64 member_index);
 
 ZAPI Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error_loc);
 

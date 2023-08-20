@@ -269,6 +269,7 @@ ZAPI Bytecode_Register bytecode_real_literal(Bytecode_Builder *builder, Type *ty
 ZAPI Bytecode_Register bytecode_boolean_literal(Bytecode_Builder *builder, Type *type, bool value);
 ZAPI Bytecode_Register bytecode_string_literal(Bytecode_Builder *bb, String_Ref str);
 ZAPI Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Dynamic_Array<Bytecode_Register> members, Type *type);
+ZAPI Bytecode_Register bytecode_array_literal(Bytecode_Builder *bb, Dynamic_Array<Bytecode_Register> values, Type *type);
 ZAPI Bytecode_Register bytecode_block_value(Bytecode_Builder *builder, Bytecode_Block_Handle block_handle);
 ZAPI Bytecode_Register bytecode_type_value(Bytecode_Builder *builder, Type *type);
 ZAPI Bytecode_Register bytecode_register_create(Bytecode_Builder *builder, Bytecode_Register_Kind kind, Type *type, Bytecode_Register_Flags flags = BC_REGISTER_FLAG_NONE);

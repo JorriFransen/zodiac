@@ -338,11 +338,11 @@ Infer_Node *arg_infer_node_new(Zodiac_Context *ctx, Infer_Node *infer_node, s64 
     return result;
 }
 
-Infer_Node *member_infer_node_new(Zodiac_Context *ctx, Infer_Node *infer_node, s64 member_index)
+Infer_Node *compound_infer_node_new(Zodiac_Context *ctx, Infer_Node *infer_node, s64 member_index)
 {
     debug_assert(ctx && infer_node);
 
-    auto result = infer_node_new(ctx, Infer_Source::INFER_NODE, Infer_Target::MEMBER);
+    auto result = infer_node_new(ctx, Infer_Source::INFER_NODE, Infer_Target::COMPOUND);
     result->source.infer_node = infer_node;
     result->target.index = member_index;
 
@@ -406,14 +406,24 @@ Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error
             break;
         }
 
-        case Infer_Target::MEMBER: {
-            assert(inferred_type->flags & TYPE_FLAG_AGGREGATE);
-            assert(inferred_type->kind == Type_Kind::STRUCTURE);
+        case Infer_Target::COMPOUND: {
+            assert((inferred_type->flags & TYPE_FLAG_AGGREGATE) ||
+                   (inferred_type->flags & TYPE_FLAG_STATIC_ARRAY));
 
             auto index = infer_node->target.index;
-            assert(inferred_type->structure.member_types.count > infer_node->target.index);
 
-            inferred_type = inferred_type->structure.member_types[index];
+            if (inferred_type->kind == Type_Kind::STRUCTURE) {
+                assert(inferred_type->structure.member_types.count > infer_node->target.index);
+
+                inferred_type = inferred_type->structure.member_types[index];
+            } else {
+                assert(inferred_type->kind == Type_Kind::STATIC_ARRAY);
+                assert(index >= 0 && index < inferred_type->static_array.count);
+
+                inferred_type = inferred_type->static_array.element_type;
+            }
+
+            assert(inferred_type);
             break;
         }
     }
@@ -754,7 +764,7 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
             assert(infer_node);
 
             for (s64 i = 0; i < expr->compound.expressions.count; i++) {
-                Infer_Node *infer_from = member_infer_node_new(resolver->ctx, infer_node, i);
+                Infer_Node *infer_from = compound_infer_node_new(resolver->ctx, infer_node, i);
                 flatten_expression(resolver, expr->compound.expressions[i], scope, dest, infer_from);
             }
         }
@@ -1990,30 +2000,60 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
         case AST_Expression_Kind::COMPOUND: {
             assert(inferred_type);
 
-            auto aggregate_type = inferred_type;
-            assert(aggregate_type->flags & TYPE_FLAG_AGGREGATE);
-            assert(aggregate_type->kind == Type_Kind::STRUCTURE);
-
-            auto aggregate_member_count = aggregate_type->structure.member_types.count;
             auto compound_member_count = expr->compound.expressions.count;
 
-            if (aggregate_member_count != compound_member_count) {
-                fatal_resolve_error(ctx, expr, "Mismatching expression count, expected %i, got %i",  aggregate_member_count, compound_member_count);
-                return false;
-            }
+            if (inferred_type->flags & TYPE_FLAG_AGGREGATE) {
+                auto aggregate_type = inferred_type;
+                assert(aggregate_type->kind == Type_Kind::STRUCTURE);
 
-            for (s64 i = 0; i < aggregate_member_count; i++) {
-                Type *aggregate_member_type = aggregate_type->structure.member_types[i];
-                auto compound_member_expr = expr->compound.expressions[i];
-                Type *compound_member_type = compound_member_expr->resolved_type;
-                assert(compound_member_type);
+                auto aggregate_member_count = aggregate_type->structure.member_types.count;
 
-                if (aggregate_member_type != compound_member_type) {
-                    fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
-                    fatal_resolve_error(ctx, compound_member_expr, "    Expected: %s", temp_type_string(aggregate_member_type));
-                    fatal_resolve_error(ctx, compound_member_expr, "    Got: %s", temp_type_string(compound_member_type));
+                if (aggregate_member_count != compound_member_count) {
+                    fatal_resolve_error(ctx, expr, "Mismatching expression count in compound expression, expected %i, got %i",  aggregate_member_count, compound_member_count);
                     return false;
                 }
+
+                for (s64 i = 0; i < aggregate_member_count; i++) {
+                    Type *aggregate_member_type = aggregate_type->structure.member_types[i];
+                    auto compound_member_expr = expr->compound.expressions[i];
+                    Type *compound_member_type = compound_member_expr->resolved_type;
+                    assert(compound_member_type);
+
+                    if (aggregate_member_type != compound_member_type) {
+                        fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
+                        fatal_resolve_error(ctx, compound_member_expr, "    Expected: %s", temp_type_string(aggregate_member_type));
+                        fatal_resolve_error(ctx, compound_member_expr, "    Got: %s", temp_type_string(compound_member_type));
+                        return false;
+                    }
+                }
+
+            } else if (inferred_type->flags & TYPE_FLAG_STATIC_ARRAY) {
+                auto array_type = inferred_type;
+                assert(array_type->kind == Type_Kind::STATIC_ARRAY);
+
+                auto array_member_count = array_type->static_array.count;
+
+                if (array_member_count != compound_member_count) {
+                    fatal_resolve_error(ctx, expr, "Mismatching expression count in compound expression, expected %i, got %i", array_member_count, compound_member_count);
+                    return false;
+
+                    auto array_element_type = array_type->static_array.element_type;
+
+                    for (s64 i = 0; i < array_member_count; i++) {
+                        auto compound_member_expr = expr->compound.expressions[i];
+                        Type *compound_member_type = compound_member_expr->resolved_type;
+
+                        if (array_element_type != compound_member_type) {
+                            fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
+                            fatal_resolve_error(ctx, compound_member_expr, "    Expected: %s", temp_type_string(array_element_type));
+                            fatal_resolve_error(ctx, compound_member_expr, "    Got: %s", temp_type_string(compound_member_type));
+                            return false;
+                        }
+                    }
+                }
+
+            } else {
+                assert_msg(false, "Invalid inferred type for compound expression");
             }
 
             expr->resolved_type = inferred_type;

@@ -100,6 +100,6 @@ ZAPI void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Ha
                                   s64 arg_count, s64 result_index);
 ZAPI Interpreter_Stack_Frame interpreter_pop_stack_frame(Interpreter *interp);
 
-ZAPI void interpreter_copy_aggregate_literal_into_memory(Interpreter *interp, u8 *dest, Interpreter_Register source);
+ZAPI void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest, Interpreter_Register source);
 
 }}

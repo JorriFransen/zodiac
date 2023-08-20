@@ -561,7 +561,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                    expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER ||
                    expr->resolved_type->kind == Type_Kind::FLOAT ||
                    expr->resolved_type->kind == Type_Kind::BOOLEAN ||
-                   expr->resolved_type->kind == Type_Kind::STRUCTURE && expr->kind == AST_Expression_Kind::COMPOUND,
+                   (expr->resolved_type->kind == Type_Kind::STRUCTURE && expr->kind == AST_Expression_Kind::COMPOUND) || 
+                   (expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && expr->kind == AST_Expression_Kind::COMPOUND),
                    "Constant expression substition not supported for this type");
 
         return ast_const_expr_to_bytecode(bc, expr);
@@ -824,6 +825,21 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
             }
 
             return bytecode_aggregate_literal(bc->builder, members, type);
+        }
+
+        case Type_Kind::STATIC_ARRAY: {
+            
+            Dynamic_Array<Bytecode_Register> values;
+            dynamic_array_create<Bytecode_Register>(bc->allocator, &values, expr->compound.expressions.count);
+
+            for (s64 i = 0; i < expr->compound.expressions.count; i++) {
+                auto value_expr = expr->compound.expressions[i];
+                assert(EXPR_IS_CONST(value_expr));
+                Bytecode_Register value_reg = ast_const_expr_to_bytecode(bc, value_expr);
+                dynamic_array_append(&values, value_reg);
+            }
+
+            return bytecode_array_literal(bc->builder, values, type);
         }
     }
 
