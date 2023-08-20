@@ -39,6 +39,7 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
             auto scope = expr->identifier.scope;
             assert(scope);
             auto sym = scope_get_symbol(scope, expr->identifier.name);
+            assert(sym);
             auto decl = sym->decl;
             assert(decl);
             assert(decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
@@ -52,6 +53,7 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
 
             AST_Expression *init_expr = decl->variable.value;
             assert(init_expr);
+            assert(init_expr->resolved_type);
             return resolve_constant_integer_expr(init_expr, init_type);
         }
 
@@ -132,6 +134,66 @@ Integer_Value resolve_constant_integer_binary_expr(AST_Expression *expr, Type *t
 #undef EXECUTE_SIZED_BINOP
 
     return result;
+}
+
+Real_Value resolve_constant_real_expr(AST_Expression *expr)
+{
+    debug_assert(expr);
+
+    assert(EXPR_IS_CONST(expr));
+    assert(EXPR_IS_TYPED(expr));
+    assert(expr->resolved_type->kind == Type_Kind::FLOAT);
+
+    switch (expr->kind) {
+
+        case AST_Expression_Kind::INVALID: assert(false); break;
+        case AST_Expression_Kind::INTEGER_LITERAL: assert(false); break;
+        case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
+        case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
+        case AST_Expression_Kind::BOOL_LITERAL: assert(false); break;
+
+        case AST_Expression_Kind::REAL_LITERAL: {
+            return expr->real_literal.value;
+        }
+
+        case AST_Expression_Kind::IDENTIFIER: {
+            auto scope = expr->identifier.scope;
+            assert(scope);
+
+            auto sym = scope_get_symbol(scope, expr->identifier.name);
+            assert(sym);
+            auto decl = sym->decl;
+            assert(decl);
+            assert(decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
+            assert(decl->variable.resolved_type);
+
+            Type *init_type = decl->variable.resolved_type;
+            assert(init_type->kind == Type_Kind::FLOAT);
+
+            AST_Expression *init_expr = decl->variable.value;
+            assert(init_expr);
+            assert(init_expr->resolved_type);
+            assert(init_expr->resolved_type == init_type);
+            return resolve_constant_real_expr(init_expr);
+        }
+
+        case AST_Expression_Kind::MEMBER: assert(false); break;
+        case AST_Expression_Kind::INDEX: assert(false); break;
+        case AST_Expression_Kind::CALL: assert(false); break;
+        case AST_Expression_Kind::UNARY: assert(false); break;
+        case AST_Expression_Kind::BINARY: assert(false); break;
+        case AST_Expression_Kind::CAST: assert(false); break;
+
+        case AST_Expression_Kind::RUN_DIRECTIVE: {
+            assert(expr->directive.generated_expression);
+            return resolve_constant_real_expr(expr->directive.generated_expression);
+        }
+
+        case AST_Expression_Kind::COMPOUND: assert(false); break;
+    }
+
+    assert(false);
+    return {};
 }
 
 }
