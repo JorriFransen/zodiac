@@ -622,10 +622,29 @@ AST_Type_Spec *parse_type_spec(Parser *parser)
     Token t = cur_tok(parser);
     switch (t.kind) {
 
-        case TOK_STAR: {
+        case '*': {
             next_token(parser);
             AST_Type_Spec *base = parse_type_spec(parser);
-            return ast_pointer_ts_new(parser->context, t.range, base);
+            return ast_pointer_ts_new(parser->context, { t.range.start, base->range.end }, base);
+        }
+
+        case '[': {
+            next_token(parser);
+
+            AST_Expression *length_expr = nullptr;
+            if (!is_token(parser, ']')) {
+                length_expr = parse_expression(parser);
+            }
+
+            auto end_pos = cur_tok(parser).range.end;
+            if (!match_token(parser, ']')) return nullptr;
+
+            AST_Type_Spec *base_ts = parse_type_spec(parser);
+
+            assert(base_ts);
+            assert(length_expr);
+
+            return ast_static_array_ts_new(parser->context, { t.range.start, end_pos }, length_expr, base_ts);
         }
 
         case TOK_NAME: {

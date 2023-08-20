@@ -167,11 +167,11 @@ void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Decla
             auto field = decl->function.params[i];
             assert(field->kind == AST_Declaration_Kind::PARAMETER);
 
-            flatten_type_spec(field->field.type_spec, scope, &proto_node->nodes);
+            flatten_type_spec(resolver, field->field.type_spec, scope, &proto_node->nodes);
         }
 
         if (decl->function.return_ts) {
-            flatten_type_spec(decl->function.return_ts, scope, &proto_node->nodes);
+            flatten_type_spec(resolver, decl->function.return_ts, scope, &proto_node->nodes);
         }
 
         Flat_Node flat_decl = to_flat_proto(decl, scope);
@@ -493,7 +493,7 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
             Infer_Node *infer_from = nullptr;
 
             if (ts) {
-                flatten_type_spec(ts, scope, dest);
+                flatten_type_spec(resolver, ts, scope, dest);
                 infer_from = infer_node_new(resolver->ctx, ts);
             }
             if (val)
@@ -517,13 +517,13 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
                 auto field = decl->function.params[i];
                 assert(field->kind == AST_Declaration_Kind::PARAMETER);
 
-                flatten_type_spec(field->parameter.type_spec, scope, dest);
+                flatten_type_spec(resolver, field->parameter.type_spec, scope, dest);
                 Flat_Node param_node = to_flat_node(field, parameter_scope);
                 dynamic_array_append(dest, param_node);
             }
 
             if (decl->function.return_ts) {
-                flatten_type_spec(decl->function.return_ts, scope, dest);
+                flatten_type_spec(resolver, decl->function.return_ts, scope, dest);
             }
 
             for (u64 i = 0; i < decl->function.body.count; i++) {
@@ -541,7 +541,7 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
                 auto field = decl->aggregate.fields[i];
                 assert(field->kind == AST_Declaration_Kind::FIELD);
 
-                flatten_type_spec(field->field.type_spec, scope, dest);
+                flatten_type_spec(resolver, field->field.type_spec, scope, dest);
                 Flat_Node member_node = to_flat_node(field, aggregate_scope);
                 dynamic_array_append(dest, member_node);
             }
@@ -722,7 +722,7 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
 
         case AST_Expression_Kind::CAST: {
             assert(expr->cast.type_spec);
-            flatten_type_spec(expr->cast.type_spec, scope, dest);
+            flatten_type_spec(resolver, expr->cast.type_spec, scope, dest);
             flatten_expression(resolver, expr->cast.value, scope, dest);
             break;
         }
@@ -750,9 +750,9 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
     dynamic_array_append(dest, flat_expr);
 }
 
-void flatten_type_spec(AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node> *dest)
+void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node> *dest)
 {
-    debug_assert(ts && scope && dest);
+    debug_assert(resolver && ts && scope && dest);
 
     switch (ts->kind) {
 
@@ -765,7 +765,13 @@ void flatten_type_spec(AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node>
         }
 
         case AST_Type_Spec_Kind::POINTER: {
-            flatten_type_spec(ts->base, scope, dest);
+            flatten_type_spec(resolver, ts->pointer_base, scope, dest);
+            break;
+        }
+
+        case AST_Type_Spec_Kind::STATIC_ARRAY: {
+            flatten_expression(resolver, ts->static_array.length_expr, scope, dest);
+            flatten_type_spec(resolver, ts->static_array.base, scope, dest);
             break;
         }
     }
@@ -1230,11 +1236,11 @@ bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
             break;
         }
 
-        case AST_Type_Spec_Kind::POINTER: {
-            // Leaf, the base should have been resolved before..
+        case AST_Type_Spec_Kind::POINTER:
+        case AST_Type_Spec_Kind::STATIC_ARRAY: {
+            // Leaf
             break;
         }
-
     }
 
     return result;
@@ -2017,7 +2023,8 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
             assert(false); // Should have returned
         }
 
-        case AST_Type_Spec_Kind::POINTER: assert(false);
+        case AST_Type_Spec_Kind::POINTER: assert(false); break;
+        case AST_Type_Spec_Kind::STATIC_ARRAY: assert(false); break;
     }
 
     assert(false);

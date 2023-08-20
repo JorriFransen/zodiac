@@ -405,7 +405,17 @@ void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts)
 
     ast_type_spec_create(AST_Type_Spec_Kind::POINTER, out_ts);
 
-    out_ts->base = base;
+    out_ts->pointer_base = base;
+}
+
+void ast_static_array_ts_create(AST_Expression *length_expr, AST_Type_Spec *base, AST_Type_Spec *out_ts)
+{
+    debug_assert(length_expr && base && out_ts);
+
+    ast_type_spec_create(AST_Type_Spec_Kind::STATIC_ARRAY, out_ts);
+
+    out_ts->static_array.length_expr = length_expr;
+    out_ts->static_array.base = base;
 }
 
 void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts)
@@ -786,6 +796,15 @@ AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range range, AST_T
 
     auto ts = ast_type_spec_new(ctx, range);
     ast_pointer_ts_create(base, ts);
+    return ts;
+}
+
+AST_Type_Spec *ast_static_array_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *length_expr, AST_Type_Spec *base)
+{
+    debug_assert(ctx && length_expr && base);
+
+    auto ts = ast_type_spec_new(ctx, range);
+    ast_static_array_ts_create(length_expr, base, ts);
     return ts;
 }
 
@@ -1228,7 +1247,15 @@ file_local void ast__print_type_spec_internal(String_Builder *sb, AST_Type_Spec 
 
         case AST_Type_Spec_Kind::POINTER: {
             string_builder_append(sb, "*");
-            ast__print_type_spec_internal(sb, ts->base, indent);
+            ast__print_type_spec_internal(sb, ts->pointer_base, indent);
+            break;
+        }
+
+        case AST_Type_Spec_Kind::STATIC_ARRAY: {
+            string_builder_append(sb, "[");
+            ast_print_expression(sb, ts->static_array.length_expr);
+            string_builder_append(sb, "]");
+            ast__print_type_spec_internal(sb, ts->static_array.base, indent);
             break;
         }
     }

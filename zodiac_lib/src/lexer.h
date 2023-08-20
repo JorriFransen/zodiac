@@ -13,8 +13,10 @@ enum Token_Kind
 {
     TOK_INVALID = 0,
 
-    // Ascii range
-    TOK_STAR = '*',
+    // Ascii range (mostly here so the character literals can be used in switch statements)
+    TOK_STAR = '*',   // 42
+    TOK_LBRACK = '[', // 91
+    TOK_RBRACK = ']', // 93
 
     TOK_INT = 128,
     TOK_REAL,
