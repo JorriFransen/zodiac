@@ -868,7 +868,11 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
             break;
         }
         case AST_Expression_Kind::REAL_LITERAL: {
-            string_builder_append(sb, "%f", expr->real_literal.value.r64);
+            if (!expr->resolved_type || expr->resolved_type->bit_size == 64) {
+                string_builder_append(sb, "%f", expr->real_literal.value.r64);
+            } else {
+                string_builder_append(sb, "%f", expr->real_literal.value.r32);
+            }
             break;
         }
 

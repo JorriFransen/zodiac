@@ -792,7 +792,10 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
     switch (type->kind) {
 
-        default: assert_msg(false, "Unsupported type in ast_const_expr_to_bytecode()");
+        case Type_Kind::INVALID: assert(false); break;
+        case Type_Kind::VOID: assert(false); break;
+        case Type_Kind::POINTER: assert(false); break;
+        case Type_Kind::FUNCTION: assert(false); break;
 
         case Type_Kind::UNSIZED_INTEGER:
         case Type_Kind::INTEGER: {
@@ -804,6 +807,13 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
             Integer_Value result_value = resolve_constant_integer_expr(expr, literal_type);
             return bytecode_integer_literal(bc->builder, literal_type, result_value);
+        }
+
+        case Type_Kind::FLOAT: {
+
+            Real_Value result_value = resolve_constant_real_expr(expr);
+            return bytecode_real_literal(bc->builder, expr->resolved_type, result_value);
+            break;
         }
 
         case Type_Kind::BOOLEAN: {
