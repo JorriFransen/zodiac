@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include "atom.h"
+#include "common.h"
 #include "constant_resolver.h"
 #include "error.h"
 #include "memory/allocator.h"
@@ -680,8 +681,21 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
             break;
         }
 
-        case AST_Expression_Kind::INDEX:
-            assert(false);
+        case AST_Expression_Kind::INDEX: {
+            flatten_expression(resolver, expr->index.base, scope, dest);
+
+            auto index_expr = expr->index.index;
+            assert(index_expr->kind == AST_Expression_Kind::INTEGER_LITERAL ||
+                   index_expr->kind == AST_Expression_Kind::IDENTIFIER);
+
+            Infer_Node *index_infer_node = nullptr;
+            if (index_expr->kind == AST_Expression_Kind::INTEGER_LITERAL) {
+                index_infer_node = infer_node_new(resolver->ctx, &builtin_type_s64);
+            }
+
+            flatten_expression(resolver, expr->index.index, scope, dest, index_infer_node);
+            break;
+        }
 
         case AST_Expression_Kind::CALL: {
             flatten_expression(resolver, expr->call.base, scope, dest);
@@ -1190,10 +1204,10 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             break;
         }
 
-        case AST_Expression_Kind::INDEX: assert(false); break;
         case AST_Expression_Kind::UNARY: assert(false); break;
         case AST_Expression_Kind::CAST: assert(false); break;
 
+        case AST_Expression_Kind::INDEX:
         case AST_Expression_Kind::COMPOUND: {
             // leaf
             break;
@@ -1782,7 +1796,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
         case AST_Expression_Kind::MEMBER: {
 
             auto base_expr = expr->member.base;
-            assert(base_expr->resolved_type);
+            assert(EXPR_IS_TYPED(base_expr));
 
             auto aggregate_type = base_expr->resolved_type;
             assert((aggregate_type->flags & TYPE_FLAG_AGGREGATE) == TYPE_FLAG_AGGREGATE);
@@ -1807,7 +1821,27 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             break;
         }
 
-        case AST_Expression_Kind::INDEX: assert(false);
+        case AST_Expression_Kind::INDEX: {
+            auto base_expr = expr->index.base;
+            assert(EXPR_IS_TYPED(base_expr));
+            assert(EXPR_IS_LVALUE(base_expr));
+            assert(base_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY);
+
+            auto static_array_type = base_expr->resolved_type;
+
+            auto index_expr = expr->index.index;
+            assert(EXPR_IS_TYPED(index_expr));
+            assert(index_expr->resolved_type->kind == Type_Kind::INTEGER);
+
+            if (EXPR_IS_CONST(index_expr)) {
+                Integer_Value index_val = resolve_constant_integer_expr(index_expr);
+                assert(index_val.s64 >= 0 && index_val.s64 < static_array_type->static_array.count);
+            }
+
+            expr->resolved_type = static_array_type->static_array.element_type;
+            expr->flags |= AST_EXPR_FLAG_LVALUE;
+            break;
+        }
 
         case AST_Expression_Kind::CALL: {
 
@@ -2039,6 +2073,7 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
         case AST_Type_Spec_Kind::STATIC_ARRAY: {
             auto length_expr = ts->static_array.length_expr;
             assert(EXPR_IS_TYPED(length_expr));
+            assert(EXPR_IS_CONST(length_expr));
             assert(length_expr->resolved_type->kind == Type_Kind::INTEGER);
             assert(length_expr->resolved_type == &builtin_type_s64); // This might not be the case when using a identifier (pointing to constant)
 
@@ -2051,7 +2086,6 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
 
             ts->resolved_type = get_static_array_type(elem_type, length_val.s64, &ctx->ast_allocator);
             return true;
-            break;
         }
     }
 

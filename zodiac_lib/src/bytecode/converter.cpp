@@ -529,7 +529,12 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
             return bytecode_emit_aggregate_offset_pointer(bc->builder, base_reg, expr->member.index_in_parent);
         }
 
-        case AST_Expression_Kind::INDEX: assert(false); break;
+        case AST_Expression_Kind::INDEX: {
+            Bytecode_Register index_reg = ast_expr_to_bytecode(bc, expr->index.index);
+            Bytecode_Register base_reg = ast_lvalue_to_bytecode(bc, expr->index.base);
+            return bytecode_emit_array_offset_pointer(bc->builder, base_reg, index_reg.value.integer.s64);
+        }
+
         case AST_Expression_Kind::CALL: assert(false); break;
         case AST_Expression_Kind::UNARY: assert(false); break;
         case AST_Expression_Kind::BINARY: assert(false); break;
@@ -651,7 +656,12 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             return bytecode_emit_load_pointer(bc->builder, addr_reg);
         }
 
-        case AST_Expression_Kind::INDEX: assert(false); break;
+        case AST_Expression_Kind::INDEX: {
+            Bytecode_Register index_reg = ast_expr_to_bytecode(bc, expr->index.index);
+            Bytecode_Register base_reg = ast_lvalue_to_bytecode(bc, expr->index.base);
+            Bytecode_Register addr_reg = bytecode_emit_array_offset_pointer(bc->builder, base_reg, index_reg.value.integer.s64);
+            return bytecode_emit_load_pointer(bc->builder, addr_reg);
+        }
 
         case AST_Expression_Kind::CALL: {
 
