@@ -81,6 +81,7 @@ MunitResult Global_Run_Directive_Variable(const MunitParameter params[], void* u
 MunitResult Global_Run_Directive_Constant(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Local_Run_Directives(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Run_Directive_Global_Var_Types(const MunitParameter params[], void* user_data_or_fixture);
+MunitResult Run_Directive_Global_Const_Types(const MunitParameter params[], void* user_data_or_fixture);
 
 START_TESTS(compiler_tests)
     DEFINE_TEST(Return_0),
@@ -118,6 +119,7 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Global_Run_Directive_Constant),
     DEFINE_TEST(Local_Run_Directives),
     DEFINE_TEST(Run_Directive_Global_Var_Types),
+    DEFINE_TEST(Run_Directive_Global_Const_Types),
 END_TESTS()
 
 }}

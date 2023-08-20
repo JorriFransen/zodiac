@@ -1102,6 +1102,91 @@ MunitResult Run_Directive_Global_Var_Types(const MunitParameter params[], void* 
     return MUNIT_OK;
 }
 
+MunitResult Run_Directive_Global_Const_Types(const MunitParameter params[], void* user_data_or_fixture) {
+
+    // Running main depending on constant depending on return value of another run
+    {
+        String_Ref code_string = R"CODE_STR(
+            signed_integer :: #run return_signed_integer(7);
+            unsigned_integer :: #run return_unsigned_integer(8);
+            float :: #run return_float(4.2);
+            double :: #run return_double(8.4);
+            bool_true :: #run return_bool(true);
+            bool_false :: #run return_bool(false);
+            vector :: #run make_vector(2, 3);
+            aabb :: #run make_aabb(vector, {3, 4});
+            test_array :: #run make_test_array();
+            short_array :: #run make_short_array(44, 22);
+
+            main :: () {
+                print(signed_integer);
+                print(unsigned_integer);
+                print(float);
+                print(double);
+                print(bool_true);
+                print(bool_false);
+                print_vector(vector);
+                print_aabb(aabb);
+                print_test_array(test_array);
+                print_short_array(short_array);
+                return 0;
+            }
+            return_signed_integer :: (x: s64) -> s64 { return x; }
+            return_unsigned_integer :: (x: u64) -> u64 { return x; }
+            return_float :: (x: r32) -> r32 { return x; }
+            return_double :: (x: r64) -> r64 { return x; }
+            return_bool :: (x: bool) -> bool { return x; }
+
+            Vec2 :: struct { x, y: s64; }
+            make_vector :: (x: s64, y: s64) -> Vec2 {
+                result: Vec2;
+                result.x = x;
+                result.y = y;
+                return result;
+            }
+            print_vector :: (v: Vec2) {
+                print(v.x, ", ", v.y);
+            }
+
+            AABB :: struct { pos, size: Vec2; }
+            make_aabb :: (pos: Vec2, size: Vec2) -> AABB {
+                result: AABB;
+                result.pos = pos;
+                result.size = size;
+                return result;
+            }
+            print_aabb :: (r: AABB) {
+                print(r.pos.x, ", ", r.pos.y, ", ", r.size.x, ", ", r.size.y);
+            }
+            make_test_array :: () -> [5]s64 {
+                return { 5, 4, 3, 2, 1 };
+            }
+            print_test_array :: (a: [5]s64) {
+                print(a[0], ", ", a[1], ", ", a[2], ", ", a[3], ", ", a[4]);
+            }
+            make_short_array :: (x0: s64, x1: s64) -> [2]s64 {
+                r: [2]s64;
+                r[0] = x0;
+                r[1] = x1;
+                return r;
+            }
+            print_short_array :: (r: [2]s64) {
+                print(r[0], ", ", r[1]);
+            }
+        )CODE_STR";
+
+        Expected_Results expected = {
+            .std_out = "7\n8\n4.200000\n8.400000\ntrue\nfalse\n2, 3\n2, 3, 3, 4\n5, 4, 3, 2, 1\n44, 22",
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+        if (result.result != MUNIT_OK) return result.result;
+    }
+
+    return MUNIT_OK;
+}
 #undef resolve_error
 
 }}

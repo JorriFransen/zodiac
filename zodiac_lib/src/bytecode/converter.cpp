@@ -803,7 +803,6 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
         case Type_Kind::UNSIZED_INTEGER:
         case Type_Kind::INTEGER: {
-
             Type *literal_type = type;
             if (literal_type->kind == Type_Kind::UNSIZED_INTEGER) {
                 literal_type = &builtin_type_s64;
@@ -814,16 +813,14 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
         }
 
         case Type_Kind::FLOAT: {
-
             Real_Value result_value = resolve_constant_real_expr(expr);
             return bytecode_real_literal(bc->builder, expr->resolved_type, result_value);
             break;
         }
 
         case Type_Kind::BOOLEAN: {
-            Type *bool_type = type;
-            assert(bool_type->kind == Type_Kind::BOOLEAN);
-            return bytecode_boolean_literal(bc->builder, bool_type, expr->bool_literal);
+            bool result_value = resolve_constant_bool_expr(expr);
+            return bytecode_boolean_literal(bc->builder, expr->resolved_type, result_value);
         }
 
         case Type_Kind::STRUCTURE: {
