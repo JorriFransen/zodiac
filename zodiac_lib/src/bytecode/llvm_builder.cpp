@@ -859,8 +859,11 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
             Type *array_type = nullptr;
 
-            if (bc_inst.a.kind == Bytecode_Register_Kind::ALLOC) {
+            if (bc_inst.a.kind == Bytecode_Register_Kind::ALLOC ||
+                bc_inst.a.kind == Bytecode_Register_Kind::GLOBAL) {
+
                 array_type = bc_inst.a.type;
+
             } else {
                 assert(bc_inst.a.kind == Bytecode_Register_Kind::TEMPORARY);
                 assert(bc_inst.a.type->kind == Type_Kind::POINTER);

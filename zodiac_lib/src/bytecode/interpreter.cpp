@@ -975,6 +975,7 @@ switch (operand.type->bit_size) { \
 
         case Bytecode_Opcode::ARR_OFFSET_POINTER: {
             assert(instruction.a.kind == Bytecode_Register_Kind::ALLOC ||
+                   instruction.a.kind == Bytecode_Register_Kind::GLOBAL ||
                    instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
 
             Interpreter_Register array_register = interpreter_load_register(interp, instruction.a);
@@ -996,7 +997,8 @@ switch (operand.type->bit_size) { \
 
             u8 *ptr = nullptr;
 
-            if (instruction.a.kind == Bytecode_Register_Kind::ALLOC) {
+            if (instruction.a.kind == Bytecode_Register_Kind::ALLOC ||
+                instruction.a.kind == Bytecode_Register_Kind::GLOBAL) {
                 ptr = array_register.pointer;
             } else {
                 assert(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);

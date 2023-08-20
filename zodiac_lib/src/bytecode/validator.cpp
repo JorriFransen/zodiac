@@ -1386,7 +1386,9 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
         case Bytecode_Opcode::ARR_OFFSET_POINTER: {
             Type *array_type = nullptr;
 
-            if (instruction->a.kind == Bytecode_Register_Kind::ALLOC) {
+            if (instruction->a.kind == Bytecode_Register_Kind::ALLOC ||
+                instruction->a.kind == Bytecode_Register_Kind::GLOBAL) {
+
                 array_type = instruction->a.type;
 
             } else if (instruction->a.kind == Bytecode_Register_Kind::TEMPORARY) {
@@ -1399,7 +1401,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 array_type = instruction->a.type->pointer.base;
 
             } else {
-                bytecode_validator_report_error(validator, "The 'a' register of 'ARR_OFFSET_POINTER' must be a temporary or an alloc");
+                bytecode_validator_report_error(validator, "The 'a' register of 'ARR_OFFSET_POINTER' must be a temporary, global or an alloc");
                 return false;
             }
 

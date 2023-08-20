@@ -1063,8 +1063,11 @@ Bytecode_Register bytecode_emit_array_offset_pointer(Bytecode_Builder *builder, 
 {
     Type *array_type = nullptr;
 
-    if (array_register.kind == Bytecode_Register_Kind::ALLOC) {
+    if (array_register.kind == Bytecode_Register_Kind::ALLOC ||
+        array_register.kind == Bytecode_Register_Kind::GLOBAL) {
+
         array_type = array_register.type;
+
     } else {
         assert(array_register.type->kind == Type_Kind::POINTER);
         array_type = array_register.type->pointer.base;
