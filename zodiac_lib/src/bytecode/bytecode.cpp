@@ -1055,6 +1055,12 @@ Bytecode_Register bytecode_emit_aggregate_offset_pointer(Bytecode_Builder *build
 
 Bytecode_Register bytecode_emit_array_offset_pointer(Bytecode_Builder *builder, Bytecode_Register array_register, s64 index)
 {
+    auto index_register = bytecode_integer_literal(builder, &builtin_type_s64, index);
+    return bytecode_emit_array_offset_pointer(builder, array_register, index_register);
+}
+
+Bytecode_Register bytecode_emit_array_offset_pointer(Bytecode_Builder *builder, Bytecode_Register array_register, Bytecode_Register index_register)
+{
     Type *array_type = nullptr;
 
     if (array_register.kind == Bytecode_Register_Kind::ALLOC) {
@@ -1068,10 +1074,11 @@ Bytecode_Register bytecode_emit_array_offset_pointer(Bytecode_Builder *builder, 
     assert(array_type->flags & TYPE_FLAG_STATIC_ARRAY);
     assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
-    assert(index >= 0);
-    assert(index < array_type->static_array.count);
-
-    auto index_register = bytecode_integer_literal(builder, &builtin_type_s64, index);
+    if (index_register.flags & BC_REGISTER_FLAG_LITERAL) {
+        assert(index_register.flags & BC_REGISTER_FLAG_CONSTANT)
+        assert(index_register.value.integer.s64 >= 0);
+        assert(index_register.value.integer.s64 < array_type->static_array.count);
+    }
 
     auto element_type = array_type->static_array.element_type;
     Type *result_type = get_pointer_type(element_type, &builder->zodiac_context->ast_allocator);

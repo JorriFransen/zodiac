@@ -1,4 +1,3 @@
-- make bytecode_emit_array_offset_pointer work with Bytecode registers as index argument.
 - Test rundirectives with different types and with constants
 
 - Struct literal expressions (add as tests)
@@ -13,7 +12,10 @@
     - With non constant values
     - global (constants)
 
+- Some way to get static array length
 - Make sure we can't assign values/elements to constant arrays.
+
+- Slices (just call them arrays maybe?)
 
 - Convert structs returned from run directives into ast expression (struct literal).
 

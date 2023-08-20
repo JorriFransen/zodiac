@@ -327,6 +327,7 @@ ZAPI Bytecode_Register bytecode_emit_extract_element(Bytecode_Builder *builder, 
 
 ZAPI Bytecode_Register bytecode_emit_aggregate_offset_pointer(Bytecode_Builder *builder, Bytecode_Register agg_register, s64 index);
 ZAPI Bytecode_Register bytecode_emit_array_offset_pointer(Bytecode_Builder *builder, Bytecode_Register array_register, s64 index);
+ZAPI Bytecode_Register bytecode_emit_array_offset_pointer(Bytecode_Builder *builder, Bytecode_Register array_register, Bytecode_Register index_register);
 
 ZAPI void bytecode_emit_jmp(Bytecode_Builder *builder, Bytecode_Block_Handle block);
 ZAPI void bytecode_emit_jmp_if(Bytecode_Builder *builder, Bytecode_Register cond, Bytecode_Block_Handle then_block, Bytecode_Block_Handle else_block);

@@ -852,7 +852,6 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
         }
 
         case Bytecode_Opcode::ARR_OFFSET_POINTER: {
-            assert(bc_inst.b.flags & BC_REGISTER_FLAG_LITERAL);
             assert(bc_inst.b.type == &builtin_type_s64);
 
             llvm::Value *llvm_array = llvm_builder_emit_register(builder, bc_inst.a);

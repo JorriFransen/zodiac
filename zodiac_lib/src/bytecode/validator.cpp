@@ -1420,11 +1420,6 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            if (!(instruction->b.flags & BC_REGISTER_FLAG_LITERAL)) {
-                bytecode_validator_report_error(validator, "The 'b' register of 'ARR_OFFSET_POINTER' must be a literal");
-                return false;
-            }
-
             auto index = instruction->b.value.integer.s32;
             assert(array_type);
 

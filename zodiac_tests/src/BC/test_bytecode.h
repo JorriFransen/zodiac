@@ -34,7 +34,8 @@ MunitResult Invalid_Extract_Element(const MunitParameter params[], void *user_da
 MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture);
 MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture);
 MunitResult Insert_And_Extract_Element(const MunitParameter params[], void *user_data_or_fixture);
-MunitResult Simple_ARR_OFFSET_PTR(const MunitParameter params[], void *user_data_or_fixture);
+MunitResult Simple_ARR_OFFSET_PTR_Const_Index(const MunitParameter params[], void *user_data_or_fixture);
+MunitResult Simple_ARR_OFFSET_PTR_Index(const MunitParameter params[], void *user_data_or_fixture);
 MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_data_or_fixture);
 MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[], void *user_data_or_fixture);
 MunitResult BC_Callback_From_C(const MunitParameter params[], void *user_data_or_fixture);
@@ -60,7 +61,8 @@ START_TESTS(bytecode_tests)
     DEFINE_TEST(Simple_AGG_OFFSET_PTR),
     DEFINE_TEST(Nested_AGG_OFFSET_PTR),
     DEFINE_TEST(Insert_And_Extract_Element),
-    DEFINE_TEST(Simple_ARR_OFFSET_PTR),
+    DEFINE_TEST(Simple_ARR_OFFSET_PTR_Const_Index),
+    DEFINE_TEST(Simple_ARR_OFFSET_PTR_Index),
     DEFINE_TEST(Calling_Function_Pointers),
     DEFINE_TEST(BC_FN_PTR_Calls_With_Structs),
     DEFINE_TEST(BC_Callback_From_C),
