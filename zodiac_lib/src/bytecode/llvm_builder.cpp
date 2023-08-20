@@ -869,7 +869,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             }
 
             assert(array_type);
-            assert(array_type->flags & TYPE_FLAG_ARRAY);
+            assert(array_type->flags & TYPE_FLAG_STATIC_ARRAY);
             assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
             llvm::Type *llvm_array_type = llvm_type_from_ast_type(builder, array_type);

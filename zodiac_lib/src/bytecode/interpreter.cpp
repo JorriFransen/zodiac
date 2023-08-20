@@ -847,7 +847,7 @@ switch (operand.type->bit_size) { \
 
         case Bytecode_Opcode::INSERT_ELEMENT: {
             Type *array_type = instruction.dest.type;
-            assert(array_type->flags & TYPE_FLAG_ARRAY);
+            assert(array_type->flags & TYPE_FLAG_STATIC_ARRAY);
             assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
             assert(instruction.additional_index >= 0);
@@ -899,7 +899,7 @@ switch (operand.type->bit_size) { \
             Interpreter_Register index_val = interpreter_load_register(interp, instruction.b);
 
             Type *array_type = array_val.type;
-            assert(array_type->flags & TYPE_FLAG_ARRAY);
+            assert(array_type->flags & TYPE_FLAG_STATIC_ARRAY);
             assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
             assert(index_val.type == &builtin_type_s64);
@@ -986,7 +986,7 @@ switch (operand.type->bit_size) { \
                 array_type = array_type->pointer.base;
             }
 
-            assert(array_type->flags & TYPE_FLAG_ARRAY);
+            assert(array_type->flags & TYPE_FLAG_STATIC_ARRAY);
             assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
             assert(index_register.type == &builtin_type_s64);

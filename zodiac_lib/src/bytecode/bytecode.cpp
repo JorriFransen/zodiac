@@ -1007,7 +1007,7 @@ Bytecode_Register bytecode_emit_extract_element(Bytecode_Builder *builder, Bytec
     assert(array.type);
 
     Type *array_type = array.type;
-    assert(array_type->flags & TYPE_FLAG_ARRAY);
+    assert(array_type->flags & TYPE_FLAG_STATIC_ARRAY);
     assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
     assert(index >= 0 && index < array_type->static_array.count);
@@ -1065,7 +1065,7 @@ Bytecode_Register bytecode_emit_array_offset_pointer(Bytecode_Builder *builder, 
     }
 
     assert(array_type);
-    assert(array_type->flags & TYPE_FLAG_ARRAY);
+    assert(array_type->flags & TYPE_FLAG_STATIC_ARRAY);
     assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
     assert(index >= 0);
@@ -1109,7 +1109,7 @@ Bytecode_Instruction_Handle bytecode_emit_instruction(Bytecode_Builder *builder,
          result.kind != Bytecode_Register_Kind::BLOCK)
             &&
         ((result.type->flags & TYPE_FLAG_AGGREGATE) ||
-         (result.type->flags & TYPE_FLAG_ARRAY) ||
+         (result.type->flags & TYPE_FLAG_STATIC_ARRAY) ||
           op == Bytecode_Opcode::ALLOC)) {
 
         // These should be all the instructions that require stack size for their result

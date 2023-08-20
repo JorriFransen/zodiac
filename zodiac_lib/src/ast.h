@@ -408,7 +408,7 @@ struct AST_Type_Spec
 
         struct {
             AST_Expression *length_expr;
-            AST_Type_Spec *base;
+            AST_Type_Spec *element_ts;
         } static_array;
     };
 };
@@ -493,7 +493,7 @@ ZAPI void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out
 
 ZAPI void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts);
 ZAPI void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts);
-ZAPI void ast_static_array_ts_create(AST_Expression *length_expr, AST_Type_Spec *base, AST_Type_Spec *out_ts);
+ZAPI void ast_static_array_ts_create(AST_Expression *length_expr, AST_Type_Spec *element_ts, AST_Type_Spec *out_ts);
 ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
 
 ZAPI void ast_run_directive_create(AST_Expression *expr, AST_Directive *out_dir);
@@ -540,7 +540,7 @@ ZAPI AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Range rang
 
 ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident);
 ZAPI AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *base);
-ZAPI AST_Type_Spec *ast_static_array_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *length_expr, AST_Type_Spec *base);
+ZAPI AST_Type_Spec *ast_static_array_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *length_expr, AST_Type_Spec *element_ts);
 ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range range);
 
 ZAPI AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *expr);

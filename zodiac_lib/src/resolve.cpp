@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include "atom.h"
+#include "constant_resolver.h"
 #include "error.h"
 #include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
@@ -770,8 +771,18 @@ void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dyna
         }
 
         case AST_Type_Spec_Kind::STATIC_ARRAY: {
-            flatten_expression(resolver, ts->static_array.length_expr, scope, dest);
-            flatten_type_spec(resolver, ts->static_array.base, scope, dest);
+            auto length_expr = ts->static_array.length_expr;
+
+            assert(length_expr->kind == AST_Expression_Kind::INTEGER_LITERAL ||
+                   length_expr->kind == AST_Expression_Kind::IDENTIFIER);
+
+            Infer_Node *length_infer_node = nullptr;
+            if (length_expr->kind == AST_Expression_Kind::INTEGER_LITERAL) {
+                length_infer_node = infer_node_new(resolver->ctx, &builtin_type_s64);
+            }
+
+            flatten_expression(resolver, length_expr, scope, dest, length_infer_node);
+            flatten_type_spec(resolver, ts->static_array.element_ts, scope, dest);
             break;
         }
     }
@@ -2024,7 +2035,24 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
         }
 
         case AST_Type_Spec_Kind::POINTER: assert(false); break;
-        case AST_Type_Spec_Kind::STATIC_ARRAY: assert(false); break;
+
+        case AST_Type_Spec_Kind::STATIC_ARRAY: {
+            auto length_expr = ts->static_array.length_expr;
+            assert(EXPR_IS_TYPED(length_expr));
+            assert(length_expr->resolved_type->kind == Type_Kind::INTEGER);
+            assert(length_expr->resolved_type == &builtin_type_s64); // This might not be the case when using a identifier (pointing to constant)
+
+            Integer_Value length_val = resolve_constant_integer_expr(length_expr);
+            assert(length_val.s64 >= 1);
+
+            auto elem_ts = ts->static_array.element_ts;
+            assert(elem_ts->resolved_type);
+            auto elem_type = elem_ts->resolved_type;
+
+            ts->resolved_type = get_static_array_type(elem_type, length_val.s64, &ctx->ast_allocator);
+            return true;
+            break;
+        }
     }
 
     assert(false);

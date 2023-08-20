@@ -155,7 +155,7 @@ void create_static_array_type(Type *type, Type *element_type, u64 count)
     auto bit_size = count * element_type->bit_size;
     assert(bit_size % 8 == 0);
 
-    create_type(type, Type_Kind::STATIC_ARRAY, bit_size, TYPE_FLAG_ARRAY);
+    create_type(type, Type_Kind::STATIC_ARRAY, bit_size, TYPE_FLAG_STATIC_ARRAY);
 
     type->static_array.element_type = element_type;
     type->static_array.count = count;

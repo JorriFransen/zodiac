@@ -1,4 +1,6 @@
 
+global_ints : [4]s64;
+
 main :: () {
     print("Hello zodiac!");
 
