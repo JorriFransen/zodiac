@@ -781,6 +781,8 @@ MunitResult Static_Array_Basics(const MunitParameter params[], void* user_data_o
             v = { 44, 22 };
             arr_print(v);
 
+            arr_print(test_arr());
+
             return 0;
         }
 
@@ -793,9 +795,13 @@ MunitResult Static_Array_Basics(const MunitParameter params[], void* user_data_o
         arr_print :: (a: [2]s64) {
             print(a[0], ", ", a[1]);
         }
+
+        test_arr :: () -> [2]s64 {
+            return { 5, 4 };
+        }
     )CODE_STR";
 
-    Expected_Results expected = { .std_out = "1\n2\n1\n2\n3, 1\n4, 2\n1, 2\n44, 22" };
+    Expected_Results expected = { .std_out = "1\n2\n1\n2\n3, 1\n4, 2\n1, 2\n44, 22\n5, 4" };
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };
 
