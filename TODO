@@ -37,7 +37,7 @@
 
 - Base run wrapper names on filename/line
 
-
+- There is multiple places (in ast_const_expr_to_bytecode, and the constant resolver) where we lookup a symbol, find the declaration (variable/constant), find the init expression. This can probably be wrapped up in a function.
 
 - Calculate/substitute non leaf constant expressions before emitting bytecode (we only do this when emitting bytecode now).
 
