@@ -38,7 +38,7 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
         case AST_Expression_Kind::IDENTIFIER: {
             auto scope = expr->identifier.scope;
             assert(scope);
-            auto sym = scope_get_symbol(scope, expr->identifier.name);
+            auto sym = scope_get_symbol(scope, expr->identifier);
             assert(sym);
             auto decl = sym->decl;
             assert(decl);
@@ -160,7 +160,7 @@ Real_Value resolve_constant_real_expr(AST_Expression *expr)
             auto scope = expr->identifier.scope;
             assert(scope);
 
-            auto sym = scope_get_symbol(scope, expr->identifier.name);
+            auto sym = scope_get_symbol(scope, expr->identifier);
             assert(sym);
             auto decl = sym->decl;
             assert(decl);

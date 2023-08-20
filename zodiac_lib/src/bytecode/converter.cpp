@@ -137,6 +137,9 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                 decl->variable.resolved_type == &builtin_type_unsized_integer) {
                 // No need to emit anything
                 break;
+            } else if (decl->variable.resolved_type->kind == Type_Kind::STRUCTURE) {
+                // leaf
+                break;
             } else {
                 assert_msg(false, "Not implemented")
             }
@@ -561,7 +564,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                    expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER ||
                    expr->resolved_type->kind == Type_Kind::FLOAT ||
                    expr->resolved_type->kind == Type_Kind::BOOLEAN ||
-                   (expr->resolved_type->kind == Type_Kind::STRUCTURE && expr->kind == AST_Expression_Kind::COMPOUND) ||
+                   (expr->resolved_type->kind == Type_Kind::STRUCTURE && (expr->kind == AST_Expression_Kind::COMPOUND || expr->kind == AST_Expression_Kind::IDENTIFIER)) ||
                    (expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && expr->kind == AST_Expression_Kind::COMPOUND),
                    "Constant expression substition not supported for this type");
 
@@ -824,11 +827,48 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
         case Type_Kind::STRUCTURE: {
 
-            Dynamic_Array<Bytecode_Register> members;
-            dynamic_array_create<Bytecode_Register>(bc->allocator, &members, expr->compound.expressions.count);
+            AST_Expression *compound_expr = nullptr;
 
-            for (s64 i = 0; i < expr->compound.expressions.count; i++) {
-                auto member_expr = expr->compound.expressions[i];
+            if (expr->kind == AST_Expression_Kind::COMPOUND) {
+                compound_expr = expr;
+            } else {
+                assert(expr->kind == AST_Expression_Kind::IDENTIFIER);
+                
+                auto scope = expr->identifier.scope;
+                assert(scope);
+
+                auto sym = scope_get_symbol(scope, expr->identifier);
+                assert(sym);
+                auto decl = sym->decl;
+                assert(decl);
+                assert(decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
+                assert(decl->variable.resolved_type);
+
+                Type *type = decl->variable.resolved_type;
+                assert(type);
+                assert(type->kind == Type_Kind::STRUCTURE);
+
+                AST_Expression *init_expr = decl->variable.value;
+                assert(init_expr);
+                assert(init_expr->resolved_type);
+                assert(init_expr->resolved_type == type);
+
+                if (init_expr->kind == AST_Expression_Kind::RUN_DIRECTIVE) {
+                    assert(init_expr->directive.generated_expression);
+                    init_expr = init_expr->directive.generated_expression;
+                }
+                assert(init_expr->kind == AST_Expression_Kind::COMPOUND);
+
+                compound_expr = init_expr;
+            }
+
+            assert(compound_expr);
+
+            Dynamic_Array<Bytecode_Register> members;
+            dynamic_array_create<Bytecode_Register>(bc->allocator, &members, compound_expr->compound.expressions.count);
+
+            for (s64 i = 0; i < compound_expr->compound.expressions.count; i++) {
+                auto member_expr = compound_expr->compound.expressions[i];
                 assert(EXPR_IS_CONST(member_expr));
                 Bytecode_Register member_reg = ast_const_expr_to_bytecode(bc, member_expr);
                 dynamic_array_append(&members, member_reg);
