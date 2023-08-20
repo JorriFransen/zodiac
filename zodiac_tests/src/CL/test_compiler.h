@@ -5,7 +5,10 @@
 #include "test_common.h"
 
 #include "bytecode/bytecode.h"
+#include "containers/dynamic_array.h"
+#include "defines.h"
 #include "error.h"
+#include "util/zstring.h"
 #include "zodiac_context.h"
 
 namespace Zodiac { namespace Compiler_Tests {

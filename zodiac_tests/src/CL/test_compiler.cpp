@@ -1,13 +1,24 @@
 #include "test_compiler.h"
 
+#include <munit/munit.h>
+
+#include "ast.h"
+#include "atom.h"
 #include "bytecode/converter.h"
 #include "bytecode/interpreter.h"
 #include "bytecode/llvm_builder.h"
 #include "bytecode/validator.h"
+#include "common.h"
+#include "containers/hash_table.h"
 #include "lexer.h"
+#include "memory/allocator.h"
+#include "memory/temporary_allocator.h"
 #include "parser.h"
+#include "platform/filesystem.h"
+#include "platform/platform.h"
 #include "resolve.h"
 #include "type.h"
+#include "util/asserts.h"
 
 namespace Zodiac { namespace Compiler_Tests {
 
