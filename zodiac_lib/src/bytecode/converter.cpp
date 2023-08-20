@@ -561,7 +561,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                    expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER ||
                    expr->resolved_type->kind == Type_Kind::FLOAT ||
                    expr->resolved_type->kind == Type_Kind::BOOLEAN ||
-                   (expr->resolved_type->kind == Type_Kind::STRUCTURE && expr->kind == AST_Expression_Kind::COMPOUND) || 
+                   (expr->resolved_type->kind == Type_Kind::STRUCTURE && expr->kind == AST_Expression_Kind::COMPOUND) ||
                    (expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && expr->kind == AST_Expression_Kind::COMPOUND),
                    "Constant expression substition not supported for this type");
 
@@ -775,7 +775,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             return value_reg;
         }
 
-        case Zodiac::AST_Expression_Kind::COMPOUND: assert(false); break;
+        case Zodiac::AST_Expression_Kind::COMPOUND: assert(false); break; // TODO: This means we have non constant members
     }
 
     assert(false);
@@ -828,7 +828,7 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
         }
 
         case Type_Kind::STATIC_ARRAY: {
-            
+
             Dynamic_Array<Bytecode_Register> values;
             dynamic_array_create<Bytecode_Register>(bc->allocator, &values, expr->compound.expressions.count);
 
@@ -983,7 +983,8 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
 
         case Type_Kind::POINTER: assert(false); break;
 
-        case Type_Kind::STRUCTURE: {
+        case Type_Kind::STRUCTURE:
+        case Type_Kind::STATIC_ARRAY: {
             assert(reg.value.pointer);
             result = interpreter_memory_to_ast_expression(bc, reg.pointer, reg.type, scope, range);
 
@@ -992,7 +993,6 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
             break;
         }
 
-        case Type_Kind::STATIC_ARRAY: assert(false); break;
         case Type_Kind::FUNCTION: assert(false); break;
     }
 
@@ -1060,7 +1060,7 @@ AST_Expression *interpreter_memory_to_ast_expression(Bytecode_Converter *bc, u8*
                 assert(member_type->bit_size % 8 == 0);
                 auto size = member_type->bit_size / 8;
 
-                auto member_expr =  interpreter_memory_to_ast_expression(bc, cursor, member_type, scope, range);
+                auto member_expr = interpreter_memory_to_ast_expression(bc, cursor, member_type, scope, range);
                 cursor += size;
                 dynamic_array_append(&member_exprs, member_expr);
             }
@@ -1069,7 +1069,27 @@ AST_Expression *interpreter_memory_to_ast_expression(Bytecode_Converter *bc, u8*
             break;
         }
 
-        case Type_Kind::STATIC_ARRAY: assert(false); break;
+        case Type_Kind::STATIC_ARRAY: {
+            u8 *cursor = mem;
+
+            Dynamic_Array<AST_Expression *> value_exprs;
+            dynamic_array_create(&bc->context->ast_allocator, &value_exprs, type->static_array.count);
+
+            auto elem_type = type->static_array.element_type;
+            assert(elem_type->bit_size % 8 == 0);
+            auto elem_size = elem_type->bit_size / 8;
+
+            for (s64 i = 0; i < type->static_array.count; i++) {
+
+                auto value_expr = interpreter_memory_to_ast_expression(bc, cursor, elem_type, scope, range);
+                cursor += elem_size;
+                dynamic_array_append(&value_exprs, value_expr);
+            }
+
+            result = ast_compound_expr_new(bc->context, range, value_exprs);
+            break;
+        }
+
         case Type_Kind::FUNCTION: assert(false); break;
     }
 

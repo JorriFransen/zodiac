@@ -13,6 +13,8 @@
     - With non constant values
     - global (constants)
 
+- Non constant compound literals
+
 - Some way to get static array length
 - Make sure we can't assign values/elements to constant arrays.
 - static array tests

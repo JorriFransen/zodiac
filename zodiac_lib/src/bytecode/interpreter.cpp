@@ -611,8 +611,21 @@ switch (operand.type->bit_size) { \
                     };
                 }
 
-                if (return_value.type->flags & TYPE_FLAG_AGGREGATE) {
-                    return_value = interpreter_load_pointer(interp, return_value.pointer, return_value.type);
+                if ((return_value.type->flags & TYPE_FLAG_AGGREGATE) ||
+                     return_value.type->flags & TYPE_FLAG_STATIC_ARRAY) {
+
+                    if (return_value.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
+                        assert(return_value.type->bit_size % 8 == 0);
+                        auto size = return_value.type->bit_size / 8;
+                        u8 *ptr = new_frame->sp;
+                        new_frame->sp += size;
+
+                        interpreter_copy_compound_literal_into_memory(interp, ptr, return_value);
+                        return_value = { .type = return_value.type, .pointer = ptr };
+
+                    } else {
+                        return_value = interpreter_load_pointer(interp, return_value.pointer, return_value.type);
+                    }
                 }
                 interpreter_store_register(interp, return_value, dest_register);
 
@@ -1240,7 +1253,9 @@ Interpreter_Register interpreter_load_register(Interpreter *interp,
         if (bc_reg.flags & BC_REGISTER_FLAG_LITERAL) {
 
             Interpreter_Register_Flags flags = INTERP_REG_FLAG_NONE;
-            if (bc_reg.type->flags & (TYPE_FLAG_AGGREGATE | TYPE_FLAG_STATIC_ARRAY)) {
+
+            if ((bc_reg.type->flags & TYPE_FLAG_AGGREGATE) ||
+                (bc_reg.type->flags & TYPE_FLAG_STATIC_ARRAY)) {
                 flags |= INTERP_REG_FLAG_AGGREGATE_LITERAL;
             }
 

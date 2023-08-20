@@ -1018,6 +1018,8 @@ MunitResult Run_Directive_Global_Var_Types(const MunitParameter params[], void* 
             bool_false := #run return_bool(false);
             vector := #run make_vector(2, 3);
             aabb := #run make_aabb(vector, {3, 4});
+            test_array := #run make_test_array();
+            short_array := #run make_short_array(44, 22);
 
             main :: () {
                 print(signed_integer);
@@ -1028,6 +1030,8 @@ MunitResult Run_Directive_Global_Var_Types(const MunitParameter params[], void* 
                 print(bool_false);
                 print_vector(vector);
                 print_aabb(aabb);
+                print_test_array(test_array);
+                print_short_array(short_array);
                 return 0;
             }
             return_signed_integer :: (x: s64) -> s64 { return x; }
@@ -1057,12 +1061,25 @@ MunitResult Run_Directive_Global_Var_Types(const MunitParameter params[], void* 
             print_aabb :: (r: AABB) {
                 print(r.pos.x, ", ", r.pos.y, ", ", r.size.x, ", ", r.size.y);
             }
+            make_test_array :: () -> [5]s64 {
+                return { 5, 4, 3, 2, 1 };
+            }
+            print_test_array :: (a: [5]s64) {
+                print(a[0], ", ", a[1], ", ", a[2], ", ", a[3], ", ", a[4]);
+            }
+            make_short_array :: (x0: s64, x1: s64) -> [2]s64 {
+                r: [2]s64;
+                r[0] = x0;
+                r[1] = x1;
+                return r;
+            }
+            print_short_array :: (r: [2]s64) {
+                print(r[0], ", ", r[1]);
+            }
         )CODE_STR";
 
-        // Compile and run will always run main at compile time, so account for that in the output
         Expected_Results expected = {
-            .compiletime_std_out = "7\n8\n4.200000\n8.400000\ntrue\nfalse\n2, 3\n2, 3, 3, 4",
-            .runtime_std_out = "7\n8\n4.200000\n8.400000\ntrue\nfalse\n2, 3\n2, 3, 3, 4"
+            .std_out = "7\n8\n4.200000\n8.400000\ntrue\nfalse\n2, 3\n2, 3, 3, 4\n5, 4, 3, 2, 1\n44, 22",
         };
 
         auto result = compile_and_run(code_string, expected);

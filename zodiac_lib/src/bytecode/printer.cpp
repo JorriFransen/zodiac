@@ -374,6 +374,11 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
                 assert(reg.kind == Bytecode_Register_Kind::TEMPORARY);
 
                 switch (reg.type->kind) {
+                    case Zodiac::Type_Kind::INVALID: assert(false); break;
+                    case Zodiac::Type_Kind::VOID: assert(false); break;
+                    case Zodiac::Type_Kind::UNSIZED_INTEGER: assert(false); break;
+                    case Zodiac::Type_Kind::FUNCTION: assert(false); break;
+
                     case Type_Kind::INTEGER: {
                         auto ri = reg.value.integer;
                         if (reg.type->integer.sign) {
@@ -437,7 +442,13 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
                         break;
                     }
 
-                    default: {
+                    case Type_Kind::STATIC_ARRAY: {
+                        string_builder_append(sb, "{ ");
+                        for (s64 i = 0; i < reg.value.compound.count; i++) {
+                            if (i != 0) string_builder_append(sb, ", ");
+                            bytecode_print_register(builder, fn, reg.value.compound[i], sb);
+                        }
+                        string_builder_append(sb, " }");
                         break;
                     }
                 }
