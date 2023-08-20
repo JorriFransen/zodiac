@@ -1715,7 +1715,9 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
 bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope, Infer_Node *infer_type_from)
 {
     debug_assert(expr);
-    debug_assert(expr->resolved_type == nullptr);
+
+    if (expr->resolved_type) return true;
+
     debug_assert(scope);
 
     bool result = true;

@@ -222,6 +222,7 @@ Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator)
 
     Type *result = alloc<Type>(allocator);
     create_static_array_type(result, element_type, count);
+    dynamic_array_append(&static_array_types, result);
 
     return result;
 }
@@ -253,6 +254,7 @@ Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Al
 
     Type *result = alloc<Type>(allocator);
     create_function_type(result, return_type, params_copy, vararg);
+    dynamic_array_append(&function_types, result);
 
     return result;
 }

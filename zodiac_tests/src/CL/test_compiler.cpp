@@ -753,6 +753,59 @@ MunitResult Nested_Struct_Offset_Ptr(const MunitParameter params[], void* user_d
     return result.result;
 }
 
+MunitResult Static_Array_Basics(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        global_ints : [4]s64;
+
+        main :: () {
+            ints : [5]s64;
+
+            ints[0] = 1;
+            global_ints[0] = 1;
+
+            i1 : s64 = 1;
+            ints[i1] = 2;
+            global_ints[i1] = 2;
+
+            print(ints[0]);
+            print(ints[i1]);
+            print(global_ints[0]);
+            print(global_ints[i1]);
+
+            v := arr_create(3, 1);
+            arr_print(v);
+            v = arr_add(v, 1);
+            arr_print(v);
+
+            return 0;
+        }
+
+        arr_create :: (x0: s64, x1: s64) -> [2]s64 {
+            result: [2]s64;
+            result[0] = x0;
+            result[1] = x1;
+            return result;
+        }
+
+        arr_add :: (a: [2]s64, x: s64) -> [2]s64 {
+            a[0] = a[0] + x;
+            a[1] = a[1] + x;
+            return a;
+        }
+
+        arr_print :: (a: [2]s64) {
+            print(a[0], ", ", a[1]);
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out = "1\n2\n1\n2\n3, 1\n4, 2" };
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
 MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void* user_data_or_fixture) {
 
     // Running main
