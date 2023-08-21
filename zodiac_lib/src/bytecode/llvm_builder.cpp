@@ -666,8 +666,9 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             break;
         }
 
-        case Bytecode_Opcode::ADDROF_ALLOC: {
-            assert(bc_inst.a.kind == Bytecode_Register_Kind::ALLOC);
+        case Bytecode_Opcode::ADDROF: {
+            assert(bc_inst.a.kind == Bytecode_Register_Kind::ALLOC ||
+                   bc_inst.a.kind == Bytecode_Register_Kind::GLOBAL);
 
             llvm::Value *llvm_alloc = llvm_builder_emit_register(builder, bc_inst.a);
             llvm_builder_store_result(builder, bc_inst.dest, llvm_alloc);

@@ -26,9 +26,19 @@ S :: struct {
     // TODO: function (pointer)?
 }
 
+gs : S;
+
 main :: () {
 
+    print("Uninitialized global:");
+    print(*gs);
+    print_s(*gs);
+
     s : S;
+    print("Uninitialized local:");
+    print(*s);
+    print_s(*s);
+
     return 0;
 }
 
@@ -39,4 +49,8 @@ Vec2 :: struct {
 SS :: struct {
     id : u32;
     v  : Vec2;
+}
+
+print_s :: (s : *S) {
+    print("TODO: print S");
 }

@@ -658,8 +658,10 @@ switch (operand.type->bit_size) { \
             break;
         }
 
-        case Bytecode_Opcode::ADDROF_ALLOC: {
-            assert(instruction.a.kind == Bytecode_Register_Kind::ALLOC);
+        case Bytecode_Opcode::ADDROF: {
+            assert(instruction.a.kind == Bytecode_Register_Kind::ALLOC ||
+                   instruction.a.kind == Bytecode_Register_Kind::GLOBAL);
+
             Interpreter_Register alloc_register = interpreter_load_register(interp, instruction.a);
 
             assert(alloc_register.pointer);

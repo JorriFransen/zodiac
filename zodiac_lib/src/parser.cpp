@@ -181,15 +181,21 @@ AST_Expression *parse_expr_unary(Parser *parser)
     debug_assert(parser);
     Source_Pos start_pos = cur_tok(parser).range.start;
 
-    if (is_token(parser, '+')) {
+    if (match_token(parser, '+')) {
 
-        next_token(parser);
         AST_Expression *operand = parse_expr_unary(parser);
         return ast_unary_expr_new(parser->context, {start_pos, operand->range.end} , AST_Unary_Operator::PLUS, operand);
-    } else if (is_token(parser, '-')) {
-        next_token(parser);
+
+    } else if (match_token(parser, '-')) {
+
         AST_Expression *operand = parse_expr_unary(parser);
         return ast_unary_expr_new(parser->context, {start_pos, operand->range.end}, AST_Unary_Operator::MINUS, operand);
+
+    } else if (match_token(parser, '*')) {
+
+        AST_Expression *operand = parse_expr_unary(parser);
+        return ast_unary_expr_new(parser->context, {start_pos, operand->range.end}, AST_Unary_Operator::ADDRESS_OF, operand);
+
     } else {
         return parse_expr_base(parser);
     }

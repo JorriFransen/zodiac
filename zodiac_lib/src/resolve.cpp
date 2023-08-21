@@ -722,8 +722,10 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
             break;
         }
 
-        case AST_Expression_Kind::UNARY:
-            assert(false);
+        case AST_Expression_Kind::UNARY: {
+            flatten_expression(resolver, expr->unary.operand, scope, dest);
+            break;
+        }
 
         case AST_Expression_Kind::BINARY: {
             // assert(infer_type_from);
@@ -1214,7 +1216,13 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             break;
         }
 
-        case AST_Expression_Kind::UNARY: assert(false); break;
+        case AST_Expression_Kind::UNARY: {
+            if (EXPR_IS_CONST(expr->unary.operand)) {
+                expr->flags |= AST_EXPR_FLAG_CONST;
+            }
+            break;
+        }
+
         case AST_Expression_Kind::CAST: assert(false); break;
 
         case AST_Expression_Kind::INDEX:
@@ -1706,6 +1714,7 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
                 assert(type->kind == Type_Kind::INTEGER ||
                        type->kind == Type_Kind::FLOAT   ||
                        type->kind == Type_Kind::BOOLEAN ||
+                       type->kind == Type_Kind::POINTER ||
                        type == &builtin_type_String);
 
             }
@@ -1909,7 +1918,39 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             break;
         }
 
-        case AST_Expression_Kind::UNARY: assert(false);
+        case AST_Expression_Kind::UNARY: {
+            AST_Expression *operand = expr->unary.operand;
+            assert(EXPR_IS_TYPED(operand));
+
+            Type *base_type = operand->resolved_type;
+
+            switch (expr->unary.op) {
+
+                case AST_Unary_Operator::INVALID: assert(false); break;
+
+                case AST_Unary_Operator::PLUS:
+                case AST_Unary_Operator::MINUS: {
+                    assert(false);
+                    break;
+                }
+
+                case AST_Unary_Operator::ADDRESS_OF: {
+
+                    if (!EXPR_IS_LVALUE(operand)) {
+                        fatal_resolve_error(ctx, expr, "The operand to dereference ('*') is not an lvalue");
+                        fatal_resolve_error(ctx, operand, "Operand: '%s'", ast_print_expression(operand, &ctx->error_allocator));
+                        return false;
+                    }
+
+                    expr->resolved_type = get_pointer_type(base_type, &ctx->ast_allocator);
+                    break;
+                }
+            }
+
+            debug_assert(expr->resolved_type);
+
+            break;
+        }
 
         case AST_Expression_Kind::BINARY: {
             auto lhs = expr->binary.lhs;

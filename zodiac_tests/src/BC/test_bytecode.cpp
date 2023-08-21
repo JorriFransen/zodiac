@@ -768,7 +768,7 @@ MunitResult Basic_Pointers(const MunitParameter params[], void *user_data_or_fix
         auto int_alloc = bytecode_emit_alloc(&bb, &builtin_type_s64, "x");
         bytecode_emit_store_alloc(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, exit_code - 1), int_alloc);
 
-        auto int_alloc_addr = bytecode_emit_address_of_alloc(&bb, int_alloc);
+        auto int_alloc_addr = bytecode_emit_address_of(&bb, int_alloc);
         auto int_value = bytecode_emit_load_pointer(&bb, int_alloc_addr);
         bytecode_emit_print(&bb, int_value);
         PRINT_NEWLINE;
@@ -844,7 +844,7 @@ MunitResult Struct_Pointers(const MunitParameter params[], void *user_data_or_fi
         struct_val = bytecode_emit_insert_value(&bb, struct_val, bytecode_integer_literal(&bb, &builtin_type_s64, 24), vec_type, 1);
         bytecode_emit_store_alloc(&bb, struct_val, struct_alloc);
 
-        auto struct_ptr = bytecode_emit_address_of_alloc(&bb, struct_alloc);
+        auto struct_ptr = bytecode_emit_address_of(&bb, struct_alloc);
         auto loaded_struct = bytecode_emit_load_pointer(&bb, struct_ptr);
         auto x = bytecode_emit_extract_value(&bb, loaded_struct, 0);
         auto y = bytecode_emit_extract_value(&bb, loaded_struct, 1);
@@ -909,7 +909,7 @@ MunitResult Invalid_Extract_Element(const MunitParameter params[], void *user_da
         auto inserted_struct_val = bytecode_emit_insert_value(&bb, struct_alloc, bytecode_integer_literal(&bb, &builtin_type_s64, 42), vec_type, 0);
         inserted_struct_val = bytecode_emit_insert_value(&bb, struct_alloc, bytecode_integer_literal(&bb, &builtin_type_s64, 24), vec_type, 1);
 
-        auto struct_ptr = bytecode_emit_address_of_alloc(&bb, struct_alloc);
+        auto struct_ptr = bytecode_emit_address_of(&bb, struct_alloc);
         auto loaded_struct = bytecode_emit_load_pointer(&bb, struct_ptr);
         auto x = bytecode_emit_extract_value(&bb, loaded_struct, 0);
         auto y = bytecode_emit_extract_value(&bb, loaded_struct, 1);
@@ -982,7 +982,7 @@ MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data
         bytecode_emit_print(&bb, sum);
         PRINT_NEWLINE;
 
-        auto struct_ptr = bytecode_emit_address_of_alloc(&bb, struct_alloc);
+        auto struct_ptr = bytecode_emit_address_of(&bb, struct_alloc);
         x_ptr = bytecode_emit_aggregate_offset_pointer(&bb, struct_ptr, 0);
         y_ptr = bytecode_emit_aggregate_offset_pointer(&bb, struct_ptr, 1);
 
@@ -1259,7 +1259,7 @@ MunitResult Simple_ARR_OFFSET_PTR_Const_Index(const MunitParameter params[], voi
             sum = bytecode_emit_add(&bb, sum, elem);
         }
 
-        auto array_ptr = bytecode_emit_address_of_alloc(&bb, array_alloc);
+        auto array_ptr = bytecode_emit_address_of(&bb, array_alloc);
 
         for (s64 i = array_type->static_array.count - 1; i >= 0; i--) {
             auto elem_ptr = bytecode_emit_array_offset_pointer(&bb, array_ptr, i);
@@ -1370,7 +1370,7 @@ MunitResult Simple_ARR_OFFSET_PTR_Index(const MunitParameter params[], void *use
             sum = bytecode_emit_add(&bb, sum, elem);
         }
 
-        auto array_ptr = bytecode_emit_address_of_alloc(&bb, array_alloc);
+        auto array_ptr = bytecode_emit_address_of(&bb, array_alloc);
 
         for (s64 i = array_type->static_array.count - 1; i >= 0; i--) {
             auto idx_lit = bytecode_integer_literal(&bb, &builtin_type_s64, i);

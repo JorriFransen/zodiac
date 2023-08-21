@@ -447,6 +447,7 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                 assert(type->kind == Type_Kind::INTEGER ||
                        type->kind == Type_Kind::FLOAT   ||
                        type->kind == Type_Kind::BOOLEAN ||
+                       type->kind == Type_Kind::POINTER ||
                        type == &builtin_type_String);
                 Bytecode_Register value_reg = ast_expr_to_bytecode(bc, stmt->print_expr.expressions[i]);
                 bytecode_emit_print(bc->builder, value_reg);
@@ -463,6 +464,7 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
 {
     assert(bc);
     assert(expr);
+    assert(EXPR_IS_LVALUE(expr))
 
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false); break;
@@ -695,7 +697,32 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             break;
         }
 
-        case AST_Expression_Kind::UNARY: assert(false); break;
+        case AST_Expression_Kind::UNARY: {
+
+            switch (expr->unary.op) {
+
+                case AST_Unary_Operator::INVALID: assert(false); break;
+
+                case AST_Unary_Operator::PLUS:
+                case AST_Unary_Operator::MINUS: {
+                    assert(false);
+                    break;
+                }
+
+                case AST_Unary_Operator::ADDRESS_OF: {
+                    Bytecode_Register lvalue_reg = ast_lvalue_to_bytecode(bc, expr->unary.operand);
+
+                    assert(lvalue_reg.kind == Bytecode_Register_Kind::ALLOC ||
+                           lvalue_reg.kind == Bytecode_Register_Kind::GLOBAL);
+
+                    return bytecode_emit_address_of(bc->builder, lvalue_reg);
+                    break;
+                }
+            }
+
+            assert(false); // should have returned
+            break;
+        }
 
         case AST_Expression_Kind::BINARY: {
 

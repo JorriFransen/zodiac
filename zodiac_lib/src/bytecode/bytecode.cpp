@@ -824,7 +824,7 @@ Bytecode_Register bytecode_emit_alloc(Bytecode_Builder *builder, Type *type, con
     return result_register;
 }
 
-Bytecode_Register bytecode_emit_address_of_alloc(Bytecode_Builder *builder, Bytecode_Register alloc)
+Bytecode_Register bytecode_emit_address_of(Bytecode_Builder *builder, Bytecode_Register alloc)
 {
     if (!alloc.type->pointer_to) {
         get_pointer_type(alloc.type, &builder->zodiac_context->ast_allocator);
@@ -834,7 +834,7 @@ Bytecode_Register bytecode_emit_address_of_alloc(Bytecode_Builder *builder, Byte
 
     Bytecode_Register result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, alloc.type->pointer_to);
 
-    bytecode_emit_instruction(builder, Bytecode_Opcode::ADDROF_ALLOC, alloc, {}, result);
+    bytecode_emit_instruction(builder, Bytecode_Opcode::ADDROF, alloc, {}, result);
 
     return result;
 }

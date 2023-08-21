@@ -51,7 +51,7 @@ struct Bytecode_Register;
     ZODIAC_BC_OP(RETURN_VOID) \
     ZODIAC_BC_OP(RETURN) \
     ZODIAC_BC_OP(ALLOC) \
-    ZODIAC_BC_OP(ADDROF_ALLOC) \
+    ZODIAC_BC_OP(ADDROF) \
     ZODIAC_BC_OP(ADDROF_FUNC) \
     ZODIAC_BC_OP(LOAD_G) \
     ZODIAC_BC_OP(STORE_G) \
@@ -308,7 +308,7 @@ ZAPI void bytecode_emit_return(Bytecode_Builder *builder);
 ZAPI void bytecode_emit_return(Bytecode_Builder *builder, Bytecode_Register return_value);
 
 ZAPI Bytecode_Register bytecode_emit_alloc(Bytecode_Builder *builder, Type *type, const char *name);
-ZAPI Bytecode_Register bytecode_emit_address_of_alloc(Bytecode_Builder *builder, Bytecode_Register alloc);
+ZAPI Bytecode_Register bytecode_emit_address_of(Bytecode_Builder *builder, Bytecode_Register alloc);
 ZAPI Bytecode_Register bytecode_emit_address_of_function(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle);
 
 ZAPI void bytecode_emit_store_global(Bytecode_Builder *builder, Bytecode_Register source, Bytecode_Global_Handle global_handle);

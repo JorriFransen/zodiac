@@ -883,24 +883,25 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             break;
         }
 
-        case Bytecode_Opcode::ADDROF_ALLOC: {
-            if (instruction->a.kind != Bytecode_Register_Kind::ALLOC) {
-                bytecode_validator_report_error(validator, "The 'a' register for 'ADDROF_ALLOC' must be an alloc");
+        case Bytecode_Opcode::ADDROF: {
+            if (instruction->a.kind != Bytecode_Register_Kind::ALLOC &&
+                instruction->a.kind != Bytecode_Register_Kind::GLOBAL) {
+                bytecode_validator_report_error(validator, "The 'a' register for 'ADDROF' must be an alloc or global");
                 return false;
             }
 
             if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
-                bytecode_validator_report_error(validator, "The 'dest' register for 'ADDROF_ALLOC' must be a temporary");
+                bytecode_validator_report_error(validator, "The 'dest' register for 'ADDROF' must be a temporary");
                 return false;
             }
 
             if (instruction->dest.type->kind != Type_Kind::POINTER) {
-                bytecode_validator_report_error(validator, "The 'dest' register for 'ADDROF_ALLOC' must be of pointer type");
+                bytecode_validator_report_error(validator, "The 'dest' register for 'ADDROF' must be of pointer type");
                 return false;
             }
 
             if (instruction->dest.type->pointer.base != instruction->a.type) {
-                bytecode_validator_report_error(validator, "The type of the 'dest' register for 'ADDROF_ALLOC' must be a pointer to the 'a' registers type");
+                bytecode_validator_report_error(validator, "The type of the 'dest' register for 'ADDROF' must be a pointer to the 'a' registers type");
                 return false;
             }
 

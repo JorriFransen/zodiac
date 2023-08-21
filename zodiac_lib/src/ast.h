@@ -74,6 +74,7 @@ enum class AST_Unary_Operator
 
     PLUS = '+',
     MINUS = '-',
+    ADDRESS_OF = '*',
 };
 
 struct AST_Unary_Expression

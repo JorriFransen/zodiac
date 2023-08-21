@@ -244,7 +244,7 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
         UNOP_CASE_(RETURN)
 
         UNOP_CASE_(ALLOC)
-        UNOP_CASE_(ADDROF_ALLOC)
+        UNOP_CASE_(ADDROF)
         UNOP_CASE_(ADDROF_FUNC)
 
         UNOP_CASE_(STORE_G)
