@@ -38,7 +38,7 @@ void interpreter_init(Allocator *allocator, Zodiac_Context *context, Interpreter
 
     dynamic_array_create(allocator, &out_interp->globals);
 
-    const auto register_count = 64;
+    const auto register_count = 128;
     out_interp->registers.data = alloc_array<Interpreter_Register>(allocator, register_count);
     out_interp->registers.count = register_count;
     out_interp->used_register_count = 0;
@@ -481,6 +481,7 @@ switch (operand.type->bit_size) { \
                    operand.type->kind == Type_Kind::FLOAT ||
                    operand.type->kind == Type_Kind::BOOLEAN ||
                    operand.type->kind == Type_Kind::POINTER ||
+                   operand.type->kind == Type_Kind::STATIC_ARRAY ||
                    operand.type == &builtin_type_String);
 
             auto out_handle = (FILE *)interp->std_out.handle;
@@ -528,8 +529,22 @@ switch (operand.type->bit_size) { \
                     break;
                 }
 
-                case Zodiac::Type_Kind::POINTER: {
+                case Type_Kind::POINTER: {
                     fprintf(out_handle, "%p", operand.value.pointer);
+                    break;
+                }
+
+                case Type_Kind::STATIC_ARRAY: {
+                    fprintf(out_handle, "{ ");
+                    u8 *cursor = operand.value.pointer;
+                    auto elem_type = operand.type->static_array.element_type;
+                    auto elem_size = elem_type->bit_size / 8;
+                    for (s64 i = 0; i < operand.type->static_array.count; i++) {
+                        if (i != 0) fprintf(out_handle, ", ");
+                        interpreter_print_from_memory(interp, cursor, elem_type);
+                        cursor += elem_size;
+                    }
+                    fprintf(out_handle, " }");
                     break;
                 }
             }
@@ -1644,4 +1659,46 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
         dest_cursor += copy_size;
     }
 }
+
+void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type)
+{
+    debug_assert(interp && mem && type);
+
+    auto out_handle = (FILE *)interp->std_out.handle;
+
+    switch (type->kind) {
+        case Type_Kind::INVALID: assert(false); break;
+        case Type_Kind::VOID: assert(false); break;
+        case Type_Kind::UNSIZED_INTEGER: assert(false); break;
+
+        case Type_Kind::INTEGER: {
+            if (type->integer.sign) {
+                switch (type->bit_size) {
+                    default: assert(false);
+                    case 8: fprintf(out_handle, "%i", *(s8*)mem); break;
+                    case 16: fprintf(out_handle, "%i", *(s16*)mem); break;
+                    case 32: fprintf(out_handle, "%i", *(s32*)mem); break;
+                    case 64: fprintf(out_handle, "%lli", *(s64*)mem); break;
+                }
+            } else {
+                switch (type->bit_size) {
+                    default: assert(false);
+                    case 8: fprintf(out_handle, "%i", *(u8*)mem); break;
+                    case 16: fprintf(out_handle, "%i", *(u16*)mem); break;
+                    case 32: fprintf(out_handle, "%i", *(u32*)mem); break;
+                    case 64: fprintf(out_handle, "%lli", *(u64*)mem); break;
+                }
+            }
+            break;
+        }
+
+        case Type_Kind::FLOAT: assert(false); break;
+        case Type_Kind::BOOLEAN: assert(false); break;
+        case Type_Kind::POINTER: assert(false); break;
+        case Type_Kind::STRUCTURE: assert(false); break;
+        case Type_Kind::STATIC_ARRAY: assert(false); break;
+        case Type_Kind::FUNCTION: assert(false); break;
+    }
+}
+
 }}

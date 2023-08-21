@@ -31,12 +31,14 @@ gs : S;
 main :: () {
 
     print("Uninitialized global:");
-    print(*gs);
     print_s(*gs);
 
     s : S;
     print("Uninitialized local:");
-    print(*s);
+    print_s(*s);
+
+    s._u64 = 9876;
+    print("Initialized local:");
     print_s(*s);
 
     return 0;
@@ -52,5 +54,27 @@ SS :: struct {
 }
 
 print_s :: (s : *S) {
-    print("TODO: print S");
+    print(s);
+    print("{ ", s._u64, ", ",
+                s._s64, ", ",
+                s._u32, ", ",
+                s._s32, ", ",
+                s._u16, ", ",
+                s._s16, ", ",
+                s._u8,  ", ",
+                s._s8,  ", ",
+
+                s._r64,  ", ",
+                s._r32,  ", ",
+
+                s._bool1,  ", ",
+                s._bool2,  ", ",
+
+                s._ptr_vec2,  ", ",
+
+                "{ ", s._ss.id, ", { ", s._ss.v.x, ", ", s._ss.v.y, " } }, ",
+
+                s._bytes,
+
+          " }");
 }

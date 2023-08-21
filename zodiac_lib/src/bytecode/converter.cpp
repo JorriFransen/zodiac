@@ -448,6 +448,7 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                        type->kind == Type_Kind::FLOAT   ||
                        type->kind == Type_Kind::BOOLEAN ||
                        type->kind == Type_Kind::POINTER ||
+                       type->kind == Type_Kind::STATIC_ARRAY ||
                        type == &builtin_type_String);
                 Bytecode_Register value_reg = ast_expr_to_bytecode(bc, stmt->print_expr.expressions[i]);
                 bytecode_emit_print(bc->builder, value_reg);
@@ -531,7 +532,12 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
 
         case AST_Expression_Kind::MEMBER: {
             assert(expr->member.index_in_parent >= 0);
-            Bytecode_Register base_reg = ast_lvalue_to_bytecode(bc, expr->member.base);
+            Bytecode_Register base_reg;
+            if (expr->member.base->resolved_type->kind == Type_Kind::POINTER) {
+                base_reg = ast_expr_to_bytecode(bc, expr->member.base);
+            } else {
+                base_reg = ast_lvalue_to_bytecode(bc, expr->member.base);
+            }
             return bytecode_emit_aggregate_offset_pointer(bc->builder, base_reg, expr->member.index_in_parent);
         }
 
@@ -658,7 +664,13 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
         }
 
         case AST_Expression_Kind::MEMBER: {
-            Bytecode_Register base_reg = ast_lvalue_to_bytecode(bc, expr->member.base);
+            assert(expr->member.index_in_parent >= 0);
+            Bytecode_Register base_reg;
+            if (expr->member.base->resolved_type->kind == Type_Kind::POINTER) {
+                base_reg = ast_expr_to_bytecode(bc, expr->member.base);
+            } else {
+                base_reg = ast_lvalue_to_bytecode(bc, expr->member.base);
+            }
             Bytecode_Register addr_reg = bytecode_emit_aggregate_offset_pointer(bc->builder, base_reg, expr->member.index_in_parent);
             return bytecode_emit_load_pointer(bc->builder, addr_reg);
         }

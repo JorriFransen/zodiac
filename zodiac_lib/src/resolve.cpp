@@ -1188,7 +1188,11 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             }
 
             auto aggregate_type = base_expr->resolved_type;
-            assert((aggregate_type->flags & TYPE_FLAG_AGGREGATE) == TYPE_FLAG_AGGREGATE);
+            if (aggregate_type->kind == Type_Kind::POINTER) {
+            assert(aggregate_type->pointer.base->flags & TYPE_FLAG_AGGREGATE);
+                aggregate_type = aggregate_type->pointer.base;
+            }
+            assert(aggregate_type->flags & TYPE_FLAG_AGGREGATE);
 
             assert(aggregate_type->structure.name.length);
 
@@ -1202,7 +1206,7 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             auto sym = scope_get_symbol_direct(type_sym->aggregate.scope, expr->member.member_name, &member_index);
             if (!sym) {
                 assert(type_sym->decl);
-                fatal_resolve_error(ctx, expr, "'%s' is not a member of aggregate type '%s'", expr->member.member_name.data, aggregate_type->structure.name);
+                fatal_resolve_error(ctx, expr, "'%s' is not a member of aggregate type '%s'", expr->member.member_name.data, aggregate_type->structure.name.data);
                 fatal_resolve_error(ctx, type_sym->decl, "'%s' was declared here", aggregate_type->structure.name);
                 result = false;
                 break;
@@ -1715,6 +1719,7 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
                        type->kind == Type_Kind::FLOAT   ||
                        type->kind == Type_Kind::BOOLEAN ||
                        type->kind == Type_Kind::POINTER ||
+                       type->kind == Type_Kind::STATIC_ARRAY ||
                        type == &builtin_type_String);
 
             }
@@ -1819,7 +1824,12 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             auto base_expr = expr->member.base;
             assert(EXPR_IS_TYPED(base_expr));
 
+            bool via_pointer = false;
             auto aggregate_type = base_expr->resolved_type;
+            if (aggregate_type->kind == Type_Kind::POINTER) {
+                via_pointer = true;
+                aggregate_type = aggregate_type->pointer.base;
+            }
             assert((aggregate_type->flags & TYPE_FLAG_AGGREGATE) == TYPE_FLAG_AGGREGATE);
 
             auto type_sym = scope_get_symbol(scope, aggregate_type->structure.name);
@@ -1837,8 +1847,14 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
             expr->resolved_type = mem_decl->field.resolved_type;
 
-            assert(EXPR_IS_LVALUE(base_expr));
-            expr->flags |= AST_EXPR_FLAG_LVALUE;
+            if (via_pointer) {
+                if (EXPR_IS_LVALUE(base_expr)) {
+                    expr->flags |= AST_EXPR_FLAG_LVALUE;
+                }
+            } else {
+                assert(EXPR_IS_LVALUE(base_expr));
+                expr->flags |= AST_EXPR_FLAG_LVALUE;
+            }
             break;
         }
 

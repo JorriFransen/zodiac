@@ -471,6 +471,14 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             auto temp_llvm_print_args = temp_array_create<llvm::Value *>(temp_allocator_allocator(), 2);
             auto llvm_print_args = &temp_llvm_print_args.array;
 
+            bool use_printf = true;
+            Type *print_func_arg_type = get_pointer_type(&builtin_type_u8, ast_allocator);
+            Type *print_func_arg_types[] = { print_func_arg_type };
+            Type *print_func_type = get_function_type(&builtin_type_s32, print_func_arg_types, ast_allocator, true);
+
+            auto printf_func = llvm_get_intrinsic(builder, print_func_type, "printf");
+            assert(printf_func);
+
             switch(bc_inst.a.type->kind) {
 
                 default: {
@@ -570,16 +578,19 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
                     }
                     break;
                 }
+
+                case Type_Kind::STATIC_ARRAY: {
+                    use_printf = false;
+                    // auto fmt_str =
+                    assert_msg(false, "TODO: implement!");
+                    break;
+                }
             }
 
-            Type *print_func_arg_type = get_pointer_type(&builtin_type_u8, ast_allocator);
-            Type *print_func_arg_types[] = { print_func_arg_type };
-            Type *print_func_type = get_function_type(&builtin_type_s32, print_func_arg_types, ast_allocator, true);
+            if (use_printf) {
+                irb->CreateCall(printf_func, { llvm_print_args->data, (size_t)llvm_print_args->count });
+            }
 
-            auto printf_func = llvm_get_intrinsic(builder, print_func_type, "printf");
-            assert(printf_func);
-
-            irb->CreateCall(printf_func, { llvm_print_args->data, (size_t)llvm_print_args->count });
             temp_array_destroy(&temp_llvm_print_args);
             break;
         }
