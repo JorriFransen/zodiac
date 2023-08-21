@@ -2110,7 +2110,13 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
             assert(false); // Should have returned
         }
 
-        case AST_Type_Spec_Kind::POINTER: assert(false); break;
+        case AST_Type_Spec_Kind::POINTER: {
+            assert(ts->pointer_base->resolved_type);
+
+            auto pointer_type = get_pointer_type(ts->pointer_base->resolved_type, &ctx->ast_allocator);
+            ts->resolved_type = pointer_type;
+            return true;
+        }
 
         case AST_Type_Spec_Kind::STATIC_ARRAY: {
             auto length_expr = ts->static_array.length_expr;
