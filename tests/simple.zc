@@ -38,6 +38,7 @@ main :: () {
     print_s(*s);
 
     s._u64 = 9876;
+    s._bytes = { 11, 22, 33, 44, 55, 66, 77 };
     print("Initialized local:");
     print_s(*s);
 
@@ -55,26 +56,27 @@ SS :: struct {
 
 print_s :: (s : *S) {
     print(s);
-    print("{ ", s._u64, ", ",
-                s._s64, ", ",
-                s._u32, ", ",
-                s._s32, ", ",
-                s._u16, ", ",
-                s._s16, ", ",
-                s._u8,  ", ",
-                s._s8,  ", ",
+    print("{ ",
+          s._u64, ", ",
+          s._s64, ", ",
+          s._u32, ", ",
+          s._s32, ", ",
+          s._u16, ", ",
+          s._s16, ", ",
+          s._u8,  ", ",
+          s._s8,  ", ",
 
-                s._r64,  ", ",
-                s._r32,  ", ",
+          s._r64,  ", ",
+          s._r32,  ", ",
 
-                s._bool1,  ", ",
-                s._bool2,  ", ",
+          s._bool1,  ", ",
+          s._bool2,  ", ",
 
-                s._ptr_vec2,  ", ",
+          s._ptr_vec2,  ", ",
 
-                "{ ", s._ss.id, ", { ", s._ss.v.x, ", ", s._ss.v.y, " } }, ",
+          "{ ", s._ss.id, ", { ", s._ss.v.x, ", ", s._ss.v.y, " } }, ",
 
-                s._bytes,
+          s._bytes,
 
           " }");
 }

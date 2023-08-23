@@ -1041,7 +1041,7 @@ switch (operand.type->bit_size) { \
             // @Cleanup: @TODO: @FIXME: alignment?
             assert(element_type->bit_size % 8 == 0);
             s64 offset = index * (element_type->bit_size / 8);
-            assert(offset % 8 == 0);
+            // assert(offset % 8 == 0);
             ptr += offset;
 
             Type *dest_type = get_pointer_type(element_type, &interp->context->ast_allocator);

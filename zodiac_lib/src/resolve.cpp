@@ -1954,7 +1954,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
                     if (!EXPR_IS_LVALUE(operand)) {
                         fatal_resolve_error(ctx, expr, "The operand to dereference ('*') is not an lvalue");
-                        fatal_resolve_error(ctx, operand, "Operand: '%s'", ast_print_expression(operand, &ctx->error_allocator));
+                        fatal_resolve_error(ctx, operand, "Operand: '%s'", ast_print_expression(operand, &ctx->error_allocator).data);
                         return false;
                     }
 

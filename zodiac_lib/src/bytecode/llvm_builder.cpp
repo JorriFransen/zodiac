@@ -466,132 +466,14 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
         case Bytecode_Opcode::PRINT: {
 
+            if (bc_inst.a.type == &builtin_type_String) {
+                assert(bc_inst.a.flags & BC_REGISTER_FLAG_CONSTANT);
+                assert(bc_inst.a.flags & BC_REGISTER_FLAG_LITERAL);
+                // Must be zero terminated for now
+            }
+
             llvm::Value *llvm_val = llvm_builder_emit_register(builder, bc_inst.a);
-
-            auto temp_llvm_print_args = temp_array_create<llvm::Value *>(temp_allocator_allocator(), 2);
-            auto llvm_print_args = &temp_llvm_print_args.array;
-
-            bool use_printf = true;
-            Type *print_func_arg_type = get_pointer_type(&builtin_type_u8, ast_allocator);
-            Type *print_func_arg_types[] = { print_func_arg_type };
-            Type *print_func_type = get_function_type(&builtin_type_s32, print_func_arg_types, ast_allocator, true);
-
-            auto printf_func = llvm_get_intrinsic(builder, print_func_type, "printf");
-            assert(printf_func);
-
-            switch(bc_inst.a.type->kind) {
-
-                default: {
-                    assert(false && !"Unhandled type in print (llvm)");
-                    break;
-                }
-
-                case Type_Kind::BOOLEAN: {
-                    Type *bool_to_str_ret_type = get_pointer_type(&builtin_type_u8, ast_allocator);
-                    Type *bool_to_str_arg_type = &builtin_type_bool;
-                    Type *bool_to_str_arg_types[] = { bool_to_str_arg_type };
-                    Type *bool_to_str_fn_type = get_function_type(bool_to_str_ret_type, bool_to_str_arg_types, ast_allocator);
-
-
-                    auto bool_to_str_fn = llvm_get_intrinsic(builder, bool_to_str_fn_type, "bool_to_string");
-
-                    llvm::Value *llvm_args[] = { llvm_val };
-                    llvm::Value *llvm_bool_str = irb->CreateCall(bool_to_str_fn, llvm_args);
-
-                    llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, "%s");
-                    dynamic_array_append(llvm_print_args, fmt_str_lit);
-                    dynamic_array_append(llvm_print_args, llvm_bool_str);
-                    break;
-                }
-
-
-                case Type_Kind::INTEGER: {
-
-                    const char *fmt_str = nullptr;
-                    if (bc_inst.a.type->integer.sign) {
-                        switch (bc_inst.a.type->bit_size) {
-                            default: assert(false); break;
-                            case 8: fmt_str = "%i"; break;
-                            case 16: fmt_str = "%i"; break;
-                            case 32: fmt_str = "%i"; break;
-                            case 64: fmt_str = "%i"; break;
-                        }
-                    } else {
-                        switch (bc_inst.a.type->bit_size) {
-                            default: assert(false); break;
-                            case 8: fmt_str = "%u"; break;
-                            case 16: fmt_str = "%u"; break;
-                            case 32: fmt_str = "%u"; break;
-                            case 64: fmt_str = "%u"; break;
-                        }
-
-                    }
-
-                    assert(fmt_str);
-                    llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
-                    dynamic_array_append(llvm_print_args, fmt_str_lit);
-                    dynamic_array_append(llvm_print_args, llvm_val);
-                    break;
-                }
-
-                case Type_Kind::FLOAT: {
-
-                    const char *fmt_str = nullptr;
-                    switch (bc_inst.a.type->bit_size) {
-                        default: assert(false && !"Unhandled real size in print (llvm)"); break;
-
-                        case 32: {
-                            llvm::Type *llvm_r64_ty = llvm_type_from_ast_type(builder, &builtin_type_r64);;
-                            llvm_val = irb->CreateFPCast(llvm_val, llvm_r64_ty);
-                            fmt_str = "%f";
-                            break;
-                        }
-
-                        case 64: fmt_str = "%f"; break;
-                    }
-
-                    assert(fmt_str);
-                    llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
-                    dynamic_array_append(llvm_print_args, fmt_str_lit);
-                    dynamic_array_append(llvm_print_args, llvm_val);
-                    break;
-                }
-
-                case Type_Kind::POINTER: {
-                    auto fmt_str = "%p";
-                    llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
-                    dynamic_array_append(llvm_print_args, fmt_str_lit);
-                    dynamic_array_append(llvm_print_args, llvm_val);
-                    break;
-                }
-
-                case Type_Kind::STRUCTURE: {
-                    if (bc_inst.a.type == &builtin_type_String) {
-                        auto fmt_str = "%.*s";
-                        llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
-                        llvm::Value *llvm_str_len = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, {bc_inst.a.value.string.length});
-                        dynamic_array_append(llvm_print_args, fmt_str_lit);
-                        dynamic_array_append(llvm_print_args, llvm_str_len);
-                        dynamic_array_append(llvm_print_args, llvm_val);
-                    } else {
-                        assert_msg(false, "Unhandled struct type in print (llvm)");
-                    }
-                    break;
-                }
-
-                case Type_Kind::STATIC_ARRAY: {
-                    use_printf = false;
-                    // auto fmt_str =
-                    assert_msg(false, "TODO: implement!");
-                    break;
-                }
-            }
-
-            if (use_printf) {
-                irb->CreateCall(printf_func, { llvm_print_args->data, (size_t)llvm_print_args->count });
-            }
-
-            temp_array_destroy(&temp_llvm_print_args);
+            llvm_builder_emit_print_instruction(builder, bc_inst.a.type, llvm_val);
             break;
         }
 
@@ -967,6 +849,153 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 #undef EMIT_FLOAT_BINOP
 
 
+
+void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm::Value *llvm_val)
+{
+    debug_assert(builder && type && llvm_val);
+
+    auto ast_allocator = &builder->zodiac_context->ast_allocator;
+    auto irb = builder->ir_builder;
+
+    auto temp_llvm_print_args = temp_array_create<llvm::Value *>(temp_allocator_allocator(), 2);
+    auto llvm_print_args = &temp_llvm_print_args.array;
+
+    bool use_printf = true;
+    Type *print_func_arg_type = get_pointer_type(&builtin_type_u8, ast_allocator);
+    Type *print_func_arg_types[] = { print_func_arg_type };
+    Type *print_func_type = get_function_type(&builtin_type_s32, print_func_arg_types, ast_allocator, true);
+
+    auto printf_func = llvm_get_intrinsic(builder, print_func_type, "printf");
+    assert(printf_func);
+
+    switch(type->kind) {
+
+        default: {
+            assert(false && !"Unhandled type in print (llvm)");
+            break;
+        }
+
+        case Type_Kind::BOOLEAN: {
+            Type *bool_to_str_ret_type = get_pointer_type(&builtin_type_u8, ast_allocator);
+            Type *bool_to_str_arg_type = &builtin_type_bool;
+            Type *bool_to_str_arg_types[] = { bool_to_str_arg_type };
+            Type *bool_to_str_fn_type = get_function_type(bool_to_str_ret_type, bool_to_str_arg_types, ast_allocator);
+
+
+            auto bool_to_str_fn = llvm_get_intrinsic(builder, bool_to_str_fn_type, "bool_to_string");
+
+            llvm::Value *llvm_args[] = { llvm_val };
+            llvm::Value *llvm_bool_str = irb->CreateCall(bool_to_str_fn, llvm_args);
+
+            llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, "%s");
+            dynamic_array_append(llvm_print_args, fmt_str_lit);
+            dynamic_array_append(llvm_print_args, llvm_bool_str);
+            break;
+        }
+
+        case Type_Kind::INTEGER: {
+
+            const char *fmt_str = nullptr;
+            if (type->integer.sign) {
+                switch (type->bit_size) {
+                    default: assert(false); break;
+                    case 8: fmt_str = "%i"; break;
+                    case 16: fmt_str = "%i"; break;
+                    case 32: fmt_str = "%i"; break;
+                    case 64: fmt_str = "%i"; break;
+                }
+            } else {
+                switch (type->bit_size) {
+                    default: assert(false); break;
+                    case 8: fmt_str = "%u"; break;
+                    case 16: fmt_str = "%u"; break;
+                    case 32: fmt_str = "%u"; break;
+                    case 64: fmt_str = "%u"; break;
+                }
+
+            }
+
+            assert(fmt_str);
+            llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
+            dynamic_array_append(llvm_print_args, fmt_str_lit);
+            dynamic_array_append(llvm_print_args, llvm_val);
+            break;
+        }
+
+        case Type_Kind::FLOAT: {
+
+            const char *fmt_str = nullptr;
+            switch (type->bit_size) {
+                default: assert(false && !"Unhandled real size in print (llvm)"); break;
+
+                case 32: {
+                    llvm::Type *llvm_r64_ty = llvm_type_from_ast_type(builder, &builtin_type_r64);;
+                    llvm_val = irb->CreateFPCast(llvm_val, llvm_r64_ty);
+                    fmt_str = "%f";
+                    break;
+                }
+
+                case 64: fmt_str = "%f"; break;
+            }
+
+            assert(fmt_str);
+            llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
+            dynamic_array_append(llvm_print_args, fmt_str_lit);
+            dynamic_array_append(llvm_print_args, llvm_val);
+            break;
+        }
+
+        case Type_Kind::POINTER: {
+            auto fmt_str = "%p";
+            llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
+            dynamic_array_append(llvm_print_args, fmt_str_lit);
+            dynamic_array_append(llvm_print_args, llvm_val);
+            break;
+        }
+
+        case Type_Kind::STRUCTURE: {
+            if (type == &builtin_type_String) {
+                auto fmt_str = "%s";
+                llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
+                dynamic_array_append(llvm_print_args, fmt_str_lit);
+                dynamic_array_append(llvm_print_args, llvm_val);
+            } else {
+                assert_msg(false, "Unhandled struct type in print (llvm)");
+            }
+            break;
+        }
+
+        case Type_Kind::STATIC_ARRAY: {
+            use_printf = false;
+
+            llvm::Value *preamble = llvm_builder_emit_string_literal(builder, "{ ");
+            irb->CreateCall(printf_func, { &preamble, 1 });
+
+            auto elem_type = type->static_array.element_type;
+
+            for (s64 i = 0; i < type->static_array.count; i++) {
+                if (i != 0) {
+                    llvm::Value *comma_str = llvm_builder_emit_string_literal(builder, ", ");
+                    irb->CreateCall(printf_func, { &comma_str, 1 });
+                }
+
+                unsigned indexes[] = { (unsigned)i };
+                llvm::Value *elem_val = irb->CreateExtractValue(llvm_val, indexes);
+                llvm_builder_emit_print_instruction(builder, elem_type, elem_val);
+            }
+
+            llvm::Value *postamble = llvm_builder_emit_string_literal(builder, "}");
+            irb->CreateCall(printf_func, { &postamble, 1 });
+            break;
+        }
+    }
+
+    if (use_printf) {
+        irb->CreateCall(printf_func, { llvm_print_args->data, (size_t)llvm_print_args->count });
+    }
+
+    temp_array_destroy(&temp_llvm_print_args);
+}
 
 llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Register &bc_reg)
 {
