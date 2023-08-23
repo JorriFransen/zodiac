@@ -1158,19 +1158,42 @@ AST_Expression *interpreter_memory_to_ast_expression(Bytecode_Converter *bc, u8*
         case Type_Kind::INTEGER: {
             Integer_Value val;
             switch (type->bit_size) {
-                case 64: {
-                    val.u64 = *(u64*)mem;
-                    break;
-                }
+                default: assert_msg(false, "Unsupported integer size in 'interpreter_memory_to_ast_expression'"); break;
+                case 8: val.u8 = *(u8*)mem; break;
+                case 16: val.u16 = *(u16*)mem; break;
+                case 32: val.u32 = *(u32*)mem; break;
+                case 64: val.u64 = *(u64*)mem; break;
             }
 
             result = ast_integer_literal_expr_new(ctx, range, val);
             break;
         }
 
-        case Type_Kind::FLOAT: assert(false); break;
-        case Type_Kind::BOOLEAN: assert(false); break;
-        case Type_Kind::POINTER: assert(false); break;
+        case Type_Kind::FLOAT: {
+            Real_Value val;
+            switch (type->bit_size) {
+                default: assert_msg(false, "Unsupported real size in 'interpreter_memory_to_ast_expression'"); break;
+                case 32: val.r32 = *(r32*)mem; break;
+                case 64: val.r64 = *(r64*)mem; break;
+            }
+
+            result = ast_real_literal_expr_new(ctx, range, val);
+            break;
+        }
+
+        case Type_Kind::BOOLEAN: {
+            bool val = *(bool*)mem;
+            result = ast_bool_literal_expr_new(ctx, range, val);
+            break;
+        }
+
+        case Type_Kind::POINTER: {
+            ZWARN("Making pointer literal from interpreter memory, this point will probably be invalid...");
+
+            assert(false);
+            // result = ast_pointer_literal_expr_new(ctx, )
+            break;
+        }
 
         case Type_Kind::STRUCTURE: {
 

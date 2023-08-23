@@ -26,21 +26,23 @@ S :: struct {
     // TODO: function (pointer)?
 }
 
-gs : S;
+ss: SS = { 1, { 2.2, 3.3 }};
+v1: Vec2 = { 1.0, 2.0 };
+gs : S = #run make_s(11, 22, 33, 44, 55, 66, 77, 88, 9.9, 10.10, true, false, *v1, ss, { 1, 2, 3, 4, 5, 6, 7 });
 
 main :: () {
 
-    print("Uninitialized global:");
-    print_s(*gs);
-
     s : S;
-    print("Uninitialized local:");
-    print_s(*s);
 
-    s._u64 = 9876;
-    s._bytes = { 11, 22, 33, 44, 55, 66, 77 };
     print("Initialized local:");
-    print_s(*s);
+    print_s(*gs);
+    print(" ");
+
+    gs = make_s(1010, 99, 88, 77, 66, 55, 44, 33, 2.2, 1.1, false, true, *v1, ss, { 7, 6, 5, 4, 3, 2, 1 });
+    print("Initialized global:");
+    print_s(*gs);
+    print(" ");
+
 
     return 0;
 }
@@ -52,6 +54,38 @@ Vec2 :: struct {
 SS :: struct {
     id : u32;
     v  : Vec2;
+}
+
+make_s :: (_u64: u64, _s64: s64, _u32: u32, _s32: s32, _u16: u16, _s16: s16, _u8: u8, _s8: s8,
+           _r32: r32, _r64: r64,
+           _b1: bool, _b2: bool,
+           _ptr_vec2: *Vec2,
+           _ss: SS,
+           _bytes: [7]u8) -> S {
+    s: S;
+
+    s._u64 = _u64;
+    s._s64 = _s64;
+    s._u32 = _u32;
+    s._s32 = _s32;
+    s._u16 = _u16;
+    s._s16 = _s16;
+    s._u8  =  _u8;
+    s._s8  =  _s8;
+
+    s._r64 = _r64;
+    s._r32 = _r32;
+
+    s._bool1 = _b1;
+    s._bool2 = _b2;
+
+    s._ptr_vec2 = _ptr_vec2;
+
+    s._ss = _ss;
+
+    s._bytes = _bytes;
+
+    return s;
 }
 
 print_s :: (s : *S) {

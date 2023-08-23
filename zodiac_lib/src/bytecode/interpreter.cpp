@@ -1619,7 +1619,7 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
             case Type_Kind::VOID: assert(false); break;
 
 
-#define COPY_INT_CASE(size) case size: zmemcpy(dest_cursor, &mem_reg.value.integer.u##size, copy_size); break;
+#define COPY_INT_CASE(size) case size: *((u##size*)dest_cursor) = mem_reg.value.integer.u##size; break;
             case Type_Kind::UNSIZED_INTEGER:
             case Type_Kind::INTEGER: {
 
@@ -1635,7 +1635,15 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
             }
 #undef COPY_INT_CASE
 
-            case Type_Kind::FLOAT: assert(false); break;
+            case Type_Kind::FLOAT: {
+                switch (mem_reg.type->bit_size) {
+                    default: assert_msg(false, "Unsupported real bit size"); break;
+                    case 32: *((float*)dest_cursor) = mem_reg.value.real.r32; break;
+                    case 64: *((double*)dest_cursor) = mem_reg.value.real.r64; break;
+                }
+                break;;
+            }
+
             case Type_Kind::BOOLEAN: assert(false); break;
             case Type_Kind::POINTER: assert(false); break;
 
