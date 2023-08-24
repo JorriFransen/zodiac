@@ -38,13 +38,6 @@ main :: () {
     print_s2(gs);
     print_s2(gcs);
 
-    s := make_s(2, 2, 3, 4, 5, 6, 7, 8, 9.99, 10.1010, false, true, *v1, ss, { 7, 6, 5, 4, 3, 2, 1 });
-
-    // s := gcs;
-    s._bool1 = false;
-    s._bool2 = true;
-    print_s2(s);
-
     return 0;
 }
 

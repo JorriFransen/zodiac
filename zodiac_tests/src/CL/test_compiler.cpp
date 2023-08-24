@@ -1188,6 +1188,90 @@ MunitResult Run_Directive_Global_Const_Types(const MunitParameter params[], void
 
     return MUNIT_OK;
 }
+
+MunitResult Run_Directive_Struct_Member_Types(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        S :: struct {
+            _u64 : u64;
+            _s64 : s64;
+            _u32 : u32;
+            _s32 : s32;
+            _u16 : u16;
+            _s16 : s16;
+            _u8  :  u8;
+            _s8  :  s8;
+            _r64 : r64;
+            _r32 : r32;
+            _bool1 : bool;
+            _bool2 : bool;
+            _ptr_vec2 : *Vec2;
+            _ss : SS;
+            _bytes : [7]u8;
+            // TODO: function (pointer)?
+        }
+        ss: SS = { 1, { 2.2, 3.3 }};
+        v1: Vec2 = { 1.0, 2.0 };
+        gs : S = #run make_s(11, 22, 33, 44, 55, 66, 77, 88, 9.9, 10.10, true, false, *v1, ss, { 1, 2, 3, 4, 5, 6, 7 });
+        gcs : S : #run make_s(1, 2, 3, 4, 5, 6, 7, 8, 9.99, 10.1010, false, true, *v1, ss, { 7, 6, 5, 4, 3, 2, 1 });
+        main :: () {
+            print_s2(gs);
+            print_s2(gcs);
+            return 0;
+        }
+        Vec2 :: struct { x, y: r64; }
+        SS :: struct { id : u32; v  : Vec2; }
+        make_s :: (_u64: u64, _s64: s64, _u32: u32, _s32: s32, _u16: u16, _s16: s16, _u8: u8, _s8: s8, _r32: r32, _r64: r64, _b1: bool, _b2: bool, _ptr_vec2: *Vec2, _ss: SS, _bytes: [7]u8) -> S {
+            s: S;
+            s._u64 = _u64;
+            s._s64 = _s64;
+            s._u32 = _u32;
+            s._s32 = _s32;
+            s._u16 = _u16;
+            s._s16 = _s16;
+            s._u8  =  _u8;
+            s._s8  =  _s8;
+            s._r64 = _r64;
+            s._r32 = _r32;
+            s._bool1 = _b1;
+            s._bool2 = _b2;
+            s._ptr_vec2 = _ptr_vec2;
+            s._ss = _ss;
+            s._bytes = _bytes;
+            return s;
+        }
+        print_s2 :: (s : S) {
+            print("{ ",
+                  s._u64, ", ",
+                  s._s64, ", ",
+                  s._u32, ", ",
+                  s._s32, ", ",
+                  s._u16, ", ",
+                  s._s16, ", ",
+                  s._u8,  ", ",
+                  s._s8,  ", ",
+                  s._r64,  ", ",
+                  s._r32,  ", ",
+                  s._bool1,  ", ",
+                  s._bool2,  ", ",
+                  // s._ptr_vec2,  ", ", // Can't really test this
+                  "{ ", s._ss.id, ", { ", s._ss.v.x, ", ", s._ss.v.y, " } }, ",
+                  s._bytes,
+                  " }");
+        }
+    )CODE_STR";
+
+    Expected_Results expected = {
+        .std_out = R"OUT_STR({ 11, 22, 33, 44, 55, 66, 77, 88, 10.100000, 9.900000, true, false, { 1, { 2.200000, 3.300000 } }, { 1, 2, 3, 4, 5, 6, 7 } }
+{ 1, 2, 3, 4, 5, 6, 7, 8, 10.101000, 9.990000, false, true, { 1, { 2.200000, 3.300000 } }, { 7, 6, 5, 4, 3, 2, 1 } })OUT_STR",
+
+    };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
 #undef resolve_error
 
 }}
