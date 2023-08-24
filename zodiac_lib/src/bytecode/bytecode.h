@@ -264,6 +264,7 @@ ZAPI Bytecode_Block *bytecode_get_insert_block(Bytecode_Builder *builder);
 
 ZAPI Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type, s64 value);
 ZAPI Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type, Integer_Value iv);
+ZAPI Bytecode_Register bytecode_pointer_literal(Bytecode_Builder *builder, Type *type, void *ptr);
 ZAPI Bytecode_Register bytecode_real_literal(Bytecode_Builder *builder, Type *type, float float_value, double double_value);
 ZAPI Bytecode_Register bytecode_real_literal(Bytecode_Builder *builder, Type *type, Real_Value rv);
 ZAPI Bytecode_Register bytecode_boolean_literal(Bytecode_Builder *builder, Type *type, bool value);

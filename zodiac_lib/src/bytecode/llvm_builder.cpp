@@ -899,18 +899,18 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
             if (type->integer.sign) {
                 switch (type->bit_size) {
                     default: assert(false); break;
-                    case 8: fmt_str = "%i"; break;
-                    case 16: fmt_str = "%i"; break;
-                    case 32: fmt_str = "%i"; break;
-                    case 64: fmt_str = "%i"; break;
+                    case 8: fmt_str = "%hhi"; break;
+                    case 16: fmt_str = "%hi"; break;
+                    case 32: fmt_str = "%d"; break;
+                    case 64: fmt_str = "%lld"; break;
                 }
             } else {
                 switch (type->bit_size) {
                     default: assert(false); break;
-                    case 8: fmt_str = "%u"; break;
-                    case 16: fmt_str = "%u"; break;
+                    case 8: fmt_str = "%hhu"; break;
+                    case 16: fmt_str = "%hu"; break;
                     case 32: fmt_str = "%u"; break;
-                    case 64: fmt_str = "%u"; break;
+                    case 64: fmt_str = "%llu"; break;
                 }
 
             }

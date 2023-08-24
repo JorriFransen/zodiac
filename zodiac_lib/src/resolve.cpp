@@ -1227,7 +1227,10 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             break;
         }
 
-        case AST_Expression_Kind::CAST: assert(false); break;
+        case AST_Expression_Kind::CAST: {
+            // leaf
+            break;
+        }
 
         case AST_Expression_Kind::INDEX:
         case AST_Expression_Kind::COMPOUND: {
@@ -2034,7 +2037,33 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             break;
         }
 
-        case AST_Expression_Kind::CAST: assert(false); break;
+        case AST_Expression_Kind::CAST: {
+            assert(EXPR_IS_TYPED(expr->cast.value));
+
+            Type *target_type = nullptr;
+            if (expr->cast.type) {
+                target_type = expr->cast.type;
+            } else {
+                assert(expr->cast.type_spec->resolved_type);
+                target_type = expr->cast.type_spec->resolved_type;
+            }
+            assert(target_type);
+
+            bool valid_conversion = false;
+            if (target_type == expr->cast.value->resolved_type) {
+                valid_conversion = true;
+            } else {
+                valid_conversion = valid_static_type_conversion(expr->cast.value->resolved_type, target_type);
+            }
+            assert(valid_conversion);
+
+            expr->resolved_type = target_type;
+
+            if (EXPR_IS_CONST(expr->cast.value)) {
+                expr->flags |= AST_EXPR_FLAG_CONST;
+            }
+            break;
+        }
 
         case AST_Expression_Kind::RUN_DIRECTIVE: {
             assert(expr->directive.directive->kind == AST_Directive_Kind::RUN);

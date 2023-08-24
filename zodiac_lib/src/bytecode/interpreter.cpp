@@ -1641,11 +1641,18 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
                     case 32: *((float*)dest_cursor) = mem_reg.value.real.r32; break;
                     case 64: *((double*)dest_cursor) = mem_reg.value.real.r64; break;
                 }
-                break;;
+                break;
             }
 
-            case Type_Kind::BOOLEAN: assert(false); break;
-            case Type_Kind::POINTER: assert(false); break;
+            case Type_Kind::BOOLEAN: {
+                *((bool*)dest_cursor) = mem_reg.value.boolean;
+                break;
+            }
+
+            case Type_Kind::POINTER: {
+                *((u8**)dest_cursor) = mem_reg.value.pointer;
+                break;
+            }
 
             case Type_Kind::STRUCTURE: {
                 assert(mem_reg.type->flags & TYPE_FLAG_AGGREGATE);
@@ -1659,7 +1666,11 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
                 break;
             }
 
-            case Type_Kind::STATIC_ARRAY: assert(false); break;
+            case Type_Kind::STATIC_ARRAY: {
+                interpreter_copy_compound_literal_into_memory(interp, dest_cursor, mem_reg);
+                break;
+            }
+
             case Type_Kind::FUNCTION: assert(false); break;
         }
 

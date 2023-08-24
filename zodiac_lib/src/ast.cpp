@@ -140,9 +140,10 @@ void ast_cast_expr_create(AST_Type_Spec *ts, AST_Expression *value, AST_Expressi
 
     ast_expression_create(AST_Expression_Kind::CAST, AST_EXPR_FLAG_NONE, out_expr);
 
+    out_expr->cast.type = nullptr;
     out_expr->cast.type_spec = ts;
     out_expr->cast.value = value;
-    out_expr->cast.resolved_type = nullptr;
+    out_expr->resolved_type = nullptr;
 }
 
 void ast_cast_expr_create(Type *type, AST_Expression *value, AST_Expression *out_expr)
@@ -151,10 +152,10 @@ void ast_cast_expr_create(Type *type, AST_Expression *value, AST_Expression *out
 
     ast_expression_create(AST_Expression_Kind::CAST, AST_EXPR_FLAG_NONE, out_expr);
 
+    out_expr->cast.type = type;
     out_expr->cast.type_spec = nullptr;
     out_expr->cast.value = value;
-    out_expr->cast.resolved_type = type;
-    out_expr->resolved_type = type;
+    out_expr->resolved_type = nullptr;
 }
 
 void ast_run_directive_expr_create(AST_Directive *directive, AST_Expression *out_expr)
@@ -938,7 +939,7 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
         }
 
         case AST_Expression_Kind::CAST: {
-            type_to_string(expr->cast.resolved_type, sb);
+            type_to_string(expr->resolved_type, sb);
             string_builder_append(sb, "(");
             ast_print_expression(sb, expr->cast.value);
             string_builder_append(sb, ")");

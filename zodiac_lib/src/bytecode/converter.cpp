@@ -780,11 +780,11 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
         }
 
         case AST_Expression_Kind::CAST: {
-            debug_assert(expr->resolved_type && expr->cast.resolved_type);
-            debug_assert(expr->resolved_type == expr->cast.resolved_type);
+            debug_assert(expr->resolved_type && expr->resolved_type);
+            debug_assert(expr->resolved_type == expr->resolved_type);
 
             Bytecode_Register value_reg = ast_expr_to_bytecode(bc, expr->cast.value);
-            return bytecode_emit_cast(bc->builder, expr->cast.resolved_type, value_reg);
+            return bytecode_emit_cast(bc->builder, expr->resolved_type, value_reg);
         }
 
         case AST_Expression_Kind::RUN_DIRECTIVE: {
@@ -837,7 +837,18 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
         case Type_Kind::INVALID: assert(false); break;
         case Type_Kind::VOID: assert(false); break;
-        case Type_Kind::POINTER: assert(false); break;
+
+        case Type_Kind::POINTER: {
+            assert(expr->kind == AST_Expression_Kind::CAST);
+            auto value_expr = expr->cast.value;
+            assert(value_expr->resolved_type == &builtin_type_u64);
+
+            Integer_Value int_val = resolve_constant_integer_expr(value_expr, value_expr->resolved_type);
+            void *ptr = (void *)int_val.u64;
+            return bytecode_pointer_literal(bc->builder, expr->resolved_type, ptr);
+            break;
+        }
+
         case Type_Kind::FUNCTION: assert(false); break;
 
         case Type_Kind::UNSIZED_INTEGER:
@@ -854,7 +865,6 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
         case Type_Kind::FLOAT: {
             Real_Value result_value = resolve_constant_real_expr(expr);
             return bytecode_real_literal(bc->builder, expr->resolved_type, result_value);
-            break;
         }
 
         case Type_Kind::BOOLEAN: {
@@ -1188,10 +1198,16 @@ AST_Expression *interpreter_memory_to_ast_expression(Bytecode_Converter *bc, u8*
         }
 
         case Type_Kind::POINTER: {
-            ZWARN("Making pointer literal from interpreter memory, this point will probably be invalid...");
+            // ZWARN("Making pointer literal from interpreter memory, this pointer will probably be invalid...");
 
-            assert(false);
-            // result = ast_pointer_literal_expr_new(ctx, )
+            Integer_Value intval = { .u64 = *(u64*)mem };
+            result = ast_integer_literal_expr_new(ctx, range, intval);
+            name_resolve_expr(ctx, result, scope);
+
+            auto lit_infer_node = infer_node_new(ctx, &builtin_type_u64);
+            type_resolve_expression(ctx, result, scope, lit_infer_node);
+
+            result = ast_cast_expr_new(ctx, range, type, result);
             break;
         }
 

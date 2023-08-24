@@ -353,6 +353,18 @@ Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type
     return result;
 }
 
+Bytecode_Register bytecode_pointer_literal(Bytecode_Builder *builder, Type *type, void *ptr)
+{
+    debug_assert(builder);
+    assert(type->kind == Type_Kind::POINTER);
+
+    auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, type, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT);
+    result.value.pointer = (u8*)ptr;
+
+    return result;
+
+}
+
 Bytecode_Register bytecode_real_literal(Bytecode_Builder *builder, Type *type, float float_value, double double_value)
 {
     return bytecode_real_literal(builder, type, { .r32 = float_value, .r64 = double_value });

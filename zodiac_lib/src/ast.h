@@ -117,10 +117,10 @@ struct AST_Binary_Expression
 
 struct AST_Cast_Expression
 {
+    Type *type;
     AST_Type_Spec *type_spec;
-    AST_Expression *value;
 
-    Type *resolved_type;
+    AST_Expression *value;
 };
 
 struct AST_Directive_Expression
