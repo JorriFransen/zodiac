@@ -12,6 +12,9 @@ using namespace Compiler_Tests;
 
 static MunitResult bool_to_string_Bool_Arg_LLVM(const MunitParameter params[], void *user_data_or_fixture)
 {
+#ifndef ZPLATFORM_LINUX
+    return MUNIT_OK;
+#endif
     // This bug only happens on Linux. The register containing the boolean argument
     //  might have a value larger than 0xFF. This overflow happens with values
     //  originating from GEP instructions when the boolean is in the middle
