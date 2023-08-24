@@ -25,5 +25,10 @@ public s64 foreign_call_binop_ptr(Binop_FN_Ptr fn_ptr, s64 a, s64 b) {
 }
 
 public const char *bool_to_string(bool x) {
-    return x ? "true" : "false";
+    printf("%d", x);
+    if (x) {
+        printf("(x not zero)");
+        return "true";
+    }
+    return "false";
 }

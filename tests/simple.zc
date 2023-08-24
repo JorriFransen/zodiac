@@ -21,7 +21,7 @@ S :: struct {
 
     _ss : SS;
 
-    _bytes : [7]u16;
+    _bytes : [7]u8;
 
     // TODO: function (pointer)?
 }
@@ -31,7 +31,7 @@ v1: Vec2 = { 1.0, 2.0 };
 
 gs : S = #run make_s(11, 22, 33, 44, 55, 66, 77, 88, 9.9, 10.10, true, false, *v1, ss, { 1, 2, 3, 4, 5, 6, 7 });
 
-gcs : S : #run make_s(1, 2, 3, 4, 5, 6, 7, 8, 9.99, 10.1010, false, true, *v1, ss, { 1, 2, 3, 4, 5, 6, 7 });
+gcs : S : #run make_s(1, 2, 3, 4, 5, 6, 7, 8, 9.99, 10.1010, false, true, *v1, ss, { 7, 6, 5, 4, 3, 2, 1 });
 
 main :: () {
 
@@ -57,7 +57,7 @@ make_s :: (_u64: u64, _s64: s64, _u32: u32, _s32: s32, _u16: u16, _s16: s16, _u8
            _b1: bool, _b2: bool,
            _ptr_vec2: *Vec2,
            _ss: SS,
-           _bytes: [7]u16) -> S {
+           _bytes: [7]u8) -> S {
     s: S;
 
     s._u64 = _u64;
