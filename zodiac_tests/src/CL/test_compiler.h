@@ -43,7 +43,7 @@ struct Compile_Run_Results
 };
 
 void free_compile_run_results(Compile_Run_Results *r);
-Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expected_results);
+Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expected_results, Zodiac_Options options = {});
 
 MunitResult Return_0(const MunitParameter params[], void* user_data_or_fixture);
 

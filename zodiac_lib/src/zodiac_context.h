@@ -24,6 +24,9 @@ struct Zodiac_Options
     bool print_bytecode = false;
     bool print_llvm_ir = false;
     bool verbose = false;
+
+    // Temporary/Development options
+    bool use_bool_to_string_for_PRINT_in_llvm = false;
 };
 
 struct Zodiac_Error;

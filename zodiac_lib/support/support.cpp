@@ -40,9 +40,7 @@ public s64 foreign_call_binop_ptr(Binop_FN_Ptr fn_ptr, s64 a, s64 b) {
 //  data into the register than it should..
 //
 public const char *bool_to_string(bool x) {
-    printf("%d", x);
     if (x) {
-        // printf("(x not zero)");
         return "true";
     }
     return "false";

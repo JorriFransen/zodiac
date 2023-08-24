@@ -876,28 +876,31 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
         }
 
         case Type_Kind::BOOLEAN: {
-            // Type *bool_to_str_ret_type = get_pointer_type(&builtin_type_u8, ast_allocator);
-            // Type *bool_to_str_arg_type = &builtin_type_bool;
-            // Type *bool_to_str_arg_types[] = { bool_to_str_arg_type };
-            // Type *bool_to_str_fn_type = get_function_type(bool_to_str_ret_type, bool_to_str_arg_types, ast_allocator);
+            if (builder->zodiac_context->options.use_bool_to_string_for_PRINT_in_llvm) {
+                Type *bool_to_str_ret_type = get_pointer_type(&builtin_type_u8, ast_allocator);
+                Type *bool_to_str_arg_type = &builtin_type_bool;
+                Type *bool_to_str_arg_types[] = { bool_to_str_arg_type };
+                Type *bool_to_str_fn_type = get_function_type(bool_to_str_ret_type, bool_to_str_arg_types, ast_allocator);
 
-            // auto bool_to_str_fn = llvm_get_intrinsic(builder, bool_to_str_fn_type, "bool_to_string");
+                auto bool_to_str_fn = llvm_get_intrinsic(builder, bool_to_str_fn_type, "bool_to_string");
 
-            // llvm::Value *llvm_args[] = { llvm_val };
-            // llvm::Value *llvm_bool_str = irb->CreateCall(bool_to_str_fn, llvm_args);
+                llvm::Value *llvm_args[] = { llvm_val };
+                llvm::Value *llvm_bool_str = irb->CreateCall(bool_to_str_fn, llvm_args);
 
-            // llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, "%s");
-            // dynamic_array_append(llvm_print_args, fmt_str_lit);
-            // dynamic_array_append(llvm_print_args, llvm_bool_str);
+                llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, "%s");
+                dynamic_array_append(llvm_print_args, fmt_str_lit);
+                dynamic_array_append(llvm_print_args, llvm_bool_str);
+            } else {
 
-            llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, "%s");
-            llvm::Value *llvm_true_str = llvm_builder_emit_string_literal(builder, "true");
-            llvm::Value *llvm_false_str = llvm_builder_emit_string_literal(builder, "false");
+                llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, "%s");
+                llvm::Value *llvm_true_str = llvm_builder_emit_string_literal(builder, "true");
+                llvm::Value *llvm_false_str = llvm_builder_emit_string_literal(builder, "false");
 
-            llvm::Value *llvm_bool_str = irb->CreateSelect(llvm_val, llvm_true_str, llvm_false_str);
+                llvm::Value *llvm_bool_str = irb->CreateSelect(llvm_val, llvm_true_str, llvm_false_str);
 
-            dynamic_array_append(llvm_print_args, fmt_str_lit);
-            dynamic_array_append(llvm_print_args, llvm_bool_str);
+                dynamic_array_append(llvm_print_args, fmt_str_lit);
+                dynamic_array_append(llvm_print_args, llvm_bool_str);
+            }
             break;
         }
 
@@ -992,7 +995,7 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
                 llvm_builder_emit_print_instruction(builder, elem_type, elem_val);
             }
 
-            llvm::Value *postamble = llvm_builder_emit_string_literal(builder, "}");
+            llvm::Value *postamble = llvm_builder_emit_string_literal(builder, " }");
             irb->CreateCall(printf_func, { &postamble, 1 });
             break;
         }

@@ -30,7 +30,7 @@ void free_compile_run_results(Compile_Run_Results *r)
     zodiac_context_destroy(&r->context);
 }
 
-Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expected_results) {
+Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expected_results, Zodiac_Options options/*={}*/) {
 
     if (expected_results.std_out.length) {
         munit_assert_int64(expected_results.compiletime_std_out.length, ==, 0);
@@ -46,6 +46,7 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
 
     zodiac_context_create(&result.context);
 
+    result.context.options = options;
     result.context.options.verbose = true;
 
     Lexer lexer;

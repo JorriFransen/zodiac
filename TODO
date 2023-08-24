@@ -1,5 +1,7 @@
 - Allow pointers to constants
 
+- Look into weird behaviour with bool_to_string from the support lib
+
 - Rewrite ast_const_expr_to_bytecode to switch on the expression kind instead of type kind (this has caused multiple problems already)
 - Do we actually need TYPE_FLAG_STATIC_ARRAY??
 - Test rundirectives with different types and with constants

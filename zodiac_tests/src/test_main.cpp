@@ -11,6 +11,7 @@
 #include "CL/test_compiler.h"
 
 #include "test_atoms.h"
+#include "test_bugs.h"
 #include "test_lexer.h"
 #include "test_string_builder.h"
 #include "test_strings.h"
@@ -29,6 +30,14 @@ static MunitSuite string_suite = {
 static MunitSuite atom_suite = {
     (char *)"Atom/",
     Atom_Tests::atom_tests,
+    nullptr,
+    1,
+    MUNIT_SUITE_OPTION_NONE,
+};
+
+static MunitSuite bug_suite = {
+    (char *)"Bug/",
+    Bug_Tests::bug_tests,
     nullptr,
     1,
     MUNIT_SUITE_OPTION_NONE,
@@ -75,6 +84,7 @@ static MunitSuite main_child_suites[] = {
     lexer_suite,
     bytecode_suite,
     compiler_suite,
+    bug_suite,
     {},
 };
 
