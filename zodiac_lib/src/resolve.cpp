@@ -1685,6 +1685,10 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
 
                     AST_Expression *value_expr = stmt->return_stmt.value;
                     AST_Expression *cast_expr = ast_cast_expr_new(ctx, value_expr->range, expected_type, value_expr);
+                    bool cast_name_result = name_resolve_expr(ctx, cast_expr, scope);
+                    assert(cast_name_result);
+                    bool cast_type_result = type_resolve_expression(ctx, cast_expr, scope, nullptr);
+                    assert(cast_type_result);
                     stmt->return_stmt.value = cast_expr;
 
                 } else {
@@ -2149,10 +2153,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
     assert(result);
     assert(expr->resolved_type);
-
-    if (result) {
-        expr->flags |= AST_EXPR_FLAG_TYPED;
-    }
+    expr->flags |= AST_EXPR_FLAG_TYPED;
 
     return result;
 }

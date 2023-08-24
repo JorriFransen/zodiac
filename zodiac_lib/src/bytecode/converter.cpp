@@ -780,8 +780,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
         }
 
         case AST_Expression_Kind::CAST: {
-            debug_assert(expr->resolved_type && expr->resolved_type);
-            debug_assert(expr->resolved_type == expr->resolved_type);
+            debug_assert(expr->resolved_type);
 
             Bytecode_Register value_reg = ast_expr_to_bytecode(bc, expr->cast.value);
             return bytecode_emit_cast(bc->builder, expr->resolved_type, value_reg);
