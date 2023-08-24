@@ -29,15 +29,16 @@ public s64 foreign_call_binop_ptr(Binop_FN_Ptr fn_ptr, s64 a, s64 b) {
 // !!!!!! This function is not being used at the moment !!!!!!!
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //
-//  it will return true in some cases it should return false,
-//  when stepping through the disassembled binary, it seems
+//  It will return true in some cases it should return false.
+//  When stepping through the disassembled binary, it seems
 //  like the register being used for the x argument has a value
-//  of 256 (or maybe some other value where higher bits are set.
-//  The bool type should be 1 byte so max 255....
+//  of 256 (or maybe some other value where higher bits are set).
+//  The bool type should be 1 byte so max 255.... (tried masking
+//  here with 0xff but that didn't change anything.)
 //     My best guess at the moment is that it has something to
 //  do with struct packing/alignment, causing it to load more
 //  data into the register than it should..
-// 
+//
 public const char *bool_to_string(bool x) {
     printf("%d", x);
     if (x) {

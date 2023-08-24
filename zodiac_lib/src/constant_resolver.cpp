@@ -66,7 +66,10 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
             return resolve_constant_integer_binary_expr(expr, type);
         }
 
-        case AST_Expression_Kind::CAST: assert(false); break;
+        case AST_Expression_Kind::CAST: {
+            return resolve_constant_integer_expr(expr->cast.value, expr->resolved_type);
+            break;
+        }
 
         case AST_Expression_Kind::RUN_DIRECTIVE: {
             assert(expr->directive.generated_expression);
