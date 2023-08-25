@@ -21,8 +21,13 @@
 
 #else //_MSC_VER
 
+#ifndef NDEBUG
+#define ZODIAC_ABORT() __builtin_trap()
+#define ZODIAC_DEBUG_BREAK() __builtin_trap()
+#else
 #define ZODIAC_ABORT() raise(SIGABRT)
 #define ZODIAC_DEBUG_BREAK() __builtin_trap()
+#endif // NDEBUG
 
 #endif //_MSC_VER
 
