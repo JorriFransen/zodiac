@@ -133,19 +133,14 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                 break;
             }
 
-            if (decl->variable.resolved_type->kind == Type_Kind::INTEGER ||
-                decl->variable.resolved_type == &builtin_type_unsized_integer) {
-                // No need to emit anything
-                break;
-            } else if ((decl->variable.resolved_type->flags & TYPE_FLAG_AGGREGATE) ||
-                       (decl->variable.resolved_type->flags & TYPE_FLAG_STATIC_ARRAY)) {
-                // leaf
-                break;
-            } else {
-                assert_msg(false, "Not implemented")
-            }
+            // if (DECL_IS_GLOBAL(decl)) {
+            //     assert(decl->variable.value);
 
-            assert(false);
+            //     Bytecode_Register initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
+            // } else {
+            //     assert(false);
+            // }
+
             break;
         }
 

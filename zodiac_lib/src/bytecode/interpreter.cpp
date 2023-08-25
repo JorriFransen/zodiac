@@ -476,90 +476,7 @@ switch (operand.type->bit_size) { \
 
         case Bytecode_Opcode::PRINT: {
             Interpreter_Register operand = interpreter_load_register(interp, instruction.a);
-
-            auto out_handle = (FILE *)interp->std_out.handle;
-
-            if (operand.type == &builtin_type_String) {
-                fprintf(out_handle, "%.*s", (int)operand.value.string.length, operand.value.string.data);
-                break;
-            }
-
-            switch (operand.type->kind) {
-                default: assert(false); break;
-
-                case Type_Kind::INTEGER: {
-                    if (operand.type->integer.sign) {
-                        switch (operand.type->bit_size) {
-                            default: assert(false); break;
-                            case 8: fprintf(out_handle, "%d", operand.value.integer.s8); break;
-                            case 16: fprintf(out_handle, "%d", operand.value.integer.s16); break;
-                            case 32: fprintf(out_handle, "%d", operand.value.integer.s32); break;
-                            case 64: fprintf(out_handle, "%lld", operand.value.integer.s64); break;
-                        }
-                    } else {
-                        switch (operand.type->bit_size) {
-                            default: assert(false); break;
-                            case 8: fprintf(out_handle, "%u", operand.value.integer.u8); break;
-                            case 16: fprintf(out_handle, "%u", operand.value.integer.u16); break;
-                            case 32: fprintf(out_handle, "%u", operand.value.integer.u32); break;
-                            case 64: fprintf(out_handle, "%llu", operand.value.integer.u64); break;
-                        }
-                    }
-                    break;
-                }
-
-                case Type_Kind::FLOAT: {
-                    switch (operand.type->bit_size) {
-                        default: assert(false && !"Unhandled float bit size for print instruction"); break;
-                        case 32: fprintf(out_handle, "%f", operand.value.real.r32); break;
-                        case 64: fprintf(out_handle, "%f", operand.value.real.r64); break;
-                    }
-                    break;
-                }
-
-                case Type_Kind::BOOLEAN: {
-                    fprintf(out_handle, "%s", operand.value.boolean ? "true" : "false");
-                    break;
-                }
-
-                case Type_Kind::POINTER: {
-                    fprintf(out_handle, "%p", operand.value.pointer);
-                    break;
-                }
-
-                case Type_Kind::STRUCTURE: {
-                    fprintf(out_handle, "{ ");
-
-                    auto cursor = operand.value.pointer;
-
-                    for (s64 i = 0; i < operand.type->structure.member_types.count; i++) {
-                        if (i != 0) fprintf(out_handle, ", ");
-
-                        auto member_type = operand.type->structure.member_types[i];
-                        auto member_size = member_type->bit_size / 8;
-
-                        interpreter_print_from_memory(interp, cursor, member_type);
-
-                        cursor += member_size;
-                    }
-                    fprintf(out_handle, " }");
-                    break;
-                }
-
-                case Type_Kind::STATIC_ARRAY: {
-                    fprintf(out_handle, "{ ");
-                    u8 *cursor = operand.value.pointer;
-                    auto elem_type = operand.type->static_array.element_type;
-                    auto elem_size = elem_type->bit_size / 8;
-                    for (s64 i = 0; i < operand.type->static_array.count; i++) {
-                        if (i != 0) fprintf(out_handle, ", ");
-                        interpreter_print_from_memory(interp, cursor, elem_type);
-                        cursor += elem_size;
-                    }
-                    fprintf(out_handle, " }");
-                    break;
-                }
-            }
+            interpreter_print_register(interp, operand);
             break;
         }
 
@@ -1738,6 +1655,112 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type)
         case Type_Kind::STRUCTURE: assert(false); break;
         case Type_Kind::STATIC_ARRAY: assert(false); break;
         case Type_Kind::FUNCTION: assert(false); break;
+    }
+}
+
+void interpreter_print_register(Interpreter *interp, Interpreter_Register reg)
+{
+    debug_assert(interp && reg.type);
+
+    auto out_handle = (FILE *)interp->std_out.handle;
+
+    if (reg.type == &builtin_type_String) {
+        fprintf(out_handle, "%.*s", (int)reg.value.string.length, reg.value.string.data);
+        return;
+    }
+
+    switch (reg.type->kind) {
+        default: assert(false); break;
+
+        case Type_Kind::INTEGER: {
+            if (reg.type->integer.sign) {
+                switch (reg.type->bit_size) {
+                    default: assert(false); break;
+                    case 8: fprintf(out_handle, "%d", reg.value.integer.s8); break;
+                    case 16: fprintf(out_handle, "%d", reg.value.integer.s16); break;
+                    case 32: fprintf(out_handle, "%d", reg.value.integer.s32); break;
+                    case 64: fprintf(out_handle, "%lld", reg.value.integer.s64); break;
+                }
+            } else {
+                switch (reg.type->bit_size) {
+                    default: assert(false); break;
+                    case 8: fprintf(out_handle, "%u", reg.value.integer.u8); break;
+                    case 16: fprintf(out_handle, "%u", reg.value.integer.u16); break;
+                    case 32: fprintf(out_handle, "%u", reg.value.integer.u32); break;
+                    case 64: fprintf(out_handle, "%llu", reg.value.integer.u64); break;
+                }
+            }
+            break;
+        }
+
+        case Type_Kind::FLOAT: {
+            switch (reg.type->bit_size) {
+                default: assert(false && !"Unhandled float bit size for print instruction"); break;
+                case 32: fprintf(out_handle, "%f", reg.value.real.r32); break;
+                case 64: fprintf(out_handle, "%f", reg.value.real.r64); break;
+            }
+            break;
+        }
+
+        case Type_Kind::BOOLEAN: {
+            fprintf(out_handle, "%s", reg.value.boolean ? "true" : "false");
+            break;
+        }
+
+        case Type_Kind::POINTER: {
+            fprintf(out_handle, "%p", reg.value.pointer);
+            break;
+        }
+
+        case Type_Kind::STRUCTURE: {
+
+            fprintf(out_handle, "{ ");
+
+            if (reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
+
+                for (s64 i = 0; i < reg.value.compound.count; i++) {
+                    auto interp_reg = interpreter_load_register(interp, reg.value.compound[i]);
+                    if (i != 0) fprintf(out_handle, ", ");
+                    interpreter_print_register(interp, interp_reg);
+                }
+
+            } else {
+
+                auto cursor = reg.value.pointer;
+
+                for (s64 i = 0; i < reg.type->structure.member_types.count; i++) {
+                    if (i != 0) fprintf(out_handle, ", ");
+
+                    auto member_type = reg.type->structure.member_types[i];
+                    auto member_size = member_type->bit_size / 8;
+
+                    interpreter_print_from_memory(interp, cursor, member_type);
+
+                    cursor += member_size;
+                }
+            }
+
+            fprintf(out_handle, " }");
+
+            break;
+        }
+
+        case Type_Kind::STATIC_ARRAY: {
+            if (reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
+                assert(false);
+            }
+            fprintf(out_handle, "{ ");
+            u8 *cursor = reg.value.pointer;
+            auto elem_type = reg.type->static_array.element_type;
+            auto elem_size = elem_type->bit_size / 8;
+            for (s64 i = 0; i < reg.type->static_array.count; i++) {
+                if (i != 0) fprintf(out_handle, ", ");
+                interpreter_print_from_memory(interp, cursor, elem_type);
+                cursor += elem_size;
+            }
+            fprintf(out_handle, " }");
+            break;
+        }
     }
 }
 
