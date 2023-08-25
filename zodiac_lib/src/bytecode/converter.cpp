@@ -443,13 +443,6 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
         case AST_Statement_Kind::PRINT: {
             for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
-                auto type = stmt->print_expr.expressions[i]->resolved_type;
-                assert(type->kind == Type_Kind::INTEGER ||
-                       type->kind == Type_Kind::FLOAT   ||
-                       type->kind == Type_Kind::BOOLEAN ||
-                       type->kind == Type_Kind::POINTER ||
-                       type->kind == Type_Kind::STATIC_ARRAY ||
-                       type == &builtin_type_String);
                 Bytecode_Register value_reg = ast_expr_to_bytecode(bc, stmt->print_expr.expressions[i]);
                 bytecode_emit_print(bc->builder, value_reg);
             }

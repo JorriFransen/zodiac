@@ -1721,14 +1721,6 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
                     type = &builtin_type_s64;
                     stmt->print_expr.expressions[i]->resolved_type = &builtin_type_s64;
                 }
-
-                assert(type->kind == Type_Kind::INTEGER ||
-                       type->kind == Type_Kind::FLOAT   ||
-                       type->kind == Type_Kind::BOOLEAN ||
-                       type->kind == Type_Kind::POINTER ||
-                       type->kind == Type_Kind::STATIC_ARRAY ||
-                       type == &builtin_type_String);
-
             }
 
             break;

@@ -657,17 +657,6 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             auto t = instruction->a.type;
             assert(t);
 
-            if (t->kind != Type_Kind::INTEGER &&
-                t->kind != Type_Kind::FLOAT &&
-                t->kind != Type_Kind::BOOLEAN &&
-                t->kind != Type_Kind::POINTER &&
-                t->kind != Type_Kind::STATIC_ARRAY &&
-                t != &builtin_type_String) {
-
-                bytecode_validator_report_error(validator, "The 'a' register for 'PRINT' must be of integer, float, boolean, pointer, static array or String type");
-                return false;
-            }
-
             return true;
             break;
         }

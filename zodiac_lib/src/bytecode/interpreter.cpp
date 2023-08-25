@@ -477,13 +477,6 @@ switch (operand.type->bit_size) { \
         case Bytecode_Opcode::PRINT: {
             Interpreter_Register operand = interpreter_load_register(interp, instruction.a);
 
-            assert(operand.type->kind == Type_Kind::INTEGER ||
-                   operand.type->kind == Type_Kind::FLOAT ||
-                   operand.type->kind == Type_Kind::BOOLEAN ||
-                   operand.type->kind == Type_Kind::POINTER ||
-                   operand.type->kind == Type_Kind::STATIC_ARRAY ||
-                   operand.type == &builtin_type_String);
-
             auto out_handle = (FILE *)interp->std_out.handle;
 
             if (operand.type == &builtin_type_String) {
@@ -531,6 +524,25 @@ switch (operand.type->bit_size) { \
 
                 case Type_Kind::POINTER: {
                     fprintf(out_handle, "%p", operand.value.pointer);
+                    break;
+                }
+
+                case Type_Kind::STRUCTURE: {
+                    fprintf(out_handle, "{ ");
+
+                    auto cursor = operand.value.pointer;
+
+                    for (s64 i = 0; i < operand.type->structure.member_types.count; i++) {
+                        if (i != 0) fprintf(out_handle, ", ");
+
+                        auto member_type = operand.type->structure.member_types[i];
+                        auto member_size = member_type->bit_size / 8;
+
+                        interpreter_print_from_memory(interp, cursor, member_type);
+
+                        cursor += member_size;
+                    }
+                    fprintf(out_handle, " }");
                     break;
                 }
 
@@ -1711,7 +1723,16 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type)
             break;
         }
 
-        case Type_Kind::FLOAT: assert(false); break;
+        case Type_Kind::FLOAT: {
+            if (type->bit_size == 64) {
+                fprintf(out_handle, "%f", *(double*)mem);
+            } else {
+                assert(type->bit_size == 32);
+                fprintf(out_handle, "%f", *(float*)mem);
+            }
+            break;
+        }
+
         case Type_Kind::BOOLEAN: assert(false); break;
         case Type_Kind::POINTER: assert(false); break;
         case Type_Kind::STRUCTURE: assert(false); break;

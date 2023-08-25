@@ -849,7 +849,6 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 #undef EMIT_FLOAT_BINOP
 
 
-
 void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm::Value *llvm_val)
 {
     debug_assert(builder && type && llvm_val);
@@ -971,7 +970,24 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
                 dynamic_array_append(llvm_print_args, fmt_str_lit);
                 dynamic_array_append(llvm_print_args, llvm_val);
             } else {
-                assert_msg(false, "Unhandled struct type in print (llvm)");
+                use_printf = false;
+
+                llvm::Value *preamble = llvm_builder_emit_string_literal(builder, "{ ");
+                irb->CreateCall(printf_func, { &preamble, 1 });
+
+                for (s64 i = 0; i < type->structure.member_types.count; i++) {
+                    if (i != 0) {
+                        llvm::Value *comma_str = llvm_builder_emit_string_literal(builder, ", ");
+                        irb->CreateCall(printf_func, { &comma_str, 1 });
+                    }
+
+                    unsigned indexes[] = { (unsigned)i } ;
+                    llvm::Value *mem_val = irb->CreateExtractValue(llvm_val, indexes);
+                    llvm_builder_emit_print_instruction(builder, type->structure.member_types[i], mem_val);
+                }
+
+                llvm::Value *postamble = llvm_builder_emit_string_literal(builder, " }");
+                irb->CreateCall(printf_func, { &postamble, 1 });
             }
             break;
         }
