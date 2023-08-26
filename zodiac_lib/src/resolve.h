@@ -155,4 +155,6 @@ ZAPI bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope
 ZAPI bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope, Infer_Node *infer_type_from);
 ZAPI bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope);
 
+ZAPI bool expr_is_call_with_const_args(AST_Expression *expr);
+
 }

@@ -1118,7 +1118,6 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
         case AST_Expression_Kind::NULL_LITERAL:
         case AST_Expression_Kind::BOOL_LITERAL:
         case AST_Expression_Kind::RUN_DIRECTIVE: {
-            debug_assert(EXPR_IS_CONST(expr));
             // Leaf
             break;
         }
@@ -1337,6 +1336,7 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
         }
 
         case Flat_Node_Kind::FIELD_DECL: {
+            assert(false);
             assert(node->decl->field.type_spec);
             assert(node->decl->field.type_spec->resolved_type);
 
@@ -1583,7 +1583,13 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
         case AST_Declaration_Kind::UNION: assert(false);
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
-            assert(EXPR_IS_TYPED(decl->directive->run.expr));
+            auto expr = decl->directive->run.expr;
+            assert(EXPR_IS_TYPED(expr));
+
+            if (!EXPR_IS_CONST(expr) && !expr_is_call_with_const_args(expr)) {
+                fatal_resolve_error(ctx, expr, "Expression after run directive must be constant");
+                return false;
+            }
             result = true;
             break;
         }
@@ -2075,8 +2081,13 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
         }
 
         case AST_Expression_Kind::RUN_DIRECTIVE: {
-            assert(expr->directive.directive->kind == AST_Directive_Kind::RUN);
             auto dir = expr->directive.directive;
+            assert(EXPR_IS_TYPED(dir->run.expr));
+
+            if (!EXPR_IS_CONST(dir->run.expr) && !expr_is_call_with_const_args(dir->run.expr)) {
+                fatal_resolve_error(ctx, dir->run.expr, "Expression after run directive must be constant");
+                return false;
+            }
 
             Type *type = nullptr;
 
@@ -2229,6 +2240,17 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
 
     assert(false);
     return false;
+}
+
+bool expr_is_call_with_const_args(AST_Expression *expr)
+{
+    if (expr->kind != AST_Expression_Kind::CALL) return false;
+
+    for (s64 i = 0; i < expr->call.args.count; i++) {
+        if (!EXPR_IS_CONST(expr->call.args[i])) return false;
+    }
+
+    return true;
 }
 
 }

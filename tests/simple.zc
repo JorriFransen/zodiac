@@ -1,29 +1,16 @@
 
 #run main();
 
-Vec2 :: struct {
-    x, y: r64;
+return_x :: (x: s64) {
+    return x;
 }
 
-START_POS : Vec2 : { 1.0, 2.0 };
-X :: 1;
+global_variable : s64 = 6;
+global_constant : s64 : 66;
+
+another_global_variable : s64 = #run return_x(global_variable);
 
 main :: () {
-
-    Y :: 2;
-
-    print(Y);
-    print(*Y);
-
-    print(X);
-    print(*X);
-
-    print(START_POS);
-    print(*START_POS);
-    print_via_pointer(*START_POS);
+    print(another_global_variable);
     return 0;
-}
-
-print_via_pointer :: (v: *Vec2) {
-    print("{ ", v.x, ", ", v.y, " }");
 }
