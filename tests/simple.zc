@@ -24,30 +24,6 @@ main :: () {
     return 0;
 }
 
-// glob_vec : Vec2 = { 1.1, 2.2 };
-
-// main :: () {
-//     loc_vec : Vec2 = { 1.2, 3.4 };
-//     loc_const_vec : Vec2 : { 5.6, 7.8 };
-
-//     print("loc_vec:");
-//     print(loc_vec);
-//     print_via_pointer(*loc_vec);
-
-//     print(" ");
-
-//     print("glob_vec");
-//     print(glob_vec);
-//     print_via_pointer(*glob_vec);
-
-//     print(" ");
-
-//     print("loc_const_vec");
-//     print(loc_const_vec);
-//     print_via_pointer(*loc_const_vec);
-//     return 0;
-// }
-
 print_via_pointer :: (v: *Vec2) {
     print("{ ", v.x, ", ", v.y, " }");
 }

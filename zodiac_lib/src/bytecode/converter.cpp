@@ -863,155 +863,143 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
     return {};
 }
 
+Bytecode_Register ast_const_compound_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *compound_expr) {
+    debug_assert(bc && compound_expr);
+    assert(EXPR_IS_CONST(compound_expr));
+
+    assert(compound_expr->resolved_type);
+    auto type = compound_expr->resolved_type;
+    bool aggregate = type->flags & TYPE_FLAG_AGGREGATE;
+    assert(aggregate || (type->flags & TYPE_FLAG_STATIC_ARRAY));
+
+    Dynamic_Array<Bytecode_Register> values;
+    dynamic_array_create<Bytecode_Register>(bc->allocator, &values, compound_expr->compound.expressions.count);
+
+    for (s64 i = 0; i < compound_expr->compound.expressions.count; i++) {
+        auto value_expr = compound_expr->compound.expressions[i];
+        assert(EXPR_IS_CONST(value_expr));
+        Bytecode_Register value_reg = ast_const_expr_to_bytecode(bc, value_expr);
+        dynamic_array_append(&values, value_reg);
+    }
+
+    if (aggregate) {
+        return bytecode_aggregate_literal(bc->builder, values, type);
+    } else {
+        return bytecode_array_literal(bc->builder, values, type);
+    }
+
+}
+
 Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr)
 {
-    assert(bc);
-    assert(expr);
+    debug_assert(bc);
     assert(EXPR_IS_CONST(expr));
 
+    assert(expr->resolved_type);
     auto type = expr->resolved_type;
 
-    switch (type->kind) {
+    switch (expr->kind) {
 
-        case Type_Kind::INVALID: assert(false); break;
-        case Type_Kind::VOID: assert(false); break;
+        case AST_Expression_Kind::INVALID: assert(false); break;
 
-        case Type_Kind::POINTER: {
-            assert(expr->kind == AST_Expression_Kind::CAST);
+        case AST_Expression_Kind::INTEGER_LITERAL: {
+            Integer_Value result_value = resolve_constant_integer_expr(expr);
+            return bytecode_integer_literal(bc->builder, type, result_value);
+        }
+
+        case AST_Expression_Kind::REAL_LITERAL: {
+            Real_Value result_value = resolve_constant_real_expr(expr);
+            return bytecode_real_literal(bc->builder, expr->resolved_type, result_value);
+        }
+
+        case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
+        case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
+
+        case AST_Expression_Kind::BOOL_LITERAL: {
+            bool result_value = resolve_constant_bool_expr(expr);
+            return bytecode_boolean_literal(bc->builder, type, result_value);
+        }
+
+        case AST_Expression_Kind::IDENTIFIER: {
+            switch (type->kind) {
+
+                case Type_Kind::INVALID: assert(false);
+                case Type_Kind::VOID: assert(false);
+                case Type_Kind::UNSIZED_INTEGER: assert(false);
+
+                case Type_Kind::INTEGER: {
+                    Integer_Value result_value = resolve_constant_integer_expr(expr, type);
+                    return bytecode_integer_literal(bc->builder, type, result_value);
+                }
+
+                case Type_Kind::FLOAT: {
+                    Real_Value result_value = resolve_constant_real_expr(expr);
+                    return bytecode_real_literal(bc->builder, expr->resolved_type, result_value);
+                }
+
+                case Type_Kind::BOOLEAN: {
+                    bool result_value = resolve_constant_bool_expr(expr);
+                    return bytecode_boolean_literal(bc->builder, type, result_value);
+                }
+
+                case Type_Kind::POINTER: assert(false);
+
+                case Type_Kind::STRUCTURE:
+                case Type_Kind::STATIC_ARRAY: {
+                    auto sym = scope_get_symbol(expr->identifier.scope, expr->identifier);
+                    assert(sym && sym->decl);
+                    auto decl = sym->decl;
+                    assert(decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
+                    assert(decl->variable.resolved_type == type);
+                    auto init_expr = decl->variable.value;
+                    assert(init_expr->resolved_type == type);
+
+                    if (init_expr->kind == AST_Expression_Kind::RUN_DIRECTIVE) {
+                        assert(init_expr->directive.generated_expression);
+                        init_expr = init_expr->directive.generated_expression;
+                    }
+                    assert(init_expr->kind == AST_Expression_Kind::COMPOUND);
+
+                    return ast_const_compound_expr_to_bytecode(bc, init_expr);
+                    break;
+                }
+
+                case Type_Kind::FUNCTION: assert(false);
+            }
+
+            assert(false); // should have returned
+            break;
+        }
+
+        case AST_Expression_Kind::MEMBER: assert(false); break;
+        case AST_Expression_Kind::INDEX: assert(false); break;
+        case AST_Expression_Kind::CALL: assert(false); break;
+        case AST_Expression_Kind::UNARY: assert(false); break;
+
+        case AST_Expression_Kind::BINARY: {
+            assert(type->kind == Type_Kind::INTEGER);
+            Integer_Value result = resolve_constant_integer_binary_expr(expr, type);
+            return  bytecode_integer_literal(bc->builder, type, result);
+            break;
+        }
+
+        case AST_Expression_Kind::CAST: {
+            assert(type->kind == Type_Kind::POINTER);
+
             auto value_expr = expr->cast.value;
             assert(value_expr->resolved_type == &builtin_type_u64);
 
             Integer_Value int_val = resolve_constant_integer_expr(value_expr, value_expr->resolved_type);
             void *ptr = (void *)int_val.u64;
             return bytecode_pointer_literal(bc->builder, expr->resolved_type, ptr);
+        }
+
+        case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
+
+        case AST_Expression_Kind::COMPOUND: {
+            assert((type->flags & TYPE_FLAG_AGGREGATE) || (type->flags & TYPE_FLAG_STATIC_ARRAY));
+            return ast_const_compound_expr_to_bytecode(bc, expr);
             break;
-        }
-
-        case Type_Kind::FUNCTION: assert(false); break;
-
-        case Type_Kind::UNSIZED_INTEGER:
-        case Type_Kind::INTEGER: {
-            Type *literal_type = type;
-            if (literal_type->kind == Type_Kind::UNSIZED_INTEGER) {
-                literal_type = &builtin_type_s64;
-            }
-
-            Integer_Value result_value = resolve_constant_integer_expr(expr, literal_type);
-            return bytecode_integer_literal(bc->builder, literal_type, result_value);
-        }
-
-        case Type_Kind::FLOAT: {
-            Real_Value result_value = resolve_constant_real_expr(expr);
-            return bytecode_real_literal(bc->builder, expr->resolved_type, result_value);
-        }
-
-        case Type_Kind::BOOLEAN: {
-            bool result_value = resolve_constant_bool_expr(expr);
-            return bytecode_boolean_literal(bc->builder, expr->resolved_type, result_value);
-        }
-
-        case Type_Kind::STRUCTURE: {
-
-            AST_Expression *compound_expr = nullptr;
-
-            if (expr->kind == AST_Expression_Kind::COMPOUND) {
-                compound_expr = expr;
-            } else {
-                assert(expr->kind == AST_Expression_Kind::IDENTIFIER);
-
-                auto scope = expr->identifier.scope;
-                assert(scope);
-
-                auto sym = scope_get_symbol(scope, expr->identifier);
-                assert(sym);
-                auto decl = sym->decl;
-                assert(decl);
-                assert(decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
-                assert(decl->variable.resolved_type);
-
-                Type *type = decl->variable.resolved_type;
-                assert(type);
-                assert(type->kind == Type_Kind::STRUCTURE);
-
-                AST_Expression *init_expr = decl->variable.value;
-                assert(init_expr);
-                assert(init_expr->resolved_type);
-                assert(init_expr->resolved_type == type);
-
-                if (init_expr->kind == AST_Expression_Kind::RUN_DIRECTIVE) {
-                    assert(init_expr->directive.generated_expression);
-                    init_expr = init_expr->directive.generated_expression;
-                }
-                assert(init_expr->kind == AST_Expression_Kind::COMPOUND);
-
-                compound_expr = init_expr;
-            }
-
-            assert(compound_expr);
-
-            Dynamic_Array<Bytecode_Register> members;
-            dynamic_array_create<Bytecode_Register>(bc->allocator, &members, compound_expr->compound.expressions.count);
-
-            for (s64 i = 0; i < compound_expr->compound.expressions.count; i++) {
-                auto member_expr = compound_expr->compound.expressions[i];
-                assert(EXPR_IS_CONST(member_expr));
-                Bytecode_Register member_reg = ast_const_expr_to_bytecode(bc, member_expr);
-                dynamic_array_append(&members, member_reg);
-            }
-
-            return bytecode_aggregate_literal(bc->builder, members, type);
-        }
-
-        case Type_Kind::STATIC_ARRAY: {
-
-            AST_Expression *compound_expr = nullptr;
-
-            if (expr->kind == AST_Expression_Kind::COMPOUND) {
-                compound_expr = expr;
-            } else {
-                assert(expr->kind == AST_Expression_Kind::IDENTIFIER);
-
-                auto scope = expr->identifier.scope;
-                assert(scope);
-
-                auto sym = scope_get_symbol(scope, expr->identifier);
-                assert(sym);
-                auto decl = sym->decl;
-                assert(decl);
-                assert(decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
-                assert(decl->variable.resolved_type);
-
-                Type *type = decl->variable.resolved_type;
-                assert(type);
-                assert(type->kind == Type_Kind::STATIC_ARRAY);
-
-                AST_Expression *init_expr = decl->variable.value;
-                assert(init_expr);
-                assert(init_expr->resolved_type);
-                assert(init_expr->resolved_type == type);
-
-                if (init_expr->kind == AST_Expression_Kind::RUN_DIRECTIVE) {
-                    assert(init_expr->directive.generated_expression);
-                    init_expr = init_expr->directive.generated_expression;
-                }
-                assert(init_expr->kind == AST_Expression_Kind::COMPOUND);
-
-                compound_expr = init_expr;
-            }
-
-            assert(compound_expr);
-
-            Dynamic_Array<Bytecode_Register> values;
-            dynamic_array_create<Bytecode_Register>(bc->allocator, &values, compound_expr->compound.expressions.count);
-
-            for (s64 i = 0; i < compound_expr->compound.expressions.count; i++) {
-                auto value_expr = compound_expr->compound.expressions[i];
-                assert(EXPR_IS_CONST(value_expr));
-                Bytecode_Register value_reg = ast_const_expr_to_bytecode(bc, value_expr);
-                dynamic_array_append(&values, value_reg);
-            }
-
-            return bytecode_array_literal(bc->builder, values, type);
         }
     }
 

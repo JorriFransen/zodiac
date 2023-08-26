@@ -46,7 +46,6 @@ void free_compile_run_results(Compile_Run_Results *r);
 Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expected_results, Zodiac_Options options = {});
 
 MunitResult Return_0(const MunitParameter params[], void* user_data_or_fixture);
-
 MunitResult Return_1(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Infer_Void_Return(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Invalid_Return_Type(const MunitParameter params[], void* user_data_or_fixture);
