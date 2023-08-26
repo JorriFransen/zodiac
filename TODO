@@ -1,5 +1,4 @@
 
-- Do we actually need TYPE_FLAG_STATIC_ARRAY??
 - Ensure #run expressions are constant (report error)
 - Report error for #run on statement level when not in global scope (eg. #run main)
 - Fix crash when passing in folder name instead of file name on command line

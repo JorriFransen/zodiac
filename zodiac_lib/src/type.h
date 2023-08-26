@@ -56,10 +56,9 @@ enum class Type_Kind
 typedef u32 Type_Flags;
 enum Type_Flag : Type_Flags
 {
-    TYPE_FLAG_NONE         = 0x00,
-    TYPE_FLAG_INT          = 0x01,
-    TYPE_FLAG_AGGREGATE    = 0x02,
-    TYPE_FLAG_STATIC_ARRAY = 0x04,
+    TYPE_FLAG_NONE      = 0x00,
+    TYPE_FLAG_INT       = 0x01,
+    TYPE_FLAG_AGGREGATE = 0x02,
 };
 
 struct Type

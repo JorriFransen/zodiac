@@ -870,7 +870,7 @@ Bytecode_Register ast_const_compound_expr_to_bytecode(Bytecode_Converter *bc, AS
     assert(compound_expr->resolved_type);
     auto type = compound_expr->resolved_type;
     bool aggregate = type->flags & TYPE_FLAG_AGGREGATE;
-    assert(aggregate || (type->flags & TYPE_FLAG_STATIC_ARRAY));
+    assert(aggregate || type->kind == Type_Kind::STATIC_ARRAY);
 
     Dynamic_Array<Bytecode_Register> values;
     dynamic_array_create<Bytecode_Register>(bc->allocator, &values, compound_expr->compound.expressions.count);
@@ -997,7 +997,7 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
         case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
 
         case AST_Expression_Kind::COMPOUND: {
-            assert((type->flags & TYPE_FLAG_AGGREGATE) || (type->flags & TYPE_FLAG_STATIC_ARRAY));
+            assert((type->flags & TYPE_FLAG_AGGREGATE) || type->kind == Type_Kind::STATIC_ARRAY);
             return ast_const_compound_expr_to_bytecode(bc, expr);
             break;
         }

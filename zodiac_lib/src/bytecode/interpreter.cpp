@@ -556,7 +556,7 @@ switch (operand.type->bit_size) { \
                 }
 
                 if ((return_value.type->flags & TYPE_FLAG_AGGREGATE) ||
-                     return_value.type->flags & TYPE_FLAG_STATIC_ARRAY) {
+                     return_value.type->kind == Type_Kind::STATIC_ARRAY) {
 
                     if (return_value.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
                         assert(return_value.type->bit_size % 8 == 0);
@@ -806,7 +806,6 @@ switch (operand.type->bit_size) { \
 
         case Bytecode_Opcode::INSERT_ELEMENT: {
             Type *array_type = instruction.dest.type;
-            assert(array_type->flags & TYPE_FLAG_STATIC_ARRAY);
             assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
             assert(instruction.additional_index >= 0);
@@ -858,7 +857,6 @@ switch (operand.type->bit_size) { \
             Interpreter_Register index_val = interpreter_load_register(interp, instruction.b);
 
             Type *array_type = array_val.type;
-            assert(array_type->flags & TYPE_FLAG_STATIC_ARRAY);
             assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
             assert(index_val.type == &builtin_type_s64);
@@ -946,7 +944,6 @@ switch (operand.type->bit_size) { \
                 array_type = array_type->pointer.base;
             }
 
-            assert(array_type->flags & TYPE_FLAG_STATIC_ARRAY);
             assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
             assert(index_register.type == &builtin_type_s64);
@@ -1201,7 +1198,7 @@ Interpreter_Register interpreter_load_register(Interpreter *interp,
             Interpreter_Register_Flags flags = INTERP_REG_FLAG_NONE;
 
             if ((bc_reg.type->flags & TYPE_FLAG_AGGREGATE) ||
-                (bc_reg.type->flags & TYPE_FLAG_STATIC_ARRAY)) {
+                bc_reg.type->kind == Type_Kind::STATIC_ARRAY) {
                 flags |= INTERP_REG_FLAG_AGGREGATE_LITERAL;
             }
 
@@ -1509,7 +1506,7 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
     debug_assert(interp && dest);
 
     assert((source.type->flags & TYPE_FLAG_AGGREGATE) ||
-           (source.type->flags & TYPE_FLAG_STATIC_ARRAY));
+           source.type->kind == Type_Kind::STATIC_ARRAY);
 
     assert(source.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL);
 

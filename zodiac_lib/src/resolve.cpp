@@ -408,7 +408,7 @@ Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error
 
         case Infer_Target::COMPOUND: {
             assert((inferred_type->flags & TYPE_FLAG_AGGREGATE) ||
-                   (inferred_type->flags & TYPE_FLAG_STATIC_ARRAY));
+                   inferred_type->kind == Type_Kind::STATIC_ARRAY);
 
             auto index = infer_node->target.index;
 
@@ -2122,10 +2122,8 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                     }
                 }
 
-            } else if (inferred_type->flags & TYPE_FLAG_STATIC_ARRAY) {
+            } else if (inferred_type->kind == Type_Kind::STATIC_ARRAY) {
                 auto array_type = inferred_type;
-                assert(array_type->kind == Type_Kind::STATIC_ARRAY);
-
                 auto array_member_count = array_type->static_array.count;
 
                 if (array_member_count != compound_member_count) {
