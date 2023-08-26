@@ -3,6 +3,7 @@
 #include "atom.h"
 #include "common.h"
 #include "containers/dynamic_array.h"
+#include "containers/hash_table.h"
 #include "defines.h"
 #include "source_pos.h"
 #include "util/zstring.h"
@@ -315,10 +316,17 @@ struct AST_Variable_Declaration
     Type *resolved_type;
 };
 
+struct AST_Const_LValue
+{
+    AST_Expression *expr; // The expression that 'identifies' the declaration
+    AST_Declaration *decl;
+};
+
 struct AST_Function_Declaration
 {
     Dynamic_Array<AST_Declaration *> params;
     Dynamic_Array<AST_Declaration *> variables;
+    Dynamic_Array<AST_Const_LValue> const_lvalues;
 
     AST_Type_Spec *return_ts;
 

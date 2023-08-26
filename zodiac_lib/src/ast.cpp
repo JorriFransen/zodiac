@@ -352,7 +352,10 @@ void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynami
 
     out_decl->identifier = ident;
     out_decl->function.params = args;
+
     dynamic_array_create(allocator, &out_decl->function.variables, 0);
+    dynamic_array_create(allocator, &out_decl->function.const_lvalues, 0);
+
     out_decl->function.return_ts = return_ts;
     out_decl->function.body = body;
     out_decl->function.type = nullptr;

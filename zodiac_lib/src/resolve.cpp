@@ -1951,7 +1951,20 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
                 case AST_Unary_Operator::ADDRESS_OF: {
 
-                    if (!EXPR_IS_LVALUE(operand)) {
+                    if (EXPR_IS_CONST(operand)) {
+                        // The expression must have a delcaration, probably add a function to test for this more thoroughly.
+                        assert(operand->kind == AST_Expression_Kind::IDENTIFIER);
+
+                        auto sym = scope_get_symbol(scope, operand->identifier);
+                        assert(sym);
+                        assert(sym->decl);
+                        assert(sym->decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
+
+                        auto current_function = enclosing_function(scope);
+                        dynamic_array_append(&current_function->function.const_lvalues, { operand, sym->decl });
+
+                    } else if (!EXPR_IS_LVALUE(operand)) {
+
                         fatal_resolve_error(ctx, expr, "The operand to dereference ('*') is not an lvalue");
                         fatal_resolve_error(ctx, operand, "Operand: '%s'", ast_print_expression(operand, &ctx->error_allocator).data);
                         return false;

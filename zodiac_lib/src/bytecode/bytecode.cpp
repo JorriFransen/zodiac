@@ -218,15 +218,14 @@ Bytecode_Function_Handle bytecode_foreign_function_create(Bytecode_Builder *buil
     return bytecode_function_create(builder, name, fn_type, BC_FUNCTION_FLAG_FOREIGN);
 }
 
-Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, const char *cstr_name, Type *type, Bytecode_Register initial_value /*={}*/)
+Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, const char *cstr_name, Type *type, bool constant, Bytecode_Register initial_value /*={}*/)
 {
     Atom atom = atom_get(&builder->zodiac_context->atoms, cstr_name);
-    return bytecode_create_global(builder, atom, type, initial_value);
+    return bytecode_create_global(builder, atom, type, constant, initial_value);
 }
 
-Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, Atom name, Type *type, Bytecode_Register initial_value /*={}*/)
+Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, Atom name, Type *type, bool constant, Bytecode_Register initial_value /*={}*/)
 {
-
     if (initial_value.kind != Bytecode_Register_Kind::INVALID) {
         assert(initial_value.flags & BC_REGISTER_FLAG_CONSTANT);
     }
@@ -234,7 +233,7 @@ Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, Atom na
     Bytecode_Global global_var = {
         .atom = name,
         .type = type,
-        .constant = false,
+        .constant = constant,
         .initial_value = initial_value,
     };
 

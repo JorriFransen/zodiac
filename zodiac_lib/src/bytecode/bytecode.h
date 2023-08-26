@@ -253,8 +253,8 @@ ZAPI Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder
 ZAPI Bytecode_Function_Handle bytecode_foreign_function_create(Bytecode_Builder *builder, const char *cstr_fn_name, Type *fn_type);
 ZAPI Bytecode_Function_Handle bytecode_foreign_function_create(Bytecode_Builder *builder, Atom name, Type *fn_type);
 
-ZAPI Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, const char *cstr_name, Type *type, Bytecode_Register initial_value = {});
-ZAPI Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, Atom name, Type *type, Bytecode_Register initial_value = {});
+ZAPI Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, const char *cstr_name, Type *type, bool constant, Bytecode_Register initial_value = {});
+ZAPI Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, Atom name, Type *type, bool constant, Bytecode_Register initial_value = {});
 
 ZAPI Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, const char* cstr_name);
 ZAPI Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Atom name);

@@ -274,6 +274,11 @@ Type *sym_decl_type(Symbol *sym)
         case AST_Declaration_Kind::PARAMETER:
         case AST_Declaration_Kind::FIELD: {
             assert(decl->variable.resolved_type);
+
+            if (decl->variable.resolved_type->kind == Type_Kind::UNSIZED_INTEGER) {
+                return &builtin_type_s64;
+            }
+
             return decl->variable.resolved_type;
         }
 

@@ -2072,8 +2072,8 @@ MunitResult Globals(const MunitParameter params[], void *user_data_or_fixture)
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
     defer { bytecode_builder_free(&bb); };
 
-    auto global_var = bytecode_create_global(&bb, "global_var", &builtin_type_s64);
-    auto global_var2 = bytecode_create_global(&bb, "global_var2", &builtin_type_s64, bytecode_integer_literal(&bb, &builtin_type_s64, 42));
+    auto global_var = bytecode_create_global(&bb, "global_var", &builtin_type_s64, false);
+    auto global_var2 = bytecode_create_global(&bb, "global_var2", &builtin_type_s64, false, bytecode_integer_literal(&bb, &builtin_type_s64, 42));
 
     const s64 exit_code = 24;
     const String_Ref stdout_str("24\n42");

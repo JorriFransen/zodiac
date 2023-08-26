@@ -6,16 +6,21 @@ Vec2 :: struct {
 }
 
 START_POS : Vec2 : { 1.0, 2.0 };
+X :: 1;
 
 main :: () {
-    X :: 1;
+
+    Y :: 2;
+
+    print(Y);
+    print(*Y);
 
     print(X);
-    // print(*X);
+    print(*X);
 
     print(START_POS);
-    // print(*START_POS);
-    // print_via_pointer(*START_POS);
+    print(*START_POS);
+    print_via_pointer(*START_POS);
     return 0;
 }
 
@@ -43,6 +48,6 @@ main :: () {
 //     return 0;
 // }
 
-// print_via_pointer :: (v: *Vec2) {
-//     print("{ ", v.x, ", ", v.y, " }");
-// }
+print_via_pointer :: (v: *Vec2) {
+    print("{ ", v.x, ", ", v.y, " }");
+}

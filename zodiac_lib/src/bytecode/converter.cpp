@@ -29,6 +29,7 @@ Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Contex
 
     hash_table_create(allocator, &result.functions);
     hash_table_create(allocator, &result.allocations);
+    hash_table_create(allocator, &result.const_lvalues);
     hash_table_create(allocator, &result.globals);
     hash_table_create(allocator, &result.run_directives);
 
@@ -102,7 +103,7 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                     initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
                 }
 
-                auto global_handle = bytecode_create_global(bc->builder, global_name, global_type, initial_value_reg);
+                auto global_handle = bytecode_create_global(bc->builder, global_name, global_type, false, initial_value_reg);
 
                 hash_table_add(&bc->globals, decl, global_handle);
 
@@ -133,13 +134,15 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                 break;
             }
 
-            // if (DECL_IS_GLOBAL(decl)) {
-            //     assert(decl->variable.value);
+            assert(decl->variable.value);
+            auto name = decl->identifier.name;
+            auto type = decl->variable.resolved_type;
 
-            //     Bytecode_Register initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
-            // } else {
-            //     assert(false);
-            // }
+            Bytecode_Register initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
+            assert(initial_value_reg.type == type ||
+                   initial_value_reg.type->kind == Type_Kind::INTEGER && type->kind == Type_Kind::UNSIZED_INTEGER)
+            auto global_handle = bytecode_create_global(bc->builder, name, initial_value_reg.type, true, initial_value_reg);
+            hash_table_add(&bc->globals, decl, global_handle);
 
             break;
         }
@@ -183,7 +186,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     Bytecode_Function_Handle fn_handle = bytecode_function_create(bc->builder, decl->identifier.name, decl->function.type);
     hash_table_add(&bc->functions, decl, fn_handle);
 
-    if (decl->function.variables.count || decl->function.params.count) {
+    if (decl->function.variables.count || decl->function.params.count || decl->function.const_lvalues.count) {
 
         Bytecode_Block_Handle allocs_block_handle = bytecode_append_block(bc->builder, fn_handle, "allocs");
         bytecode_set_insert_point(bc->builder, fn_handle, allocs_block_handle);
@@ -217,6 +220,17 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             if (var_decl->variable.value && EXPR_IS_CONST(var_decl->variable.value)) has_inits = true;
         }
 
+        for (s64 i = 0; i < decl->function.const_lvalues.count; i++) {
+            auto const_lval = decl->function.const_lvalues[i];
+
+            Type *alloc_type = const_lval.expr->resolved_type;
+            auto alloc_name = string_append(bc->allocator, "clv_", const_lval.decl->identifier.name.data);
+            auto alloc_reg = bytecode_emit_alloc(bc->builder, alloc_type, alloc_name.data);
+
+            hash_table_add(&bc->const_lvalues, const_lval.expr, alloc_reg);
+            has_inits = true;
+        }
+
         if (has_inits) {
             Bytecode_Block_Handle inits_block_handle = bytecode_append_block(bc->builder, fn_handle, "inits");
             bytecode_emit_jmp(bc->builder, inits_block_handle);
@@ -235,6 +249,28 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
                     bytecode_emit_store_alloc(bc->builder, value, alloc_reg);
                 }
+            }
+
+            for (s64 i = 0; i < decl->function.const_lvalues.count; i++) {
+                auto const_lvalue = decl->function.const_lvalues[i];
+                auto expr = const_lvalue.expr;
+
+                Bytecode_Register alloc_reg;
+                bool found = hash_table_find(&bc->const_lvalues, expr, &alloc_reg);
+                assert(found);
+
+                assert(expr->kind == AST_Expression_Kind::IDENTIFIER);
+                auto sym = scope_get_symbol(expr->identifier.scope, expr->identifier);
+                assert(sym->decl);
+                assert(sym->decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
+
+                auto const_decl = sym->decl;
+
+                assert(const_decl->variable.value);
+                Bytecode_Register value = ast_expr_to_bytecode(bc, const_decl->variable.value);
+
+                bytecode_emit_store_alloc(bc->builder, value, alloc_reg);
+
             }
         }
 
@@ -556,7 +592,10 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
     if (expr->kind != AST_Expression_Kind::INTEGER_LITERAL &&
         expr->kind != AST_Expression_Kind::REAL_LITERAL &&
         expr->kind != AST_Expression_Kind::STRING_LITERAL &&
-        expr->kind != AST_Expression_Kind::RUN_DIRECTIVE && EXPR_IS_CONST(expr)) {
+        expr->kind != AST_Expression_Kind::RUN_DIRECTIVE &&
+        !(expr->kind == AST_Expression_Kind::UNARY && expr->unary.op == AST_Unary_Operator::ADDRESS_OF) &&
+        EXPR_IS_CONST(expr)) {
+
         assert_msg(expr->resolved_type->kind == Type_Kind::INTEGER ||
                    expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER ||
                    expr->resolved_type->kind == Type_Kind::FLOAT ||
@@ -710,12 +749,24 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                 }
 
                 case AST_Unary_Operator::ADDRESS_OF: {
-                    Bytecode_Register lvalue_reg = ast_lvalue_to_bytecode(bc, expr->unary.operand);
+                    if (EXPR_IS_CONST(expr)) {
 
-                    assert(lvalue_reg.kind == Bytecode_Register_Kind::ALLOC ||
-                           lvalue_reg.kind == Bytecode_Register_Kind::GLOBAL);
+                        auto operand = expr->unary.operand;
 
-                    return bytecode_emit_address_of(bc->builder, lvalue_reg);
+                        Bytecode_Register alloc_reg;
+                        bool found = hash_table_find(&bc->const_lvalues, operand, &alloc_reg);
+                        assert(found);
+
+                        return bytecode_emit_address_of(bc->builder, alloc_reg);
+
+                    } else {
+                        Bytecode_Register lvalue_reg = ast_lvalue_to_bytecode(bc, expr->unary.operand);
+
+                        assert(lvalue_reg.kind == Bytecode_Register_Kind::ALLOC ||
+                               lvalue_reg.kind == Bytecode_Register_Kind::GLOBAL);
+
+                        return bytecode_emit_address_of(bc->builder, lvalue_reg);
+                    }
                     break;
                 }
             }
