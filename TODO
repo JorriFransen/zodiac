@@ -1,8 +1,15 @@
-- Look into weird behaviour with bool_to_string from the support lib
 
 - Rewrite ast_const_expr_to_bytecode to switch on the expression kind instead of type kind (this has caused multiple problems already)
 - Do we actually need TYPE_FLAG_STATIC_ARRAY??
+- Ensure #run expressions are constant (report error)
+- Report error for #run on statement level when not in global scope (eg. #run main)
+- Fix crash when passing in folder name instead of file name on command line
+- Validate bytecode for runs
+- Base run wrapper names on filename/line
+
 - Test rundirectives with different types and with constants
+    - array element types
+    - array element types as struct members? (Not sure this is a seperate case.)
 
 - Struct literal expressions (add as tests)
     - return {2, 3} (Vec2)
@@ -22,27 +29,17 @@
 - Make sure we can't assign values/elements to constant arrays.
 - static array tests
 
+- Try to report (fatal) errors before executing run directives
+
 - Slices (just call them arrays maybe?)
 
 - Convert structs returned from run directives into ast expression (struct literal).
 
-- Ensure #run expressions are constant (report error)
-
-- Report error for #run on statement level when not in global scope
-
-- Fix crash when passing in folder name instead of file name on command line
-
-- Validate bytecode for runs
-
 - Support multiple adjacent function parameters with the same typespec (parser). Like we do for struct fields.
-
-- Try to report (fatal) errors before executing run directives
-
-- Base run wrapper names on filename/line
 
 - There is multiple places (in ast_const_expr_to_bytecode, and the constant resolver) where we lookup a symbol, find the declaration (variable/constant), find the init expression. This can probably be wrapped up in a function.
 
-- Calculate/substitute non leaf constant expressions before emitting bytecode (we only do this when emitting bytecode now).
+- Look into weird behaviour with bool_to_string from the support lib
 
 test
 - Containers
