@@ -1215,8 +1215,8 @@ MunitResult Run_Directive_Struct_Member_Types(const MunitParameter params[], voi
         gs : S = #run make_s(11, 22, 33, 44, 55, 66, 77, 88, 9.9, 10.10, true, false, *v1, ss, { 1, 2, 3, 4, 5, 6, 7 });
         gcs : S : #run make_s(1, 2, 3, 4, 5, 6, 7, 8, 9.99, 10.1010, false, true, *v1, ss, { 7, 6, 5, 4, 3, 2, 1 });
         main :: () {
-            print_s2(gs);
-            print_s2(gcs);
+            print_s(*gs);
+            print_s(*gcs);
             return 0;
         }
         Vec2 :: struct { x, y: r64; }
@@ -1240,7 +1240,7 @@ MunitResult Run_Directive_Struct_Member_Types(const MunitParameter params[], voi
             s._bytes = _bytes;
             return s;
         }
-        print_s2 :: (s : S) {
+        print_s :: (s : *S) {
             print("{ ",
                   s._u64, ", ",
                   s._s64, ", ",
