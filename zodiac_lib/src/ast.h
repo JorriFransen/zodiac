@@ -449,10 +449,9 @@ struct AST_Directive
         {
             AST_Run_Directive_Kind kind;
             Scope *scope;
-            union {
-                AST_Expression *expr;
-                AST_Statement *stmt;
-            };
+
+            AST_Expression *expr;
+            AST_Statement *stmt;
         } run;
     };
 };

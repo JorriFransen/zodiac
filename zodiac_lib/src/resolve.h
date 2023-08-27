@@ -156,5 +156,8 @@ ZAPI bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Sco
 ZAPI bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope);
 
 ZAPI bool expr_is_call_with_const_args(AST_Expression *expr);
+ZAPI bool run_directive_is_const(Zodiac_Context *ctx, AST_Directive *dir);
+ZAPI bool run_directive_expr_is_const(Zodiac_Context *ctx, AST_Expression *expr);
+ZAPI bool run_directive_stmt_is_const(Zodiac_Context *ctx, AST_Statement *stmt);
 
 }

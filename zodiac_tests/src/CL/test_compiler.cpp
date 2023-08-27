@@ -875,7 +875,7 @@ MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void
 
                 return 0;
             }
-            x := 42;
+            x :: 42;
         )CODE_STR";
 
         // Compile and run will always run main at compile time, so account for that in the output
@@ -903,7 +903,7 @@ MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void
 
                 return 0;
             }
-            x := 42;
+            x :: 42;
         )CODE_STR";
 
         // Compile and run will always run main at compile time, so account for that in the output

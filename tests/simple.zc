@@ -1,9 +1,10 @@
-#run main();
+
+#run print(42);
+
 main :: () -> s64 {
     print("main");
     return 0;
 }
-
 
 // make_short_array :: (x0: s64, x1: s64) -> [2]s64 {
 //     r: [2]s64;

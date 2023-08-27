@@ -1583,13 +1583,10 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
         case AST_Declaration_Kind::UNION: assert(false);
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
-            auto expr = decl->directive->run.expr;
-            assert(EXPR_IS_TYPED(expr));
-
-            if (!(EXPR_IS_CONST(expr) || expr_is_call_with_const_args(expr))) {
-                fatal_resolve_error(ctx, expr, "Expression after run directive must be constant");
+            if (!run_directive_is_const(ctx, decl->directive)) { // This reports errors internally
                 return false;
             }
+
             result = true;
             break;
         }
@@ -2086,10 +2083,8 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
         case AST_Expression_Kind::RUN_DIRECTIVE: {
             auto dir = expr->directive.directive;
-            assert(EXPR_IS_TYPED(dir->run.expr));
 
-            if (!(EXPR_IS_CONST(dir->run.expr) || expr_is_call_with_const_args(dir->run.expr))) {
-                fatal_resolve_error(ctx, dir->run.expr, "Expression after run directive must be constant");
+            if (!run_directive_is_const(ctx, expr->directive.directive)) { // This reports errors internally
                 return false;
             }
 
@@ -2256,5 +2251,72 @@ bool expr_is_call_with_const_args(AST_Expression *expr)
 
     return true;
 }
+
+bool run_directive_is_const(Zodiac_Context *ctx, AST_Directive *dir) {
+
+    debug_assert(ctx && dir);
+    assert(dir->kind == AST_Directive_Kind::RUN);
+
+    if (dir->run.expr) {
+        return run_directive_expr_is_const(ctx, dir->run.expr);
+
+    } else {
+        assert(dir->run.stmt);
+        return run_directive_stmt_is_const(ctx, dir->run.stmt);
+    }
+
+    assert(false);
+    return false;
+}
+
+bool run_directive_expr_is_const(Zodiac_Context *ctx, AST_Expression *expr)
+{
+    debug_assert(ctx && expr);
+
+    if (!(EXPR_IS_CONST(expr) || expr_is_call_with_const_args(expr))) {
+        fatal_resolve_error(ctx, expr, "Run directive expression must be constant");
+        return false;
+    }
+    return true;
+}
+
+bool run_directive_stmt_is_const(Zodiac_Context *ctx, AST_Statement *stmt)
+{
+    debug_assert(ctx && stmt);
+
+    switch (stmt->kind) {
+
+        default: assert(false); break;
+
+        case AST_Statement_Kind::PRINT: {
+            for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
+                auto expr = stmt->print_expr.expressions[i];
+                if (!EXPR_IS_CONST(expr)) {
+                    fatal_resolve_error(ctx, expr, "Argument to print in run directive must be constant");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        case AST_Statement_Kind::BLOCK: {
+            for (s64 i = 0; i < stmt->block.statements.count; i++) {
+                auto mem_stmt = stmt->block.statements[i];
+                if (!run_directive_stmt_is_const(ctx, mem_stmt)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        case AST_Statement_Kind::CALL: {
+            return run_directive_expr_is_const(ctx, stmt->call.call);
+        }
+    }
+
+    assert(false);
+    return false;
+}
+
 
 }

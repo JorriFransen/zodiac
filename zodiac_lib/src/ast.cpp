@@ -437,6 +437,7 @@ void ast_run_directive_create(AST_Expression *expr, AST_Directive *out_dir)
 
     out_dir->run.kind = AST_Run_Directive_Kind::EXPR;
     out_dir->run.expr = expr;
+    out_dir->run.stmt = nullptr;
     out_dir->run.scope = nullptr;
 }
 
@@ -447,7 +448,9 @@ void ast_run_directive_create(AST_Statement *stmt, AST_Directive *out_dir)
     ast_directive_create(AST_Directive_Kind::RUN, out_dir);
 
     out_dir->run.kind = AST_Run_Directive_Kind::STMT;
+    out_dir->run.expr = nullptr;
     out_dir->run.stmt = stmt;
+    out_dir->run.scope = nullptr;
 }
 
 void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir)
