@@ -1,16 +1,32 @@
-
 #run main();
-
-return_x :: (x: s64) {
-    return x;
-}
-
-global_variable : s64 = 6;
-global_constant : s64 : 66;
-
-another_global_variable : s64 = #run return_x(global_variable);
-
-main :: () {
-    print(another_global_variable);
+main :: () -> s64 {
+    print("main");
     return 0;
 }
+
+
+// make_short_array :: (x0: s64, x1: s64) -> [2]s64 {
+//     r: [2]s64;
+//     r[0] = x0;
+//     r[1] = x1;
+//     return r;
+// }
+// print_short_array :: (r: [2]s64) {
+//     print(r[0], ", ", r[1]);
+// }
+
+// #run main();
+
+// return_x :: (x: s64) {
+//     return x;
+// }
+
+// global_variable : s64 = 6;
+// global_constant : s64 : 66;
+
+// another_global_variable : s64 = #run return_x(global_variable);
+
+// main :: () {
+//     print(another_global_variable);
+//     return 0;
+// }

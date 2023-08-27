@@ -1586,7 +1586,7 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             auto expr = decl->directive->run.expr;
             assert(EXPR_IS_TYPED(expr));
 
-            if (!EXPR_IS_CONST(expr) && !expr_is_call_with_const_args(expr)) {
+            if (!(EXPR_IS_CONST(expr) || expr_is_call_with_const_args(expr))) {
                 fatal_resolve_error(ctx, expr, "Expression after run directive must be constant");
                 return false;
             }
@@ -1966,8 +1966,12 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                         assert(sym->decl);
                         assert(sym->decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
 
-                        auto current_function = enclosing_function(scope);
-                        dynamic_array_append(&current_function->function.const_lvalues, { operand, sym->decl });
+                        if (DECL_IS_GLOBAL(sym->decl)) {
+                            assert_msg(false, "Implement global const_lvalues");
+                        } else {
+                            auto current_function = enclosing_function(scope);
+                            dynamic_array_append(&current_function->function.const_lvalues, { operand, sym->decl });
+                        }
 
                     } else if (!EXPR_IS_LVALUE(operand)) {
 
@@ -2084,7 +2088,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
             auto dir = expr->directive.directive;
             assert(EXPR_IS_TYPED(dir->run.expr));
 
-            if (!EXPR_IS_CONST(dir->run.expr) && !expr_is_call_with_const_args(dir->run.expr)) {
+            if (!(EXPR_IS_CONST(dir->run.expr) || expr_is_call_with_const_args(dir->run.expr))) {
                 fatal_resolve_error(ctx, dir->run.expr, "Expression after run directive must be constant");
                 return false;
             }

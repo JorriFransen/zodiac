@@ -1029,7 +1029,8 @@ MunitResult Run_Directive_Global_Var_Types(const MunitParameter params[], void* 
             bool_true := #run return_bool(true);
             bool_false := #run return_bool(false);
             vector := #run make_vector(2, 3);
-            aabb := #run make_aabb(vector, {3, 4});
+            const_vector : Vec2 : { 2, 3 };
+            aabb := #run make_aabb(const_vector, {3, 4});
             test_array := #run make_test_array();
             short_array := #run make_short_array(44, 22);
 
@@ -1210,7 +1211,7 @@ MunitResult Run_Directive_Struct_Member_Types(const MunitParameter params[], voi
             _bytes : [7]u8;
             // TODO: function (pointer)?
         }
-        ss: SS = { 1, { 2.2, 3.3 }};
+        ss: SS : { 1, { 2.2, 3.3 }};
         v1: Vec2 = { 1.0, 2.0 };
         gs : S = #run make_s(11, 22, 33, 44, 55, 66, 77, 88, 9.9, 10.10, true, false, *v1, ss, { 1, 2, 3, 4, 5, 6, 7 });
         gcs : S : #run make_s(1, 2, 3, 4, 5, 6, 7, 8, 9.99, 10.1010, false, true, *v1, ss, { 7, 6, 5, 4, 3, 2, 1 });
