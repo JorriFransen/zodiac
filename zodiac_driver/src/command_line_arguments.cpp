@@ -77,8 +77,8 @@ void parse_command_line_options(Zodiac_Options *opts, int argc, const char **arg
         ZFATAL("Input file required");
     }
 
-    if (!filesystem_exists(opts->input_file_name)) {
-        ZFATAL("Input file '%.*s' does not exist", (int)opts->input_file_name.length, opts->input_file_name.data);
+    if (!filesystem_is_regular(opts->input_file_name)) {
+        ZFATAL("Invalid path '%.*s' (input_file_name)", (int)opts->input_file_name.length, opts->input_file_name.data);
     }
 
     if (opts->dont_emit_binary && opts->print_llvm_ir) {

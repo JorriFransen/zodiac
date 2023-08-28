@@ -188,6 +188,11 @@ bool filesystem_read_entire_file(Allocator *allocator, const String_Ref path, St
         return false;
     }
 
+    if (!filesystem_is_regular(path)) {
+        ZERROR("Path is not a file: '%s'", path.data);
+        return false;
+    }
+
     File_Handle file_handle = {};
     bool open_result = filesystem_open(path, FILE_MODE_READ, &file_handle);
     assert(open_result);
