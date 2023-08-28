@@ -1,10 +1,10 @@
 
 - Pointer to constant at global scope
 
-- CL/Global_Run_Directive_Return_Void is failing with a compile error, but the same code is fine if it's compiled with the driver. Seems like there is a difference in the compile loop from the driver and tests.
-
 - Ensure #run expressions are constant (report error)
     - Add some test for error messages
+
+- Deduplicate bytecode register/global names
 
 - remove Flat_Node_Kind::FIELD_DECL
 - Report error for #run on statement level when not in global scope (eg. #run main)

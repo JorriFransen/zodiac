@@ -121,6 +121,24 @@ Element_Type *dynamic_array_append(Dynamic_Array<Element_Type> *array, Element_T
 }
 
 template <typename Element_Type>
+Element_Type *dynamic_array_insert(Dynamic_Array<Element_Type> *array, Element_Type element, s64 index = 0)
+{
+    assert(index >= 0 && index <= array->count);
+
+    if (array->count >= array->capacity) {
+        dynamic_array_grow(array);
+    }
+
+    auto copy_size = sizeof(Element_Type) * (array->count - index);
+    zmemmove(&array->data[index + 1], &array->data[index], copy_size);
+
+    array->data[index] = element;
+    array->count += 1;
+
+    return &array->data[index];
+}
+
+template <typename Element_Type>
 Dynamic_Array<Element_Type> dynamic_array_copy(const Array_Ref<Element_Type> &source, Allocator *allocator)
 {
     if (source.count == 0) return {};
