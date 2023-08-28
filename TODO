@@ -1,5 +1,5 @@
 
-- Only allow print/call statements in #run blocks
+- Only allow print/call statements in #run blocks?
 
 - Deduplicate bytecode register/global names
 
