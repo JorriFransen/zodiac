@@ -1,6 +1,5 @@
 
-- Ensure #run expressions are constant (report error)
-    - Add some test for error messages
+- Only allow print/call statements in #run blocks
 
 - Deduplicate bytecode register/global names
 
@@ -41,6 +40,8 @@
 - Support multiple adjacent function parameters with the same typespec (parser). Like we do for struct fields.
 
 - There is multiple places (in ast_const_expr_to_bytecode, and the constant resolver) where we lookup a symbol, find the declaration (variable/constant), find the init expression. This can probably be wrapped up in a function.
+
+- Replace fatal_syntax_error in the parser with some way of reporting errors and cleanly exitting
 
 - Look into weird behaviour with bool_to_string from the support lib
 

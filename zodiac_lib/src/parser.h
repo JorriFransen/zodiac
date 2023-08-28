@@ -31,7 +31,7 @@ ZAPI void parser_destroy(Parser *parser);
 // expr_operand = INT | REAL | NAME | compound | '(' expr ')' | 'null' | 'true' | 'false'
 // call_args = (expr ( ',' expr )* )?
 // expr_base = expr_operand ( '(' call_args ')' | '[' expr ']' | '.' NAME )*
-// expr_unary = ([+-*] expr_unary) | expr_base
+// expr_unary = ([+-*<] expr_unary) | expr_base
 // expr_mul = expr_unary ([/*] expr_unary)*
 // expr_add = expr_mul ([+-] expr_mul)*
 // expr_cmp = expr_add (([<>] | '==' | '!=' | '<=' | '>=') expr_add )*

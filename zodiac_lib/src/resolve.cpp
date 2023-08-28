@@ -1994,6 +1994,14 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                     expr->resolved_type = get_pointer_type(base_type, &ctx->ast_allocator);
                     break;
                 }
+
+                case AST_Unary_Operator::DEREF: {
+                    auto operand = expr->unary.operand;
+                    assert(operand->resolved_type->kind == Type_Kind::POINTER);
+
+                    expr->resolved_type = operand->resolved_type->pointer.base;
+                    break;
+                }
             }
 
             debug_assert(expr->resolved_type);
@@ -2108,7 +2116,11 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
 
                 case AST_Run_Directive_Kind::INVALID: assert(false); break;
                 case AST_Run_Directive_Kind::EXPR: type = dir->run.expr->resolved_type; break;
-                case AST_Run_Directive_Kind::STMT: assert(false); break;
+
+                case AST_Run_Directive_Kind::STMT: {
+                    fatal_resolve_error(ctx, dir->run.stmt, "Expected expression after #run in assignment");
+                    return false;
+                }
             }
 
             assert(type);
@@ -2305,7 +2317,7 @@ bool run_directive_stmt_is_const(Zodiac_Context *ctx, AST_Statement *stmt)
             for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
                 auto expr = stmt->print_expr.expressions[i];
                 if (!EXPR_IS_CONST(expr)) {
-                    fatal_resolve_error(ctx, expr, "Argument to print in run directive must be constant");
+                    fatal_resolve_error(ctx, expr, "Arguments to print in #run must be constant");
                     return false;
                 }
             }

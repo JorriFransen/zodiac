@@ -1273,6 +1273,261 @@ MunitResult Run_Directive_Struct_Member_Types(const MunitParameter params[], voi
 
     return result.result;
 }
-#undef resolve_error
+
+MunitResult Run_Directive_And_Pointer_To_Const(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        S :: struct { val : s64; }
+        X : s64 : #run return_x(42);
+        gcs : S : #run make_s(*X);
+        main :: () {
+            print_s(*gcs);
+            return 0;
+        }
+        return_x :: (x: s64) { return x; }
+        make_s :: (val_ptr: *s64) -> S {
+            result: S;
+            result.val = <val_ptr;
+            return result;
+        }
+        print_s :: (s: *S) {
+            print(s.val);
+        }
+    )CODE_STR";
+
+    Expected_Results expected = {
+        .std_out = "42",
+    };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+MunitResult Run_Expr_Const(const MunitParameter params[], void* user_data_or_fixture) {
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            x : s64 = 42;
+            y := #run x;
+        )CODE_STR";
+
+        Expected_Results expected = {
+            .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Run directive expression must be constant")})
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+
+        munit_assert(result.result == MUNIT_OK);
+    }
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            X : s64 : 42;
+            y := #run X;
+            main :: () { return 0; }
+        )CODE_STR";
+
+        Expected_Results expected = {
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+
+        munit_assert(result.result == MUNIT_OK);
+    }
+
+    return MUNIT_OK;
+}
+
+MunitResult Run_Call_Arg_Const(const MunitParameter params[], void* user_data_or_fixture) {
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            return_x :: (x: s64) { return x; }
+            x : s64 = 42;
+            y := #run return_x(x);
+        )CODE_STR";
+
+        Expected_Results expected = {
+            .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Run directive expression must be constant")})
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+
+        munit_assert(result.result == MUNIT_OK);
+    }
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            return_x :: (x: s64) { return x; }
+            x : s64 : 42;
+            y := #run return_x(x);
+            main :: () { return 0; }
+        )CODE_STR";
+
+        Expected_Results expected = {
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+
+        munit_assert(result.result == MUNIT_OK);
+    }
+
+    return MUNIT_OK;
+}
+
+MunitResult Run_Print_Arg_Const(const MunitParameter params[], void* user_data_or_fixture) {
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            x : s64 = 42;
+            #run print(x);
+        )CODE_STR";
+
+        Expected_Results expected = {
+            .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Arguments to print in #run must be constant")})
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+
+        munit_assert(result.result == MUNIT_OK);
+    }
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            x : s64 : 42;
+            #run print(x);
+            main :: () { return 0; }
+        )CODE_STR";
+
+        Expected_Results expected = {
+            .compiletime_std_out = "42"
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+
+        munit_assert(result.result == MUNIT_OK);
+    }
+
+    return MUNIT_OK;
+}
+
+MunitResult Run_Assignment_Is_Expression(const MunitParameter params[], void* user_data_or_fixture) {
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            x : s64 : 42;
+            y := #run print(x);
+        )CODE_STR";
+
+        Expected_Results expected = {
+            .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Expected expression after #run in assignment")})
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+
+        munit_assert(result.result == MUNIT_OK);
+    }
+
+    return MUNIT_OK;
+}
+
+MunitResult Run_Call_Arg_In_Block_Const(const MunitParameter params[], void* user_data_or_fixture) {
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            return_x :: (x: s64) { return x; }
+            x : s64 = 42;
+            #run { return_x(x); }
+        )CODE_STR";
+
+        Expected_Results expected = {
+            .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Run directive expression must be constant")})
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+
+        munit_assert(result.result == MUNIT_OK);
+    }
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            return_x :: (x: s64) { return x; }
+            x : s64 : 42;
+            #run { return_x(x); }
+            main :: () { return 0; }
+        )CODE_STR";
+
+        Expected_Results expected = {
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+
+        munit_assert(result.result == MUNIT_OK);
+    }
+
+    return MUNIT_OK;
+}
+
+MunitResult Run_Print_Arg_In_Block_Const(const MunitParameter params[], void* user_data_or_fixture) {
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            x : s64 = 42;
+            #run { print(x); }
+        )CODE_STR";
+
+        Expected_Results expected = {
+            .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Arguments to print in #run must be constant")})
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+
+        munit_assert(result.result == MUNIT_OK);
+    }
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            x : s64 : 42;
+            #run { print(x); }
+            main :: () { return 0; }
+        )CODE_STR";
+
+        Expected_Results expected = {
+            .compiletime_std_out = "42"
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+
+        munit_assert(result.result == MUNIT_OK);
+    }
+
+    return MUNIT_OK;
+}
+
+#undef RESOLVE_ERR
 
 }}

@@ -196,6 +196,9 @@ AST_Expression *parse_expr_unary(Parser *parser)
         AST_Expression *operand = parse_expr_unary(parser);
         return ast_unary_expr_new(parser->context, {start_pos, operand->range.end}, AST_Unary_Operator::ADDRESS_OF, operand);
 
+    } else if (match_token(parser, '<')) {
+        AST_Expression *operand = parse_expr_unary(parser);
+        return ast_unary_expr_new(parser->context, {start_pos, operand->range.end}, AST_Unary_Operator::DEREF, operand);
     } else {
         return parse_expr_base(parser);
     }
@@ -284,8 +287,9 @@ AST_Expression *parse_expression(Parser *parser)
         AST_Directive *directive = parse_directive(parser, false);
         assert(directive);
         assert(directive->kind == AST_Directive_Kind::RUN);
-        assert(directive->run.kind == AST_Run_Directive_Kind::EXPR);
+
         return ast_run_directive_expr_new(parser->context, directive->range, directive);
+
     } else {
         return parse_expr_cmp(parser);
     }
@@ -608,13 +612,22 @@ AST_Declaration *parse_declaration(Parser *parser)
         // Variable
         AST_Expression *value = nullptr;
 
+        bool expect_semicolon = true;
+
         if (match_token(parser, '=')) {
             value = parse_expression(parser);
             assert(value);
+            expect_semicolon = value->kind != AST_Expression_Kind::RUN_DIRECTIVE;
 
         }
+
         auto end = cur_tok(parser).range.end;
-        expect_token(parser, ';');
+
+        if (expect_semicolon) {
+            expect_token(parser, ';');
+        } else {
+            match_token(parser, ';');
+        }
 
         return ast_variable_decl_new(parser->context, Source_Range { ident.range.start, end }, ident, ts, value);
     }

@@ -72,9 +72,10 @@ enum class AST_Unary_Operator
 {
     INVALID,
 
-    PLUS = '+',
-    MINUS = '-',
+    PLUS       = '+',
+    MINUS      = '-',
     ADDRESS_OF = '*',
+    DEREF      = '<',
 };
 
 struct AST_Unary_Expression
@@ -284,7 +285,7 @@ enum AST_Statement_Flag : AST_Statement_Flags
     AST_STMT_FLAG_TYPED = 0x01,
 };
 
-#define STMT_IS_TYPED(s) (((s)->flags & AST_STMT_FLAG_TYPED) == AST_STMT_FLAG_TYPED)
+#define STMT_IS_TYPED(s) ((s)->flags & AST_STMT_FLAG_TYPED)
 
 struct AST_Statement
 {

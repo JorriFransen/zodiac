@@ -785,6 +785,15 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     }
                     break;
                 }
+
+                case AST_Unary_Operator::DEREF: {
+                    auto operand = expr->unary.operand;
+                    assert(operand->resolved_type->kind == Type_Kind::POINTER);
+
+                    Bytecode_Register ptr_reg = ast_expr_to_bytecode(bc, operand);
+                    return bytecode_emit_load_pointer(bc->builder, ptr_reg);
+                    break;
+                }
             }
 
             assert(false); // should have returned

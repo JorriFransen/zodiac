@@ -45,7 +45,6 @@ int main(int argc, const char **argv) {
     if (!read_result) {
         return 1;
     }
-    defer { free(&dynamic_allocator, stream.data); };
 
     lexer_init_stream(&lexer, stream, opts->input_file_name);
 
@@ -58,12 +57,14 @@ int main(int argc, const char **argv) {
     if (parser.error) return 1;
     assert(file);
 
+    free(&dynamic_allocator, stream.data);
 
     Resolver resolver;
     resolver_create(&resolver, &c);
     defer { resolver_destroy(&resolver); };
 
     resolver_add_file(&resolver, file);
+
     free(&dynamic_allocator, stream.data);
 
     // This bytecode builder should maybe be part of the context?
