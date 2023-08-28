@@ -57,9 +57,6 @@ enum class Flat_Node_Kind
     EXPR,
     TYPE_SPEC,
 
-    PARAM_DECL,
-    FIELD_DECL,
-
     FUNCTION_PROTO,
 
     GLOBAL_CONST_LVALUE,

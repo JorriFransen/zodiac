@@ -924,28 +924,6 @@ bool name_resolve_node(Resolver *resolver, Flat_Node *node)
             return name_resolve_ts(resolver->ctx, node->ts, node->scope);
         }
 
-        case Flat_Node_Kind::PARAM_DECL: {
-            Symbol *param_sym = scope_get_symbol(node->scope, node->decl->identifier);
-            assert(param_sym);
-            assert(param_sym->decl->kind == AST_Declaration_Kind::FUNCTION);
-
-            assert(param_sym->state == Symbol_State::UNRESOLVED);
-            param_sym->state = Symbol_State::RESOLVED;
-            return true;
-        }
-
-        case Flat_Node_Kind::FIELD_DECL: {
-            assert(node->scope->kind == Scope_Kind::AGGREGATE);
-            Symbol *field_sym = scope_get_symbol(node->scope, node->decl->identifier);
-            assert(field_sym);
-            assert(field_sym->decl->kind == AST_Declaration_Kind::STRUCT ||
-                   field_sym->decl->kind == AST_Declaration_Kind::UNION);
-
-            assert(field_sym->state == Symbol_State::UNRESOLVED);
-            field_sym->state = Symbol_State::RESOLVED;
-            return true;
-        }
-
         case Flat_Node_Kind::FUNCTION_PROTO: {
             // If we get here, we have name resolved all dependencies
             Symbol *sym = scope_get_symbol(node->scope, node->decl->identifier);
@@ -1326,37 +1304,6 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
 
         case Flat_Node_Kind::TYPE_SPEC: {
             return type_resolve_ts(ctx, node->ts, node->scope);
-        }
-
-        case Flat_Node_Kind::PARAM_DECL: {
-            assert(node->decl->parameter.type_spec);
-            assert(node->decl->parameter.type_spec->resolved_type);
-
-            assert(node->decl->parameter.resolved_type == nullptr);
-            node->decl->parameter.resolved_type = node->decl->parameter.type_spec->resolved_type;
-
-            auto sym = scope_get_symbol(node->scope, node->decl->identifier);
-            assert(sym);
-            assert(sym->kind == Symbol_Kind::PARAM);
-            assert(sym->state == Symbol_State::RESOLVED);
-            sym->state = Symbol_State::TYPED;
-            return true;
-        }
-
-        case Flat_Node_Kind::FIELD_DECL: {
-            assert(false);
-            assert(node->decl->field.type_spec);
-            assert(node->decl->field.type_spec->resolved_type);
-
-            assert(node->decl->field.resolved_type == nullptr);
-            node->decl->field.resolved_type = node->decl->field.type_spec->resolved_type;
-
-            auto sym = scope_get_symbol(node->scope, node->decl->identifier);
-            assert(sym);
-            assert(sym->kind == Symbol_Kind::MEMBER);
-            assert(sym->state == Symbol_State::RESOLVED);
-            sym->state = Symbol_State::TYPED;
-            return true;
         }
 
         case Flat_Node_Kind::FUNCTION_PROTO: {

@@ -3,7 +3,6 @@
 
 - Deduplicate bytecode register/global names
 
-- remove Flat_Node_Kind::FIELD_DECL
 - Report error for #run on statement level when not in global scope (eg. #run main)
 - Fix crash when passing in folder name instead of file name on command line
 - Validate bytecode for runs

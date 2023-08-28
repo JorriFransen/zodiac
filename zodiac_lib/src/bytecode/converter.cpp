@@ -67,8 +67,6 @@ void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
             case Flat_Node_Kind::STMT: assert(false); break;
             case Flat_Node_Kind::EXPR: assert(false); break;
             case Flat_Node_Kind::TYPE_SPEC: assert(false); break;
-            case Flat_Node_Kind::PARAM_DECL: assert(false); break;
-            case Flat_Node_Kind::FIELD_DECL: assert(false); break;
 
             case Flat_Node_Kind::GLOBAL_CONST_LVALUE: {
 
