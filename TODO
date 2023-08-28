@@ -1,6 +1,4 @@
 
-- Pointer to constant at global scope
-
 - Ensure #run expressions are constant (report error)
     - Add some test for error messages
 
