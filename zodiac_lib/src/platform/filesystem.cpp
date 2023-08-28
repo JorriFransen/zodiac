@@ -41,7 +41,7 @@ bool filesystem_exists(const String_Ref path)
     return stat_res == 0;
 }
 
-ZAPI bool filesystem_is_link(const String_Ref path)
+bool filesystem_is_link(const String_Ref path)
 {
     assert(path.data[path.length] == '\0');
 
@@ -56,7 +56,7 @@ ZAPI bool filesystem_is_link(const String_Ref path)
     return S_ISLNK(mode);
 }
 
-ZAPI bool filesystem_is_regular(const String_Ref path)
+bool filesystem_is_regular(const String_Ref path)
 {
     assert(path.data[path.length] == '\0');
 
@@ -69,6 +69,21 @@ ZAPI bool filesystem_is_regular(const String_Ref path)
     auto mode = statbuf.st_mode;
 
     return S_ISREG(mode);
+}
+
+bool filesystem_is_dir(const String_Ref path)
+{
+    assert(path.data[path.length] == '\0');
+
+    struct stat statbuf;
+
+    int stat_res = lstat(path.data, &statbuf);
+
+    if (stat_res != 0) return false;
+
+    auto mode = statbuf.st_mode;
+
+    return S_ISDIR(mode);
 }
 
 bool filesystem_open(const String_Ref path, File_Mode mode, File_Handle *out_handle)
@@ -188,7 +203,7 @@ bool filesystem_read_entire_file(Allocator *allocator, const String_Ref path, St
         return false;
     }
 
-    if (!filesystem_is_regular(path)) {
+    if (filesystem_is_dir(path)) {
         ZERROR("Path is not a file: '%s'", path.data);
         return false;
     }

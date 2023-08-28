@@ -23,6 +23,7 @@ enum File_Mode : u32
 ZAPI bool filesystem_exists(const String_Ref path);
 ZAPI bool filesystem_is_link(const String_Ref path);
 ZAPI bool filesystem_is_regular(const String_Ref path);
+ZAPI bool filesystem_is_dir(const String_Ref path);
 ZAPI bool filesystem_open(const String_Ref path, File_Mode mode, File_Handle *out_handle);
 ZAPI bool filesystem_close(File_Handle *handle);
 ZAPI bool filesystem_size(File_Handle *handle, u64 *out_size);
