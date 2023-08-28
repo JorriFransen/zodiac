@@ -40,6 +40,7 @@ struct Bytecode_Converter
 
     s64 run_directive_count; // Used to generate unique names
     Hash_Table<AST_Directive *, Bytecode_Function_Handle> run_directives;
+    Hash_Table<AST_Directive *, Bytecode_Register> run_results;
 };
 
 struct Run_Wrapper_Result

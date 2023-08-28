@@ -61,6 +61,8 @@ enum class Flat_Node_Kind
     FIELD_DECL,
 
     FUNCTION_PROTO,
+
+    GLOBAL_CONST_LVALUE,
 };
 
 struct Flat_Node
@@ -76,6 +78,10 @@ struct Flat_Node
             AST_Expression *expr;
             Infer_Node *infer_type_from;
         } expr;
+        struct {
+            AST_Expression *expr;
+            AST_Declaration *decl;
+        } const_lvalue;
         AST_Type_Spec *ts;
     };
 };
@@ -155,7 +161,6 @@ ZAPI bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope
 ZAPI bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope, Infer_Node *infer_type_from);
 ZAPI bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope);
 
-ZAPI bool expr_is_call_with_const_args(AST_Expression *expr);
 ZAPI bool run_directive_is_const(Zodiac_Context *ctx, AST_Directive *dir);
 ZAPI bool run_directive_expr_is_const(Zodiac_Context *ctx, AST_Expression *expr);
 ZAPI bool run_directive_stmt_is_const(Zodiac_Context *ctx, AST_Statement *stmt);

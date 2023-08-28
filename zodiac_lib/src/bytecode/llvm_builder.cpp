@@ -173,7 +173,7 @@ void llvm_builder_emit_global(LLVM_Builder *builder, Bytecode_Global_Handle glob
     builder->llvm_module->getOrInsertGlobal(glob->atom.data, llvm_type);
     llvm::GlobalVariable *llvm_glob_var = builder->llvm_module->getNamedGlobal(glob->atom.data);
 
-    llvm_glob_var->setConstant(false);
+    llvm_glob_var->setConstant(glob->constant);
     llvm_glob_var->setLinkage(llvm::GlobalValue::PrivateLinkage);
 
     if (glob->initial_value.kind != Bytecode_Register_Kind::INVALID) {

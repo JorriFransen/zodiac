@@ -8,9 +8,10 @@
 namespace Zodiac
 {
 
-struct Allocator;
 struct AST_Declaration;
+struct AST_File;
 struct AST_Identifier;
+struct Allocator;
 struct Scope;
 struct Type;
 struct Zodiac_Context;
@@ -88,7 +89,10 @@ struct Scope
     Scope *parent;
     Dynamic_Array<Symbol> symbols;
 
-    AST_Declaration *func_decl; // Only set in FUNCTION_PARAMETER scopes
+    union {
+        AST_Declaration *func_decl; // Only set in FUNCTION_PARAMETER scopes
+        AST_File *file;
+    };
 };
 
 ZAPI Scope *scope_new(Allocator *allocator, Scope_Kind kind, Scope *parent);
@@ -108,5 +112,5 @@ ZAPI Symbol *add_typed_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kin
 ZAPI bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declaration *decl, bool global);
 
 ZAPI AST_Declaration *enclosing_function(Scope *scope);
-
+ZAPI AST_File *enclosing_file(Scope *scope);
 }

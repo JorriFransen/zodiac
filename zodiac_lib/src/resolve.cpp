@@ -25,6 +25,8 @@ void resolver_create(Resolver *resolver, Zodiac_Context *ctx)
     debug_assert(resolver);
     debug_assert(ctx);
 
+    ctx->resolver = resolver;
+
     resolver->ctx = ctx;
     resolver->global_scope = scope_new(&ctx->ast_allocator, Scope_Kind::GLOBAL, nullptr);
     resolver->node_allocator = &ctx->ast_allocator;
@@ -68,6 +70,10 @@ void resolver_add_file(Resolver *resolver, AST_File *file)
     add_builtin_type_symbol(void);
     add_builtin_type_symbol(bool);
     add_builtin_type_symbol(String);
+
+    assert(resolver->global_scope);
+    assert(resolver->global_scope->file == nullptr);
+    resolver->global_scope->file = file;
 
     // Register all top level symbols first
     for (s64 i = 0; i < file->declarations.count; i++) {
@@ -948,6 +954,8 @@ bool name_resolve_node(Resolver *resolver, Flat_Node *node)
             sym->state = Symbol_State::RESOLVED;
             return true;
         }
+
+        case Flat_Node_Kind::GLOBAL_CONST_LVALUE: assert(false); break;
     }
 
     assert(false);
@@ -1407,6 +1415,8 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
             sym->state = Symbol_State::TYPED;
             return true;
         }
+
+        case Flat_Node_Kind::GLOBAL_CONST_LVALUE: assert(false); break;
 
     }
 
@@ -1955,7 +1965,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                 case AST_Unary_Operator::ADDRESS_OF: {
 
                     if (EXPR_IS_CONST(operand)) {
-                        // The expression must have a delcaration, probably add a function to test for this more thoroughly.
+                        // The expression must have a declaration, probably add a function to test for this more thoroughly.
                         assert(operand->kind == AST_Expression_Kind::IDENTIFIER);
 
                         auto sym = scope_get_symbol(scope, operand->identifier);
@@ -1963,8 +1973,12 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                         assert(sym->decl);
                         assert(sym->decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
 
-                        if (DECL_IS_GLOBAL(sym->decl)) {
-                            assert_msg(false, "Implement global const_lvalues");
+                        if (scope->kind != Scope_Kind::FUNCTION_LOCAL && scope->kind != Scope_Kind::FUNCTION_PARAMETER) {
+                            assert(scope->kind == Scope_Kind::GLOBAL);
+                            auto flat_node = alloc<Flat_Root_Node>(ctx->resolver->node_allocator);
+                            flat_node->root.kind = Flat_Node_Kind::GLOBAL_CONST_LVALUE;
+                            flat_node->root.const_lvalue = { operand, sym->decl };
+                            dynamic_array_insert(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
                         } else {
                             auto current_function = enclosing_function(scope);
                             dynamic_array_append(&current_function->function.const_lvalues, { operand, sym->decl });
@@ -2241,17 +2255,6 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
     return false;
 }
 
-bool expr_is_call_with_const_args(AST_Expression *expr)
-{
-    if (expr->kind != AST_Expression_Kind::CALL) return false;
-
-    for (s64 i = 0; i < expr->call.args.count; i++) {
-        if (!EXPR_IS_CONST(expr->call.args[i])) return false;
-    }
-
-    return true;
-}
-
 bool run_directive_is_const(Zodiac_Context *ctx, AST_Directive *dir) {
 
     debug_assert(ctx && dir);
@@ -2273,10 +2276,20 @@ bool run_directive_expr_is_const(Zodiac_Context *ctx, AST_Expression *expr)
 {
     debug_assert(ctx && expr);
 
-    if (!(EXPR_IS_CONST(expr) || expr_is_call_with_const_args(expr))) {
+    if (expr->kind == AST_Expression_Kind::CALL) {
+
+        for (s64 i = 0; i < expr->call.args.count; i++) {
+            if (!EXPR_IS_CONST(expr->call.args[i])) {
+                fatal_resolve_error(ctx, expr->call.args[i], "Run directive expression must be constant");
+                return false;
+            }
+        }
+
+    } else if (!EXPR_IS_CONST(expr)) {
         fatal_resolve_error(ctx, expr, "Run directive expression must be constant");
         return false;
     }
+
     return true;
 }
 

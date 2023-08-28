@@ -3,7 +3,6 @@
 #include "atom.h"
 #include "common.h"
 #include "containers/dynamic_array.h"
-#include "containers/hash_table.h"
 #include "defines.h"
 #include "source_pos.h"
 #include "util/zstring.h"
@@ -375,7 +374,6 @@ enum AST_Declaration_Flag : AST_Declaration_Flags
 #define DECL_IS_TYPED(d) (((d)->flags & AST_DECL_FLAG_TYPED) == AST_DECL_FLAG_TYPED)
 
 struct AST_Declaration
-
 {
     AST_Declaration_Kind kind;
     AST_Declaration_Flags flags;

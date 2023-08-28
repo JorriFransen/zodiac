@@ -29,6 +29,7 @@ struct Zodiac_Options
     bool use_bool_to_string_for_PRINT_in_llvm = false;
 };
 
+struct Resolver;
 struct Zodiac_Error;
 
 struct Zodiac_Context
@@ -48,6 +49,7 @@ struct Zodiac_Context
     Allocator error_allocator;
 
     Zodiac_Options options = {};
+    Resolver *resolver;
 
     Dynamic_Array<Zodiac_Error> errors;
     bool fatal_resolve_error;

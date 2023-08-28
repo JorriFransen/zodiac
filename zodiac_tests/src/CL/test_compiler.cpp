@@ -1212,7 +1212,7 @@ MunitResult Run_Directive_Struct_Member_Types(const MunitParameter params[], voi
             // TODO: function (pointer)?
         }
         ss: SS : { 1, { 2.2, 3.3 }};
-        v1: Vec2 = { 1.0, 2.0 };
+        v1: Vec2 : { 1.0, 2.0 };
         gs : S = #run make_s(11, 22, 33, 44, 55, 66, 77, 88, 9.9, 10.10, true, false, *v1, ss, { 1, 2, 3, 4, 5, 6, 7 });
         gcs : S : #run make_s(1, 2, 3, 4, 5, 6, 7, 8, 9.99, 10.1010, false, true, *v1, ss, { 7, 6, 5, 4, 3, 2, 1 });
         main :: () {

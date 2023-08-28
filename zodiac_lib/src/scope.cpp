@@ -239,7 +239,7 @@ bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declarati
 
 AST_Declaration *enclosing_function(Scope *scope)
 {
-    assert(scope);
+    debug_assert(scope);
     assert(scope->kind != Scope_Kind::GLOBAL)
 
     Scope *current = scope;
@@ -253,6 +253,28 @@ AST_Declaration *enclosing_function(Scope *scope)
 
         current = current->parent;
     }
+
+    assert(false);
+    return nullptr;
+}
+
+AST_File *enclosing_file(Scope *scope)
+{
+    debug_assert(scope);
+
+    Scope *current = scope;
+    while (true) {
+        if (current->kind == Scope_Kind::GLOBAL) {
+            auto file = current->file;
+            assert(file);
+            return file;
+        }
+
+        current = current->parent;
+    }
+
+    assert(false);
+    return nullptr;
 }
 
 }
