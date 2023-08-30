@@ -9,17 +9,9 @@
 
 - Struct literal expressions (add as tests)
     - return {2, 3} (Vec2)
-    - result : Vec2 { 2, 3 };
-
-    - result.pos = {px, py}; (make_aabb, non literals)
-
-    - As function arguments
-    - Nested structs
-    - Test with different types
+    - As function arguments (tests)
     - With non constant values
-    - global (constants)
-
-- Non constant compound literals
+    - global
 
 - Some way to get static array length
 - Make sure we can't assign values/elements to constant arrays.
