@@ -1,6 +1,4 @@
 
-- Only allow print/call statements in #run blocks?
-
 - Deduplicate bytecode register/global names
 
 - Report error for #run on statement level when not in global scope (eg. #run main)

@@ -1,29 +1,12 @@
 
-#run main()
+X :: 42;
+y := 42;
 
-S :: struct {
-    ptr : *s64;
+#run {
+    z := 4;
 }
-
-X : s64 : #run return_x(42);
-// X :: 42;
-
-gcs : S : #run make_s(*X);
 
 main :: () {
-    // print_s(*gs);
-    print_s(*gcs);
+    print("main");
     return 0;
-}
-
-return_x :: (x: s64) { return x; }
-
-make_s :: (ptr: *s64) -> S {
-    result: S;
-    result.ptr = ptr;
-    return result;
-}
-
-print_s :: (s: *S) {
-    print(s.ptr);
 }
