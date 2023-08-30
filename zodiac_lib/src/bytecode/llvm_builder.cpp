@@ -780,7 +780,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
         case Bytecode_Opcode::JMP: {
             assert(bc_inst.a.kind == Bytecode_Register_Kind::BLOCK);
             auto block_handle = bc_inst.a.block_handle;
-            assert(block_handle >= 0 && (size_t)block_handle < builder->current_function->getBasicBlockList().size());
+            assert(block_handle >= 0 && (size_t)block_handle < builder->current_function->size());
             auto llvm_block_it = builder->current_function->begin();
             llvm::BasicBlock *llvm_block = &*std::next(llvm_block_it, block_handle);
             irb->CreateBr(llvm_block);
@@ -799,7 +799,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             auto llvm_block_it = builder->current_function->begin();
 
 #ifndef NDEBUG
-            auto block_count = builder->current_function->getBasicBlockList().size();
+            auto block_count = builder->current_function->size();
 #endif
             assert(then_block_handle >= 0 && (size_t)then_block_handle < block_count);
             assert(else_block_handle >= 0 && (size_t)else_block_handle < block_count);
@@ -823,7 +823,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
             auto llvm_block_it = builder->current_function->begin();
 #ifndef NDEBUG
-            auto block_count = builder->current_function->getBasicBlockList().size();
+            auto block_count = builder->current_function->size();
 #endif
             assert(phi_args.true_block_handle >= 0 && (size_t)phi_args.true_block_handle < block_count);
             assert(phi_args.false_block_handle >= 0 && (size_t)phi_args.false_block_handle < block_count);
