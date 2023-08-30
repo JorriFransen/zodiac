@@ -500,7 +500,7 @@ String platform_exe_path(Allocator *allocator)
     ssize_t exe_path_length = readlink("/proc/self/exe", exe_path, PATH_MAX);
     assert(exe_path_length != -1);
 
-    return String(allocator, exe_path, exe_path_length);
+    return string_create(allocator, exe_path, exe_path_length);
 }
 
 String platform_dir_name(Allocator *allocator, const String_Ref path)
@@ -514,7 +514,7 @@ String platform_dir_name(Allocator *allocator, const String_Ref path)
     char *result = dirname((char *)_path.data);
     assert(result);
 
-    return String(allocator, result);
+    return string_create(allocator, result);
 }
 
 String platform_cwd(Allocator *allocator)
@@ -525,7 +525,7 @@ String platform_cwd(Allocator *allocator)
     auto result_buf = getcwd(cwd_buf, cwd_buf_size);
     assert(result_buf);
 
-    return String(allocator, result_buf);
+    return string_create(allocator, result_buf);
 }
 
 void platform_exit(int exit_code)

@@ -17,20 +17,49 @@
 namespace Zodiac
 {
 
-
-void String::init(Allocator * allocator, char *cstr, s64 len)
+String string_create(char *cstr, s64 length)
 {
-    assert(len >= 0);
+    debug_assert(cstr);
+    debug_assert(length >= 0);
 
-    this->data = alloc_array<char>(allocator, len + 1);
-    this->length = len;
+    String result;
 
-    zmemcpy(this->data, cstr, (size_t)len);
+    result.data = cstr;
+    result.length = length;
 
-    this->data[len] = '\0';
+    assert(result.data[length] == '\0');
+
+    return result;
 }
 
-String::String(Allocator *allocator, const Atom *atom) { init(allocator, (char *)atom->data, atom->length); }
+String string_create(String_Ref ref)
+{
+    return string_create((char *)ref.data, ref.length);
+}
+
+String string_create(Allocator * allocator, char *cstr, s64 len)
+{
+    debug_assert(cstr);
+    debug_assert(len >= 0);
+
+    String result;
+
+    result.data = alloc_array<char>(allocator, len + 1);
+    result.length = len;
+
+    zmemcpy(result.data, cstr, (size_t)len);
+
+    result.data[len] = '\0';
+
+    return result;
+}
+
+String string_create(Allocator *allocator, char *cstr)
+{
+    auto length = cstr ? strlen(cstr) : 0;
+    return string_create(allocator, cstr, length);
+}
+
 String_Ref::String_Ref(const Atom *atom) : data(atom->data), length(atom->length) {}
 
 #ifdef ZPLATFORM_WINDOWS
@@ -78,12 +107,12 @@ Wide_String::Wide_String(Allocator *allocator, const String_Ref str_ref)
 
 String string_copy(Allocator *allocator, const String_Ref &original)
 {
-    String result(alloc_array<char>(allocator, original.length + 1), original.length);
+    auto data = alloc_array<char>(allocator, original.length + 1);
 
-    zmemcpy(result.data, original.data, (size_t)original.length);
-    result.data[original.length] = '\0';
+    zmemcpy(data, original.data, (size_t)original.length);
+    data[original.length] = '\0';
 
-    return result;
+    return string_create(data, original.length);
 }
 
 String string_copy(Allocator *allocator, const char *cstr, s64 length)
@@ -95,13 +124,13 @@ String string_append(Allocator *allocator, const String_Ref &a, const String_Ref
 {
     auto new_length = a.length + b.length;
 
-    String result(alloc_array<char>(allocator, new_length + 1), new_length);
+    auto data = alloc_array<char>(allocator, new_length + 1);
 
-    if (a.length) zmemcpy(result.data, a.data, (size_t)a.length);
-    if (b.length) zmemcpy(result.data + a.length, b.data, (size_t)b.length);
-    result.data[new_length] = '\0';
+    if (a.length) zmemcpy(data, a.data, (size_t)a.length);
+    if (b.length) zmemcpy(data + a.length, b.data, (size_t)b.length);
+    data[new_length] = '\0';
 
-    return result;
+    return string_create(data, new_length);
 }
 
 String string_append(Allocator *allocator, Array_Ref<String_Ref> strings, const String_Ref &separator/*=""*/)
@@ -114,9 +143,10 @@ String string_append(Allocator *allocator, Array_Ref<String_Ref> strings, const 
 
     new_length += separator.length * (strings.count - 1);
 
-    String result(alloc_array<char>(allocator, new_length + 1), new_length);
+    auto data = alloc_array<char>(allocator, new_length + 1);
 
-    auto cursor = result.data;
+
+    auto cursor = data;
     for (s64 i = 0; i < strings.count; i++) {
         zmemcpy(cursor, strings[i].data, strings[i].length);
         cursor += strings[i].length;
@@ -127,9 +157,9 @@ String string_append(Allocator *allocator, Array_Ref<String_Ref> strings, const 
         }
     }
 
-    result.data[new_length] = '\0';
+    data[new_length] = '\0';
 
-    return result;
+    return string_create(data, new_length);
 }
 
 #ifdef ZPLATFORM_WINDOWS
@@ -234,7 +264,7 @@ const String string_format(Allocator *allocator, const String_Ref fmt, va_list a
 
     assert_msg(written_size <= size, "Written size does not match the expected size")
 
-    return String(buf, size);
+    return string_create(buf, size);
 }
 
 i32 string_format(char *dest, const String_Ref fmt, ...)
@@ -374,20 +404,20 @@ String convert_special_characters_to_escape_characters(Allocator *allocator, con
 
     auto new_length = str.length + special_count;
 
-    String result(alloc_array<char>(allocator, new_length + 1), new_length);
+    auto data = alloc_array<char>(allocator, new_length + 1);
 
     s64 ni = 0;
     for (s64 i = 0; i < str.length; i++) {
         auto index = is_special_character(str[i]);
         if (index != -1) {
-            result[ni++] = '\\';
-            result[ni++] = escape_characters[i];
+            data[ni++] = '\\';
+            data[ni++] = escape_characters[i];
         } else {
-            result[ni++] = str[i];
+            data[ni++] = str[i];
         }
     }
 
-    return result;
+    return string_create(data, new_length);
 }
 
 }

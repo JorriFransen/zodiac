@@ -396,7 +396,7 @@ Bytecode_Register bytecode_string_literal(Bytecode_Builder *bb, String_Ref str)
 {
     assert(&builtin_type_String);
     auto result = bytecode_register_create(bb, Bytecode_Register_Kind::TEMPORARY, &builtin_type_String, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT);
-    result.value.string = str;
+    result.value.string = string_create(str);
 
     return result;
 }

@@ -116,11 +116,11 @@ union Bytecode_Register_Value
     Integer_Value integer;
     Real_Value real;
     bool boolean;
-    String_Ref string;
+    String string;
     u8 *pointer;
 
     Bytecode_Function_Handle function_handle;
-    Dynamic_Array<Bytecode_Register> compound;
+    Dynamic_Array<Bytecode_Register> compound = {};
 };
 
 struct Bytecode_Register

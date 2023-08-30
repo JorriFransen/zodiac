@@ -239,7 +239,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             assert(var_decl->variable.resolved_type);
 
             Type *alloc_type = var_decl->variable.resolved_type;
-            auto alloc_name = String(taa, &var_decl->identifier.name);
+            auto alloc_name = String_Ref(&var_decl->identifier.name);
             alloc_name = bytecode_unique_register_name_in_function(bc->builder, fn_handle, alloc_name);
             auto alloc_reg = bytecode_emit_alloc(bc->builder, alloc_type, alloc_name.data);
 

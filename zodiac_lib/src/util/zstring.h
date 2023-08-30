@@ -29,15 +29,6 @@ struct String
     char* data = nullptr;
     s64 length = 0;
 
-    ZAPI String() {}
-    ZAPI String(char* data, s64 length) : data(data), length(length) {}
-    ZAPI String(Allocator* allocator, char *cstr, s64 length) { init(allocator, cstr, length); }
-    ZAPI String(Allocator* allocator, const char *cstr, s64 length) { init(allocator, (char *)cstr, length); }
-    ZAPI String(Allocator *allocator, const char *cstr) { init(allocator, (char *)cstr, strlen(cstr)); }
-    ZAPI String(Allocator *allocator, const Atom *atom);
-
-    ZAPI void init(Allocator * allocator, char *cstr, s64 length);
-
 #ifdef ZPLATFORM_WINDOWS
     ZAPI String(Allocator* allocator, wchar_t *wstr, s64 length) { init(allocator, wstr, length); }
     ZAPI String(Allocator* allocator, const wchar_t *wstr, s64 length) { init(allocator, (wchar_t *)wstr, length); }
@@ -74,6 +65,12 @@ struct String_Ref
         return data == rhs.data && length == rhs.length;
     }
 };
+
+ZAPI String string_create(char *cstr, s64 length);
+ZAPI String string_create(String_Ref ref);
+ZAPI String string_create(Allocator *allocator, char *cstr, s64 length);
+ZAPI String string_create(Allocator *allocator, char *cstr);
+
 
 #ifdef ZPLATFORM_WINDOWS
 
