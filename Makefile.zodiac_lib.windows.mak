@@ -14,16 +14,17 @@ SUPPORT_EXTENSION_DYN := .dll
 SUPPORT_ASSEMBLY_STAT := libzrs_s
 SUPPORT_EXTENSION_STAT := .lib
 
-LLVM_VERSION := 15.0.2
+LLVM_VERSION := 16.0.6
 LLVM_SRC_DIR := $(DIR)\$(BUILD_DIR)\llvm-$(LLVM_VERSION).src
 LLVM_DEBUG_BUILD_DIR := "$(DIR)\$(BUILD_DIR)\llvm_build_debug"
 LLVM_DEBUG_INSTALL_DIR := "$(DIR)\$(BUILD_DIR)\llvm_install_debug"
+LLVM_CXX_FLAGS = -std=c++17
 
 include Makefile.dyncall_vars.windows.mak
 
 COMMON_LINKER_FLAGS := -g -lmsvcrtd -Wl,-nodefaultlib:libcmt
 
-COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wno-c99-designator -Wvla -fdeclspec
+COMPILER_FLAGS := -g -MD -MP -Wall -Werror -Wno-c99-designator -Wvla -fdeclspec $(LLVM_CXX_FLAGS)
 INCLUDE_FLAGS := -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
 LINKER_FLAGS := $(COMMON_LINKER_FLAGS) -shared -loleaut32 $(DYNCALL_LINK_FLAGS)
 DEFINES := -D_DEBUG -DZEXPORT -D_DLL -D_CRT_SECURE_NO_WARNINGS
@@ -68,7 +69,7 @@ link: llvm_vars $(FULL_ASSEMBLY_PATH) $(SUPPORT_ASSEMBLY_DYN_PATH) $(SUPPORT_ASS
 
 $(SUPPORT_ASSEMBLY_DYN_PATH): $(SUPPORT_OBJ_FILES)
 	@echo Linking $(SUPPORT_ASSEMBLY_DYN_PATH)
-	clang $(SUPPORT_OBJ_FILES) -o $@ $(DEFINES) $(COMMON_LINKER_FLAGS) -shared
+	@clang $(SUPPORT_OBJ_FILES) -o $@ $(DEFINES) $(COMMON_LINKER_FLAGS) -shared
 
 $(SUPPORT_ASSEMBLY_STAT_PATH): $(SUPPORT_OBJ_FILES)
 	@echo Linking $(SUPPORT_ASSEMBLY_STAT_PATH)
@@ -76,17 +77,17 @@ $(SUPPORT_ASSEMBLY_STAT_PATH): $(SUPPORT_OBJ_FILES)
 
 $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 	@echo Linking $(ASSEMBLY)
-	clang $(OBJ_FILES) -o $@ $(DEFINES) $(LINKER_FLAGS)
+	@clang $(OBJ_FILES) -o $@ $(DEFINES) $(LINKER_FLAGS)
 
 .PHONY: llvm
 llvm:
 	@if not exist $(LLVM_DEBUG_INSTALL_DIR) (\
 	     echo Extracting llvm... && \
-	    powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('$(BASE_DIR)\llvm\llvm-$(LLVM_VERSION).src.zip', '$(LLVM_SRC_DIR)'); }" &&\
+	    powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('$(BASE_DIR)\llvm\llvm-$(LLVM_VERSION).src.zip', '$(LLVM_SRC_DIR)') }" &&\
 	     echo Configuring llvm... &&\
 	    mkdir $(LLVM_DEBUG_BUILD_DIR) &&\
 	    pushd $(LLVM_DEBUG_BUILD_DIR) &&\
-	    cmake.exe $(LLVM_SRC_DIR)\llvm -DCMAKE_INSTALL_PREFIX=$(LLVM_DEBUG_INSTALL_DIR) -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Debug -T ClangCl &&\
+	    cmake.exe $(LLVM_SRC_DIR)\llvm-project-llvmorg-$(LLVM_VERSION)\llvm -DCMAKE_INSTALL_PREFIX=$(LLVM_DEBUG_INSTALL_DIR) -DLLVM_TARGETS_TO_BUILD=X86 -DCMAKE_BUILD_TYPE=Debug -T ClangCl &&\
 	     echo Building and installing llvm... &&\
 	    mkdir $(LLVM_DEBUG_INSTALL_DIR) &&\
 	    pushd $(LLVM_DEBUG_BUILD_DIR) &&\
