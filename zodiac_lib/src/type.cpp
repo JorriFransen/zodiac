@@ -347,7 +347,11 @@ bool valid_static_type_conversion(Type *from, Type *to)
         case Type_Kind::FLOAT: return false;
 
         case Type_Kind::BOOLEAN: assert(false);
-        case Type_Kind::POINTER: assert(false);
+
+        case Type_Kind::POINTER: {
+            return false;
+            break;
+        }
 
         case Type_Kind::STRUCTURE:  return false;
 

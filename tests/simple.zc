@@ -1,12 +1,25 @@
 
 X :: 42;
-y := 42;
 
-#run {
-    z := 4;
+print_via_pointer :: (ptr: *s64) {
+    print(<ptr);
 }
 
+S :: struct {
+    ptr: *s64;
+}
+
+gs : S : #run make_s(*X);
+gs2 : S : #run make_s(*X);
+
 main :: () {
-    print("main");
+    print_via_pointer(*X);
+    print_via_pointer(*X);
     return 0;
+}
+
+make_s :: (ptr: *s64) -> S {
+    result: S;
+    result.ptr = ptr;
+    return result;
 }

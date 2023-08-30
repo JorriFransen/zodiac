@@ -454,7 +454,7 @@ Bytecode_Register bytecode_type_value(Bytecode_Builder *builder, Type *type)
     return result;
 }
 
-Bytecode_Register bytecode_register_create(Bytecode_Builder *builder, Bytecode_Register_Kind kind, Type *type, Bytecode_Register_Flags flags /*=BC_REGISTER_FLAG_NONE*/)
+Bytecode_Register bytecode_register_create(Bytecode_Builder *builder, Bytecode_Register_Kind kind, Type *type, Bytecode_Register_Flags flags /*=BC_REGISTER_FLAG_NONE*/, const char *alloc_name/*=nullptr*/)
 {
     debug_assert(builder);
     assert(kind != Bytecode_Register_Kind::INVALID);
@@ -468,6 +468,11 @@ Bytecode_Register bytecode_register_create(Bytecode_Builder *builder, Bytecode_R
         .index = -1,
         .type = type,
     };
+
+    if (alloc_name) {
+        assert(kind == Bytecode_Register_Kind::ALLOC);
+        result.alloc_name = alloc_name;
+    }
 
     if (!literal && !global) {
         assert(builder->insert_fn_index >= 0 &&
@@ -827,8 +832,7 @@ void bytecode_emit_return(Bytecode_Builder *builder, Bytecode_Register return_va
 Bytecode_Register bytecode_emit_alloc(Bytecode_Builder *builder, Type *type, const char *name)
 {
     Bytecode_Register type_register = bytecode_type_value(builder, type);
-    Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::ALLOC, type);
-    result_register.alloc_name = name;
+    Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::ALLOC, type, BC_REGISTER_FLAG_NONE, name);
     bytecode_emit_instruction(builder, Bytecode_Opcode::ALLOC, type_register, {}, result_register);
 
     return result_register;
@@ -1207,9 +1211,77 @@ Bytecode_Instruction *bytecode_get_instruction(Bytecode_Builder *bb, const Bytec
     return &block->instructions[handle.instruction_index];
 }
 
+Atom bytecode_unique_global_name(Bytecode_Builder *bb, Atom name)
+{
+    debug_assert(bb);
+
+    auto ta = temp_allocator();
+    auto taa = temp_allocator_allocator();
+    auto mark = temporary_allocator_get_mark(ta);
+
+    auto original_name = name;
+    int dup_num = 1;
+
+    do {
+        bool duplicate = false;
+        for (s64 i = 0; i < bb->globals.count; i++) {
+            auto glob = &bb->globals[i];
+            if (glob->atom == name) {
+                duplicate = true;
+                break;
+            }
+        }
+
+        if (!duplicate) {
+            temporary_allocator_reset(ta, mark);
+            return name;
+        }
+
+        name = atom_get(&bb->zodiac_context->atoms, string_format(taa, "%s%i", original_name.data, dup_num));
+        dup_num += 1;
+
+    } while (true);
+}
+
+String bytecode_unique_register_name_in_function(Bytecode_Builder *bb, Bytecode_Function_Handle fn_handle, String_Ref name)
+{
+    debug_assert(bb);
+
+    assert(fn_handle >= 0 && fn_handle < bb->functions.count);
+
+    auto ta = temp_allocator();
+    auto taa = temp_allocator_allocator();
+    auto mark = temporary_allocator_get_mark(ta);
+
+    auto func = &bb->functions[fn_handle];
+
+    auto original_name = name;
+    int dup_num = 1;
+
+    do {
+        bool duplicate = false;
+        for (s64 i = 0; i < func->registers.count; i++) {
+            auto reg = &func->registers[i];
+            if (string_equal(reg->alloc_name, name)) {
+                duplicate = true;
+                break;
+            }
+        }
+
+        if (!duplicate) {
+            temporary_allocator_reset(ta, mark);
+            return string_copy(bb->allocator, name);
+        }
+
+        name = string_format(taa, "%s%i", original_name.data, dup_num);
+        dup_num += 1;
+
+    } while(true);
+}
+
 Bytecode_Register bytecode_retype_literal(Type *target_type, Bytecode_Register operand_register)
 {
-    assert(operand_register.flags & BC_REGISTER_FLAG_LITERAL);
+    debug_assert(operand_register.flags & BC_REGISTER_FLAG_LITERAL);
 
     switch (target_type->kind) {
         default: assert(false && !"Unsupported type for bytecode_retype_literal"); break;

@@ -34,6 +34,7 @@ struct String
     ZAPI String(Allocator* allocator, char *cstr, s64 length) { init(allocator, cstr, length); }
     ZAPI String(Allocator* allocator, const char *cstr, s64 length) { init(allocator, (char *)cstr, length); }
     ZAPI String(Allocator *allocator, const char *cstr) { init(allocator, (char *)cstr, strlen(cstr)); }
+    ZAPI String(Allocator *allocator, const Atom *atom);
 
     ZAPI void init(Allocator * allocator, char *cstr, s64 length);
 
@@ -58,7 +59,7 @@ struct String_Ref
 
     ZAPI String_Ref() : data(nullptr), length(0) {}
 
-    ZAPI String_Ref(const char *cstr) : data(cstr), length((s64)strlen(cstr)) {}
+    ZAPI String_Ref(const char *cstr) : data(cstr) { length = cstr ? strlen(cstr) : 0; }
     ZAPI String_Ref(const char *cstr, s64 length) : data(cstr), length(length) {}
     ZAPI String_Ref(const std::string &std_str) : data(std_str.c_str()), length((s64)std_str.length()) {}
     ZAPI String_Ref(const String &zstr) : data(zstr.data), length(zstr.length) {}

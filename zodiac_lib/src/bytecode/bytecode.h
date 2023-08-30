@@ -273,7 +273,7 @@ ZAPI Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Dynamic_
 ZAPI Bytecode_Register bytecode_array_literal(Bytecode_Builder *bb, Dynamic_Array<Bytecode_Register> values, Type *type);
 ZAPI Bytecode_Register bytecode_block_value(Bytecode_Builder *builder, Bytecode_Block_Handle block_handle);
 ZAPI Bytecode_Register bytecode_type_value(Bytecode_Builder *builder, Type *type);
-ZAPI Bytecode_Register bytecode_register_create(Bytecode_Builder *builder, Bytecode_Register_Kind kind, Type *type, Bytecode_Register_Flags flags = BC_REGISTER_FLAG_NONE);
+ZAPI Bytecode_Register bytecode_register_create(Bytecode_Builder *builder, Bytecode_Register_Kind kind, Type *type, Bytecode_Register_Flags flags = BC_REGISTER_FLAG_NONE, const char *alloc_name = nullptr);
 ZAPI Bytecode_Phi_Args_Handle bytecode_phi_arg_create(Bytecode_Builder *builder, Bytecode_Register true_val, Bytecode_Block_Handle true_block, Bytecode_Register false_val, Bytecode_Block_Handle false_block);
 
 ZAPI Bytecode_Register bytecode_emit_load_argument(Bytecode_Builder *builder, s64 index);
@@ -336,6 +336,9 @@ ZAPI void bytecode_emit_jmp_if(Bytecode_Builder *builder, Bytecode_Register cond
 
 ZAPI Bytecode_Instruction_Handle bytecode_emit_instruction(Bytecode_Builder *builder, Bytecode_Opcode op, Bytecode_Register a, Bytecode_Register b, Bytecode_Register result);
 ZAPI Bytecode_Instruction *bytecode_get_instruction(Bytecode_Builder *bb, const Bytecode_Instruction_Handle &handle);
+
+ZAPI Atom bytecode_unique_global_name(Bytecode_Builder *bb, Atom name);
+ZAPI String bytecode_unique_register_name_in_function(Bytecode_Builder *bb, Bytecode_Function_Handle fn_handle, String_Ref name);
 
 ZAPI Bytecode_Register bytecode_retype_literal(Type *target_type, Bytecode_Register operand_register);
 

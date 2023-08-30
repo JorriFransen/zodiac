@@ -73,6 +73,10 @@ void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
                 auto expr = root_node->root.const_lvalue.expr;
                 auto decl = root_node->root.const_lvalue.decl;
 
+                auto ta = temp_allocator();
+                auto taa = temp_allocator_allocator();
+                auto mark = temporary_allocator_get_mark(ta);
+
                 assert(expr->kind == AST_Expression_Kind::IDENTIFIER);
                 auto sym = scope_get_symbol(expr->identifier.scope, expr->identifier);
                 assert(sym->decl && sym->decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
@@ -82,8 +86,11 @@ void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
                 Bytecode_Register value_reg = ast_expr_to_bytecode(bc, const_decl->variable.value);
 
                 Type *alloc_type = expr->resolved_type;
-                auto alloc_name = atom_get(&bc->context->atoms, string_append(bc->allocator, "clv_", decl->identifier.name.data));
+                auto alloc_name = atom_get(&bc->context->atoms, string_append(taa, "clv_", decl->identifier.name.data));
+                alloc_name = bytecode_unique_global_name(bc->builder, alloc_name);
                 bytecode_create_global(bc->builder, alloc_name, alloc_type, false, value_reg);
+
+                temporary_allocator_reset(ta, mark);
 
                 Bytecode_Register global_reg;
                 bool found = hash_table_find(&bc->builder->global_registers, alloc_name, &global_reg);
@@ -202,6 +209,10 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     Bytecode_Function_Handle fn_handle = bytecode_function_create(bc->builder, decl->identifier.name, decl->function.type);
     hash_table_add(&bc->functions, decl, fn_handle);
 
+    auto taa = temp_allocator_allocator();
+    auto ta = temp_allocator();
+    auto mark = temporary_allocator_get_mark(ta);
+
     if (decl->function.variables.count || decl->function.params.count || decl->function.const_lvalues.count) {
 
         Bytecode_Block_Handle allocs_block_handle = bytecode_append_block(bc->builder, fn_handle, "allocs");
@@ -214,7 +225,8 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             assert(param_decl->variable.resolved_type);
 
             Type *param_type = param_decl->variable.resolved_type;
-            auto alloc_name = string_append(bc->allocator, "arg_", param_decl->identifier.name.data);
+            auto alloc_name = string_append(taa, "arg_", param_decl->identifier.name.data);
+            alloc_name = bytecode_unique_register_name_in_function(bc->builder, fn_handle, alloc_name);
             auto alloc_reg = bytecode_emit_alloc(bc->builder, param_type, alloc_name.data);
 
             debug_assert(!hash_table_find(&bc->allocations, param_decl));
@@ -226,7 +238,8 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             assert(var_decl->variable.resolved_type);
 
             Type *alloc_type = var_decl->variable.resolved_type;
-            auto alloc_name = var_decl->identifier.name;
+            auto alloc_name = String(taa, &var_decl->identifier.name);
+            alloc_name = bytecode_unique_register_name_in_function(bc->builder, fn_handle, alloc_name);
             auto alloc_reg = bytecode_emit_alloc(bc->builder, alloc_type, alloc_name.data);
 
             debug_assert(!hash_table_find(&bc->allocations, var_decl));
@@ -240,7 +253,8 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             auto const_lval = decl->function.const_lvalues[i];
 
             Type *alloc_type = const_lval.expr->resolved_type;
-            auto alloc_name = string_append(bc->allocator, "clv_", const_lval.decl->identifier.name.data);
+            auto alloc_name = string_append(taa, "clv_", const_lval.decl->identifier.name.data);
+            alloc_name = bytecode_unique_register_name_in_function(bc->builder, fn_handle, alloc_name);
             auto alloc_reg = bytecode_emit_alloc(bc->builder, alloc_type, alloc_name.data);
 
             hash_table_add(&bc->const_lvalues, const_lval.expr, alloc_reg);
@@ -306,6 +320,8 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
         Bytecode_Block_Handle entry_block_handle = bytecode_append_block(bc->builder, fn_handle, "entry");
         bytecode_set_insert_point(bc->builder, fn_handle, entry_block_handle);
     }
+
+    temporary_allocator_reset(ta, mark);
 
     for (s64 i = 0; i < decl->function.body.count; i++) {
 

@@ -30,8 +30,8 @@ void String::init(Allocator * allocator, char *cstr, s64 len)
     this->data[len] = '\0';
 }
 
+String::String(Allocator *allocator, const Atom *atom) { init(allocator, (char *)atom->data, atom->length); }
 String_Ref::String_Ref(const Atom *atom) : data(atom->data), length(atom->length) {}
-
 
 #ifdef ZPLATFORM_WINDOWS
 
