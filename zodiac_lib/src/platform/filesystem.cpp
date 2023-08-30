@@ -25,6 +25,10 @@
 #define S_ISLNK(m) (0 && (m))
 #endif // S_IFLNK
 
+#ifndef S_ISDIR
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#endif // S_ISDIR
+
 #endif // ZPLATFORM_WINDOWS
 
 namespace Zodiac
