@@ -7,6 +7,7 @@
 #include "containers/dynamic_array.h"
 #include "error.h"
 #include "memory/allocator.h"
+#include "memory/temporary_allocator.h"
 #include "platform/filesystem.h"
 #include "resolve.h"
 #include "scope.h"

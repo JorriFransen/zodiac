@@ -1,5 +1,6 @@
 #include "bytecode.h"
 
+#include "memory/temporary_allocator.h"
 #include "type.h"
 #include "util/asserts.h"
 #include "util/zstring.h"
