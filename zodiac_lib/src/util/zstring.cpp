@@ -64,23 +64,30 @@ String_Ref::String_Ref(const Atom *atom) : data(atom->data), length(atom->length
 
 #ifdef ZPLATFORM_WINDOWS
 
-void String::init(Allocator* allocator, wchar_t* wstr, s64 _length)
+String string_create(Allocator* allocator, wchar_t* wstr, s64 _length)
 {
     int required_size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wstr, (int)_length, nullptr, 0, nullptr, nullptr);
     assert(required_size);
 
-    this->data = alloc_array<char>(allocator, ((s64)required_size) + 1);
-    this->length = required_size;
+    auto data = alloc_array<char>(allocator, ((s64)required_size) + 1);
+    s64 length = required_size;
 
-    auto written_size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wstr, (int)_length, this->data, required_size + 1, nullptr, nullptr);
+    auto written_size = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, wstr, (int)_length, data, required_size + 1, nullptr, nullptr);
 
     assert(written_size == required_size);
     if (written_size == required_size) {
-        this->data[required_size] = '\0';
+        data[required_size] = '\0';
     } else {
         assert(false);
         exit(42);
     }
+
+    return string_create(data, length);
+}
+
+String string_create(Allocator* allocator, Wide_String_Ref ref)
+{
+    return string_create(allocator, (wchar_t *)ref.data, ref.length);
 }
 
 Wide_String::Wide_String(Allocator *allocator, const String_Ref str_ref)

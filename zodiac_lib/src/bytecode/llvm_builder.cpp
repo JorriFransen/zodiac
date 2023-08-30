@@ -1578,16 +1578,11 @@ bool llvm_builder_run_linker(LLVM_Builder *builder)
     auto vs_exe_path = Wide_String_Ref(sdk_info.vs_exe_path);
 
     auto wide_linker_path = string_append(ta, vs_exe_path, L"\\link.exe");
-    auto linker_path = String(ta, wide_linker_path.data, wide_linker_path.length);
+    auto linker_path = string_create(ta, wide_linker_path.data);
 
-    auto wide_um_lib_path = Wide_String_Ref(sdk_info.windows_sdk_um_library_path);
-    auto um_lib_path = String(ta, wide_um_lib_path.data, wide_um_lib_path.length);
-
-    auto wide_ucrt_lib_path = Wide_String_Ref(sdk_info.windows_sdk_ucrt_library_path);
-    auto ucrt_lib_path = String(ta, wide_ucrt_lib_path.data, wide_ucrt_lib_path.length);
-
-    auto wide_vs_lib_path = Wide_String_Ref(sdk_info.vs_library_path);
-    auto vs_lib_path = String(ta, wide_vs_lib_path.data, wide_vs_lib_path.length);
+    auto um_lib_path = string_create(ta, sdk_info.windows_sdk_um_library_path);
+    auto ucrt_lib_path = string_create(ta, sdk_info.windows_sdk_ucrt_library_path);
+    auto vs_lib_path = string_create(ta, sdk_info.vs_library_path);
 
     String_Ref zrs_s_lib_path = builder->zodiac_context->support_lib_static_path;
     // String_Ref zrs_lib_path = builder->zodiac_context->support_lib_dynamic_path;

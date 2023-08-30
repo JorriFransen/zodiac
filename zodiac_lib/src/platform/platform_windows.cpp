@@ -357,7 +357,7 @@ String platform_exe_path(Allocator *allocator)
     DWORD result = GetModuleFileNameW(nullptr, buf, buf_length);
 
     if (result >= 0 && result < buf_length) {
-        return String(allocator, buf, result);
+        return string_create(allocator, buf, result);
     } else {
         auto err = GetLastError();
         if (err == ERROR_INSUFFICIENT_BUFFER) {
@@ -381,7 +381,7 @@ String platform_dir_name(Allocator *allocator, const String_Ref path)
 
     Wide_String result = string_append(temp_allocator_allocator(), Wide_String_Ref(drive_name), Wide_String_Ref(dir_name));
 
-    return String(allocator, result.data, result.length);
+    return string_create(allocator, result.data, result.length);
 }
 
 String platform_cwd(Allocator *allocator)
@@ -393,7 +393,7 @@ String platform_cwd(Allocator *allocator)
     assert(length > 0);
     assert(length < buf_size);
 
-    return String(allocator, buf, length);
+    return string_create(allocator, buf, length);
 }
 
 void platform_exit(int exit_code)
@@ -436,7 +436,7 @@ String platform_windows_normalize_line_endings(Allocator *allocator, String_Ref 
         zmemcpy(write_cursor, &str[read_index], copy_length);
     }
 
-    return String(buf, new_length);
+    return string_create(buf, new_length);
 
 }
 
