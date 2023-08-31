@@ -3,6 +3,7 @@
 #include "defines.h"
 #include "memory/allocator.h"
 #include "platform/filesystem.h"
+#include "platform/platform.h"
 #include "util/asserts.h"
 #include "util/logger.h"
 #include "util/zstring.h"
@@ -12,7 +13,6 @@
 
 #include <memory>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string>
 #include <vector>
 
@@ -59,7 +59,7 @@ void parse_command_line_options(Zodiac_Options *opts, int argc, const char **arg
 
     if (result.count("help")) {
         printf("%s\n", cxxoptions.help().c_str());
-        exit(0);
+        platform_exit(0);
     }
 
     opts->input_file_name = string_copy(ca, result["input_file_name"].as<std::string>());

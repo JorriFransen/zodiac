@@ -25,7 +25,6 @@ enum Zodiac_Error_Kind
     ZODIAC_RESOLVE_ERROR,
     ZODIAC_BC_CONVERSION_ERROR,
     ZODIAC_BC_VALIDATION_ERROR,
-
 };
 
 struct Zodiac_Error

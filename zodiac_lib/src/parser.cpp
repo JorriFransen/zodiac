@@ -5,14 +5,26 @@
 #include "atom.h"
 #include "containers/dynamic_array.h"
 #include "defines.h"
+#include "error.h"
 #include "memory/zmemory.h"
-#include "platform/platform.h"
 #include "source_pos.h"
 #include "util/asserts.h"
 #include "zodiac_context.h"
 
 namespace Zodiac
 {
+
+#define report_parse_error(parser, range, fmt, ...) { \
+    parser->error = true; \
+    zodiac_report_error(parser->context, ZODIAC_PARSE_ERROR, range, (fmt), ##__VA_ARGS__); \
+}
+
+#define expect_token(p, c) if (!_expect_token((p), (c))) { return nullptr; }
+
+#define parse_expression(p) _parse_expression(p); if ((p)->error) { return nullptr; }
+#define parse_type_spec(p) _parse_type_spec(p); if ((p)->error) { return nullptr; }
+
+#define return_if_null(n) { if (!(n)) { debug_assert(parser->error); return nullptr; }}
 
 void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser)
 {
@@ -33,7 +45,8 @@ void parser_destroy(Parser *parser)
 AST_Identifier parse_identifier(Parser *parser)
 {
     Token ident_tok = cur_tok(parser);
-    expect_token(parser, TOK_NAME);
+
+    if (!_expect_token(parser, TOK_NAME)) return {};
 
     AST_Identifier result;
     ast_identifier_create(ident_tok.atom, ident_tok.range, &result);
@@ -46,7 +59,7 @@ AST_Expression *parse_expr_compound(Parser *parser)
 
     Source_Pos start_pos = cur_tok(parser).range.start;
 
-    if (!expect_token(parser, '{')) return nullptr;
+    expect_token(parser, '{');
 
     auto temp_exprs = temp_array_create<AST_Expression *>(&parser->context->temp_allocator);
 
@@ -59,6 +72,7 @@ AST_Expression *parse_expr_compound(Parser *parser)
         }
 
         AST_Expression *expr = parse_expression(parser);
+
         dynamic_array_append(&temp_exprs.array, expr);
 
         end_pos = cur_tok(parser).range.end;
@@ -118,7 +132,8 @@ AST_Expression *parse_expr_operand(Parser *parser)
         }
     }
 
-    fatal_syntax_error(parser, "Expected INT, NAME ,'(' or 'null' when parsing expression, got: '%s'", cur_tok(parser).atom.data);
+    ct = cur_tok(parser);
+    report_parse_error(parser, ct.range, "Expected INT, NAME, '(' or 'null' when parsing expression, got: '%s'", ct.atom.data);
     return nullptr;
 }
 
@@ -127,6 +142,7 @@ AST_Expression *parse_expr_base(Parser *parser)
     debug_assert(parser);
 
     AST_Expression *expr = parse_expr_operand(parser);
+    return_if_null(expr);
 
     auto start_pos = cur_tok(parser).range.start;
 
@@ -161,15 +177,14 @@ AST_Expression *parse_expr_base(Parser *parser)
             expr = ast_index_expr_new(parser->context, {start_pos, end_pos}, expr, index);
 
 
-        } else if (match_token(parser, '.')) {
+        } else {
+
+            expect_token(parser, '.');
 
             Token name_tok = cur_tok(parser);
             expect_token(parser, TOK_NAME);
             expr = ast_member_expr_new(parser->context, {start_pos, name_tok.range.end}, expr, name_tok.atom);
 
-        } else {
-            Token t = cur_tok(parser);
-            fatal_syntax_error(parser, "Unexpected token: '%s'", tmp_token_str(t).data);
         }
     }
 
@@ -281,7 +296,7 @@ AST_Expression *parse_expr_cmp(Parser *parser)
     return lhs;
 }
 
-AST_Expression *parse_expression(Parser *parser)
+AST_Expression *_parse_expression(Parser *parser)
 {
     if (is_token(parser, '#')) {
         AST_Directive *directive = parse_directive(parser, false);
@@ -376,7 +391,7 @@ AST_Statement *parse_keyword_statement(Parser *parser)
     }
 
     Token t = cur_tok(parser);
-    fatal_syntax_error(parser, "Unexpected keyword token when parsing statment: '%s'", tmp_token_str(t).data);
+    report_parse_error(parser, t.range, "Unexpected keyword token when parsing statement: '%s'", tmp_token_str(t).data);
     return nullptr;
 }
 
@@ -405,9 +420,11 @@ AST_Statement *parse_statement(Parser *parser)
         return ast_block_stmt_new(parser->context, {start_pos, end_pos}, statements);
     }
 
-    // All remaining options start with an expression
     AST_Statement *result = nullptr;
+
+    // All remaining options start with an expression
     AST_Expression *expr = parse_expression(parser);
+
     if (expr->kind == AST_Expression_Kind::CALL) {
         result = ast_call_stmt_new(parser->context, expr->range, expr);
 
@@ -419,6 +436,13 @@ AST_Statement *parse_statement(Parser *parser)
         }
 
         AST_Expression *value = nullptr;
+
+        auto ct = cur_tok(parser);
+        if (!(is_token(parser, '=') || is_token(parser, ':') || is_token(parser, ';'))) {
+            report_parse_error(parser, ct.range, "Expected '=', ':' or ';' after typespec in variable or constant declaration, got '%s'", ct.atom.data);
+            return nullptr;
+        }
+
         bool is_constant = false;
         if (match_token(parser, '=')) {
             value = parse_expression(parser);
@@ -442,7 +466,6 @@ AST_Statement *parse_statement(Parser *parser)
     } else {
         expect_token(parser, '=');
         AST_Expression *value = parse_expression(parser);
-        debug_assert(value);
         result = ast_assign_stmt_new(parser->context, {start_pos, value->range.end}, expr, value);
     }
 
@@ -499,10 +522,10 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
 
     while (!match_token(parser, '}')) {
         AST_Statement *stmt = parse_statement(parser);
-        debug_assert(stmt);
+        return_if_null(stmt);
+
         dynamic_array_append(&temp_stmts.array, stmt);
     }
-    //
 
     auto statements = temp_array_finalize(&parser->context->ast_allocator, &temp_stmts);
 
@@ -579,8 +602,9 @@ AST_Declaration *parse_declaration(Parser *parser)
     if (!is_token(parser, ':') &&  !is_token(parser, '=')) {
         ts = parse_type_spec(parser);
 
+        auto ct = cur_tok(parser);
         if (!(is_token(parser, '=') || is_token(parser, ':') || is_token(parser, ';'))) {
-            fatal_syntax_error(parser, "Expected '=', ':' or ';' after typespec in variable on constant declaration, got '%s'", cur_tok(parser).atom.data);
+            report_parse_error(parser, ct.range, "Expected '=', ':' or ';' after typespec in variable or constant declaration, got '%s'", ct.atom.data);
             return nullptr;
         }
     }
@@ -602,7 +626,7 @@ AST_Declaration *parse_declaration(Parser *parser)
         }
 
         AST_Expression *const_value = parse_expression(parser);
-        assert(const_value);
+
         expect_token(parser, ';');
 
         return ast_constant_variable_decl_new(parser->context, ident.range, ident, ts, const_value);
@@ -616,7 +640,6 @@ AST_Declaration *parse_declaration(Parser *parser)
 
         if (match_token(parser, '=')) {
             value = parse_expression(parser);
-            assert(value);
             expect_semicolon = value->kind != AST_Expression_Kind::RUN_DIRECTIVE;
 
         }
@@ -629,14 +652,15 @@ AST_Declaration *parse_declaration(Parser *parser)
             match_token(parser, ';');
         }
 
+        assert(ts);
         return ast_variable_decl_new(parser->context, Source_Range { ident.range.start, end }, ident, ts, value);
     }
 
-    fatal_syntax_error(parser, "Unexpected token: '%s' when parsing declaration", cur_tok(parser).atom.data);
+    // Should be unreachable, if not one of the cases in the 'if' above, an error should have been reported
     return nullptr;
 }
 
-AST_Type_Spec *parse_type_spec(Parser *parser)
+AST_Type_Spec *_parse_type_spec(Parser *parser)
 {
     Token t = cur_tok(parser);
     switch (t.kind) {
@@ -676,7 +700,7 @@ AST_Type_Spec *parse_type_spec(Parser *parser)
         }
 
         default: {
-            fatal_syntax_error(parser, "Unexpected token when parsing typespec: '%s'", t.atom.data);
+            report_parse_error(parser, t.range, "Unexpected token when parsing typespec: '%s'", t.atom.data);
             return nullptr;
         }
     }
@@ -691,11 +715,11 @@ AST_Directive *parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
 
     Source_Pos start_pos = cur_tok(parser).range.start;
 
-    if (!expect_token(parser, '#')) return nullptr;
+    expect_token(parser, '#');
 
     auto directive_name_tok = cur_tok(parser);
 
-    if (!expect_token(parser, TOK_NAME)) return nullptr;
+    expect_token(parser, TOK_NAME);
 
     // TODO: Use hashes here
     if (directive_name_tok.atom == directive_run) {
@@ -831,7 +855,7 @@ bool match_token(Parser *parser, char c)
     return match_token(parser, (Token_Kind)c);
 }
 
-bool expect_token(Parser *parser, Token_Kind kind)
+bool _expect_token(Parser *parser, Token_Kind kind)
 {
     debug_assert(parser && parser->lxr);
 
@@ -842,13 +866,13 @@ bool expect_token(Parser *parser, Token_Kind kind)
 
     String_Ref kind_str = tmp_token_kind_str(kind);
     Token t = cur_tok(parser);
-    fatal_syntax_error(parser, "Expected token: '%s', got: '%s'", kind_str.data, t.atom.data);
+    report_parse_error(parser, t.range, "Expected token: '%s', got: '%s'", kind_str.data, t.atom.data);
     return false;
 }
 
-bool expect_token(Parser *parser, char c)
+bool _expect_token(Parser *parser, char c)
 {
-    return expect_token(parser, (Token_Kind)c);
+    return _expect_token(parser, (Token_Kind)c);
 }
 
 Token cur_tok(Parser *parser)
@@ -930,15 +954,6 @@ void syntax_error(Parser *parser, const String_Ref fmt, va_list args)
     printf("%s\n", err_msg);
 }
 
-void fatal_syntax_error(Parser *parser, const String_Ref fmt, ...)
-{
-    va_list args;
-    va_start(args, fmt);
-
-    syntax_error(parser, fmt, args);
-
-    va_end(args);
-    platform_exit(1);
-}
+#undef parse_error
 
 }

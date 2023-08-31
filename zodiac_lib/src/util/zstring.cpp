@@ -79,7 +79,7 @@ String string_create(Allocator* allocator, wchar_t* wstr, s64 _length)
         data[required_size] = '\0';
     } else {
         assert(false);
-        exit(42);
+        platform_exit(42);
     }
 
     return string_create(data, length);

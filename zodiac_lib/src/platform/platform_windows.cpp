@@ -365,7 +365,8 @@ String platform_exe_path(Allocator *allocator)
         } else {
             assert_msg(false, "this_exe_path() failed with unknown error");
         }
-        exit(1);
+
+        platform_exit(1);
         return {};
     }
 }

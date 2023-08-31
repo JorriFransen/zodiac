@@ -329,7 +329,8 @@ Process_Result platform_execute_process(Array_Ref<String_Ref> *command_line_)
         execvp(argv[0], (char *const *)argv);
         auto cmd_line_str = string_append(c_allocator(), command_line);
         ZERROR("execv error: '%s'", cmd_line_str.data); // We don't expect execv to return
-        exit(1);
+
+        platform_exit(1);
 
     } else {
         // Original parent process

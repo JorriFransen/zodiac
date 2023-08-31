@@ -1,25 +1,13 @@
-
-X :: 42;
-
-print_via_pointer :: (ptr: *s64) {
-    print(<ptr);
-}
-
-S :: struct {
-    ptr: *s64;
-}
-
-gs : S : #run make_s(*X);
-gs2 : S : #run make_s(*X);
+#run print_hello();
 
 main :: () {
-    print_via_pointer(*X);
-    print_via_pointer(*X);
+    x :: 42;
+    print(x);
     return 0;
 }
 
-make_s :: (ptr: *s64) -> S {
-    result: S;
-    result.ptr = ptr;
-    return result;
+return_x :: (x: s64) -> s64 { return x; }
+
+print_hello :: () {
+    print("hello");
 }

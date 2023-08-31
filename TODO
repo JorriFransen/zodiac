@@ -1,4 +1,7 @@
 
+- Replace fatal_syntax_error in the parser with some way of reporting errors and cleanly exitting
+- Move the checking/reporting for error 'Only print and call statement are allowed in run blocks' back to the parser, this should be fine when parse errors are handled gracefully.
+
 - Report error for #run on statement level when not in global scope (eg. #run main)
 - Validate bytecode for runs
 - Base run wrapper names on filename/line
@@ -26,8 +29,6 @@
 - Support multiple adjacent function parameters with the same typespec (parser). Like we do for struct fields.
 
 - There is multiple places (in ast_const_expr_to_bytecode, and the constant resolver) where we lookup a symbol, find the declaration (variable/constant), find the init expression. This can probably be wrapped up in a function.
-
-- Replace fatal_syntax_error in the parser with some way of reporting errors and cleanly exitting
 
 - Look into weird behaviour with bool_to_string from the support lib
 

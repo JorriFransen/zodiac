@@ -47,7 +47,7 @@ ZAPI AST_Expression *parse_expr_unary(Parser *parser);
 ZAPI AST_Expression *parse_expr_mul(Parser *parser);
 ZAPI AST_Expression *parse_expr_add(Parser *parser);
 ZAPI AST_Expression *parse_expr_cmp(Parser *parser);
-ZAPI AST_Expression *parse_expression(Parser *parser);
+ZAPI AST_Expression *_parse_expression(Parser *parser);
 
 ZAPI AST_Statement *parse_keyword_statement(Parser *parser);
 ZAPI AST_Statement *parse_statement(Parser *parser);
@@ -56,7 +56,7 @@ ZAPI AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier 
 ZAPI AST_Declaration *parse_aggregate_decl(Parser *parser, AST_Identifier ident);
 ZAPI AST_Declaration *parse_declaration(Parser *parser);
 
-ZAPI AST_Type_Spec *parse_type_spec(Parser *parser);
+ZAPI AST_Type_Spec *_parse_type_spec(Parser *parser);
 
 ZAPI AST_Directive *parse_directive(Parser *parser, bool eat_semicolon = true);
 
@@ -71,15 +71,12 @@ ZAPI bool is_token(Parser *parser, char c);
 ZAPI bool next_token(Parser *parser);
 ZAPI bool match_token(Parser *parser, Token_Kind kind);
 ZAPI bool match_token(Parser *parser, char c);
-ZAPI bool expect_token(Parser *parser, Token_Kind kind);
-ZAPI bool expect_token(Parser *parser, char c);
+ZAPI bool _expect_token(Parser *parser, Token_Kind kind);
+ZAPI bool _expect_token(Parser *parser, char c);
 ZAPI Token cur_tok(Parser *parser);
 ZAPI Token peek_token(Parser *parser, u64 offset = 1);
 
 ZAPI void syntax_error(Parser *parser, const String_Ref fmt, ...);
 ZAPI void syntax_error(Parser *parser, const String_Ref fmt, va_list args);
-
-ZAPI void fatal_syntax_error(Parser *parser, const String_Ref fmt, ...);
-
 
 }

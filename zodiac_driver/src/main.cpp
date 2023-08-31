@@ -54,7 +54,17 @@ int main(int argc, const char **argv) {
 
     AST_File *file = parse_file(&parser);
 
-    if (parser.error) return 1;
+    if (parser.error) {
+        for (s64 i = 0; i < c.errors.count; i++) {
+            auto &err = c.errors[i];
+            assert(err.kind == Zodiac_Error_Kind::ZODIAC_PARSE_ERROR);
+            auto start = err.source_range.start;
+            fprintf(stderr, "%s:%llu:%llu: error: %s\n", start.name.data, start.line, start.index_in_line, err.message.data);
+        }
+
+        platform_exit(1);
+    }
+
     assert(file);
 
     free(&dynamic_allocator, stream.data);
