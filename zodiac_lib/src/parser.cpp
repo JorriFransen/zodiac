@@ -652,7 +652,6 @@ AST_Declaration *parse_declaration(Parser *parser)
             match_token(parser, ';');
         }
 
-        assert(ts);
         return ast_variable_decl_new(parser->context, Source_Range { ident.range.start, end }, ident, ts, value);
     }
 

@@ -1,5 +1,4 @@
 
-- Replace fatal_syntax_error in the parser with some way of reporting errors and cleanly exitting
 - Move the checking/reporting for error 'Only print and call statement are allowed in run blocks' back to the parser, this should be fine when parse errors are handled gracefully.
 
 - Report error for #run on statement level when not in global scope (eg. #run main)
