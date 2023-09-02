@@ -1017,7 +1017,7 @@ MunitResult Local_Run_Directives(const MunitParameter params[], void* user_data_
     return MUNIT_OK;
 }
 
-MunitResult Run_Directive_Global_Var_Types(const MunitParameter params[], void* user_data_or_fixture) {
+MunitResult Run_Global_Var_Types(const MunitParameter params[], void* user_data_or_fixture) {
 
     // Running main depending on constant depending on return value of another run
     {
@@ -1104,7 +1104,7 @@ MunitResult Run_Directive_Global_Var_Types(const MunitParameter params[], void* 
     return MUNIT_OK;
 }
 
-MunitResult Run_Directive_Global_Const_Types(const MunitParameter params[], void* user_data_or_fixture) {
+MunitResult Run_Global_Const_Types(const MunitParameter params[], void* user_data_or_fixture) {
 
     // Running main depending on constant depending on return value of another run
     {
@@ -1190,7 +1190,7 @@ MunitResult Run_Directive_Global_Const_Types(const MunitParameter params[], void
     return MUNIT_OK;
 }
 
-MunitResult Run_Directive_Struct_Member_Types(const MunitParameter params[], void* user_data_or_fixture) {
+MunitResult Run_Struct_Member_Types(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
         S :: struct {
@@ -1274,7 +1274,7 @@ MunitResult Run_Directive_Struct_Member_Types(const MunitParameter params[], voi
     return result.result;
 }
 
-MunitResult Run_Directive_And_Pointer_To_Const(const MunitParameter params[], void* user_data_or_fixture) {
+MunitResult Run_And_Pointer_To_Const(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
         S :: struct { val : s64; }
@@ -1516,6 +1516,29 @@ MunitResult Run_Print_Arg_In_Block_Const(const MunitParameter params[], void* us
 
         Expected_Results expected = {
             .compiletime_std_out = "42"
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+
+        munit_assert(result.result == MUNIT_OK);
+    }
+
+    return MUNIT_OK;
+}
+
+MunitResult Run_Block_Only_Print_And_Call(const MunitParameter params[], void* user_data_or_fixture) {
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            #run {
+                x :: 4;
+            }
+        )CODE_STR";
+
+        Expected_Results expected = {
+            .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Only print and call statements are allowed in run blocks")})
         };
 
         auto result = compile_and_run(code_string, expected);
