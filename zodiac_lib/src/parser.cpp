@@ -14,6 +14,8 @@
 namespace Zodiac
 {
 
+#define FIRST_VARARG(N, ...) N
+
 #define report_parse_error(parser, range, fmt, ...) { \
     parser->error = true; \
     zodiac_report_error(parser->context, ZODIAC_PARSE_ERROR, range, (fmt), ##__VA_ARGS__); \
@@ -22,6 +24,7 @@ namespace Zodiac
 #define expect_token(p, c) if (!_expect_token((p), (c))) { return nullptr; }
 
 #define parse_expression(p) _parse_expression(p); if ((p)->error) { return nullptr; }
+#define parse_statement(...) _parse_statement(__VA_ARGS__); if ((FIRST_VARARG(__VA_ARGS__))->error) { return nullptr; }
 #define parse_type_spec(p) _parse_type_spec(p); if ((p)->error) { return nullptr; }
 
 #define return_if_null(n) { if (!(n)) { debug_assert(parser->error); return nullptr; }}
@@ -310,7 +313,7 @@ AST_Expression *_parse_expression(Parser *parser)
     }
 }
 
-AST_Statement *parse_keyword_statement(Parser *parser)
+AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=false*/)
 {
     debug_assert(parser);
 
@@ -383,7 +386,11 @@ AST_Statement *parse_keyword_statement(Parser *parser)
             end_pos = cur_tok(parser).range.end;
         }
 
-        expect_token(parser, ';');
+        if (optional_semi) {
+            match_token(parser, ';');
+        } else {
+            expect_token(parser, ';');
+        }
 
         auto print_exprs = temp_array_finalize(&parser->context->ast_allocator, &temp_print_exprs);
 
@@ -395,12 +402,12 @@ AST_Statement *parse_keyword_statement(Parser *parser)
     return nullptr;
 }
 
-AST_Statement *parse_statement(Parser *parser)
+AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
 {
     debug_assert(parser);
 
     if (is_token(parser, TOK_KEYWORD)) {
-        return parse_keyword_statement(parser);
+        return parse_keyword_statement(parser, optional_semi);
     }
 
     Source_Pos start_pos = cur_tok(parser).range.start;
@@ -452,15 +459,14 @@ AST_Statement *parse_statement(Parser *parser)
         }
 
         auto end_pos = cur_tok(parser).range.end;
-        expect_token(parser, ';');
 
         Source_Range range = {start_pos, end_pos};
         if (is_constant) {
             auto decl = ast_constant_variable_decl_new(parser->context, range, expr->identifier, type_spec, value);
-            return ast_declaration_stmt_new(parser->context, range, decl);
+            result = ast_declaration_stmt_new(parser->context, range, decl);
         } else {
             auto decl = ast_variable_decl_new(parser->context, range, expr->identifier, type_spec, value);
-            return ast_declaration_stmt_new(parser->context, range, decl);
+            result = ast_declaration_stmt_new(parser->context, range, decl);
         }
 
     } else {
@@ -471,7 +477,11 @@ AST_Statement *parse_statement(Parser *parser)
 
     debug_assert(result);
 
-    expect_token(parser, ';');
+    if (optional_semi) {
+        match_token(parser, ';');
+    } else {
+        expect_token(parser, ';');
+    }
 
     return result;
 }
@@ -725,7 +735,7 @@ AST_Directive *parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
 
         if (is_token(parser, '{') || is_keyword(parser, keyword_print)) {
 
-            AST_Statement *stmt = parse_statement(parser);
+            AST_Statement *stmt = parse_statement(parser, true);
 
             if (stmt->kind == AST_Statement_Kind::BLOCK) {
 

@@ -49,8 +49,8 @@ ZAPI AST_Expression *parse_expr_add(Parser *parser);
 ZAPI AST_Expression *parse_expr_cmp(Parser *parser);
 ZAPI AST_Expression *_parse_expression(Parser *parser);
 
-ZAPI AST_Statement *parse_keyword_statement(Parser *parser);
-ZAPI AST_Statement *parse_statement(Parser *parser);
+ZAPI AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi = false);
+ZAPI AST_Statement *_parse_statement(Parser *parser, bool optional_semi = false);
 
 ZAPI AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident);
 ZAPI AST_Declaration *parse_aggregate_decl(Parser *parser, AST_Identifier ident);

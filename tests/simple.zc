@@ -1,6 +1,6 @@
 #run print_hello();
 
-#run print("HI!");
+#run print("HI!")
 
 main :: () {
     x :: 42;
