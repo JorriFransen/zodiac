@@ -67,6 +67,9 @@ jobs:
   retryDelay: 30
   timeout: 3600
   postBuildActions:
+  - !RunJobAction
+    condition: successful
+    jobName: Github sync
   - !SendNotificationAction
     condition: failed or timed out
     receivers: committers
@@ -94,6 +97,3 @@ jobs:
   - !SendNotificationAction
     condition: successful and previous is failed
     receivers: committers-since-previous-successful
-  - !RunJobAction
-    condition: successful
-    jobName: CI
