@@ -1067,11 +1067,17 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
     auto original_insert_fn_index = bc->builder->insert_fn_index;
     auto original_insert_block_index = bc->builder->insert_block_index;
 
-    char buf[256];
-    auto len = string_format(buf, "run_wrapper_%i", bc->run_directive_count);
-    assert(len < 256);
+    Atom run_wrapper_name;
+    {
+        auto spos = run_directive->range.start;
 
-    bc->run_directive_count += 1;
+        char buf[256];
+        auto len = string_format(buf, "run_wrapper_%.*s:%i:%i", (int)spos.name.length, spos.name.data, spos.line, spos.index_in_line);
+        bc->run_directive_count += 1;
+        assert(len < 256);
+
+        run_wrapper_name = atom_get(&bc->context->atoms, buf);
+    }
 
     Type *return_type = &builtin_type_void;
 
@@ -1084,7 +1090,6 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
 
     Type *run_wrapper_type = get_function_type(return_type, {}, &bc->context->ast_allocator);
 
-    Atom run_wrapper_name = atom_get(&bc->context->atoms, buf);
     auto fn_handle = bytecode_function_create(bc->builder, run_wrapper_name, run_wrapper_type, BC_FUNCTION_FLAG_RUN_WRAPPER);
     auto entry_block = bytecode_append_block(bc->builder, fn_handle, "entry");
     bytecode_set_insert_point(bc->builder, fn_handle, entry_block);

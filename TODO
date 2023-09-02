@@ -3,7 +3,6 @@
 
 - Report error for #run on statement level when not in global scope (eg. #run main)
 - Validate bytecode for runs
-- Base run wrapper names on filename/line
 
 - Test rundirectives with different types and with constants
     - array element types
