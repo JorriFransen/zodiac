@@ -30,6 +30,7 @@ struct Expected_Results
     String_Ref compiletime_std_out = {};
     String_Ref runtime_std_out = {};
 
+    Array_Ref<Expected_Error> parse_errors = {};
     Array_Ref<Expected_Error> resolve_errors = {};
 };
 

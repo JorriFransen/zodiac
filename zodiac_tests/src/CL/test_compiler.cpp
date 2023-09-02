@@ -23,6 +23,7 @@
 namespace Zodiac { namespace Compiler_Tests {
 
 #define RESOLVE_ERR(f, m) (Expected_Error { .kind = ZODIAC_RESOLVE_ERROR, .fatal = (f), .message = (m)})
+#define PARSE_ERR(f, m) (Expected_Error { .kind = ZODIAC_PARSE_ERROR, .fatal = (f), .message = (m)})
 
 void free_compile_run_results(Compile_Run_Results *r)
 {
@@ -60,8 +61,15 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     defer { parser_destroy(&parser); };
 
     AST_File *file = parse_file(&parser);
-    munit_assert_ptr_not_null(file);
-    munit_assert_false(parser.error);
+    if (!expected_results.parse_errors.count) {
+        munit_assert_ptr_not_null(file);
+        munit_assert_false(parser.error);
+    } else {
+        munit_assert_ptr_null(file);
+        munit_assert(parser.error);
+        result.result = MUNIT_FAIL;
+        return result;
+    }
 
     Resolver resolver;
     resolver_create(&resolver, &result.context);
@@ -844,7 +852,7 @@ MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void
         if (result.result != MUNIT_OK) return result.result;
     }
 
-    // print
+    // // print
     {
         String_Ref code_string = R"CODE_STR(
             #run print(42);
@@ -866,7 +874,7 @@ MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void
         if (result.result != MUNIT_OK) return result.result;
     }
 
-    // print 2
+    // // print 2
     {
         String_Ref code_string = R"CODE_STR(
             #run print(x);
@@ -890,7 +898,7 @@ MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void
         if (result.result != MUNIT_OK) return result.result;
     }
 
-    // block
+    // // block
     {
         String_Ref code_string = R"CODE_STR(
             #run {
@@ -1538,14 +1546,14 @@ MunitResult Run_Block_Only_Print_And_Call(const MunitParameter params[], void* u
         )CODE_STR";
 
         Expected_Results expected = {
-            .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Only print and call statements are allowed in run blocks")})
+            .parse_errors = Array_Ref<Expected_Error>({ PARSE_ERR(true, "Only print and call statements are allowed in run blocks")})
         };
 
         auto result = compile_and_run(code_string, expected);
         defer { free_compile_run_results(&result); };
 
 
-        munit_assert(result.result == MUNIT_OK);
+        munit_assert(result.result == MUNIT_FAIL);
     }
 
     return MUNIT_OK;

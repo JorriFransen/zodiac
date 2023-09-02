@@ -8,17 +8,22 @@
 #include "containers/dynamic_array.h"
 #include "containers/hash_table.h"
 #include "defines.h"
+#include "error.h"
 #include "lexer.h"
 #include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 #include "parser.h"
 #include "platform/filesystem.h"
+#include "platform/platform.h"
 #include "resolve.h"
+#include "source_pos.h"
 #include "util/asserts.h"
 #include "util/logger.h"
 #include "util/zstring.h"
 #include "zodiac_context.h"
+
+#include <stdio.h>
 
 using namespace Zodiac;
 using namespace Bytecode;

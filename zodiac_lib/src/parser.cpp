@@ -593,7 +593,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
 AST_Declaration *parse_declaration(Parser *parser)
 {
     AST_Identifier ident = parse_identifier(parser);
-    debug_assert(ident.name.data)
+    return_if_null(ident.name.data);
 
     expect_token(parser, ':');
 
@@ -726,6 +726,21 @@ AST_Directive *parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
         if (is_token(parser, '{') || is_keyword(parser, keyword_print)) {
 
             AST_Statement *stmt = parse_statement(parser);
+
+            if (stmt->kind == AST_Statement_Kind::BLOCK) {
+
+                for (s64 i = 0; i < stmt->block.statements.count; i++) {
+                    auto member_stmt = stmt->block.statements[i];
+
+                    if (member_stmt->kind != AST_Statement_Kind::CALL &&
+                        member_stmt->kind != AST_Statement_Kind::PRINT) {
+                        report_parse_error(parser, member_stmt->range, "Only print and call statements are allowed in run blocks");
+                        return nullptr;
+                    }
+                }
+
+            }
+
             return ast_run_directive_new(parser->context, { start_pos, stmt->range.end }, stmt);
         } else {
 
@@ -756,7 +771,7 @@ AST_File *parse_file(Parser *parser)
         // Top level directive
         if (is_token(parser, '#')) {
             directive = parse_directive(parser);
-            assert(directive);
+            return_if_null(directive);
         }
 
         AST_Declaration *decl = nullptr;

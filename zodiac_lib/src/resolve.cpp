@@ -838,19 +838,6 @@ void flatten_directive(Resolver *resolver, AST_Directive *directive, Scope *scop
         }
 
         case AST_Run_Directive_Kind::STMT: {
-            if (directive->run.stmt->kind == AST_Statement_Kind::BLOCK) {
-                auto block = directive->run.stmt;
-
-                for (s64 i = 0; i < block->block.statements.count; i++) {
-
-                    auto mem_stmt = block->block.statements[i];
-
-                    if (mem_stmt->kind != AST_Statement_Kind::PRINT && mem_stmt->kind != AST_Statement_Kind::CALL) {
-                        fatal_resolve_error(resolver->ctx, mem_stmt, "Only print and call statements are allowed in run blocks");
-                        return;
-                    }
-                }
-            }
             flatten_statement(resolver, directive->run.stmt, scope, dest);
             break;
         }
@@ -2271,7 +2258,10 @@ bool run_directive_stmt_is_const(Zodiac_Context *ctx, AST_Statement *stmt)
 
     switch (stmt->kind) {
 
-        default: assert(false); break;
+        default: {
+            fatal_resolve_error(ctx, stmt, "Only print and call statements are allowed in run blocks");
+            return false;
+        }
 
         case AST_Statement_Kind::PRINT: {
             for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
