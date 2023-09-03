@@ -640,8 +640,7 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
 
                 // This is only used by lvalue deref at the time of writing...
                 Bytecode_Register result = ast_lvalue_to_bytecode(bc, expr->unary.operand);
-                if (result.kind == Bytecode_Register_Kind::ALLOC ||
-                    result.kind == Bytecode_Register_Kind::GLOBAL) {
+                if (result.kind == Bytecode_Register_Kind::ALLOC) {
 
                     result = bytecode_emit_address_of(bc->builder, result);
                 }
