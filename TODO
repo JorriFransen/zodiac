@@ -3,8 +3,6 @@
 
 - Maybe only allow run statements inside of blocks (add print expression to allow that)
 
-- Report error for #run on statement level when not in global scope (eg. #run main)
-
 - Test rundirectives with different types and with constants
     - array element types
     - array element types as struct members? (Not sure this is a seperate case.)

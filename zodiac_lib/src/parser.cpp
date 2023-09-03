@@ -469,6 +469,9 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
             result = ast_declaration_stmt_new(parser->context, range, decl);
         }
 
+    } else if (expr->kind == AST_Expression_Kind::RUN_DIRECTIVE) {
+        report_parse_error(parser, expr->range, "Result value of #run in local scope is not used");
+        return nullptr;
     } else {
         expect_token(parser, '=');
         AST_Expression *value = parse_expression(parser);
@@ -797,9 +800,10 @@ AST_File *parse_file(Parser *parser)
             decl = parse_declaration(parser);
         }
 
-        if (parser->error) break;
-
-        assert(decl);
+        if (!decl) {
+            assert(parser->error);
+            return nullptr;
+        }
 
         dynamic_array_append(&decls, decl);
     }

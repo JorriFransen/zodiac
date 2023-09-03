@@ -1559,6 +1559,30 @@ MunitResult Run_Block_Only_Print_And_Call(const MunitParameter params[], void* u
     return MUNIT_OK;
 }
 
+MunitResult Run_Local_Unused(const MunitParameter params[], void* user_data_or_fixture) {
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            main :: {
+                #run print(1);
+                return 0;
+            }
+        )CODE_STR";
+
+        Expected_Results expected = {
+            .parse_errors = Array_Ref<Expected_Error>({ PARSE_ERR(true, "Result value of #run in local scope is not used")})
+        };
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+
+
+        munit_assert(result.result == MUNIT_FAIL);
+    }
+
+    return MUNIT_OK;
+}
+
 #undef RESOLVE_ERR
 
 }}
