@@ -1,4 +1,4 @@
-sync
+
 - Add local runs to the run queue, instead of running them when emitting the 'parent' bytecode. (get rid if BC_FUNCTION_FLAG_EMISSION_DONE)
 
 - Maybe only allow run statements inside of blocks (add print expression to allow that)
