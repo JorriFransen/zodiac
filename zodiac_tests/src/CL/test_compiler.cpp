@@ -828,6 +828,128 @@ MunitResult Static_Array_Basics(const MunitParameter params[], void* user_data_o
     return result.result;
 }
 
+MunitResult Deref(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () {
+            x := 42;
+            xptr := *x;
+            print(x);
+
+            <xptr = 21;
+            print(x);
+
+            <*x = int_double(<*x);
+            print(x);
+
+            v : Vec2 = { 1, 2 };
+
+            print(v.x, ", ", v.y);
+
+            vxptr := *v.x;
+            <vxptr = 11;
+            <*v.y = 22;
+
+            print(v.x, ", ", v.y);
+
+            v1 : Vec2 = { 3, 4 };
+            vptr := *v;
+            <vptr = v1;
+
+            print(v.x, ", ", v.y);
+
+            v2 : Vec2 = { 33, 44 };
+            v = <*v2;
+
+            print(v.x, ", ", v.y);
+
+            v = vec_double(v);
+
+            print(v.x, ", ", v.y);
+
+            <*v = { 12, 34 };
+
+            print(v.x, ", ", v.y);
+
+            ints : [2]s64 = { 1, 2 };
+
+            print(ints[0], ", ", ints[1]);
+
+            ints_0ptr := *ints[0];
+            <ints_0ptr = 11;
+            <*ints[1] = 22;
+
+            print(ints[0], ", ", ints[1]);
+
+            ints1 : [2]s64 = { 3, 4 };
+            intsptr := *ints;
+            <intsptr = ints1;
+
+            print(ints[0], ", ", ints[1]);
+
+            ints2 : [2]s64 = { 33, 44 };
+            ints = <*ints2;
+
+            print(ints[0], ", ", ints[1]);
+
+            ints = arr_double(ints);
+
+            print(ints[0], ", ", ints[1]);
+
+            <*ints = { 12, 34 };
+
+            print(ints[0], ", ", ints[1]);
+
+            return 0;
+        }
+
+        Vec2 :: struct {
+            x, y: s64;
+        }
+
+        int_double :: (i: s64) {
+            iptr : *s64 = *i;
+            <iptr = <*i * 2;
+            return <iptr;
+        }
+
+        vec_double :: (v: Vec2) {
+            vptr := *v;
+            <*vptr.x = v.x * 2;
+            vptr.y = <*v.y * 2;
+            return <vptr;
+        }
+
+        arr_double :: (a: [2]s64) {
+            a0ptr := *a[0];
+            <a0ptr = a[0] * 2;
+            <*a[1] = <*a[1] * 2;
+            return <*a;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out = R"STDOUT_STR(42
+21
+42
+1, 2
+11, 22
+3, 4
+33, 44
+66, 88
+12, 34
+1, 2
+11, 22
+3, 4
+33, 44
+66, 88
+12, 34)STDOUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
 MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void* user_data_or_fixture) {
 
     // Running main

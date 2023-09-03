@@ -1936,6 +1936,7 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                     }
 
                     expr->resolved_type = get_pointer_type(base_type, &ctx->ast_allocator);
+                    expr->flags |= AST_EXPR_FLAG_LVALUE;
                     break;
                 }
 
@@ -1944,6 +1945,10 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
                     assert(operand->resolved_type->kind == Type_Kind::POINTER);
 
                     expr->resolved_type = operand->resolved_type->pointer.base;
+
+                    if (EXPR_IS_LVALUE(operand)) {
+                        expr->flags |= AST_EXPR_FLAG_LVALUE;
+                    }
                     break;
                 }
             }

@@ -15,7 +15,7 @@ static MunitResult bool_to_string_Bool_Arg_LLVM(const MunitParameter params[], v
 #ifndef ZPLATFORM_LINUX
     return MUNIT_OK;
 #endif
-    // This bug only happens on Linux. The register containing the boolean argument
+    // This bug(?) only happens on Linux. The register containing the boolean argument
     //  might have a value larger than 0xFF. This overflow happens with values
     //  originating from GEP instructions when the boolean is in the middle
     //  of a struct.
@@ -25,18 +25,6 @@ static MunitResult bool_to_string_Bool_Arg_LLVM(const MunitParameter params[], v
     //  be fixed anyway.
     String_Ref code_string = R"CODE_STR(
         S :: struct {
-            // _u64 : u64;
-            // _s64 : s64;
-            // _u32 : u32;
-            // _s32 : s32;
-            // _u16 : u16;
-            // _s16 : s16;
-            // _u8  :  u8;
-            // _s8  :  s8;
-
-            // _r64 : r64;
-            // _r32 : r32;
-
             _bool1 : bool;
             _bool2 : bool;
         }

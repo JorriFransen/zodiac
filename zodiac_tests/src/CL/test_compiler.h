@@ -76,6 +76,7 @@ MunitResult Define_Struct_Type(const MunitParameter params[], void* user_data_or
 MunitResult Struct_Offset_Ptr(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Nested_Struct_Offset_Ptr(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Static_Array_Basics(const MunitParameter params[], void* user_data_or_fixture);
+MunitResult Deref(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Global_Run_Directive_Variable(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Global_Run_Directive_Constant(const MunitParameter params[], void* user_data_or_fixture);
@@ -124,6 +125,7 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Struct_Offset_Ptr),
     DEFINE_TEST(Nested_Struct_Offset_Ptr),
     DEFINE_TEST(Static_Array_Basics),
+    DEFINE_TEST(Deref),
     DEFINE_TEST(Global_Run_Directive_Return_Void),
     DEFINE_TEST(Global_Run_Directive_Variable),
     DEFINE_TEST(Global_Run_Directive_Constant),

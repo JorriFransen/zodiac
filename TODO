@@ -1,3 +1,4 @@
+- Convert escape charaters in string literals
 
 - Add local runs to the run queue, instead of running them when emitting the 'parent' bytecode. (get rid if BC_FUNCTION_FLAG_EMISSION_DONE)
 
@@ -14,7 +15,6 @@
     - global
 
 - Some way to get static array length
-- Make sure we can't assign values/elements to constant arrays.
 - static array tests
 
 - Try to report (fatal) errors before executing run directives

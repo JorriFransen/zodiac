@@ -621,7 +621,34 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
         }
 
         case AST_Expression_Kind::CALL: assert(false); break;
-        case AST_Expression_Kind::UNARY: assert(false); break;
+
+        case AST_Expression_Kind::UNARY: {
+            if (expr->unary.op == AST_Unary_Operator::DEREF) {
+
+                Bytecode_Register result = ast_lvalue_to_bytecode(bc, expr->unary.operand);
+
+                if (result.kind == Bytecode_Register_Kind::ALLOC) {
+
+                    result = bytecode_emit_load_alloc(bc->builder, result);
+                }
+                assert(result.type == expr->resolved_type->pointer_to);
+                return result;
+
+            } else {
+
+                assert(expr->unary.op == AST_Unary_Operator::ADDRESS_OF);
+
+                // This is only used by lvalue deref at the time of writing...
+                Bytecode_Register result = ast_lvalue_to_bytecode(bc, expr->unary.operand);
+                if (result.kind == Bytecode_Register_Kind::ALLOC ||
+                    result.kind == Bytecode_Register_Kind::GLOBAL) {
+
+                    result = bytecode_emit_address_of(bc->builder, result);
+                }
+                return result;
+            }
+        }
+
         case AST_Expression_Kind::BINARY: assert(false); break;
         case AST_Expression_Kind::CAST: assert(false); break;
         case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
@@ -811,10 +838,15 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     } else {
                         Bytecode_Register lvalue_reg = ast_lvalue_to_bytecode(bc, expr->unary.operand);
 
-                        assert(lvalue_reg.kind == Bytecode_Register_Kind::ALLOC ||
-                               lvalue_reg.kind == Bytecode_Register_Kind::GLOBAL);
+                        if (lvalue_reg.kind == Bytecode_Register_Kind::ALLOC ||
+                            lvalue_reg.kind == Bytecode_Register_Kind::GLOBAL) {
 
-                        return bytecode_emit_address_of(bc->builder, lvalue_reg);
+                            return bytecode_emit_address_of(bc->builder, lvalue_reg);
+
+                        } else {
+                            assert(lvalue_reg.kind == Bytecode_Register_Kind::TEMPORARY);
+                            return lvalue_reg;
+                        }
                     }
                     break;
                 }
