@@ -53,10 +53,10 @@ struct Run_Wrapper_Result
 ZAPI Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Context *context, Bytecode_Builder *bb);
 ZAPI void bytecode_converter_destroy(Bytecode_Converter *bc);
 
-ZAPI void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc);
-ZAPI void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl);
+ZAPI bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc);
+ZAPI bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl);
 ZAPI void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl);
-ZAPI void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt);
+ZAPI bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt);
 
 ZAPI Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr);
 ZAPI Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr);

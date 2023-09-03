@@ -852,7 +852,7 @@ MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void
         if (result.result != MUNIT_OK) return result.result;
     }
 
-    // // print
+    // print
     {
         String_Ref code_string = R"CODE_STR(
             #run print(42);
@@ -874,7 +874,7 @@ MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void
         if (result.result != MUNIT_OK) return result.result;
     }
 
-    // // print 2
+    // print 2
     {
         String_Ref code_string = R"CODE_STR(
             #run print(x);
@@ -898,7 +898,7 @@ MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void
         if (result.result != MUNIT_OK) return result.result;
     }
 
-    // // block
+    // block
     {
         String_Ref code_string = R"CODE_STR(
             #run {

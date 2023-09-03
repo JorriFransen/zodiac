@@ -1,15 +1,27 @@
-#run print_hello();
-
-#run print("HI!")
-
+#run main();
 main :: () {
-    x :: 42;
-    print(x);
+    x := #run 20 * 2;
+    y :: #run ret_x(2);
+    print(x + y);
+    print(#run y * 21);
     return 0;
 }
-
-return_x :: (x: s64) -> s64 { return x; }
-
-print_hello :: () {
-    print("hello");
+ret_x :: (x: s64) -> s64 {
+    return x;
 }
+
+// #run print_hello();
+
+// #run print("HI!")
+
+// main :: () {
+//     x :: 42;
+//     print(x);
+//     return 0;
+// }
+
+// return_x :: (x: s64) -> s64 { return x; }
+
+// print_hello :: () {
+//     print("hello");
+// }

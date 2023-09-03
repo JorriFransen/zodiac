@@ -105,11 +105,8 @@ bool resolver_cycle(Resolver *resolver)
 
     if (resolver->ctx->fatal_resolve_error) return false;
 
-    done = ((names_result & RESOLVE_RESULT_DONE) == RESOLVE_RESULT_DONE) &&
-           ((types_result & RESOLVE_RESULT_DONE) == RESOLVE_RESULT_DONE);
-
-    bool progress = ((names_result & RESOLVE_RESULT_PROGRESS) == RESOLVE_RESULT_PROGRESS) ||
-                    ((types_result & RESOLVE_RESULT_PROGRESS) == RESOLVE_RESULT_PROGRESS);
+    done = (names_result & RESOLVE_RESULT_DONE) && (types_result & RESOLVE_RESULT_DONE);
+    bool progress = (names_result & RESOLVE_RESULT_PROGRESS) || (types_result & RESOLVE_RESULT_PROGRESS);
 
     if (done) assert(resolver->ctx->errors.count == 0);
 

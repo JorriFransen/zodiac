@@ -180,10 +180,13 @@ struct Bytecode_Phi_Args
 typedef int BC_Function_Flag;
 enum BC_Function_Flag_ : BC_Function_Flag
 {
-    BC_FUNCTION_FLAG_NONE        = 0x000,
-    BC_FUNCTION_FLAG_FOREIGN     = 0x001,
-    BC_FUNCTION_FLAG_NORETURN    = 0x002,
-    BC_FUNCTION_FLAG_RUN_WRAPPER = 0x004,
+    BC_FUNCTION_FLAG_NONE          = 0x000,
+    BC_FUNCTION_FLAG_FOREIGN       = 0x001,
+    BC_FUNCTION_FLAG_NORETURN      = 0x002,
+    BC_FUNCTION_FLAG_RUN_WRAPPER   = 0x004,
+
+    BC_FUNCTION_FLAG_EMISSION_DONE = 0x008,
+    BC_FUNCTION_FLAG_VALIDATED     = 0x010,
 };
 
 struct Bytecode_Function

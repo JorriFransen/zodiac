@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include "atom.h"
+#include "bytecode/validator.h"
 #include "common.h"
 #include "constant_resolver.h"
 #include "containers/dynamic_array.h"
@@ -49,10 +50,12 @@ void bytecode_converter_destroy(Bytecode_Converter *bc)
     hash_table_free(&bc->run_results);
 }
 
-void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
+bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
 {
     assert(resolver);
     assert(bc);
+
+    bool success = true;
 
     for (s64 i = 0; i < resolver->nodes_to_emit_bytecode.count; i++) {
 
@@ -61,7 +64,9 @@ void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
         switch (root_node->root.kind) {
 
             case Flat_Node_Kind::DECL: {
-                ast_decl_to_bytecode(bc, root_node->root.decl);
+                if (!ast_decl_to_bytecode(bc, root_node->root.decl)) {
+                    success = false;
+                }
                 break;
             }
 
@@ -107,14 +112,18 @@ void emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
         dynamic_array_remove_ordered(&resolver->nodes_to_emit_bytecode, i);
         i -= 1;
 
-        if (root_node->root.kind == Flat_Node_Kind::DECL &&
+        if (success &&
+            root_node->root.kind == Flat_Node_Kind::DECL &&
             root_node->root.decl->kind == AST_Declaration_Kind::RUN_DIRECTIVE) {
+
             dynamic_array_append(&resolver->nodes_to_run_bytecode, root_node);
         }
     }
+
+    return success;
 }
 
-void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
+bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 {
     assert(bc);
     assert(decl);
@@ -188,6 +197,9 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
             auto directive = decl->directive;
             Bytecode_Function_Handle fn_handle = create_run_wrapper(bc, directive);
+            if (fn_handle < 0) {
+                return false;
+            }
 
             debug_assert(!hash_table_find(&bc->run_directives, directive));
             hash_table_add(&bc->run_directives, directive, fn_handle);
@@ -195,6 +207,8 @@ void ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             break;
         }
     }
+
+    return true;
 }
 
 void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
@@ -369,9 +383,11 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             bytecode_emit_return(bc->builder);
         }
     }
+
+    fn->flags |= BC_FUNCTION_FLAG_EMISSION_DONE;
 }
 
-void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
+bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 {
     assert(bc);
     assert(stmt);
@@ -385,7 +401,7 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                 Bytecode_Block *current_block = bytecode_get_insert_block(bc->builder);
                 if (bytecode_block_is_terminated(current_block)) {
                     zodiac_report_error(bc->context, Zodiac_Error_Kind::ZODIAC_BC_CONVERSION_ERROR, stmt, "Unreachable code detected");
-                    return;
+                    return false;
                 }
 
                 ast_stmt_to_bytecode(bc, stmt->block.statements[i]);
@@ -394,7 +410,7 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
         }
 
         case AST_Statement_Kind::DECLARATION: {
-            ast_decl_to_bytecode(bc, stmt->decl.decl);
+            return ast_decl_to_bytecode(bc, stmt->decl.decl);
             break;
         }
 
@@ -514,6 +530,8 @@ void ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             break;
         }
     }
+
+    return true;
 }
 
 Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr)
@@ -875,6 +893,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
             if (!directive->generated_expression) {
                 Bytecode_Function_Handle wrapper_handle = create_run_wrapper(bc, directive->directive);
+                assert(wrapper_handle >= 0);
+
                 Run_Wrapper_Result run_result = execute_run_wrapper(bc, wrapper_handle);
                 auto result = run_result.value;
                 assert(result.type);
@@ -1072,7 +1092,7 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
         auto spos = run_directive->range.start;
 
         char buf[256];
-        auto len = string_format(buf, "run_wrapper_%.*s:%i:%i", (int)spos.name.length, spos.name.data, spos.line, spos.index_in_line);
+        auto len = string_format(buf, "rw_%.*s:%i:%i", (int)spos.name.length, spos.name.data, spos.line, spos.index_in_line);
         bc->run_directive_count += 1;
         assert(len < 256);
 
@@ -1118,6 +1138,24 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
         bytecode_emit_return(bc->builder, result_register);
     } else {
         bytecode_emit_return(bc->builder);
+    }
+
+    auto fn = &bc->builder->functions[fn_handle];
+    fn->flags |= BC_FUNCTION_FLAG_EMISSION_DONE;
+
+    Bytecode_Validator validator = {};
+
+    // We need to pass in all the functions, otherwise the handles won't work
+    auto functions = Array_Ref(bc->builder->functions);
+
+    bytecode_validator_init(bc->context, temp_allocator_allocator(), &validator, functions, nullptr);
+    bool bytecode_valid = validate_bytecode(&validator);
+
+    if (!bytecode_valid) {
+        assert(validator.errors.count);
+
+        bytecode_validator_print_errors(&validator);
+        return -1;
     }
 
     bc->builder->insert_fn_index = original_insert_fn_index;

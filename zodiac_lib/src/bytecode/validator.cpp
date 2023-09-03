@@ -129,6 +129,8 @@ bool validate_function(Bytecode_Validator *validator, Bytecode_Function_Handle f
     assert(fn_handle >= 0 && fn_handle < validator->visitor.functions.count);
     auto function = &validator->visitor.functions[fn_handle];
 
+    assert(function->flags & BC_FUNCTION_FLAG_EMISSION_DONE);
+
     if (function->flags & BC_FUNCTION_FLAG_FOREIGN) {
         return true;
     }
@@ -724,12 +726,12 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             if (instruction->dest.index != -1) {
 
                 if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
-                    bytecode_validator_report_error(validator, "The 'dest' register for 'CALL_*FOREIGN' must be a temporary");
+                    bytecode_validator_report_error(validator, "The 'dest' register for 'CALL_* must be a temporary");
                     return false;
                 }
 
                 if (instruction->dest.type != fn->type->function.return_type) {
-                    bytecode_validator_report_error(validator, "The type of the 'dest' register for 'CALL_FOREIGN' does noet match the return type of the called function");
+                    bytecode_validator_report_error(validator, "The type of the 'dest' register for 'CALL_*' does not match the return type of the called function");
                     return false;
                 }
             }

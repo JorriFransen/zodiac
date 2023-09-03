@@ -1,11 +1,13 @@
 #include "bytecode/visitor.h"
 
-#include <stdio.h>
-
+#include "atom.h"
 #include "common.h"
 #include "defines.h"
 #include "type.h"
 #include "util/asserts.h"
+#include "util/logger.h"
+
+#include <stdio.h>
 
 namespace Zodiac { namespace Bytecode {
 
@@ -43,20 +45,37 @@ bool visit_bytecode(Bytecode_Visitor *visitor)
 
     for (pos->fn_index = 0; pos->fn_index < visitor->functions.count; pos->fn_index++) {
 
+        auto fn_handle = (Bytecode_Function_Handle)pos->fn_index;
+
+        auto fn = &visitor->functions[fn_handle];
+
+        if (!(fn->flags & BC_FUNCTION_FLAG_EMISSION_DONE) ||
+            (fn->flags & BC_FUNCTION_FLAG_VALIDATED)) {
+            continue;
+        }
+
+        ZTRACE("Validating bytecode function: '%s'", fn->name.data);
+
         bool r = true;
         if (visitor->visit_function) {
-            if (!visitor->visit_function(visitor, (Bytecode_Function_Handle)pos->fn_index)) {
+            if (!visitor->visit_function(visitor, fn_handle)) {
                 r = false;
             }
         }
 
         if (r) {
-            if (!visit_function(visitor, (Bytecode_Function_Handle)pos->fn_index)) {
+            if (!visit_function(visitor, fn_handle)) {
                 r = false;
             }
         }
 
-        if (!r) result = false;
+        if (r) {
+            fn->flags |= BC_FUNCTION_FLAG_VALIDATED;
+        } else {
+            result = false;
+        }
+
+        ZTRACE("\t%s", r ? "OK" : "FAIL");
     }
 
     return result;
@@ -66,6 +85,8 @@ bool visit_function(Bytecode_Visitor *visitor, Bytecode_Function_Handle fn_handl
 {
     assert(fn_handle >= 0 && fn_handle < visitor->functions.count);
     auto bc_func = &visitor->functions[fn_handle];
+
+    assert(bc_func->flags & BC_FUNCTION_FLAG_EMISSION_DONE);
 
     assert(visitor->current_function == nullptr);
     visitor->current_function = bc_func;

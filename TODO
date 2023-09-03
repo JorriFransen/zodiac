@@ -1,8 +1,9 @@
 
+- Add global runs to the run queue, instead of running them when emitting the 'parent' bytecode. (get rid if BC_FUNCTION_FLAG_EMISSION_DONE)
+
 - Maybe only allow run statements inside of blocks (add print expression to allow that)
 
 - Report error for #run on statement level when not in global scope (eg. #run main)
-- Validate bytecode for runs
 
 - Test rundirectives with different types and with constants
     - array element types
