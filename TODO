@@ -1,6 +1,4 @@
 
-- (get rid if BC_FUNCTION_FLAG_EMISSION_DONE)
-
 - Seperate flat root node kinds from flat node kinds?
 
 - Wrap a function around the compile loop (deduplicate from main and the tests).

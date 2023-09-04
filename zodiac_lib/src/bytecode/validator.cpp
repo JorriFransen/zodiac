@@ -129,8 +129,6 @@ bool validate_function(Bytecode_Validator *validator, Bytecode_Function_Handle f
     assert(fn_handle >= 0 && fn_handle < validator->visitor.functions.count);
     auto function = &validator->visitor.functions[fn_handle];
 
-    assert(function->flags & BC_FUNCTION_FLAG_EMISSION_DONE);
-
     if (function->flags & BC_FUNCTION_FLAG_FOREIGN) {
         return true;
     }

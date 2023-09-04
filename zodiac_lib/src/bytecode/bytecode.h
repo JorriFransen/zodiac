@@ -185,8 +185,7 @@ enum BC_Function_Flag_ : BC_Function_Flag
     BC_FUNCTION_FLAG_NORETURN      = 0x002,
     BC_FUNCTION_FLAG_RUN_WRAPPER   = 0x004,
 
-    BC_FUNCTION_FLAG_EMISSION_DONE = 0x008,
-    BC_FUNCTION_FLAG_VALIDATED     = 0x010,
+    BC_FUNCTION_FLAG_VALIDATED     = 0x008,
 };
 
 struct Bytecode_Function

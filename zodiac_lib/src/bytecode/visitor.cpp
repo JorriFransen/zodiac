@@ -49,8 +49,7 @@ bool visit_bytecode(Bytecode_Visitor *visitor)
 
         auto fn = &visitor->functions[fn_handle];
 
-        if (!(fn->flags & BC_FUNCTION_FLAG_EMISSION_DONE) ||
-            (fn->flags & BC_FUNCTION_FLAG_VALIDATED)) {
+        if (fn->flags & BC_FUNCTION_FLAG_VALIDATED) {
             continue;
         }
 
@@ -85,8 +84,6 @@ bool visit_function(Bytecode_Visitor *visitor, Bytecode_Function_Handle fn_handl
 {
     assert(fn_handle >= 0 && fn_handle < visitor->functions.count);
     auto bc_func = &visitor->functions[fn_handle];
-
-    assert(bc_func->flags & BC_FUNCTION_FLAG_EMISSION_DONE);
 
     assert(visitor->current_function == nullptr);
     visitor->current_function = bc_func;

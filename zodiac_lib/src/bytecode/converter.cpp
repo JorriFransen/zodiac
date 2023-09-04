@@ -393,8 +393,6 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             bytecode_emit_return(bc->builder);
         }
     }
-
-    fn->flags |= BC_FUNCTION_FLAG_EMISSION_DONE;
 }
 
 bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
@@ -1154,9 +1152,6 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
     } else {
         bytecode_emit_return(bc->builder);
     }
-
-    auto fn = &bc->builder->functions[fn_handle];
-    fn->flags |= BC_FUNCTION_FLAG_EMISSION_DONE;
 
     Bytecode_Validator validator = {};
 
