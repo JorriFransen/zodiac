@@ -1,6 +1,11 @@
-- Convert escape charaters in string literals
 
-- Add local runs to the run queue, instead of running them when emitting the 'parent' bytecode. (get rid if BC_FUNCTION_FLAG_EMISSION_DONE)
+- (get rid if BC_FUNCTION_FLAG_EMISSION_DONE)
+
+- Seperate flat root node kinds from flat node kinds?
+
+- Wrap a function around the compile loop (deduplicate from main and the tests).
+
+- Convert escape charaters in string literals
 
 - Maybe only allow run statements inside of blocks (add print expression to allow that)
 

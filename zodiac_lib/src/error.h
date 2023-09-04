@@ -10,9 +10,10 @@ namespace Zodiac {
 
 struct Zodiac_Context;
 
+struct AST_Declaration;
+struct AST_Directive;
 struct AST_Expression;
 struct AST_Statement;
-struct AST_Declaration;
 struct AST_Type_Spec;
 
 typedef s64 Error_Handle;
@@ -49,6 +50,7 @@ ZAPI Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind
 ZAPI Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind, AST_Statement *stmt, const char *fmt, ...);
 ZAPI Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind, AST_Declaration *decl, const char *fmt, ...);
 ZAPI Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind, AST_Type_Spec *ts, const char *fmt, ...);
+ZAPI Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind, AST_Directive *directive, const char *fmt, ...);
 
 #define resolve_error(ctx, node, fmt, ...) zodiac_report_error(ctx, ZODIAC_RESOLVE_ERROR, node, (fmt), ##__VA_ARGS__);
 

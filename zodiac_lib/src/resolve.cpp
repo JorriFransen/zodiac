@@ -258,7 +258,7 @@ Resolve_Results resolve_types(Resolver *resolver)
             }
 
             node->type_index = i;
-            bool result = type_resolve_node(resolver->ctx, &node->nodes[i]);
+            bool result = type_resolve_node(resolver, &node->nodes[i]);
 
             if (!result) {
                 done = false;
@@ -931,6 +931,9 @@ bool name_resolve_node(Resolver *resolver, Flat_Node *node)
         }
 
         case Flat_Node_Kind::GLOBAL_CONST_LVALUE: assert(false); break;
+
+        case Flat_Node_Kind::RUN: assert(false); break;
+
     }
 
     assert(false);
@@ -1278,29 +1281,29 @@ bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
     return result;
 }
 
-bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
+bool type_resolve_node(Resolver *resolver, Flat_Node *node)
 {
-    debug_assert(ctx && node);
+    debug_assert(resolver && node);
 
     switch (node->kind) {
 
         case Flat_Node_Kind::DECL: {
-            return type_resolve_declaration(ctx, node->decl, node->scope);
+            return type_resolve_declaration(resolver->ctx, node->decl, node->scope);
             break;
         }
 
         case Flat_Node_Kind::STMT: {
-            return type_resolve_statement(ctx, node->stmt, node->scope);
+            return type_resolve_statement(resolver, node->stmt, node->scope);
             break;
         }
 
         case Flat_Node_Kind::EXPR: {
-            return type_resolve_expression(ctx, node->expr.expr, node->scope, node->expr.infer_type_from);
+            return type_resolve_expression(resolver, node->expr.expr, node->scope, node->expr.infer_type_from);
             break;
         }
 
         case Flat_Node_Kind::TYPE_SPEC: {
-            return type_resolve_ts(ctx, node->ts, node->scope);
+            return type_resolve_ts(resolver->ctx, node->ts, node->scope);
         }
 
         case Flat_Node_Kind::FUNCTION_PROTO: {
@@ -1318,11 +1321,11 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
                 if (!func_decl->function.return_ts &&
                     !func_decl->function.inferred_return_type)
                 {
-                    resolve_error(ctx, node->decl, "Could not infer return type");
+                    resolve_error(resolver->ctx, node->decl, "Could not infer return type");
                     return false;
                 }
 
-                auto param_types = temp_array_create<Type *>(&ctx->temp_allocator, func_decl->function.params.count);
+                auto param_types = temp_array_create<Type *>(&resolver->ctx->temp_allocator, func_decl->function.params.count);
 
                 for (u64 i = 0; i < func_decl->function.params.count; i++) {
 
@@ -1344,11 +1347,11 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
                 }
 
                 if (!return_type) {
-                    fatal_resolve_error(ctx, func_decl, "Could not infer return type");
+                    fatal_resolve_error(resolver->ctx, func_decl, "Could not infer return type");
                     return false;
                 }
 
-                func_decl->function.type = get_function_type(return_type, param_types.array, &ctx->ast_allocator);
+                func_decl->function.type = get_function_type(return_type, param_types.array, &resolver->ctx->ast_allocator);
 
                 temp_array_destroy(&param_types);
             }
@@ -1362,6 +1365,7 @@ bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node)
 
         case Flat_Node_Kind::GLOBAL_CONST_LVALUE: assert(false); break;
 
+        case Flat_Node_Kind::RUN: assert(false); break;
     }
 
     assert(false);
@@ -1553,9 +1557,9 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
     return result;
 }
 
-bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
+bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope)
 {
-    debug_assert(ctx && stmt && scope);
+    debug_assert(resolver && stmt && scope);
 
     bool result = true;
 
@@ -1577,7 +1581,7 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
             AST_Expression *value_expr = stmt->assign.value;
 
             if (!EXPR_IS_LVALUE(lvalue_expr)) {
-                fatal_resolve_error(ctx, lvalue_expr, "Left side of assignment must be an lvalue");
+                fatal_resolve_error(resolver->ctx, lvalue_expr, "Left side of assignment must be an lvalue");
                 result = false;
                 break;
             }
@@ -1641,10 +1645,10 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
                     }
 
                     AST_Expression *value_expr = stmt->return_stmt.value;
-                    AST_Expression *cast_expr = ast_cast_expr_new(ctx, value_expr->range, expected_type, value_expr);
-                    bool cast_name_result = name_resolve_expr(ctx, cast_expr, scope);
+                    AST_Expression *cast_expr = ast_cast_expr_new(resolver->ctx, value_expr->range, expected_type, value_expr);
+                    bool cast_name_result = name_resolve_expr(resolver->ctx, cast_expr, scope);
                     assert(cast_name_result);
-                    bool cast_type_result = type_resolve_expression(ctx, cast_expr, scope, nullptr);
+                    bool cast_type_result = type_resolve_expression(resolver, cast_expr, scope, nullptr);
                     assert(cast_type_result);
                     stmt->return_stmt.value = cast_expr;
 
@@ -1692,11 +1696,13 @@ bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
     return result;
 }
 
-bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope, Infer_Node *infer_type_from)
+bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, Infer_Node *infer_type_from)
 {
-    debug_assert(expr);
+    debug_assert(resolver && expr);
 
-    if (expr->resolved_type) return true;
+    auto ctx = resolver->ctx;
+
+    if (expr->resolved_type && !(expr->kind == AST_Expression_Kind::RUN_DIRECTIVE)) return true;
 
     debug_assert(scope);
 
@@ -2055,25 +2061,50 @@ bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *s
         case AST_Expression_Kind::RUN_DIRECTIVE: {
             auto dir = expr->directive.directive;
 
-            if (!run_directive_is_const(ctx, expr->directive.directive)) { // This reports errors internally
-                return false;
-            }
+            if (!EXPR_IS_TYPED(expr)) {
 
-            Type *type = nullptr;
+                if (!run_directive_is_const(ctx, expr->directive.directive)) { // This reports errors internally
+                    return false;
+                }
 
-            switch (dir->run.kind) {
+                Type *type = nullptr;
 
-                case AST_Run_Directive_Kind::INVALID: assert(false); break;
-                case AST_Run_Directive_Kind::EXPR: type = dir->run.expr->resolved_type; break;
+                switch (dir->run.kind) {
 
-                case AST_Run_Directive_Kind::STMT: {
-                    fatal_resolve_error(ctx, dir->run.stmt, "Expected expression after #run in assignment");
+                    case AST_Run_Directive_Kind::INVALID: assert(false); break;
+                    case AST_Run_Directive_Kind::EXPR: {
+                        type = dir->run.expr->resolved_type;
+                        if (type->kind == Type_Kind::UNSIZED_INTEGER) {
+                            type = &builtin_type_s64;
+                            dir->run.expr->resolved_type = &builtin_type_s64;
+                        }
+                        break;
+                    }
+
+                    case AST_Run_Directive_Kind::STMT: {
+                        fatal_resolve_error(ctx, dir->run.stmt, "Expected expression after #run in assignment");
+                        return false;
+                    }
+                }
+
+                assert(type);
+
+                auto node = alloc<Flat_Root_Node>(resolver->node_allocator);
+                node->root.kind = Flat_Node_Kind::RUN;
+                node->root.run.expr = expr;
+                dynamic_array_append(&resolver->nodes_to_emit_bytecode, node);
+
+                expr->resolved_type = type;
+                expr->flags |= AST_EXPR_FLAG_TYPED;
+                return false; // Always fail the first time around since we need to emit and execute the bytecode first
+
+            } else {
+
+                if (!expr->directive.generated_expression) {
+                    resolve_error(ctx, expr, "Waiting for #run to be executed");
                     return false;
                 }
             }
-
-            assert(type);
-            expr->resolved_type = type;
             break;
         }
 

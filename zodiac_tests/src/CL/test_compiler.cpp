@@ -97,16 +97,44 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
         for (s64 i = 0; i < resolver.nodes_to_run_bytecode.count; i++) {
             Flat_Root_Node *root_node = resolver.nodes_to_run_bytecode[i];
 
-            assert(root_node->root.kind == Flat_Node_Kind::DECL);
-            auto decl = root_node->root.decl;
-            assert(decl->kind == AST_Declaration_Kind::RUN_DIRECTIVE);
-            assert(decl->directive->kind == AST_Directive_Kind::RUN);
+            AST_Directive *directive = nullptr;
+            bool from_expr = false;
+
+            if (root_node->root.kind == Flat_Node_Kind::DECL) {
+                auto decl = root_node->root.decl;
+                assert(decl->kind == AST_Declaration_Kind::RUN_DIRECTIVE);
+                assert(decl->directive->kind == AST_Directive_Kind::RUN);
+                directive = decl->directive;
+            } else {
+                assert(root_node->root.kind == Flat_Node_Kind::RUN);
+                directive = root_node->root.run.expr->directive.directive;
+                from_expr = true;
+            }
+            assert(directive);
 
             Bytecode_Function_Handle wrapper_handle;
-            bool found = hash_table_find(&bc.run_directives, decl->directive, &wrapper_handle);
+            bool found = hash_table_find(&bc.run_directives, directive, &wrapper_handle);
             assert(found);
 
             auto run_res = execute_run_wrapper(&bc, wrapper_handle, stdout_file);
+
+            if (from_expr) {
+                auto expr = root_node->root.run.expr;
+                assert(run_res.value.type == expr->resolved_type);
+
+                Scope *scope = directive->run.scope;
+                Source_Range range = expr->range;
+                AST_Expression *new_expr = interpreter_register_to_ast_expression(&bc, run_res.value, scope, range);
+
+                assert(new_expr->resolved_type);
+                assert(EXPR_IS_CONST(new_expr));
+
+                Bytecode_Register value_reg = ast_expr_to_bytecode(&bc, new_expr);
+                expr->directive.generated_expression = new_expr;
+
+                hash_table_add(&bc.run_results, directive, value_reg);
+            }
+
             free_run_wrapper_result(&run_res);
         }
 

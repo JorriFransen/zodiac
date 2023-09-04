@@ -57,9 +57,10 @@ enum class Flat_Node_Kind
     EXPR,
     TYPE_SPEC,
 
+    // These should be Flat_Root_Node_Kind
     FUNCTION_PROTO,
-
     GLOBAL_CONST_LVALUE,
+    RUN,
 };
 
 struct Flat_Node
@@ -80,6 +81,10 @@ struct Flat_Node
             AST_Declaration *decl;
         } const_lvalue;
         AST_Type_Spec *ts;
+
+        struct {
+            AST_Expression *expr;
+        } run;
     };
 };
 
@@ -152,10 +157,10 @@ ZAPI bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
 ZAPI bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope);
 ZAPI bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope);
 
-ZAPI bool type_resolve_node(Zodiac_Context *ctx, Flat_Node *node);
+ZAPI bool type_resolve_node(Resolver *resolver, Flat_Node *node);
 ZAPI bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope);
-ZAPI bool type_resolve_statement(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope);
-ZAPI bool type_resolve_expression(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope, Infer_Node *infer_type_from);
+ZAPI bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope);
+ZAPI bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, Infer_Node *infer_type_from);
 ZAPI bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope);
 
 ZAPI bool run_directive_is_const(Zodiac_Context *ctx, AST_Directive *dir);

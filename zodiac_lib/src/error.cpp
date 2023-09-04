@@ -118,4 +118,16 @@ Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind
     return result;
 }
 
+Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind, AST_Directive *directive, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+
+    auto result = zodiac_report_error(context, kind, directive->range, fmt, args);
+
+    va_end(args);
+
+    return result;
+}
+
 }

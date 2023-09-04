@@ -55,8 +55,6 @@ bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
     assert(resolver);
     assert(bc);
 
-    bool success = true;
-
     for (s64 i = 0; i < resolver->nodes_to_emit_bytecode.count; i++) {
 
         Flat_Root_Node *root_node = resolver->nodes_to_emit_bytecode[i];
@@ -64,9 +62,12 @@ bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
         switch (root_node->root.kind) {
 
             case Flat_Node_Kind::DECL: {
-                if (!ast_decl_to_bytecode(bc, root_node->root.decl)) {
-                    success = false;
+                if (ast_decl_to_bytecode(bc, root_node->root.decl) &&
+                    root_node->root.decl->kind == AST_Declaration_Kind::RUN_DIRECTIVE) {
+
+                        dynamic_array_append(&resolver->nodes_to_run_bytecode, root_node);
                 }
+
                 break;
             }
 
@@ -107,20 +108,29 @@ bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
             };
 
             case Flat_Node_Kind::FUNCTION_PROTO: break;
+
+            case Flat_Node_Kind::RUN: {
+                assert(root_node->root.run.expr->kind == AST_Expression_Kind::RUN_DIRECTIVE);
+                auto directive = root_node->root.run.expr->directive;
+
+                Bytecode_Function_Handle fn_handle = create_run_wrapper(bc, directive.directive);
+                if (fn_handle < 0) {
+                    return false;
+                }
+
+                debug_assert(!hash_table_find(&bc->run_directives, directive.directive));
+                hash_table_add(&bc->run_directives, directive.directive, fn_handle);
+
+                dynamic_array_append(&resolver->nodes_to_run_bytecode, root_node);
+                break;
+            }
         }
 
         dynamic_array_remove_ordered(&resolver->nodes_to_emit_bytecode, i);
         i -= 1;
-
-        if (success &&
-            root_node->root.kind == Flat_Node_Kind::DECL &&
-            root_node->root.decl->kind == AST_Declaration_Kind::RUN_DIRECTIVE) {
-
-            dynamic_array_append(&resolver->nodes_to_run_bytecode, root_node);
-        }
     }
 
-    return success;
+    return true;
 }
 
 bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
@@ -922,39 +932,13 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
             auto directive = &expr->directive;
 
-            if (!directive->generated_expression) {
-                Bytecode_Function_Handle wrapper_handle = create_run_wrapper(bc, directive->directive);
-                assert(wrapper_handle >= 0);
+            assert(directive->generated_expression);
 
-                Run_Wrapper_Result run_result = execute_run_wrapper(bc, wrapper_handle);
-                auto result = run_result.value;
-                assert(result.type);
-                assert(result.type == expr->resolved_type);
+            Bytecode_Register value_reg;
+            bool found = hash_table_find(&bc->run_results, directive->directive, &value_reg);
+            assert(found);
 
-                Source_Range range = expr->range;
-
-                Scope *scope = directive->directive->run.scope;
-                assert(scope);
-
-                AST_Expression *new_expr = interpreter_register_to_ast_expression(bc, result, scope, range);
-                assert(new_expr->resolved_type);
-                assert(EXPR_IS_CONST(new_expr));
-
-                Bytecode_Register value_reg = ast_expr_to_bytecode(bc, new_expr);
-                directive->generated_expression = new_expr;
-
-                free_run_wrapper_result(&run_result);
-
-                hash_table_add(&bc->run_results, directive->directive, value_reg);
-                return value_reg;
-            } else {
-
-                Bytecode_Register value_reg;
-                bool found = hash_table_find(&bc->run_results, directive->directive, &value_reg);
-                assert(found);
-
-                return value_reg;
-            }
+            return value_reg;
         }
 
         case Zodiac::AST_Expression_Kind::COMPOUND: assert(false); break; // TODO: This means we have non constant members
@@ -1292,7 +1276,7 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
 #ifndef NDEBUG
         bool resolved_type =
 #endif // NDEBUG
-            type_resolve_expression(ctx, result, scope, infer_node);
+            type_resolve_expression(ctx->resolver, result, scope, infer_node);
         debug_assert(resolved_type);
     }
 
@@ -1355,7 +1339,7 @@ AST_Expression *interpreter_memory_to_ast_expression(Bytecode_Converter *bc, u8*
             name_resolve_expr(ctx, result, scope);
 
             auto lit_infer_node = infer_node_new(ctx, &builtin_type_u64);
-            type_resolve_expression(ctx, result, scope, lit_infer_node);
+            type_resolve_expression(ctx->resolver, result, scope, lit_infer_node);
 
             result = ast_cast_expr_new(ctx, range, type, result);
             break;
@@ -1416,7 +1400,7 @@ AST_Expression *interpreter_memory_to_ast_expression(Bytecode_Converter *bc, u8*
 #ifndef NDEBUG
     bool resolved_type =
 #endif // NDEBUG
-        type_resolve_expression(ctx, result, scope, infer_node);
+        type_resolve_expression(ctx->resolver, result, scope, infer_node);
     debug_assert(resolved_type);
 
 
