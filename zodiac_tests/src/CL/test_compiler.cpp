@@ -50,10 +50,7 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
 
     auto ta = temp_allocator_allocator();
 
-    zodiac_context_create(&result.context);
-
-    result.context.options = options;
-    result.context.options.verbose = true;
+    zodiac_context_create(options, &result.context);
 
     Lexer lexer;
     lexer_create(&result.context, &lexer);

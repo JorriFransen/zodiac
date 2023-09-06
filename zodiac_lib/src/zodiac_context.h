@@ -64,7 +64,7 @@ struct Zodiac_Context
     String support_lib_static_path;
 };
 
-ZAPI void zodiac_context_create(Zodiac_Context *out_context);
+ZAPI void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context);
 ZAPI void zodiac_context_destroy(Zodiac_Context *context);
 
 }

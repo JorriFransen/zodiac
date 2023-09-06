@@ -38,25 +38,26 @@ int main(int argc, const char **argv) {
     if (!logging_system_initialize()) return 1;
     if (!memory_system_initialize()) return 1;
 
+    Zodiac_Options options = {};
+    parse_command_line_options(&options, argc, argv);
+
     Zodiac_Context c;
-    zodiac_context_create(&c);
+    zodiac_context_create(options, &c);
     defer { zodiac_context_destroy(&c); };
 
-    auto opts = &c.options;
-    parse_command_line_options(opts, argc, argv);
 
     Lexer lexer;
     lexer_create(&c, &lexer);
     defer { lexer_destroy(&lexer); };
 
     String stream = {};
-    bool read_result = filesystem_read_entire_file(&dynamic_allocator, opts->input_file_name, &stream);
+    bool read_result = filesystem_read_entire_file(&dynamic_allocator, options.input_file_name, &stream);
     assert(read_result);
     if (!read_result) {
         return 1;
     }
 
-    lexer_init_stream(&lexer, stream, opts->input_file_name);
+    lexer_init_stream(&lexer, stream, options.input_file_name);
 
     Parser parser;
     parser_create(&c, &lexer, &parser);
@@ -166,9 +167,9 @@ int main(int argc, const char **argv) {
         resolver.nodes_to_run_bytecode.count = 0;
     }
 
-    if (opts->print_ast) ast_print_file(file);
+    if (options.print_ast) ast_print_file(file);
 
-    if (opts->print_bytecode) bytecode_print(&bb, temp_allocator_allocator());
+    if (options.print_bytecode) bytecode_print(&bb, temp_allocator_allocator());
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(&c, temp_allocator_allocator(), &validator, bb.functions, nullptr);
@@ -181,14 +182,14 @@ int main(int argc, const char **argv) {
         return 1;
     }
 
-    if (!opts->dont_emit_binary) {
+    if (!options.dont_emit_binary) {
 
         auto program = bytecode_get_program(bc.builder);
         LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
 
         llvm_builder_emit_program(&llvm_builder, &program);
 
-        if (opts->print_llvm_ir) llvm_builder_print(&llvm_builder);
+        if (options.print_llvm_ir) llvm_builder_print(&llvm_builder);
 
         llvm_builder_emit_binary(&llvm_builder);
 

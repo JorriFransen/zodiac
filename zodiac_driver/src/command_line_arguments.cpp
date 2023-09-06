@@ -85,10 +85,6 @@ void parse_command_line_options(Zodiac_Options *opts, int argc, const char **arg
         printf("%s\n", cxxoptions.help().c_str());
         ZFATAL("Conflicting options 'no_binary' and 'print_llvm_ir'");
     }
-
-    if (opts->verbose) {
-        logging_system_set_max_level(Log_Level::TRACE);
-    }
 }
 
 }

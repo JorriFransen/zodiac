@@ -24,12 +24,15 @@ namespace Zodiac { namespace Bytecode_Tests {
 void init_test_context(Zodiac_Context *zc)
 {
     assert(zc);
-    zodiac_context_create(zc);
+
+    Zodiac_Options options = {};
 
 #if BYTECODE_TESTS_VERBOSE
-    zc->options.verbose = true;
-    logging_system_set_max_level(Log_Level::TRACE);
+    options.verbose = true;
 #endif // BYTECODE_TESTS_VERBOSE
+
+    zodiac_context_create(options, zc);
+
 }
 
 #define PRINT_NEWLINE bytecode_emit_print(&bb, bytecode_string_literal(&bb, "\n"));
