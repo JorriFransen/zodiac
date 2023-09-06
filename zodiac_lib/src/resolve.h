@@ -57,7 +57,6 @@ enum class Flat_Node_Kind
     EXPR,
     TYPE_SPEC,
 
-    // These should be Flat_Root_Node_Kind
     FUNCTION_PROTO,
     GLOBAL_CONST_LVALUE,
     RUN,

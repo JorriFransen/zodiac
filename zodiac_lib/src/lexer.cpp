@@ -1,5 +1,12 @@
 #include "lexer.h"
 
+#include "error.h"
+#include "memory/temporary_allocator.h"
+#include "memory/zmemory.h"
+#include "util/asserts.h"
+#include "util/logger.h"
+#include "zodiac_context.h"
+
 #include <cctype>
 #include <cmath>
 #include <errno.h>
@@ -7,11 +14,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "memory/zmemory.h"
-#include "util/asserts.h"
-#include "util/logger.h"
-#include "zodiac_context.h"
 
 namespace Zodiac
 {
@@ -51,6 +53,12 @@ void zodiac_register_keywords(Atom_Table *at)
 #undef ZODIAC_DIRECTIVE
 
     assert_msg(block == at->current_block, "Expected all keyword atoms to fit in the same block...");
+}
+
+#define report_lex_error(lexer, range, fmt, ...)                                            \
+{                                                                                           \
+    (lexer)->token.kind = TOK_INVALID;                                                      \
+    zodiac_report_error((lexer)->context, ZODIAC_LEX_ERROR, (range), (fmt), ##__VA_ARGS__); \
 }
 
 bool is_keyword(const Atom &atom)
@@ -226,7 +234,23 @@ case (first_char): {                                                \
     auto length = lex->stream - start;
 
     if (length) {
-        lex->token.atom = atom_get(&lex->context->atoms, start, length);
+
+            if (lex->token.kind == TOK_STRING) {
+
+                const char *err_char = nullptr;
+                String str_lit = convert_escape_characters_to_special_characters(temp_allocator_allocator(), String_Ref(start, length), &err_char);
+                if (err_char) {
+                    auto range = lex->token.range;
+                    report_lex_error(lex, range, "Invalid escape sequence in string literal: '\\%c'", *err_char);
+                    return false;
+                }
+
+                lex->token.atom = atom_get(&lex->context->atoms, str_lit);
+
+            } else {
+
+                lex->token.atom = atom_get(&lex->context->atoms, start, length);
+            }
 
         if (lex->token.kind == TOK_NAME && is_keyword(lex->token.atom)) {
             lex->token.kind = TOK_KEYWORD;
@@ -290,6 +314,7 @@ void print_token(Token token)
 }
 
 file_local String_Ref token_kind_to_string[TOK_LAST + 1] = {
+    [TOK_INVALID] = "INVALID",
     [TOK_INT] = "INT",
     [TOK_REAL] = "REAL",
     [TOK_STRING] = "STRING",

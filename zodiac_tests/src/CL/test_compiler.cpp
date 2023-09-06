@@ -17,10 +17,15 @@
 #include "platform/filesystem.h"
 #include "platform/platform.h"
 #include "resolve.h"
+#include "source_pos.h"
 #include "type.h"
 #include "util/asserts.h"
 
-namespace Zodiac { namespace Compiler_Tests {
+namespace Zodiac {
+
+struct Scope;
+
+namespace Compiler_Tests {
 
 #define RESOLVE_ERR(f, m) (Expected_Error { .kind = ZODIAC_RESOLVE_ERROR, .fatal = (f), .message = (m)})
 #define PARSE_ERR(f, m) (Expected_Error { .kind = ZODIAC_PARSE_ERROR, .fatal = (f), .message = (m)})

@@ -136,7 +136,7 @@ AST_Expression *parse_expr_operand(Parser *parser)
     }
 
     ct = cur_tok(parser);
-    report_parse_error(parser, ct.range, "Expected INT, NAME, '(' or 'null' when parsing expression, got: '%s'", ct.atom.data);
+    report_parse_error(parser, ct.range, "Expected INT, NAME, '(' or 'null' when parsing expression, got: '%s', (%s)", ct.atom.data, tmp_token_kind_str(ct.kind).data);
     return nullptr;
 }
 

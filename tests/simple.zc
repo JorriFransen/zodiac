@@ -4,7 +4,7 @@
 x := #run 42;
 
 main :: () {
-    print("main");
+    print("\tmain\n");
     print(x);
     return 0;
 }

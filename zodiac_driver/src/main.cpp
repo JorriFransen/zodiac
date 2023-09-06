@@ -1,6 +1,7 @@
 #include "ast.h"
 #include "bytecode/bytecode.h"
 #include "bytecode/converter.h"
+#include "bytecode/interpreter.h"
 #include "bytecode/llvm_builder.h"
 #include "bytecode/printer.h"
 #include "bytecode/validator.h"
@@ -27,6 +28,10 @@
 
 using namespace Zodiac;
 using namespace Bytecode;
+
+namespace Zodiac {
+    struct Scope;
+}
 
 int main(int argc, const char **argv) {
 
@@ -60,9 +65,18 @@ int main(int argc, const char **argv) {
     AST_File *file = parse_file(&parser);
 
     if (parser.error) {
+        bool lex_err = false;
         for (s64 i = 0; i < c.errors.count; i++) {
             auto &err = c.errors[i];
-            assert(err.kind == Zodiac_Error_Kind::ZODIAC_PARSE_ERROR);
+            assert(err.kind == Zodiac_Error_Kind::ZODIAC_LEX_ERROR || err.kind == Zodiac_Error_Kind::ZODIAC_PARSE_ERROR);
+            if (err.kind == Zodiac_Error_Kind::ZODIAC_LEX_ERROR) {
+                lex_err = true;
+            }
+
+            if (err.kind == Zodiac_Error_Kind::ZODIAC_PARSE_ERROR && lex_err) {
+                continue;
+            }
+
             auto start = err.source_range.start;
             fprintf(stderr, "%s:%llu:%llu: error: %s\n", start.name.data, start.line, start.index_in_line, err.message.data);
         }
