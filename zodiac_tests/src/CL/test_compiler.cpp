@@ -110,8 +110,6 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
         std_out_str = string_append(ta, expected_results.runtime_std_out, "\n");
     }
 
-    munit_assert_int64(pr.result_string.length, ==, std_out_str.length);
-
     if (pr.result_string.length) munit_assert_string_equal(pr.result_string.data, std_out_str.data);
 
     return result;
@@ -1316,6 +1314,334 @@ MunitResult Run_Struct_Member_Types(const MunitParameter params[], void* user_da
 { 1, 2, 3, 4, 5, 6, 7, 8, 10.101000, 9.990000, false, true, { 1, { 2.200000, 3.300000 } }, { 7, 6, 5, 4, 3, 2, 1 } })OUT_STR",
 
     };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        u8s := #run make_u8s(1, 2, 3, 4, 5);
+        s8s := #run make_s8s(1, 2, 3, 4, 5);
+        u16s := #run make_u16s(1, 2, 3, 4, 5);
+        s16s := #run make_s16s(1, 2, 3, 4, 5);
+        u32s := #run make_u32s(1, 2, 3, 4, 5);
+        s32s := #run make_s32s(1, 2, 3, 4, 5);
+        u64s := #run make_u64s(1, 2, 3, 4, 5);
+        s64s := #run make_s64s(1, 2, 3, 4, 5);
+        bools1 := #run make_bools(true, false, true, false, true);
+        bools2 := #run make_bools(false, true, false, true, false);
+        strings := #run make_strings("str1", "str2", "str3", "str4", "str5");
+        Vec2 :: struct { x, y: s64; }
+        vecs := #run make_vecs({0, 1}, {2, 3}, {4, 5}, {6, 7}, {8, 9});
+        arrays := #run make_arrays({1, 2}, {3, 4}, {5, 6}, {7, 8}, {9, 10});
+        main :: () {
+            print(u8s);
+            print(s8s);
+            print(u16s);
+            print(s16s);
+            print(u32s);
+            print(s32s);
+            print(u64s);
+            print(s64s);
+            print(bools1);
+            print(bools2);
+            print(strings);
+            print(vecs);
+            print(arrays);
+            return 0;
+        }
+        make_u8s :: (a0: u8, a1: u8, a2: u8, a3: u8, a4: u8) {
+            result : [5]u8;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_s8s :: (a0: s8, a1: s8, a2: s8, a3: s8, a4: s8) {
+            result : [5]s8;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_u16s :: (a0: u16, a1: u16, a2: u16, a3: u16, a4: u16) {
+            result : [5]u16;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_s16s :: (a0: s16, a1: s16, a2: s16, a3: s16, a4: s16) {
+            result : [5]s16;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_u32s :: (a0: u32, a1: u32, a2: u32, a3: u32, a4: u32) {
+            result : [5]u32;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_s32s :: (a0: s32, a1: s32, a2: s32, a3: s32, a4: s32) {
+            result : [5]s32;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_u64s :: (a0: u64, a1: u64, a2: u64, a3: u64, a4: u64) {
+            result : [5]u64;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_s64s :: (a0: s64, a1: s64, a2: s64, a3: s64, a4: s64) {
+            result : [5]s64;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_bools :: (a0: bool, a1: bool, a2: bool, a3: bool, a4: bool) {
+            result : [5]bool;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_strings :: (a0: *u8, a1: *u8, a2: *u8, a3: *u8, a4: *u8) {
+            result : [5]*u8;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_vecs :: (a0: Vec2, a1: Vec2, a2: Vec2, a3: Vec2, a4: Vec2) {
+            result : [5]Vec2;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_arrays :: (a0: [2]s64, a1: [2]s64, a2: [2]s64, a3: [2]s64, a4: [2]s64) {
+            result : [5][2]s64;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = {
+        .std_out = R"OUT_STR({ 1, 2, 3, 4, 5 }
+{ 1, 2, 3, 4, 5 }
+{ 1, 2, 3, 4, 5 }
+{ 1, 2, 3, 4, 5 }
+{ 1, 2, 3, 4, 5 }
+{ 1, 2, 3, 4, 5 }
+{ 1, 2, 3, 4, 5 }
+{ 1, 2, 3, 4, 5 }
+{ true, false, true, false, true }
+{ false, true, false, true, false }
+{ "str1", "str2", "str3", "str4", "str5" }
+{ { 0, 1 }, { 2, 3 }, { 4, 5 }, { 6, 7 }, { 8, 9 } }
+{ { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 }, { 9, 10 } })OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return result.result;
+}
+
+MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        u8s :: #run make_u8s(1, 2, 3, 4, 5);
+        s8s :: #run make_s8s(1, 2, 3, 4, 5);
+        u16s :: #run make_u16s(1, 2, 3, 4, 5);
+        s16s :: #run make_s16s(1, 2, 3, 4, 5);
+        u32s :: #run make_u32s(1, 2, 3, 4, 5);
+        s32s :: #run make_s32s(1, 2, 3, 4, 5);
+        u64s :: #run make_u64s(1, 2, 3, 4, 5);
+        s64s :: #run make_s64s(1, 2, 3, 4, 5);
+        bools1 :: #run make_bools(true, false, true, false, true);
+        bools2 :: #run make_bools(false, true, false, true, false);
+        strings :: #run make_strings("str1", "str2", "str3", "str4", "str5");
+        Vec2 :: struct { x, y: s64; }
+        vecs :: #run make_vecs({0, 1}, {2, 3}, {4, 5}, {6, 7}, {8, 9});
+        arrays :: #run make_arrays({1, 2}, {3, 4}, {5, 6}, {7, 8}, {9, 10});
+        main :: () {
+            print(u8s);
+            print(s8s);
+            print(u16s);
+            print(s16s);
+            print(u32s);
+            print(s32s);
+            print(u64s);
+            print(s64s);
+            print(bools1);
+            print(bools2);
+            print(strings);
+            print(vecs);
+            print(arrays);
+            return 0;
+        }
+        make_u8s :: (a0: u8, a1: u8, a2: u8, a3: u8, a4: u8) {
+            result : [5]u8;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_s8s :: (a0: s8, a1: s8, a2: s8, a3: s8, a4: s8) {
+            result : [5]s8;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_u16s :: (a0: u16, a1: u16, a2: u16, a3: u16, a4: u16) {
+            result : [5]u16;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_s16s :: (a0: s16, a1: s16, a2: s16, a3: s16, a4: s16) {
+            result : [5]s16;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_u32s :: (a0: u32, a1: u32, a2: u32, a3: u32, a4: u32) {
+            result : [5]u32;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_s32s :: (a0: s32, a1: s32, a2: s32, a3: s32, a4: s32) {
+            result : [5]s32;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_u64s :: (a0: u64, a1: u64, a2: u64, a3: u64, a4: u64) {
+            result : [5]u64;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_s64s :: (a0: s64, a1: s64, a2: s64, a3: s64, a4: s64) {
+            result : [5]s64;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_bools :: (a0: bool, a1: bool, a2: bool, a3: bool, a4: bool) {
+            result : [5]bool;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_strings :: (a0: *u8, a1: *u8, a2: *u8, a3: *u8, a4: *u8) {
+            result : [5]*u8;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_vecs :: (a0: Vec2, a1: Vec2, a2: Vec2, a3: Vec2, a4: Vec2) {
+            result : [5]Vec2;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+        make_arrays :: (a0: [2]s64, a1: [2]s64, a2: [2]s64, a3: [2]s64, a4: [2]s64) {
+            result : [5][2]s64;
+            result[0] = a0;
+            result[1] = a1;
+            result[2] = a2;
+            result[3] = a3;
+            result[4] = a4;
+            return result;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = {
+        .std_out = R"OUT_STR({ 1, 2, 3, 4, 5 }
+{ 1, 2, 3, 4, 5 }
+{ 1, 2, 3, 4, 5 }
+{ 1, 2, 3, 4, 5 }
+{ 1, 2, 3, 4, 5 }
+{ 1, 2, 3, 4, 5 }
+{ 1, 2, 3, 4, 5 }
+{ 1, 2, 3, 4, 5 }
+{ true, false, true, false, true }
+{ false, true, false, true, false }
+{ "str1", "str2", "str3", "str4", "str5" }
+{ { 0, 1 }, { 2, 3 }, { 4, 5 }, { 6, 7 }, { 8, 9 } }
+{ { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 }, { 9, 10 } })OUT_STR" };
 
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };

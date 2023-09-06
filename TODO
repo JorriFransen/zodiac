@@ -1,8 +1,4 @@
 
-- Test rundirectives with different types and with constants
-    - array element types
-    - array element types as struct members? (Not sure this is a seperate case.)
-
 - Struct literal expressions (add as tests)
     - return {2, 3} (Vec2)
     - As function arguments (tests)

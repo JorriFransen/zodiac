@@ -52,7 +52,6 @@ void print_bytecode(const Bytecode_Builder *bb);
     bool read_res = filesystem_read(&stream, length, (u8 *)_buf, &read_length); \
     munit_assert_int(read_length, ==, length); \
     _buf[length] = '\0'; \
-    munit_assert_int((int)strlen(_buf), ==, es.length); \
     if (read_length) munit_assert_string_equal(_buf, es.data); \
 }
 

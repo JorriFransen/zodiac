@@ -83,6 +83,8 @@ MunitResult Local_Run_Directives(const MunitParameter params[], void* user_data_
 MunitResult Run_Global_Var_Types(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Run_Global_Const_Types(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Run_Struct_Member_Types(const MunitParameter params[], void* user_data_or_fixture);
+MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_data_or_fixture);
+MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Run_And_Pointer_To_Const(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Run_Expr_Const(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Run_Call_Arg_Const(const MunitParameter params[], void* user_data_or_fixture);
@@ -132,6 +134,8 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Run_Global_Var_Types),
     DEFINE_TEST(Run_Global_Const_Types),
     DEFINE_TEST(Run_Struct_Member_Types),
+    DEFINE_TEST(Run_Array_Element_Types),
+    DEFINE_TEST(Run_Const_Array_Element_Types),
     DEFINE_TEST(Run_And_Pointer_To_Const),
     DEFINE_TEST(Run_Expr_Const),
     DEFINE_TEST(Run_Call_Arg_Const),

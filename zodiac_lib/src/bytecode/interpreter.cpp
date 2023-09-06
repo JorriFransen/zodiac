@@ -1717,17 +1717,17 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type)
     }
 }
 
-void interpreter_print_register(Interpreter *interp, Interpreter_Register reg)
+void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, bool quote_strings/*=false*/)
 {
     debug_assert(interp && reg.type);
 
     auto out_handle = (FILE *)interp->std_out.handle;
 
-    if (reg.type == &builtin_type_String) {
-        fprintf(out_handle, "%s", reg.value.string.data);
-        // fprintf(out_handle, "%.*s", (int)reg.value.string.length, reg.value.string.data);
-        return;
-    }
+    // if (reg.type == &builtin_type_String) {
+    //     fprintf(out_handle, "%s", reg.value.string.data);
+    //     // fprintf(out_handle, "%.*s", (int)reg.value.string.length, reg.value.string.data);
+    //     return;
+    // }
 
     switch (reg.type->kind) {
         default: assert(false); break;
@@ -1768,11 +1768,23 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg)
         }
 
         case Type_Kind::POINTER: {
-            fprintf(out_handle, "%p", reg.value.pointer);
+            if (reg.type == &builtin_type_String) {
+                auto fmt = "%s";
+                if (quote_strings) {
+                    fmt = "\"%s\"";
+                }
+                fprintf(out_handle, fmt, reg.value.pointer);
+            } else {
+                fprintf(out_handle, "%p", reg.value.pointer);
+            }
             break;
         }
 
         case Type_Kind::STRUCTURE: {
+
+            if (reg.type == &builtin_type_String) {
+                assert(false);
+            }
 
             fprintf(out_handle, "{ ");
 
@@ -1781,7 +1793,7 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg)
                 for (s64 i = 0; i < reg.value.compound.count; i++) {
                     auto interp_reg = interpreter_load_register(interp, reg.value.compound[i]);
                     if (i != 0) fprintf(out_handle, ", ");
-                    interpreter_print_register(interp, interp_reg);
+                    interpreter_print_register(interp, interp_reg, true);
                 }
 
             } else {
@@ -1806,18 +1818,29 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg)
         }
 
         case Type_Kind::STATIC_ARRAY: {
-            if (reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
-                assert(false);
-            }
             fprintf(out_handle, "{ ");
-            u8 *cursor = reg.value.pointer;
-            auto elem_type = reg.type->static_array.element_type;
-            auto elem_size = elem_type->bit_size / 8;
-            for (s64 i = 0; i < reg.type->static_array.count; i++) {
-                if (i != 0) fprintf(out_handle, ", ");
-                interpreter_print_from_memory(interp, cursor, elem_type);
-                cursor += elem_size;
+
+
+            if (reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
+
+                for (s64 i = 0; i < reg.value.compound.count; i++) {
+                    auto interp_reg = interpreter_load_register(interp, reg.value.compound[i]);
+                    if (i != 0) fprintf(out_handle, ", ");
+                    interpreter_print_register(interp, interp_reg, true);
+                }
+
+            } else {
+
+                u8 *cursor = reg.value.pointer;
+                auto elem_type = reg.type->static_array.element_type;
+                auto elem_size = elem_type->bit_size / 8;
+                for (s64 i = 0; i < reg.type->static_array.count; i++) {
+                    if (i != 0) fprintf(out_handle, ", ");
+                    interpreter_print_from_memory(interp, cursor, elem_type);
+                    cursor += elem_size;
+                }
             }
+
             fprintf(out_handle, " }");
             break;
         }

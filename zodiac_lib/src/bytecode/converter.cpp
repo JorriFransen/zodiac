@@ -990,21 +990,21 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
         case AST_Expression_Kind::INVALID: assert(false); break;
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
-            Integer_Value result_value = resolve_constant_integer_expr(expr);
-            return bytecode_integer_literal(bc->builder, type, result_value);
+            return bytecode_integer_literal(bc->builder, type, expr->integer_literal.value);
         }
 
         case AST_Expression_Kind::REAL_LITERAL: {
-            Real_Value result_value = resolve_constant_real_expr(expr);
-            return bytecode_real_literal(bc->builder, expr->resolved_type, result_value);
+            return bytecode_real_literal(bc->builder, expr->resolved_type, expr->real_literal.value);
         }
 
-        case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
+        case AST_Expression_Kind::STRING_LITERAL: {
+            return bytecode_string_literal(bc->builder, &expr->string_literal.atom);
+        }
+
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
 
         case AST_Expression_Kind::BOOL_LITERAL: {
-            bool result_value = resolve_constant_bool_expr(expr);
-            return bytecode_boolean_literal(bc->builder, type, result_value);
+            return bytecode_boolean_literal(bc->builder, type, expr->bool_literal);
         }
 
         case AST_Expression_Kind::IDENTIFIER: {

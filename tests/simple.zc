@@ -1,12 +1,12 @@
 
-u8s := #run make_u8s(1, 2, 3, 4, 5);
-s8s := #run make_s8s(1, 2, 3, 4, 5);
-u16s := #run make_u16s(1, 2, 3, 4, 5);
-s16s := #run make_s16s(1, 2, 3, 4, 5);
-u32s := #run make_u32s(1, 2, 3, 4, 5);
-s32s := #run make_s32s(1, 2, 3, 4, 5);
-u64s := #run make_u64s(1, 2, 3, 4, 5);
-s64s := #run make_s64s(1, 2, 3, 4, 5);
+u8s :: #run make_u8s(1, 2, 3, 4, 5);
+s8s :: #run make_s8s(1, 2, 3, 4, 5);
+u16s :: #run make_u16s(1, 2, 3, 4, 5);
+s16s :: #run make_s16s(1, 2, 3, 4, 5);
+u32s :: #run make_u32s(1, 2, 3, 4, 5);
+s32s :: #run make_s32s(1, 2, 3, 4, 5);
+u64s :: #run make_u64s(1, 2, 3, 4, 5);
+s64s :: #run make_s64s(1, 2, 3, 4, 5);
 
 bools1 := #run make_bools(true, false, true, false, true);
 bools2 := #run make_bools(false, true, false, true, false);
@@ -23,7 +23,6 @@ arrays := #run make_arrays({1, 2}, {3, 4}, {5, 6}, {7, 8}, {9, 10});
 
 #run main();
 main :: () {
-
     print(u8s);
     print(s8s);
     print(u16s);
