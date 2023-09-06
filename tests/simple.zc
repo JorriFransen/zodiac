@@ -13,9 +13,13 @@ bools2 := #run make_bools(false, true, false, true, false);
 
 strings := #run make_strings("str1", "str2", "str3", "str4", "str5");
 
-Person :: struct {
-    name: *u8;
+Vec2 :: struct {
+    x, y: s64;
 }
+
+vecs := #run make_vecs({0, 1}, {2, 3}, {4, 5}, {6, 7}, {8, 9});
+
+arrays := #run make_arrays({1, 2}, {3, 4}, {5, 6}, {7, 8}, {9, 10});
 
 #run main();
 main :: () {
@@ -31,6 +35,8 @@ main :: () {
     print(bools1);
     print(bools2);
     print(strings);
+    print(vecs);
+    print(arrays);
     return 0;
 }
 
@@ -126,6 +132,26 @@ make_bools :: (a0: bool, a1: bool, a2: bool, a3: bool, a4: bool) {
 
 make_strings :: (a0: *u8, a1: *u8, a2: *u8, a3: *u8, a4: *u8) {
     result : [5]*u8;
+    result[0] = a0;
+    result[1] = a1;
+    result[2] = a2;
+    result[3] = a3;
+    result[4] = a4;
+    return result;
+}
+
+make_vecs :: (a0: Vec2, a1: Vec2, a2: Vec2, a3: Vec2, a4: Vec2) {
+    result : [5]Vec2;
+    result[0] = a0;
+    result[1] = a1;
+    result[2] = a2;
+    result[3] = a3;
+    result[4] = a4;
+    return result;
+}
+
+make_arrays :: (a0: [2]s64, a1: [2]s64, a2: [2]s64, a3: [2]s64, a4: [2]s64) {
+    result : [5][2]s64;
     result[0] = a0;
     result[1] = a1;
     result[2] = a2;

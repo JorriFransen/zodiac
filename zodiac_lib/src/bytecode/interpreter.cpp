@@ -1537,6 +1537,8 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
         assert(member_type == bc_mem_reg.type);
 
         Interpreter_Register mem_reg = interpreter_load_register(interp, bc_mem_reg);
+
+        // @Cleanup: @TODO: @FIXME: alignment
         auto copy_size = mem_reg.type->bit_size / 8;
 
         switch (mem_reg.type->kind) {
@@ -1663,8 +1665,54 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type)
             break;
         }
 
-        case Type_Kind::STRUCTURE: assert(false); break;
-        case Type_Kind::STATIC_ARRAY: assert(false); break;
+        case Type_Kind::STRUCTURE: {
+
+            fprintf(out_handle, "{ ");
+
+            u8 *cursor = mem;
+            for (s64 i = 0; i < type->structure.member_types.count; i++) {
+
+                if (i != 0) fprintf(out_handle, ", ");
+
+                auto mem_type = type->structure.member_types[i];
+                interpreter_print_from_memory(interp, cursor, mem_type);
+
+                // @Cleanup: @TODO: @FIXME: alignment
+                assert(mem_type->bit_size % 8 == 0);
+                auto size = mem_type->bit_size / 8;
+                cursor += size;
+            }
+
+            fprintf(out_handle, " }");
+
+            break;
+        }
+
+        case Type_Kind::STATIC_ARRAY: {
+
+            fprintf(out_handle, "{ ");
+
+            auto elem_type = type->static_array.element_type;
+
+            // @Cleanup: @TODO: @FIXME: alignment
+            assert(elem_type->bit_size % 8 == 0);
+            auto elem_size = elem_type->bit_size / 8;
+
+            u8 *cursor = mem;
+            for (s64 i = 0; i < type->static_array.count; i++) {
+
+                if (i != 0) fprintf(out_handle, ", ");
+
+                interpreter_print_from_memory(interp, cursor, elem_type);
+
+                cursor += elem_size;
+            }
+
+            fprintf(out_handle, " }");
+
+            break;
+        }
+
         case Type_Kind::FUNCTION: assert(false); break;
     }
 }

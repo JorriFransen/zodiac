@@ -415,9 +415,9 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
 
                     case Type_Kind::BOOLEAN: {
                         if (reg.value.boolean) {
-                            string_builder_append(sb, "TRUE");
+                            string_builder_append(sb, "true");
                         } else {
-                            string_builder_append(sb, "FALSE");
+                            string_builder_append(sb, "false");
                         }
                         break;
                     }
