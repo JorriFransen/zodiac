@@ -37,6 +37,10 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
 
     Compile_Run_Results result = { .result = MUNIT_OK };
 
+    if (expected_results.errors.count) {
+        options.report_errors = false;
+    }
+
     auto ta = temp_allocator_allocator();
 
     File_Handle interp_stdout_file = {};
