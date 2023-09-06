@@ -791,11 +791,8 @@ AST_File *parse_file(Parser *parser)
 
 
         if (directive) {
-            if (directive->kind == AST_Directive_Kind::RUN) {
-                decl = ast_run_directive_decl_new(parser->context, directive->range, directive);
-            } else {
-                assert(false);
-            }
+            assert(directive->kind == AST_Directive_Kind::RUN);
+            decl = ast_run_directive_decl_new(parser->context, directive->range, directive);
         } else {
             decl = parse_declaration(parser);
         }

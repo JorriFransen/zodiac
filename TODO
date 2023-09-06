@@ -1,6 +1,4 @@
 
-- Maybe only allow run statements inside of blocks (add print expression to allow that)
-
 - Test rundirectives with different types and with constants
     - array element types
     - array element types as struct members? (Not sure this is a seperate case.)
@@ -24,6 +22,7 @@
 
 - There is multiple places (in ast_const_expr_to_bytecode, and the constant resolver) where we lookup a symbol, find the declaration (variable/constant), find the init expression. This can probably be wrapped up in a function.
 
+- Maybe only allow run statements inside of blocks? (add print expression to allow that)??
 - Look into weird behaviour with bool_to_string from the support lib
 
 test
