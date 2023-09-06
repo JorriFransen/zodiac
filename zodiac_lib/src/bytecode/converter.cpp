@@ -24,21 +24,26 @@ namespace Zodiac { namespace Bytecode {
 Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Context *context, Bytecode_Builder *bb)
 {
     Bytecode_Converter result = {};
-
-    result.allocator = allocator;
-    result.context = context;
-    result.builder = bb;
-
-    hash_table_create(allocator, &result.functions);
-    hash_table_create(allocator, &result.allocations);
-    hash_table_create(allocator, &result.const_lvalues);
-    hash_table_create(allocator, &result.globals);
-    hash_table_create(allocator, &result.run_directives);
-    hash_table_create(allocator, &result.run_results);
-
-    result.run_directive_count = 0;
-
+    bytecode_converter_init(allocator, context, bb, &result);
     return result;
+}
+
+void bytecode_converter_init(Allocator *allocator, Zodiac_Context *context, Bytecode_Builder *bb, Bytecode_Converter *out_bc)
+{
+    debug_assert(allocator && context && bb && out_bc);
+
+    out_bc->allocator = allocator;
+    out_bc->context = context;
+    out_bc->builder = bb;
+
+    hash_table_create(allocator, &out_bc->functions);
+    hash_table_create(allocator, &out_bc->allocations);
+    hash_table_create(allocator, &out_bc->const_lvalues);
+    hash_table_create(allocator, &out_bc->globals);
+    hash_table_create(allocator, &out_bc->run_directives);
+    hash_table_create(allocator, &out_bc->run_results);
+
+    out_bc->run_directive_count = 0;
 }
 
 void bytecode_converter_destroy(Bytecode_Converter *bc)

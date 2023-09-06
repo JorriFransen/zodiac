@@ -51,6 +51,7 @@ struct Run_Wrapper_Result
 };
 
 ZAPI Bytecode_Converter bytecode_converter_create(Allocator *allocator, Zodiac_Context *context, Bytecode_Builder *bb);
+ZAPI void bytecode_converter_init(Allocator *allocator, Zodiac_Context *context, Bytecode_Builder *bb, Bytecode_Converter *out_bc);
 ZAPI void bytecode_converter_destroy(Bytecode_Converter *bc);
 
 ZAPI bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc);

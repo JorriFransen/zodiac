@@ -2,28 +2,17 @@
 
 #include <munit/munit.h>
 
-#include "ast.h"
 #include "atom.h"
-#include "bytecode/converter.h"
 #include "bytecode/interpreter.h"
-#include "bytecode/llvm_builder.h"
-#include "bytecode/validator.h"
 #include "common.h"
-#include "containers/hash_table.h"
-#include "lexer.h"
 #include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
-#include "parser.h"
 #include "platform/filesystem.h"
 #include "platform/platform.h"
 #include "resolve.h"
-#include "source_pos.h"
 #include "type.h"
-#include "util/asserts.h"
 
 namespace Zodiac {
-
-struct Scope;
 
 namespace Compiler_Tests {
 
@@ -50,109 +39,24 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
 
     auto ta = temp_allocator_allocator();
 
+    File_Handle interp_stdout_file = {};
+    filesystem_temp_file(&interp_stdout_file);
+    defer { filesystem_close(&interp_stdout_file); };
+
     zodiac_context_create(options, &result.context);
+    result.context.interp_stdout_file = &interp_stdout_file;
 
-    Lexer lexer;
-    lexer_create(&result.context, &lexer);
-    defer { lexer_destroy(&lexer); };
+    zodiac_context_compile(&result.context, code_str, "<test_code>");
 
-    lexer_init_stream(&lexer, code_str, "<test_code>");
-
-    Parser parser;
-    parser_create(&result.context, &lexer, &parser);
-    defer { parser_destroy(&parser); };
-
-    AST_File *file = parse_file(&parser);
-    if (!expected_results.parse_errors.count) {
-        munit_assert_ptr_not_null(file);
-        munit_assert_false(parser.error);
-    } else {
-        munit_assert_ptr_null(file);
-        munit_assert(parser.error);
-        result.result = MUNIT_FAIL;
-        return result;
+    if (result.context.errors.count != expected_results.errors.count) {
+        resolver_report_errors(result.context.resolver);
     }
 
-    Resolver resolver;
-    resolver_create(&resolver, &result.context);
-    defer { resolver_destroy(&resolver); };
+    munit_assert_int64(result.context.errors.count, ==, expected_results.errors.count);
+    if (expected_results.errors.count) {
 
-    result.builder = bytecode_builder_create(&result.context.bytecode_allocator, &result.context);
-    Bytecode_Converter bc = bytecode_converter_create(&result.context.bytecode_allocator, &result.context, &result.builder);
-    defer { bytecode_converter_destroy(&bc); };
-
-    File_Handle stdout_file = {};
-    filesystem_temp_file(&stdout_file);
-    defer { filesystem_close(&stdout_file); };
-
-    resolver_add_file(&resolver, file);
-    bool resolver_done = false;
-    while (!resolver_done) {
-        resolver_done = resolver_cycle(&resolver);
-
-        if (result.context.errors.count) break;
-
-        assert(result.context.errors.count == 0);
-        emit_bytecode(&resolver, &bc);
-        assert(result.context.errors.count == 0);
-
-        for (s64 i = 0; i < resolver.nodes_to_run_bytecode.count; i++) {
-            Flat_Root_Node *root_node = resolver.nodes_to_run_bytecode[i];
-
-            AST_Directive *directive = nullptr;
-            bool from_expr = false;
-
-            if (root_node->root.kind == Flat_Node_Kind::DECL) {
-                auto decl = root_node->root.decl;
-                assert(decl->kind == AST_Declaration_Kind::RUN_DIRECTIVE);
-                assert(decl->directive->kind == AST_Directive_Kind::RUN);
-                directive = decl->directive;
-            } else {
-                assert(root_node->root.kind == Flat_Node_Kind::RUN);
-                directive = root_node->root.run.expr->directive.directive;
-                from_expr = true;
-            }
-            assert(directive);
-
-            Bytecode_Function_Handle wrapper_handle;
-            bool found = hash_table_find(&bc.run_directives, directive, &wrapper_handle);
-            assert(found);
-
-            auto run_res = execute_run_wrapper(&bc, wrapper_handle, stdout_file);
-
-            if (from_expr) {
-                auto expr = root_node->root.run.expr;
-                assert(run_res.value.type == expr->resolved_type);
-
-                Scope *scope = directive->run.scope;
-                Source_Range range = expr->range;
-                AST_Expression *new_expr = interpreter_register_to_ast_expression(&bc, run_res.value, scope, range);
-
-                assert(new_expr->resolved_type);
-                assert(EXPR_IS_CONST(new_expr));
-
-                Bytecode_Register value_reg = ast_expr_to_bytecode(&bc, new_expr);
-                expr->directive.generated_expression = new_expr;
-
-                hash_table_add(&bc.run_results, directive, value_reg);
-            }
-
-            free_run_wrapper_result(&run_res);
-        }
-
-        // For now assume runs never fail...
-        resolver.nodes_to_run_bytecode.count = 0;
-    }
-
-    if (resolve_error_count(&result.context) != expected_results.resolve_errors.count) {
-        resolver_report_errors(&resolver);
-    }
-
-    munit_assert_int64(result.context.errors.count, ==, expected_results.resolve_errors.count);
-    if (expected_results.resolve_errors.count) {
-
-        for (s64 i = 0; i < expected_results.resolve_errors.count; i++) {
-            auto expected_err = &expected_results.resolve_errors[i];
+        for (s64 i = 0; i < expected_results.errors.count; i++) {
+            auto expected_err = &expected_results.errors[i];
             auto actual_err = &result.context.errors[i];
 
             munit_assert(expected_err->kind == actual_err->kind);
@@ -165,23 +69,12 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
 
     print_bytecode(&result.builder);
 
-    Bytecode_Validator validator;
-    bytecode_validator_init(&result.context, ta, &validator, result.builder.functions, nullptr);
-    defer { bytecode_validator_free(&validator); };
-
-    bool bytecode_valid = validate_bytecode(&validator);
-    if (!bytecode_valid) {
-        bytecode_validator_print_errors(&validator);
-        result.result = MUNIT_FAIL;
-        return result;
-    }
-
-    result.program = bytecode_get_program(bc.builder);
+    result.program = bytecode_get_program(result.context.bytecode_builder);
 
     Interpreter interp = interpreter_create(c_allocator(), &result.context);
     defer { interpreter_free(&interp); };
 
-    interp.std_out = stdout_file;
+    interp.std_out = interp_stdout_file;
 
     munit_assert(result.program.entry_handle == -1);
     result.program.entry_handle = bytecode_find_entry(result.program);
@@ -191,17 +84,9 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
 
     munit_assert_int64(result_reg.value.integer.s64, ==, expected_results.exit_code);
 
-    assert_zodiac_stream(stdout_file, expected_results.compiletime_std_out);
-
-    LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &result.builder);
-    defer { llvm_builder_free(&llvm_builder); };
-
-    llvm_builder_emit_program(&llvm_builder, &result.program);
-
-    // llvm_builder_print(&llvm_builder);
+    assert_zodiac_stream(interp_stdout_file, expected_results.compiletime_std_out);
 
     auto out_file_name = result.context.options.output_file_name;
-    llvm_builder_emit_binary(&llvm_builder);
     defer { filesystem_remove(out_file_name); };
 
     munit_assert(filesystem_exists(result.context.options.output_file_name));
@@ -301,7 +186,7 @@ MunitResult Invalid_Return_Type(const MunitParameter params[], void* user_data_o
     )CODE_STR";
 
     Expected_Results expected = {
-        .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Could not convert integer literal to inferred type 'void'")})
+        .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Could not convert integer literal to inferred type 'void'")})
     };
 
     auto result = compile_and_run(code_string, expected);
@@ -493,7 +378,7 @@ MunitResult Modify_Global_Constant(const MunitParameter params[], void* user_dat
     )CODE_STR";
 
     Expected_Results expected = {
-        .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Left side of assignment must be an lvalue")})
+        .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Left side of assignment must be an lvalue")})
     };
 
     auto result = compile_and_run(code_string, expected);
@@ -578,7 +463,7 @@ MunitResult Modify_Local_Constant(const MunitParameter params[], void* user_data
     )CODE_STR";
 
     Expected_Results expected = {
-        .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Left side of assignment must be an lvalue")})
+        .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Left side of assignment must be an lvalue")})
     };
 
     auto result = compile_and_run(code_string, expected);
@@ -1474,7 +1359,7 @@ MunitResult Run_Expr_Const(const MunitParameter params[], void* user_data_or_fix
         )CODE_STR";
 
         Expected_Results expected = {
-            .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Run directive expression must be constant")})
+            .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Run directive expression must be constant")})
         };
 
         auto result = compile_and_run(code_string, expected);
@@ -1514,7 +1399,7 @@ MunitResult Run_Call_Arg_Const(const MunitParameter params[], void* user_data_or
         )CODE_STR";
 
         Expected_Results expected = {
-            .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Run directive expression must be constant")})
+            .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Run directive expression must be constant")})
         };
 
         auto result = compile_and_run(code_string, expected);
@@ -1554,7 +1439,7 @@ MunitResult Run_Print_Arg_Const(const MunitParameter params[], void* user_data_o
         )CODE_STR";
 
         Expected_Results expected = {
-            .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Arguments to print in #run must be constant")})
+            .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Arguments to print in #run must be constant")})
         };
 
         auto result = compile_and_run(code_string, expected);
@@ -1594,7 +1479,7 @@ MunitResult Run_Assignment_Is_Expression(const MunitParameter params[], void* us
         )CODE_STR";
 
         Expected_Results expected = {
-            .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Expected expression after #run in assignment")})
+            .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Expected expression after #run in assignment")})
         };
 
         auto result = compile_and_run(code_string, expected);
@@ -1617,7 +1502,7 @@ MunitResult Run_Call_Arg_In_Block_Const(const MunitParameter params[], void* use
         )CODE_STR";
 
         Expected_Results expected = {
-            .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Run directive expression must be constant")})
+            .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Run directive expression must be constant")})
         };
 
         auto result = compile_and_run(code_string, expected);
@@ -1657,7 +1542,7 @@ MunitResult Run_Print_Arg_In_Block_Const(const MunitParameter params[], void* us
         )CODE_STR";
 
         Expected_Results expected = {
-            .resolve_errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Arguments to print in #run must be constant")})
+            .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Arguments to print in #run must be constant")})
         };
 
         auto result = compile_and_run(code_string, expected);
@@ -1690,47 +1575,37 @@ MunitResult Run_Print_Arg_In_Block_Const(const MunitParameter params[], void* us
 
 MunitResult Run_Block_Only_Print_And_Call(const MunitParameter params[], void* user_data_or_fixture) {
 
-    {
-        String_Ref code_string = R"CODE_STR(
-            #run {
-                x :: 4;
-            }
-        )CODE_STR";
+    String_Ref code_string = R"CODE_STR(
+        #run {
+            x :: 4;
+        }
+    )CODE_STR";
 
-        Expected_Results expected = {
-            .parse_errors = Array_Ref<Expected_Error>({ PARSE_ERR(true, "Only print and call statements are allowed in run blocks")})
-        };
+    Expected_Results expected = {
+        .errors = Array_Ref<Expected_Error>({ PARSE_ERR(false, "Only print and call statements are allowed in run blocks")})
+    };
 
-        auto result = compile_and_run(code_string, expected);
-        defer { free_compile_run_results(&result); };
-
-
-        munit_assert(result.result == MUNIT_FAIL);
-    }
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
 
     return MUNIT_OK;
 }
 
 MunitResult Run_Local_Unused(const MunitParameter params[], void* user_data_or_fixture) {
 
-    {
-        String_Ref code_string = R"CODE_STR(
-            main :: {
-                #run print(1);
-                return 0;
-            }
-        )CODE_STR";
+    String_Ref code_string = R"CODE_STR(
+        main :: () {
+            #run print(1);
+            return 0;
+        }
+    )CODE_STR";
 
-        Expected_Results expected = {
-            .parse_errors = Array_Ref<Expected_Error>({ PARSE_ERR(true, "Result value of #run in local scope is not used")})
-        };
+    Expected_Results expected = {
+        .errors = Array_Ref<Expected_Error>({ PARSE_ERR(false, "Result value of #run in local scope is not used")})
+    };
 
-        auto result = compile_and_run(code_string, expected);
-        defer { free_compile_run_results(&result); };
-
-
-        munit_assert(result.result == MUNIT_FAIL);
-    }
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
 
     return MUNIT_OK;
 }

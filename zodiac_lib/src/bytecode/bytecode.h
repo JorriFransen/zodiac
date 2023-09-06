@@ -225,7 +225,7 @@ struct Bytecode_Program
 
 struct Bytecode_Builder
 {
-    Allocator *allocator = nullptr;
+    Allocator *bytecode_allocator = nullptr;
     Zodiac_Context *zodiac_context = nullptr;
 
     Dynamic_Array<Bytecode_Function> functions = {};
@@ -240,7 +240,8 @@ struct Bytecode_Builder
     s32 insert_block_index = -1;
 };
 
-ZAPI Bytecode_Builder bytecode_builder_create(Allocator *allocator, Zodiac_Context *cu);
+ZAPI Bytecode_Builder bytecode_builder_create(Allocator *bytecode_allocator, Zodiac_Context *cu);
+ZAPI void bytecode_builder_init(Allocator *bytecode_allocator, Zodiac_Context *cu, Bytecode_Builder *out_builder);
 ZAPI void bytecode_builder_free(Bytecode_Builder *bb);
 
 ZAPI Bytecode_Program bytecode_get_program(Bytecode_Builder *builder);

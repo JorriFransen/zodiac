@@ -11,6 +11,17 @@
 namespace Zodiac
 {
 
+struct File_Handle;
+struct Resolver;
+struct Zodiac_Error;
+
+namespace Bytecode {
+    struct Bytecode_Builder;
+    struct Bytecode_Converter;
+}
+
+using namespace Bytecode;
+
 static String_Ref default_ouput_file_name = "a.out" ZPLATFORM_DEFAULT_EXE_EXTENSION;
 
 struct Zodiac_Options
@@ -27,10 +38,8 @@ struct Zodiac_Options
 
     // Temporary/Development options
     bool use_bool_to_string_for_PRINT_in_llvm = false;
+    bool report_errors = false; // Used in the tests to not display errors for succeeding tests
 };
-
-struct Resolver;
-struct Zodiac_Error;
 
 struct Zodiac_Context
 {
@@ -49,7 +58,11 @@ struct Zodiac_Context
     Allocator error_allocator;
 
     Zodiac_Options options = {};
+
     Resolver *resolver;
+    Bytecode_Builder *bytecode_builder;
+    Bytecode_Converter *bytecode_converter;
+    File_Handle *interp_stdout_file;
 
     Dynamic_Array<Zodiac_Error> errors;
     bool fatal_resolve_error;
@@ -66,5 +79,9 @@ struct Zodiac_Context
 
 ZAPI void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context);
 ZAPI void zodiac_context_destroy(Zodiac_Context *context);
+
+ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source, String_Ref source_name);
+ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source_file_name);
+ZAPI bool zodiac_context_compile(Zodiac_Context *ctx);
 
 }

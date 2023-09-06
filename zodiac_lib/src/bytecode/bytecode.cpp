@@ -35,23 +35,26 @@ u64 hash_key(Bytecode_Instruction_Handle handle)
 
 Bytecode_Builder bytecode_builder_create(Allocator *allocator, Zodiac_Context *cu)
 {
-    debug_assert(allocator);
-
-    Bytecode_Builder result {
-        .allocator = allocator,
-        .zodiac_context = cu,
-        .required_global_size = 0,
-        .insert_fn_index = -1,
-        .insert_block_index = -1,
-    };
-
-    dynamic_array_create(allocator, &result.functions);
-    dynamic_array_create(allocator, &result.foreign_functions);
-    dynamic_array_create(allocator, &result.globals);
-
-    hash_table_create(allocator, &result.global_registers);
-
+    Bytecode_Builder result;
+    bytecode_builder_init(allocator, cu, &result);
     return result;
+}
+
+void bytecode_builder_init(Allocator *bytecode_allocator, Zodiac_Context *cu, Bytecode_Builder *out_builder)
+{
+    debug_assert(bytecode_allocator && cu && out_builder);
+
+    out_builder->bytecode_allocator = bytecode_allocator,
+    out_builder->zodiac_context = cu,
+    out_builder->required_global_size = 0,
+    out_builder->insert_fn_index = -1,
+    out_builder->insert_block_index = -1,
+
+    dynamic_array_create(bytecode_allocator, &out_builder->functions);
+    dynamic_array_create(bytecode_allocator, &out_builder->foreign_functions);
+    dynamic_array_create(bytecode_allocator, &out_builder->globals);
+
+    hash_table_create(bytecode_allocator, &out_builder->global_registers);
 }
 
 void bytecode_builder_free(Bytecode_Builder *bb)
@@ -163,9 +166,9 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
 
 
     if (!is_foreign) {
-        dynamic_array_create(builder->allocator, &registers);
-        dynamic_array_create(builder->allocator, &blocks);
-        dynamic_array_create(builder->allocator, &phi_args);
+        dynamic_array_create(builder->bytecode_allocator, &registers);
+        dynamic_array_create(builder->bytecode_allocator, &blocks);
+        dynamic_array_create(builder->bytecode_allocator, &phi_args);
     }
 
     Bytecode_Function result = {
@@ -305,7 +308,7 @@ Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_
         .terminated = false,
     };
 
-    dynamic_array_create(builder->allocator, &block.instructions);
+    dynamic_array_create(builder->bytecode_allocator, &block.instructions);
 
     dynamic_array_append(&fn->blocks, block);
 
@@ -1271,7 +1274,7 @@ String bytecode_unique_register_name_in_function(Bytecode_Builder *bb, Bytecode_
 
         if (!duplicate) {
             temporary_allocator_reset(ta, mark);
-            return string_copy(bb->allocator, name);
+            return string_copy(bb->bytecode_allocator, name);
         }
 
         name = string_format(taa, "%s%i", original_name.data, dup_num);
