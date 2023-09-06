@@ -1,8 +1,6 @@
 
 - Wrap a function around the compile loop (deduplicate from main and the tests).
 
-- Convert escape charaters in string literals
-
 - Maybe only allow run statements inside of blocks (add print expression to allow that)
 
 - Test rundirectives with different types and with constants
