@@ -465,13 +465,6 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
         }
 
         case Bytecode_Opcode::PRINT: {
-
-            if (bc_inst.a.type == &builtin_type_String) {
-                assert(bc_inst.a.flags & BC_REGISTER_FLAG_CONSTANT);
-                assert(bc_inst.a.flags & BC_REGISTER_FLAG_LITERAL);
-                // Must be zero terminated for now
-            }
-
             llvm::Value *llvm_val = llvm_builder_emit_register(builder, bc_inst.a);
             llvm_builder_emit_print_instruction(builder, bc_inst.a.type, llvm_val);
             break;
@@ -848,7 +841,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 #undef EMIT_FLOAT_BINOP
 
 
-void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm::Value *llvm_val)
+void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm::Value *llvm_val, bool quote_strings/*=false*/)
 {
     debug_assert(builder && type && llvm_val);
 
@@ -955,10 +948,20 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
         }
 
         case Type_Kind::POINTER: {
-            auto fmt_str = "%p";
-            llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
-            dynamic_array_append(llvm_print_args, fmt_str_lit);
-            dynamic_array_append(llvm_print_args, llvm_val);
+            if (type == &builtin_type_String) {
+                auto fmt_str = "%s";
+                if (quote_strings) {
+                    fmt_str = "\"%s\"";
+                }
+                llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
+                dynamic_array_append(llvm_print_args, fmt_str_lit);
+                dynamic_array_append(llvm_print_args, llvm_val);
+            } else {
+                auto fmt_str = "%p";
+                llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
+                dynamic_array_append(llvm_print_args, fmt_str_lit);
+                dynamic_array_append(llvm_print_args, llvm_val);
+            }
             break;
         }
 
@@ -982,7 +985,7 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
 
                     unsigned indexes[] = { (unsigned)i } ;
                     llvm::Value *mem_val = irb->CreateExtractValue(llvm_val, indexes);
-                    llvm_builder_emit_print_instruction(builder, type->structure.member_types[i], mem_val);
+                    llvm_builder_emit_print_instruction(builder, type->structure.member_types[i], mem_val, true);
                 }
 
                 llvm::Value *postamble = llvm_builder_emit_string_literal(builder, " }");
@@ -1007,7 +1010,7 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
 
                 unsigned indexes[] = { (unsigned)i };
                 llvm::Value *elem_val = irb->CreateExtractValue(llvm_val, indexes);
-                llvm_builder_emit_print_instruction(builder, elem_type, elem_val);
+                llvm_builder_emit_print_instruction(builder, elem_type, elem_val, true);
             }
 
             llvm::Value *postamble = llvm_builder_emit_string_literal(builder, " }");
@@ -1268,7 +1271,8 @@ llvm::Constant *llvm_builder_emit_bool_literal(LLVM_Builder *builder, Type *type
 
 llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_Ref str)
 {
-    Atom atom = atom_get(&builder->zodiac_context->atoms, str);
+    auto length = strlen(str.data);
+    Atom atom = atom_get(&builder->zodiac_context->atoms, str.data, length);
 
     llvm::Constant *result = nullptr;
     if (hash_table_find(&builder->string_literals, atom, &result)) {
@@ -1276,7 +1280,7 @@ llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_R
         return result;
     }
 
-    llvm::Constant *data = llvm::ConstantDataArray::getString(*builder->llvm_context, llvm::StringRef(str.data, str.length), true);
+    llvm::Constant *data = llvm::ConstantDataArray::getString(*builder->llvm_context, llvm::StringRef(str.data, length), true);
     llvm::GlobalValue *variable = new llvm::GlobalVariable(*builder->llvm_module, data->getType(), true, llvm::GlobalVariable::PrivateLinkage, data, "_string_literal_");
     variable->setUnnamedAddr(llvm::GlobalVariable::UnnamedAddr::Global);
     auto alignment = llvm::MaybeAlign(1);

@@ -423,7 +423,13 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
                     }
 
                     case Type_Kind::POINTER: {
-                        string_builder_append(sb, "%p", reg.value.pointer);
+                        if (reg.type == &builtin_type_String) {
+                            auto str = String_Ref(reg.value.string.data, strlen(reg.value.string.data));
+                            auto escaped_string = convert_special_characters_to_escape_characters(temp_allocator_allocator(), str);
+                            string_builder_append(sb, "\"%.*s\"", (int)escaped_string.length, escaped_string.data);
+                        } else {
+                            string_builder_append(sb, "%p", reg.value.pointer);
+                        }
                         break;
                     }
 

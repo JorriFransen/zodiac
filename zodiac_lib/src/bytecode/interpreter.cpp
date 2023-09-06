@@ -1647,8 +1647,22 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type)
             break;
         }
 
-        case Type_Kind::BOOLEAN: assert(false); break;
-        case Type_Kind::POINTER: assert(false); break;
+        case Type_Kind::BOOLEAN: {
+            bool val = *(bool *)mem;
+            fprintf(out_handle, "%s", val ? "true" : "false");
+            break;
+        }
+
+        case Type_Kind::POINTER: {
+            if (type == &builtin_type_String) {
+                auto str = *(char **)mem;
+                fprintf(out_handle, "\"%s\"", str);
+            } else {
+                assert(false);
+            }
+            break;
+        }
+
         case Type_Kind::STRUCTURE: assert(false); break;
         case Type_Kind::STATIC_ARRAY: assert(false); break;
         case Type_Kind::FUNCTION: assert(false); break;
@@ -1662,7 +1676,8 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg)
     auto out_handle = (FILE *)interp->std_out.handle;
 
     if (reg.type == &builtin_type_String) {
-        fprintf(out_handle, "%.*s", (int)reg.value.string.length, reg.value.string.data);
+        fprintf(out_handle, "%s", reg.value.string.data);
+        // fprintf(out_handle, "%.*s", (int)reg.value.string.length, reg.value.string.data);
         return;
     }
 

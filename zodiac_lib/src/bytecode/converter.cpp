@@ -715,7 +715,6 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
         case AST_Expression_Kind::STRING_LITERAL: {
             return bytecode_string_literal(bc->builder, &expr->string_literal.atom);
-            break;
         }
 
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;

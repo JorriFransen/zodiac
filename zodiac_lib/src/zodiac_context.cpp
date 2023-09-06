@@ -184,7 +184,7 @@ bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source, String_Ref s
             if (resolver_report_errors(ctx->resolver)) {
                 return false;
             }
-        } else if (ctx->fatal_resolve_error) return false;
+        } else if (ctx->errors.count) return false;
 
         assert(ctx->errors.count == 0);
         emit_bytecode(ctx->resolver, ctx->bytecode_converter);

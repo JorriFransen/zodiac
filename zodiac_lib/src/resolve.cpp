@@ -1750,7 +1750,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
         }
 
         case AST_Expression_Kind::STRING_LITERAL: {
-            assert(!inferred_type);
+            assert(!inferred_type || inferred_type == &builtin_type_String);
             expr->resolved_type = &builtin_type_String;
             break;
         }

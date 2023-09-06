@@ -131,7 +131,7 @@ ZAPI bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Ha
 
 ZAPI bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruction &bc_inst);
 
-ZAPI void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm::Value *llvm_val);
+ZAPI void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm::Value *llvm_val, bool quote_strings = false);
 
 ZAPI llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Register &bc_reg);
 ZAPI llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode_Register &bc_reg);
