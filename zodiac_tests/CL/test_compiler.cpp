@@ -1940,6 +1940,62 @@ MunitResult Run_Local_Unused(const MunitParameter params[], void* user_data_or_f
     return MUNIT_OK;
 }
 
+MunitResult Non_Constant_Compound(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        Vec2 :: struct { x, y: s64; }
+        AABB :: struct { pos, size: Vec2; }
+
+        vec2 :: (x: s64, y: s64) -> Vec2 { return { x, y }; }
+        arr :: (a0: s64, a1: s64) -> [2]s64 { return { a0, a1 }; }
+
+        main :: () {
+
+            x := 4;
+            y :: 2;
+
+            v : Vec2 = { x, y };
+            print(v);
+
+            v2 := vec2(1, 2);
+            print(v2);
+
+            print(vec2(3, 4));
+
+            r : AABB = { { x, y }, v2 };
+            print(r);
+
+            a : [2]s64 = { x, y };
+            print(a);
+
+            a2 := arr(1, 2);
+            print(a2);
+
+            print(arr(3, 4));
+
+            aa : [2][2]s64 = { { x, y }, a2 };
+            print(aa);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = {
+        .std_out = R"STDOUT_STR({ 4, 2 }
+{ 1, 2 }
+{ 3, 4 }
+{ { 4, 2 }, { 1, 2 } }
+{ 4, 2 }
+{ 1, 2 }
+{ 3, 4 }
+{ { 4, 2 }, { 1, 2 } })STDOUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef RESOLVE_ERR
 
 }}

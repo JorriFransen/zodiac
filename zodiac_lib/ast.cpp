@@ -281,7 +281,7 @@ void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
 
 void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, AST_Statement *out_stmt)
 {
-    debug_assert(exprs.count && exprs.data && out_stmt);
+    debug_assert(out_stmt);
 
     ast_statement_create(AST_Statement_Kind::PRINT, out_stmt);
 

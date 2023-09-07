@@ -2113,6 +2113,9 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
             auto compound_member_count = expr->compound.expressions.count;
 
+            bool all_literal = true;
+            bool all_const = true;
+
             if (inferred_type->flags & TYPE_FLAG_AGGREGATE) {
                 auto aggregate_type = inferred_type;
                 assert(aggregate_type->kind == Type_Kind::STRUCTURE);
@@ -2136,6 +2139,13 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                         fatal_resolve_error(ctx, compound_member_expr, "    Got: %s", temp_type_string(compound_member_type));
                         return false;
                     }
+
+                    if (!(compound_member_expr->flags & AST_EXPR_FLAG_LITERAL)) {
+                        all_literal = false;
+                    }
+                    if (!(compound_member_expr->flags & AST_EXPR_FLAG_CONST)) {
+                        all_const = false;
+                    }
                 }
 
             } else if (inferred_type->kind == Type_Kind::STATIC_ARRAY) {
@@ -2145,19 +2155,26 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 if (array_member_count != compound_member_count) {
                     fatal_resolve_error(ctx, expr, "Mismatching expression count in compound expression, expected %i, got %i", array_member_count, compound_member_count);
                     return false;
+                }
 
-                    auto array_element_type = array_type->static_array.element_type;
+                auto array_element_type = array_type->static_array.element_type;
 
-                    for (s64 i = 0; i < array_member_count; i++) {
-                        auto compound_member_expr = expr->compound.expressions[i];
-                        Type *compound_member_type = compound_member_expr->resolved_type;
+                for (s64 i = 0; i < array_member_count; i++) {
+                    auto compound_member_expr = expr->compound.expressions[i];
+                    Type *compound_member_type = compound_member_expr->resolved_type;
 
-                        if (array_element_type != compound_member_type) {
-                            fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
-                            fatal_resolve_error(ctx, compound_member_expr, "    Expected: %s", temp_type_string(array_element_type));
-                            fatal_resolve_error(ctx, compound_member_expr, "    Got: %s", temp_type_string(compound_member_type));
-                            return false;
-                        }
+                    if (array_element_type != compound_member_type) {
+                        fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
+                        fatal_resolve_error(ctx, compound_member_expr, "    Expected: %s", temp_type_string(array_element_type));
+                        fatal_resolve_error(ctx, compound_member_expr, "    Got: %s", temp_type_string(compound_member_type));
+                        return false;
+                    }
+
+                    if (!(compound_member_expr->flags & AST_EXPR_FLAG_LITERAL)) {
+                        all_literal = false;
+                    }
+                    if (!(compound_member_expr->flags & AST_EXPR_FLAG_CONST)) {
+                        all_const = false;
                     }
                 }
 
@@ -2166,6 +2183,13 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             }
 
             expr->resolved_type = inferred_type;
+
+            if (all_literal) {
+                expr->flags |= AST_EXPR_FLAG_LITERAL;
+            }
+            if (all_const) {
+                expr->flags |= AST_EXPR_FLAG_CONST;
+            }
             break;
         }
     }

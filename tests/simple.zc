@@ -1,160 +1,44 @@
 
-u8s :: #run make_u8s(1, 2, 3, 4, 5);
-s8s :: #run make_s8s(1, 2, 3, 4, 5);
-u16s :: #run make_u16s(1, 2, 3, 4, 5);
-s16s :: #run make_s16s(1, 2, 3, 4, 5);
-u32s :: #run make_u32s(1, 2, 3, 4, 5);
-s32s :: #run make_s32s(1, 2, 3, 4, 5);
-u64s :: #run make_u64s(1, 2, 3, 4, 5);
-s64s :: #run make_s64s(1, 2, 3, 4, 5);
-
-bools1 := #run make_bools(true, false, true, false, true);
-bools2 := #run make_bools(false, true, false, true, false);
-
-strings := #run make_strings("str1", "str2", "str3", "str4", "str5");
-
-Vec2 :: struct {
+vec2 :: struct {
     x, y: s64;
 }
 
-vecs := #run make_vecs({0, 1}, {2, 3}, {4, 5}, {6, 7}, {8, 9});
+aabb :: struct {
+    pos, size: vec2;
+}
 
-arrays := #run make_arrays({1, 2}, {3, 4}, {5, 6}, {7, 8}, {9, 10});
+vec2 :: (x: s64, y: s64) -> vec2 { return { x, y }; }
+arr :: (a0: s64, a1: s64) -> [2]s64 { return { a0, a1 }; }
 
 #run main();
 main :: () {
-    print(u8s);
-    print(s8s);
-    print(u16s);
-    print(s16s);
-    print(u32s);
-    print(s32s);
-    print(u64s);
-    print(s64s);
-    print(bools1);
-    print(bools2);
-    print(strings);
-    print(vecs);
-    print(arrays);
+
+    x := 4;
+    y :: 2;
+
+    v : vec2 = { x, y };
+    print(v);
+
+    v2 := vec2(1, 2);
+    print(v2);
+
+    print(vec2(3, 4));
+
+    r : aabb = { { x, y }, v2 };
+    print(r);
+
+    print();
+
+    a : [2]s64 = { x, y };
+    print(a);
+
+    a2 := arr(1, 2);
+    print(a2);
+
+    print(arr(3, 4));
+
+    aa : [2][2]s64 = { { x, y }, a2 };
+    print(aa);
+
     return 0;
-}
-
-make_u8s :: (a0: u8, a1: u8, a2: u8, a3: u8, a4: u8) {
-    result : [5]u8;
-    result[0] = a0;
-    result[1] = a1;
-    result[2] = a2;
-    result[3] = a3;
-    result[4] = a4;
-    return result;
-}
-
-make_s8s :: (a0: s8, a1: s8, a2: s8, a3: s8, a4: s8) {
-    result : [5]s8;
-    result[0] = a0;
-    result[1] = a1;
-    result[2] = a2;
-    result[3] = a3;
-    result[4] = a4;
-    return result;
-}
-
-make_u16s :: (a0: u16, a1: u16, a2: u16, a3: u16, a4: u16) {
-    result : [5]u16;
-    result[0] = a0;
-    result[1] = a1;
-    result[2] = a2;
-    result[3] = a3;
-    result[4] = a4;
-    return result;
-}
-
-make_s16s :: (a0: s16, a1: s16, a2: s16, a3: s16, a4: s16) {
-    result : [5]s16;
-    result[0] = a0;
-    result[1] = a1;
-    result[2] = a2;
-    result[3] = a3;
-    result[4] = a4;
-    return result;
-}
-
-make_u32s :: (a0: u32, a1: u32, a2: u32, a3: u32, a4: u32) {
-    result : [5]u32;
-    result[0] = a0;
-    result[1] = a1;
-    result[2] = a2;
-    result[3] = a3;
-    result[4] = a4;
-    return result;
-}
-
-make_s32s :: (a0: s32, a1: s32, a2: s32, a3: s32, a4: s32) {
-    result : [5]s32;
-    result[0] = a0;
-    result[1] = a1;
-    result[2] = a2;
-    result[3] = a3;
-    result[4] = a4;
-    return result;
-}
-
-make_u64s :: (a0: u64, a1: u64, a2: u64, a3: u64, a4: u64) {
-    result : [5]u64;
-    result[0] = a0;
-    result[1] = a1;
-    result[2] = a2;
-    result[3] = a3;
-    result[4] = a4;
-    return result;
-}
-
-make_s64s :: (a0: s64, a1: s64, a2: s64, a3: s64, a4: s64) {
-    result : [5]s64;
-    result[0] = a0;
-    result[1] = a1;
-    result[2] = a2;
-    result[3] = a3;
-    result[4] = a4;
-    return result;
-}
-
-make_bools :: (a0: bool, a1: bool, a2: bool, a3: bool, a4: bool) {
-    result : [5]bool;
-    result[0] = a0;
-    result[1] = a1;
-    result[2] = a2;
-    result[3] = a3;
-    result[4] = a4;
-    return result;
-}
-
-make_strings :: (a0: *u8, a1: *u8, a2: *u8, a3: *u8, a4: *u8) {
-    result : [5]*u8;
-    result[0] = a0;
-    result[1] = a1;
-    result[2] = a2;
-    result[3] = a3;
-    result[4] = a4;
-    return result;
-}
-
-make_vecs :: (a0: Vec2, a1: Vec2, a2: Vec2, a3: Vec2, a4: Vec2) {
-    result : [5]Vec2;
-    result[0] = a0;
-    result[1] = a1;
-    result[2] = a2;
-    result[3] = a3;
-    result[4] = a4;
-    return result;
-}
-
-make_arrays :: (a0: [2]s64, a1: [2]s64, a2: [2]s64, a3: [2]s64, a4: [2]s64) {
-    result : [5][2]s64;
-    result[0] = a0;
-    result[1] = a1;
-    result[2] = a2;
-    result[3] = a3;
-    result[4] = a4;
-    return result;
 }

@@ -1,14 +1,9 @@
 
 - Verify the llvm build process still works on windows.
 
-- Struct literal expressions (add as tests)
-    - return {2, 3} (Vec2)
-    - As function arguments (tests)
-    - With non constant values
-    - global
+- When emitting non constant compound expressions some of it's members/elements might be constant. Constant members should be emitted to a value first, which we can then use to insert the non const values into.
 
 - Some way to get static array length
-- static array tests
 
 - Try to report (fatal) errors before executing run directives
 
