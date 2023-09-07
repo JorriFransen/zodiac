@@ -8,19 +8,19 @@ all: dyncall zodiac_lib zodiac_driver zodiac_tests
 
 .PHONY: zodiac_lib
 zodiac_lib: dyncall
-	@$(MAKE) -f Makefile.zodiac_lib.windows.mak $(COMMON_FLAGS)
+	@$(MAKE) -f build/Makefile.zodiac_lib.windows.mak $(COMMON_FLAGS)
 
 zodiac_driver: zodiac_lib
-	@$(MAKE) -f Makefile.zodiac_driver.windows.mak $(COMMON_FLAGS)
+	@$(MAKE) -f build/Makefile.zodiac_driver.windows.mak $(COMMON_FLAGS)
 
 zodiac_tests: zodiac_lib
-	@$(MAKE) -f Makefile.zodiac_tests.windows.mak $(COMMON_FLAGS)
+	@$(MAKE) -f build/Makefile.zodiac_tests.windows.mak $(COMMON_FLAGS)
 
 .PHONY: clean
 clean: clean_dyncall
-	@$(MAKE) -f Makefile.zodiac_lib.windows.mak clean $(COMMON_FLAGS)
-	@$(MAKE) -f Makefile.zodiac_driver.windows.mak clean $(COMMON_FLAGS)
-	@$(MAKE) -f Makefile.zodiac_tests.windows.mak clean $(COMMON_FLAGS)
+	@$(MAKE) -f build/Makefile.zodiac_lib.windows.mak clean $(COMMON_FLAGS)
+	@$(MAKE) -f build/Makefile.zodiac_driver.windows.mak clean $(COMMON_FLAGS)
+	@$(MAKE) -f build/Makefile.zodiac_tests.windows.mak clean $(COMMON_FLAGS)
 
 .PHONY: dyncall
 dyncall: $(DYNCALL_LIB)
