@@ -44,7 +44,7 @@ $(DYNCALL_MAKEFILE): $(DYNCALL_SOURCE_DIR)
 
 $(DYNCALL_LIB): $(DYNCALL_SOURCE_DIR) $(DYNCALL_INSTALL_DIR) $(DYNCALL_MAKEFILE)
 	@echo "Building dyncall..."
-	cd $(DYNCALL_SOURCE_DIR) && $(MAKE) $(COMMON_FLAGS) install
+	cd $(DYNCALL_SOURCE_DIR) && $(MAKE) $(COMMON_FLAGS) install > /dev/null
 
 
 .PHONY: clean_dyncall
