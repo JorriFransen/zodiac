@@ -1,14 +1,14 @@
 BUILD_DIR := bin
 OBJ_DIR := obj
 
-include ./3rdparty/dyncall/Makefile.dyncall_vars.linux.mak
+include $(PWD)/3rdparty/Makefile.3rdparty.linux.mak
 
 BASE_DIR := zodiac_driver
 SRC_DIR := $(BASE_DIR)/src
 ASSEMBLY := zodiac
 EXTENSION :=
 COMPILER_FLAGS := -g -Og -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec
-INCLUDE_FLAGS := -Izodiac_lib/src -I$(SRC_DIR) -I$(BASE_DIR)/cxxopts $(DYNCALL_INCLUDE_FLAGS)
+INCLUDE_FLAGS := -Izodiac_lib/src -I$(SRC_DIR) $(CXXOPTS_INCLUDE_FLAGS) $(DYNCALL_INCLUDE_FLAGS)
 LINKER_FLAGS := -g -Og -L$(BUILD_DIR) -lzodiac -Wl,-rpath,'$$ORIGIN'
 DEFINES := -D_DEBUG -DZIMPORT
 

@@ -16,7 +16,7 @@ LLVM_LIBS := $(shell llvm-config --libs x86 --link-static --system-libs)
 LLVM_CXX_FLAGS := $(shell llvm-config --cxxflags)
 LLVM_LD_FLAGS := $(shell llvm-config --ldflags)
 
-include ./3rdparty/dyncall/Makefile.dyncall_vars.linux.mak
+include $(PWD)/3rdparty/Makefile.3rdparty.linux.mak
 
 COMMON_COMPILER_FLAGS := -g -Og -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC
 COMMON_LINKER_FLAGS := -g -Og

@@ -1,6 +1,6 @@
 
 
-include ./3rdparty/dyncall/Makefile.dyncall_vars.linux.mak
+include $(PWD)/3rdparty/Makefile.3rdparty.linux.mak
 
 COMMON_FLAGS := --no-print-directory
 
