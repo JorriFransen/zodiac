@@ -7,7 +7,7 @@ SRC_DIR := $(BASE_DIR)/src
 ASSEMBLY := zodiac_tests
 EXTENSION :=
 
-include Makefile.dyncall_vars.linux.mak
+include ./3rdparty/dyncall/Makefile.dyncall_vars.linux.mak
 
 COMPILER_FLAGS := -g -MD -MP -Werror=vla -fdeclspec
 INCLUDE_FLAGS := -Izodiac_lib/src -I$(BASE_DIR)/munit -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)

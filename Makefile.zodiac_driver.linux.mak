@@ -1,7 +1,7 @@
 BUILD_DIR := bin
 OBJ_DIR := obj
 
-include Makefile.dyncall_vars.linux.mak
+include ./3rdparty/dyncall/Makefile.dyncall_vars.linux.mak
 
 BASE_DIR := zodiac_driver
 SRC_DIR := $(BASE_DIR)/src

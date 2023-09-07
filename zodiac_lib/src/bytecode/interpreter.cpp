@@ -9,7 +9,6 @@
 #include "platform/platform.h"
 #include "type.h"
 #include "util/asserts.h"
-#include "util/zstring.h"
 #include "zodiac_context.h"
 
 namespace Zodiac { namespace Bytecode {
