@@ -1,5 +1,6 @@
 
-include ./3rdparty/dyncall/Makefile.dyncall_vars.windows.mak
+CWD := $(shell cd)
+include $(CWD)/3rdparty/Makefile.3rdparty.windows.mak
 
 COMMON_FLAGS := --no-print-directory
 

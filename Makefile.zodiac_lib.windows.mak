@@ -20,7 +20,8 @@ LLVM_DEBUG_BUILD_DIR := "$(DIR)\$(BUILD_DIR)\llvm_build_debug"
 LLVM_DEBUG_INSTALL_DIR := "$(DIR)\$(BUILD_DIR)\llvm_install_debug"
 LLVM_CXX_FLAGS = -std=c++17
 
-include ./3rdparty/dyncall/Makefile.dyncall_vars.windows.mak
+CWD := $(shell cd)
+include $(CWD)/3rdparty/Makefile.3rdparty.windows.mak
 
 COMMON_LINKER_FLAGS := -g -lmsvcrtd -Wl,-nodefaultlib:libcmt
 

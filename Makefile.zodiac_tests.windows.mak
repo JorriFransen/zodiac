@@ -3,7 +3,8 @@ DIR := $(subst /,\,${CURDIR})
 BUILD_DIR := bin
 OBJ_DIR := obj
 
-include ./3rdparty/dyncall/Makefile.dyncall_vars.windows.mak
+CWD := $(shell cd)
+include $(CWD)/3rdparty/Makefile.3rdparty.windows.mak
 
 BASE_DIR := zodiac_tests
 SRC_DIR := $(BASE_DIR)\src
