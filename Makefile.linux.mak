@@ -30,24 +30,24 @@ clean: clean_dyncall
 
 .PHONY: dyncall
 dyncall: $(DYNCALL_LIB)
-	@:
+
+$(DYNCALL_SOURCE_DIR):
+	@echo "Extracting dyncall..."
+	unzip -qq $(DYNCALL_ARCHIVE) 'dyncall-$(DYNCALL_VERSION)/**' -d $(DYNCALL_BASE_DIR)
 
 $(DYNCALL_INSTALL_DIR):
 	@mkdir -p $(DYNCALL_INSTALL_DIR)
 
-$(DYNCALL_MAKEFILE):
+$(DYNCALL_MAKEFILE): $(DYNCALL_SOURCE_DIR)
 	@echo "Configuring dyncall..."
-	@cd $(DYNCALL_SOURCE_DIR); \
-	./configure --prefix=$(DYNCALL_INSTALL_DIR) > /dev/null
+	cd $(DYNCALL_SOURCE_DIR) && ./configure --prefix=$(DYNCALL_INSTALL_DIR)
 
-$(DYNCALL_LIB):  $(DYNCALL_INSTALL_DIR) $(DYNCALL_MAKEFILE)
+$(DYNCALL_LIB): $(DYNCALL_SOURCE_DIR) $(DYNCALL_INSTALL_DIR) $(DYNCALL_MAKEFILE)
 	@echo "Building dyncall..."
-	@cd $(DYNCALL_SOURCE_DIR); \
-	$(MAKE) $(COMMON_FLAGS) > /dev/null; \
-	$(MAKE) install $(COMMON_FLAGS) > /dev/null
+	cd $(DYNCALL_SOURCE_DIR) && $(MAKE) $(COMMON_FLAGS) install
 
 
 .PHONY: clean_dyncall
 clean_dyncall:
+	cd $(DYNCALL_SOURCE_DIR) && $(MAKE) $(COMMON_FLAGS) clean > /dev/null 2>&1
 	rm -rf $(DYNCALL_INSTALL_DIR)
-	rm -f $(DYNCALL_SOURCE_DIR)/Makefile

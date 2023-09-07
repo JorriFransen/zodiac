@@ -12,6 +12,6 @@ then
     IWYU_TOOL=iwyu_tool.py
 fi
 
-$IWYU_TOOL -o clang -p . -j $(nproc) -- -Xiwyu --verbose=1 | grep 'error:'
+$IWYU_TOOL -o clang -p . -j $(nproc) -- -Xiwyu --verbose=1 | grep 'error:\|warning:'
 
 exit 0

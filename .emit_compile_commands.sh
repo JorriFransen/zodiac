@@ -1,5 +1,4 @@
 #! /usr/bin/env bash
 
 # Emit compile_commands.json for clangd
-. clean_all.sh
-exec bear -- ./build_all.sh
+compiledb -n make -f Makefile.linux.mak zodiac_driver zodiac_tests
