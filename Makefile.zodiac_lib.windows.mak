@@ -84,7 +84,7 @@ $(FULL_ASSEMBLY_PATH): $(OBJ_FILES)
 llvm:
 	@if not exist $(LLVM_DEBUG_INSTALL_DIR) (\
 	     echo Extracting llvm... && \
-	    powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('$(BASE_DIR)\llvm\llvm-$(LLVM_VERSION).src.zip', '$(LLVM_SRC_DIR)') }" &&\
+	    powershell.exe -nologo -noprofile -command "& { Add-Type -A 'System.IO.Compression.FileSystem'; [IO.Compression.ZipFile]::ExtractToDirectory('3rdparty\llvm\llvm-$(LLVM_VERSION).src.zip', '$(LLVM_SRC_DIR)') }" &&\
 	     echo Configuring llvm... &&\
 	    mkdir $(LLVM_DEBUG_BUILD_DIR) &&\
 	    pushd $(LLVM_DEBUG_BUILD_DIR) &&\

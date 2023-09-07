@@ -1,4 +1,6 @@
 
+- Verify the llvm build process still works on windows.
+
 - Struct literal expressions (add as tests)
     - return {2, 3} (Vec2)
     - As function arguments (tests)
