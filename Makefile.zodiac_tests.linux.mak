@@ -3,14 +3,14 @@ BUILD_DIR := bin
 OBJ_DIR := obj
 
 BASE_DIR := zodiac_tests
-SRC_DIR := $(BASE_DIR)/src
+SRC_DIR := $(BASE_DIR)
 ASSEMBLY := zodiac_tests
 EXTENSION :=
 
 include $(PWD)/3rdparty/Makefile.3rdparty.linux.mak
 
 COMPILER_FLAGS := -g -MD -MP -Werror=vla -fdeclspec
-INCLUDE_FLAGS := -Izodiac_lib/src $(MUNIT_INCLUDE_FLAGS) -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
+INCLUDE_FLAGS := -Izodiac_lib $(MUNIT_INCLUDE_FLAGS) -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
 LINKER_FLAGS := -g -L$(BUILD_DIR) -lzodiac -Wl,-rpath,'$$ORIGIN'
 DEFINES := -D_DEBUG -DZIMPORT
 

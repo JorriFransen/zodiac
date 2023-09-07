@@ -7,11 +7,11 @@ CWD := $(shell cd)
 include $(CWD)/3rdparty/Makefile.3rdparty.windows.mak
 
 BASE_DIR := zodiac_driver
-SRC_DIR := $(BASE_DIR)\src
+SRC_DIR := $(BASE_DIR)
 ASSEMBLY := zodiac
 EXTENSION := .exe
 COMPILER_FLAGS := -g -MD -MP -Werror=vla -Wno-c99-designator -fdeclspec
-INCLUDE_FLAGS := -Izodiac_lib\src -I$(SRC_DIR) $(CXXOPTS_INCLUDE_FLAGS) $(DYNCALL_INCLUDE_FLAGS)
+INCLUDE_FLAGS := -Izodiac_lib -I$(SRC_DIR) $(CXXOPTS_INCLUDE_FLAGS) $(DYNCALL_INCLUDE_FLAGS)
 LINKER_FLAGS := $(BUILD_DIR)\libzodiac.lib -lmsvcrtd -Wl,-nodefaultlib:libcmt
 DEFINES := -D_DEBUG -DZIMPORT
 

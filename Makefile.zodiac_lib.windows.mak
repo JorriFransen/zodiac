@@ -4,7 +4,7 @@ BUILD_DIR := bin
 OBJ_DIR := obj
 
 BASE_DIR := zodiac_lib
-SRC_DIR := $(BASE_DIR)\src
+SRC_DIR := $(BASE_DIR)
 ASSEMBLY := libzodiac
 EXTENSION := .dll
 
