@@ -152,7 +152,7 @@ bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source, String_Ref s
 
     if (parser.error) {
         bool lex_err = false;
-        if (!ctx->options.report_errors) {
+        if (ctx->options.report_errors) {
             for (s64 i = 0; i < ctx->errors.count; i++) {
                 auto &err = ctx->errors[i];
                 assert(err.kind == Zodiac_Error_Kind::ZODIAC_LEX_ERROR || err.kind == Zodiac_Error_Kind::ZODIAC_PARSE_ERROR);
