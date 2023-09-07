@@ -1,8 +1,6 @@
 
-CWD:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-
 DYNCALL_VERSION := 1.4
-DYNCALL_BASE_DIR := $(CWD)/3rdparty/dyncall
+DYNCALL_BASE_DIR := $(PWD)/3rdparty/dyncall
 DYNCALL_ARCHIVE := $(DYNCALL_BASE_DIR)/dyncall-$(DYNCALL_VERSION).zip
 DYNCALL_INSTALL_DIR := $(DYNCALL_BASE_DIR)/install
 DYNCALL_SOURCE_DIR := $(DYNCALL_BASE_DIR)/dyncall-$(DYNCALL_VERSION)

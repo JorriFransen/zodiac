@@ -10,7 +10,7 @@ EXTENSION :=
 include $(PWD)/3rdparty/Makefile.3rdparty.linux.mak
 
 COMPILER_FLAGS := -g -MD -MP -Werror=vla -fdeclspec
-INCLUDE_FLAGS := -Izodiac_lib/src -I$(BASE_DIR)/munit -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
+INCLUDE_FLAGS := -Izodiac_lib/src $(MUNIT_INCLUDE_FLAGS) -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
 LINKER_FLAGS := -g -L$(BUILD_DIR) -lzodiac -Wl,-rpath,'$$ORIGIN'
 DEFINES := -D_DEBUG -DZIMPORT
 
@@ -18,8 +18,8 @@ SRC_FILES := $(shell find $(SRC_DIR) -name *.cpp)
 DIRECTORIES := $(shell find $(SRC_DIR) -type d)
 
 # Add munit library
-SRC_FILES += $(shell find $(BASE_DIR)/munit -name *.c)
-DIRECTORIES += $(shell find $(BASE_DIR)/munit -type d)
+SRC_FILES += $(MUNIT_SOURCE_FILES)
+DIRECTORIES += $(MUNIT_SOURCE_DIRS)
 
 OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)/%.o)
 
