@@ -1,2 +1,2 @@
 [lfs]
-	url = git@github.com:JorriFransen/zodiac.git
+	url = ssh://code.jorrifransen.nl:6611/zodiac
