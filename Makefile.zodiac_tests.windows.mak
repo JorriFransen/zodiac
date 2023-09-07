@@ -11,7 +11,7 @@ SRC_DIR := $(BASE_DIR)\src
 ASSEMBLY := zodiac_tests
 EXTENSION := .exe
 COMPILER_FLAGS := -g -MD -MP -Werror=vla -fdeclspec
-INCLUDE_FLAGS := -Izodiac_lib/src -I$(BASE_DIR)\munit -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
+INCLUDE_FLAGS := -Izodiac_lib/src $(MUNIT_INCLUDE_FLAGS) -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
 LINKER_FLAGS := $(BUILD_DIR)\libzodiac.lib
 DEFINES := -D_DEBUG -DZIMPORT
 
@@ -22,8 +22,8 @@ SRC_FILES := $(subst /,\, $(call rwildcard,$(SRC_DIR)/,*.cpp))
 DIRECTORIES := \$(SRC_DIR) $(subst $(DIR),,$(shell dir $(SRC_DIR) /S /AD /B | findstr /i src)) # Our own source directories
 
 # Add munit library
-SRC_FILES += $(subst /,\, $(call rwildcard,$(BASE_DIR)/munit/,*.c))
-DIRECTORIES += \$(SRC_DIR) $(subst $(DIR),,$(shell dir $(BASE_DIR)\munit /S /AD /B | findstr /i munit)) # Munit source directories
+SRC_FILES += $(MUNIT_SOURCE_FILES)
+DIRECTORIES += $(MUNIT_SOURCE_DIRS)
 
 OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)\\%.o)
 
