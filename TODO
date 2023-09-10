@@ -1,6 +1,4 @@
 
-- Verify the llvm build process still works on windows.
-
 - When emitting non constant compound expressions some of it's members/elements might be constant. Constant members should be emitted to a value first, which we can then use to insert the non const values into.
 
 - Some way to get static array length
@@ -8,8 +6,6 @@
 - Try to report (fatal) errors before executing run directives
 
 - Slices (just call them arrays maybe?)
-
-- Convert structs returned from run directives into ast expression (struct literal).
 
 - Support multiple adjacent function parameters with the same typespec (parser). Like we do for struct fields.
 
