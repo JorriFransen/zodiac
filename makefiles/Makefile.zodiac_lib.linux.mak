@@ -12,10 +12,6 @@ SUPPORT_EXTENSION_DYN := .so
 SUPPORT_ASSEMBLY_STAT := libzrs_s
 SUPPORT_EXTENSION_STAT := .a
 
-LLVM_LIBS := $(shell llvm-config --libs x86 --link-static --system-libs)
-LLVM_CXX_FLAGS := $(shell llvm-config --cxxflags)
-LLVM_LD_FLAGS := $(shell llvm-config --ldflags)
-
 include $(PWD)/3rdparty/Makefile.3rdparty.linux.mak
 
 COMMON_COMPILER_FLAGS := -g -Og -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC
@@ -23,7 +19,7 @@ COMMON_LINKER_FLAGS := -g -Og
 
 COMPILER_FLAGS := $(COMMON_COMPILER_FLAGS) $(LLVM_CXX_FLAGS)
 INCLUDE_FLAGS := -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
-LINKER_FLAGS := $(COMMON_LINKER_FLAGS) -shared $(LLVM_LIBS) $(LLVM_LD_FLAGS) $(DYNCALL_LINK_FLAGS)
+LINKER_FLAGS := $(COMMON_LINKER_FLAGS) -shared $(LLVM_LINKER_FLAGS) $(DYNCALL_LINK_FLAGS)
 DEFINES := -D_DEBUG -DZEXPORT
 
 SRC_FILES := $(shell find $(SRC_DIR) -path $(SUPPORT_SRC_DIR) -prune -o -name "*.cpp" -print)
@@ -42,7 +38,6 @@ all: scaffold compile_support compile link
 
 .PHONY: scaffold
 scaffold:
-	@echo Source dirs: "$(DIRECTORIES)"
 	@mkdir -p bin
 	@mkdir -p $(addprefix $(OBJ_DIR)/,$(DIRECTORIES))
 	@mkdir -p $(addprefix $(OBJ_DIR)/,$(SUPPORT_DIRECTORIES))
