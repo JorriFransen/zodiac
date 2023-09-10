@@ -26,8 +26,8 @@ INCLUDE_FLAGS := -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)
 LINKER_FLAGS := $(COMMON_LINKER_FLAGS) -shared $(LLVM_LIBS) $(LLVM_LD_FLAGS) $(DYNCALL_LINK_FLAGS)
 DEFINES := -D_DEBUG -DZEXPORT
 
-SRC_FILES := $(shell find $(SRC_DIR) -name *.cpp)
-DIRECTORIES := $(shell find $(SRC_DIR) -type d)
+SRC_FILES := $(shell find $(SRC_DIR) -path $(SUPPORT_SRC_DIR) -prune -o -name "*.cpp" -print)
+DIRECTORIES := $(shell find $(SRC_DIR) -path $(SUPPORT_SRC_DIR) -prune -o -type d -print)
 OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)/%.o)
 
 SUPPORT_SRC_FILES := $(shell find $(SUPPORT_SRC_DIR) -name *.cpp)
@@ -42,6 +42,7 @@ all: scaffold compile_support compile link
 
 .PHONY: scaffold
 scaffold:
+	@echo Source dirs: "$(DIRECTORIES)"
 	@mkdir -p bin
 	@mkdir -p $(addprefix $(OBJ_DIR)/,$(DIRECTORIES))
 	@mkdir -p $(addprefix $(OBJ_DIR)/,$(SUPPORT_DIRECTORIES))
