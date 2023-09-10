@@ -40,4 +40,4 @@ $(DYNCALL_LIB): $(DYNCALL_SOURCE_DIR) $(DYNCALL_MAKEFILE)
 
 .PHONY: clean_dyncall
 clean_dyncall:
-	cd $(DYNCALL_SOURCE_DIR) && nmake -nologo -f Nmakefile clean
+	if exist $(DYNCALL_SOURCE_DIR) cd $(DYNCALL_SOURCE_DIR) && nmake -nologo -f Nmakefile clean
