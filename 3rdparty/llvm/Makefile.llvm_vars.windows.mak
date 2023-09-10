@@ -1,0 +1,13 @@
+
+LLVM_VERSION := 16.0.6
+LLVM_BASE_DIR := $(CWD)\3rdparty\llvm
+LLVM_SRC_DIR := $(LLVM_BASE_DIR)\source
+LLVM_DEBUG_BUILD_DIR := $(LLVM_BASE_DIR)\build_debug
+LLVM_DEBUG_INSTALL_DIR := $(LLVM_BASE_DIR)\install_debug
+LLVM_CXX_FLAGS = -std=c++17
+
+LLVM_CONFIG := $(LLVM_DEBUG_INSTALL_DIR)\bin\llvm-config.exe
+LLVM_INCLUDE_DIR = $(shell $(LLVM_CONFIG) --includedir)
+LLVM_INCLUDE_FLAGS = -I$(LLVM_INCLUDE_DIR)
+LLVM_LIBS = $(shell $(LLVM_CONFIG) --libs x86)
+LLVM_LINKER_FLAGS = $(LLVM_LIBS)
