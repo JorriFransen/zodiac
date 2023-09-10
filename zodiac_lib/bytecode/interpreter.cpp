@@ -1655,16 +1655,19 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type)
         }
 
         case Type_Kind::POINTER: {
-            if (type == &builtin_type_String) {
-                auto str = *(char **)mem;
-                fprintf(out_handle, "\"%s\"", str);
-            } else {
                 assert(false);
-            }
             break;
         }
 
         case Type_Kind::STRUCTURE: {
+
+            if (type == &builtin_type_String) {
+                s64 length = *(s64 *)mem;
+                mem += builtin_type_s64.bit_size / 8;
+                char *str = *(char **)mem;
+                fprintf(out_handle, "%.*s", (int)length, str);
+                break;
+            }
 
             fprintf(out_handle, "{ ");
 
@@ -1722,12 +1725,6 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
 
     auto out_handle = (FILE *)interp->std_out.handle;
 
-    // if (reg.type == &builtin_type_String) {
-    //     fprintf(out_handle, "%s", reg.value.string.data);
-    //     // fprintf(out_handle, "%.*s", (int)reg.value.string.length, reg.value.string.data);
-    //     return;
-    // }
-
     switch (reg.type->kind) {
         default: assert(false); break;
 
@@ -1782,7 +1779,20 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
         case Type_Kind::STRUCTURE: {
 
             if (reg.type == &builtin_type_String) {
-                assert(false);
+                if (reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
+                    assert(reg.value.compound.count == 2);
+
+                    auto length_reg = reg.value.compound[0];
+                    auto str_reg = reg.value.compound[1];
+
+                    assert(length_reg.value.integer.s64 == str_reg.value.string.length);
+
+                    fprintf(out_handle, "%.*s", (int)length_reg.value.integer.s64, str_reg.value.string.data);
+                } else {
+                    interpreter_print_from_memory(interp, reg.value.pointer, reg.type);
+                }
+
+                break;
             }
 
             fprintf(out_handle, "{ ");

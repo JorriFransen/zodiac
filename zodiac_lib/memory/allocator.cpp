@@ -25,8 +25,8 @@ void *alloc(Allocator *allocator, u64 size)
 
 void *alloc_aligned(Allocator *allocator, u64 size, u64 alignment)
 {
-    assert(allocator && size && alignment);
-    assert(is_power_of_two(alignment));
+    debug_assert(allocator && allocator->alloc_func && size && alignment);
+    debug_assert(is_power_of_two(alignment));
     void *result = allocator->alloc_func(allocator, Allocation_Mode::ALLOCATE, size, alignment, nullptr);
     zzeromem(result, size);
     return result;

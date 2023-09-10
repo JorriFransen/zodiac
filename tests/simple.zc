@@ -1,44 +1,16 @@
 
-Vec2 :: struct {
-    x, y: s64;
-}
-
-AABB :: struct {
-    pos, size: Vec2;
-}
-
-vec2 :: (x: s64, y: s64) -> Vec2 { return { x, y }; }
-arr :: (a0: s64, a1: s64) -> [2]s64 { return { a0, a1 }; }
-
 #run main();
 main :: () {
 
-    x := 4;
-    y :: 2;
+    print("Hello");
 
-    v : Vec2 = { x, y };
-    print(v);
+    str : String = "Hello, World!";
 
-    v2 := vec2(1, 2);
-    print(v2);
+    print(str);
 
-    print(vec2(3, 4));
+    str = "Hello, Zodiac!";
 
-    r : AABB = { { x, y }, v2 };
-    print(r);
-
-    print();
-
-    a : [2]s64 = { x, y };
-    print(a);
-
-    a2 := arr(1, 2);
-    print(a2);
-
-    print(arr(3, 4));
-
-    aa : [2][2]s64 = { { x, y }, a2 };
-    print(aa);
+    print(str);
 
     return 0;
 }

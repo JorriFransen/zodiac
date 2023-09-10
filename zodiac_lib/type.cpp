@@ -77,9 +77,12 @@ ZODIAC_BUILTIN_TYPES
     create_float_type(&builtin_type_r64, 64);
     create_float_type(&builtin_type_r32, 32);
 
-    // create_type(&builtin_type_String, Type_Kind::STRUCTURE, 0, TYPE_FLAG_AGGREGATE);
-    // builtin_type_String.structure.name = atom_get(&ctx->atoms, "String");
-    create_pointer_type(&builtin_type_String, &builtin_type_u8);
+    Dynamic_Array<Type *> string_member_types;
+    dynamic_array_create(&ctx->ast_allocator, &string_member_types, 2);
+    dynamic_array_append(&string_member_types, &builtin_type_s64);
+    dynamic_array_append(&string_member_types, get_pointer_type(&builtin_type_u8, &ctx->ast_allocator));
+
+    create_struct_type(&builtin_type_String, string_member_types, atom_get(&ctx->atoms, "String"));
 
     type_system_initialized = true;
     return true;

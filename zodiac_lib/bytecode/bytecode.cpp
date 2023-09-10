@@ -397,11 +397,20 @@ Bytecode_Register bytecode_boolean_literal(Bytecode_Builder *builder, Type *type
 
 Bytecode_Register bytecode_string_literal(Bytecode_Builder *bb, String_Ref str)
 {
-    assert(&builtin_type_String);
-    auto result = bytecode_register_create(bb, Bytecode_Register_Kind::TEMPORARY, &builtin_type_String, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT);
-    result.value.string = string_create(str);
+    debug_assert(&builtin_type_String);
 
-    return result;
+    Dynamic_Array<Bytecode_Register> values;
+    dynamic_array_create<Bytecode_Register>(bb->bytecode_allocator, &values, 2);
+
+    dynamic_array_append(&values, bytecode_integer_literal(bb, &builtin_type_s64, str.length));
+
+    auto u8_ptr_type = get_pointer_type(&builtin_type_u8, &bb->zodiac_context->ast_allocator);
+
+    auto string_memory_register = bytecode_register_create(bb, Bytecode_Register_Kind::TEMPORARY, u8_ptr_type, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT);
+    string_memory_register.value.string = string_create(str);
+    dynamic_array_append(&values, string_memory_register);
+
+    return bytecode_aggregate_literal(bb, values, &builtin_type_String);
 }
 
 Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Dynamic_Array<Bytecode_Register> members, Type *type)

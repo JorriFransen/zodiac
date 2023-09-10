@@ -43,11 +43,6 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
 
     atom_table_init(&out_context->atoms);
 
-    if (!type_system_initialized) {
-        bool result = type_system_initialize(out_context);
-        assert(result);
-    }
-
     linear_allocator_create(MEBIBYTE(1), nullptr, &out_context->ast_allocator_state);
     out_context->ast_allocator = linear_allocator_allocator(&out_context->ast_allocator_state);
 
@@ -62,6 +57,12 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
 
     dynamic_array_create(c_allocator(), &out_context->errors);
     out_context->fatal_resolve_error = false;
+
+
+    if (!type_system_initialized) {
+        bool result = type_system_initialize(out_context);
+        assert(result);
+    }
 
     out_context->resolver = alloc<Resolver>(&dynamic_allocator);
     resolver_create(out_context->resolver, out_context);
