@@ -429,7 +429,6 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
 
                     case Type_Kind::STRUCTURE: {
                         if (reg.type == &builtin_type_String) {
-                            // auto escaped_string = convert_special_characters_to_escape_characters(temp_allocator_allocator(), reg.value.string);
                             auto string_length_reg = reg.value.compound[0];
                             debug_assert(string_length_reg.type == &builtin_type_s64);
 

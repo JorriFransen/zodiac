@@ -1090,8 +1090,17 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
         case AST_Expression_Kind::COMPOUND: {
             assert((type->flags & TYPE_FLAG_AGGREGATE) || type->kind == Type_Kind::STATIC_ARRAY);
+
+            if (type == &builtin_type_String) {
+                assert(expr->compound.expressions.count == 2);
+                auto length_expr = expr->compound.expressions[0];
+                assert(length_expr->kind == AST_Expression_Kind::INTEGER_LITERAL);
+
+                auto ptr_expr = expr->compound.expressions[1];
+                auto ptr = constant_resolve_pointer_expr(ptr_expr);
+                return bytecode_string_literal(bc->builder, String_Ref((char *)ptr, length_expr->integer_literal.value.s64));
+            }
             return ast_const_compound_expr_to_bytecode(bc, expr);
-            break;
         }
     }
 
@@ -1284,6 +1293,7 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
 
         case Type_Kind::STRUCTURE:
         case Type_Kind::STATIC_ARRAY: {
+
             assert(reg.value.pointer);
             result = interpreter_memory_to_ast_expression(bc, reg.pointer, reg.type, scope, range);
 

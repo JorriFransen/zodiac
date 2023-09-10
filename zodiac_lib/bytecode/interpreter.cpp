@@ -1790,7 +1790,7 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
                     }
                     fprintf(out_handle, fmt, (int)length_reg.value.integer.s64, str_reg.value.string.data);
                 } else {
-                    interpreter_print_from_memory(interp, reg.value.pointer, reg.type);
+                    interpreter_print_from_memory(interp, reg.value.pointer, reg.type, true);
                 }
 
                 break;

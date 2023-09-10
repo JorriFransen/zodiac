@@ -260,4 +260,36 @@ Real_Value resolve_constant_real_expr(AST_Expression *expr)
     return {};
 }
 
+void* constant_resolve_pointer_expr(AST_Expression *expr)
+{
+    assert(EXPR_IS_TYPED(expr));
+    assert(expr->resolved_type->kind == Type_Kind::POINTER);
+
+    switch (expr->kind) {
+        case AST_Expression_Kind::INVALID: assert(false); break;
+        case AST_Expression_Kind::INTEGER_LITERAL: assert(false); break;
+        case AST_Expression_Kind::REAL_LITERAL: assert(false); break;
+        case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
+        case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
+        case AST_Expression_Kind::BOOL_LITERAL: assert(false); break;
+        case AST_Expression_Kind::IDENTIFIER: assert(false); break;
+        case AST_Expression_Kind::MEMBER: assert(false); break;
+        case AST_Expression_Kind::INDEX: assert(false); break;
+        case AST_Expression_Kind::CALL: assert(false); break;
+        case AST_Expression_Kind::UNARY: assert(false); break;
+        case AST_Expression_Kind::BINARY: assert(false); break;
+
+        case AST_Expression_Kind::CAST: {
+            auto base_expr = expr->cast.value;
+
+            assert(base_expr->resolved_type->kind == Type_Kind::INTEGER);
+            auto int_val = resolve_constant_integer_expr(base_expr);
+            return (void *)int_val.u64;
+        }
+
+        case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
+        case AST_Expression_Kind::COMPOUND: assert(false); break;
+    }
+}
+
 }

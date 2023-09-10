@@ -15,4 +15,5 @@ ZAPI bool resolve_constant_bool_expr(AST_Expression *expr);
 
 ZAPI Real_Value resolve_constant_real_expr(AST_Expression *expr);
 
+ZAPI void* constant_resolve_pointer_expr(AST_Expression *expr);
 }

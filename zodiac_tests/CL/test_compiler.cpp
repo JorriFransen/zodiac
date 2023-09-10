@@ -1435,8 +1435,8 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
             result[4] = a4;
             return result;
         }
-        make_strings :: (a0: *u8, a1: *u8, a2: *u8, a3: *u8, a4: *u8) {
-            result : [5]*u8;
+        make_strings :: (a0: String, a1: String, a2: String, a3: String, a4: String) {
+            result : [5]String;
             result[0] = a0;
             result[1] = a1;
             result[2] = a2;
@@ -1599,8 +1599,8 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
             result[4] = a4;
             return result;
         }
-        make_strings :: (a0: *u8, a1: *u8, a2: *u8, a3: *u8, a4: *u8) {
-            result : [5]*u8;
+        make_strings :: (a0: String, a1: String, a2: String, a3: String, a4: String) {
+            result : [5]String;
             result[0] = a0;
             result[1] = a1;
             result[2] = a2;
