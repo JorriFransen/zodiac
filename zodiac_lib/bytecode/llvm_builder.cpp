@@ -878,14 +878,14 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
                 llvm::Value *llvm_args[] = { llvm_val };
                 llvm::Value *llvm_bool_str = irb->CreateCall(bool_to_str_fn, llvm_args);
 
-                llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, "%s");
+                llvm::Value *fmt_str_lit = llvm_builder_emit_cstring_literal(builder, "%s");
                 dynamic_array_append(llvm_print_args, fmt_str_lit);
                 dynamic_array_append(llvm_print_args, llvm_bool_str);
             } else {
 
-                llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, "%s");
-                llvm::Value *llvm_true_str = llvm_builder_emit_string_literal(builder, "true");
-                llvm::Value *llvm_false_str = llvm_builder_emit_string_literal(builder, "false");
+                llvm::Value *fmt_str_lit = llvm_builder_emit_cstring_literal(builder, "%s");
+                llvm::Value *llvm_true_str = llvm_builder_emit_cstring_literal(builder, "true");
+                llvm::Value *llvm_false_str = llvm_builder_emit_cstring_literal(builder, "false");
 
                 llvm::Value *llvm_bool_str = irb->CreateSelect(llvm_val, llvm_true_str, llvm_false_str);
 
@@ -918,7 +918,7 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
             }
 
             assert(fmt_str);
-            llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
+            llvm::Value *fmt_str_lit = llvm_builder_emit_cstring_literal(builder, fmt_str);
             dynamic_array_append(llvm_print_args, fmt_str_lit);
             dynamic_array_append(llvm_print_args, llvm_val);
             break;
@@ -941,45 +941,44 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
             }
 
             assert(fmt_str);
-            llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
+            llvm::Value *fmt_str_lit = llvm_builder_emit_cstring_literal(builder, fmt_str);
             dynamic_array_append(llvm_print_args, fmt_str_lit);
             dynamic_array_append(llvm_print_args, llvm_val);
             break;
         }
 
         case Type_Kind::POINTER: {
-            if (type == &builtin_type_String) {
-                auto fmt_str = "%s";
-                if (quote_strings) {
-                    fmt_str = "\"%s\"";
-                }
-                llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
-                dynamic_array_append(llvm_print_args, fmt_str_lit);
-                dynamic_array_append(llvm_print_args, llvm_val);
-            } else {
-                auto fmt_str = "%p";
-                llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
-                dynamic_array_append(llvm_print_args, fmt_str_lit);
-                dynamic_array_append(llvm_print_args, llvm_val);
-            }
+            auto fmt_str = "%p";
+            llvm::Value *fmt_str_lit = llvm_builder_emit_cstring_literal(builder, fmt_str);
+            dynamic_array_append(llvm_print_args, fmt_str_lit);
+            dynamic_array_append(llvm_print_args, llvm_val);
             break;
         }
 
         case Type_Kind::STRUCTURE: {
             if (type == &builtin_type_String) {
-                auto fmt_str = "%s";
-                llvm::Value *fmt_str_lit = llvm_builder_emit_string_literal(builder, fmt_str);
+                auto fmt_str = "%.*s";
+                if (quote_strings) {
+                    fmt_str = "\"%.*s\"";
+                }
+                llvm::Value *fmt_str_lit = llvm_builder_emit_cstring_literal(builder, fmt_str);
                 dynamic_array_append(llvm_print_args, fmt_str_lit);
-                dynamic_array_append(llvm_print_args, llvm_val);
+
+                llvm::Value *length_val = irb->CreateExtractValue(llvm_val, { 0 });
+                llvm::Value *ptr_val = irb->CreateExtractValue(llvm_val, { 1 });
+
+                dynamic_array_append(llvm_print_args, length_val);
+                dynamic_array_append(llvm_print_args, ptr_val);
+
             } else {
                 use_printf = false;
 
-                llvm::Value *preamble = llvm_builder_emit_string_literal(builder, "{ ");
+                llvm::Value *preamble = llvm_builder_emit_cstring_literal(builder, "{ ");
                 irb->CreateCall(printf_func, { &preamble, 1 });
 
                 for (s64 i = 0; i < type->structure.member_types.count; i++) {
                     if (i != 0) {
-                        llvm::Value *comma_str = llvm_builder_emit_string_literal(builder, ", ");
+                        llvm::Value *comma_str = llvm_builder_emit_cstring_literal(builder, ", ");
                         irb->CreateCall(printf_func, { &comma_str, 1 });
                     }
 
@@ -988,7 +987,7 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
                     llvm_builder_emit_print_instruction(builder, type->structure.member_types[i], mem_val, true);
                 }
 
-                llvm::Value *postamble = llvm_builder_emit_string_literal(builder, " }");
+                llvm::Value *postamble = llvm_builder_emit_cstring_literal(builder, " }");
                 irb->CreateCall(printf_func, { &postamble, 1 });
             }
             break;
@@ -997,14 +996,14 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
         case Type_Kind::STATIC_ARRAY: {
             use_printf = false;
 
-            llvm::Value *preamble = llvm_builder_emit_string_literal(builder, "{ ");
+            llvm::Value *preamble = llvm_builder_emit_cstring_literal(builder, "{ ");
             irb->CreateCall(printf_func, { &preamble, 1 });
 
             auto elem_type = type->static_array.element_type;
 
             for (s64 i = 0; i < type->static_array.count; i++) {
                 if (i != 0) {
-                    llvm::Value *comma_str = llvm_builder_emit_string_literal(builder, ", ");
+                    llvm::Value *comma_str = llvm_builder_emit_cstring_literal(builder, ", ");
                     irb->CreateCall(printf_func, { &comma_str, 1 });
                 }
 
@@ -1013,7 +1012,7 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
                 llvm_builder_emit_print_instruction(builder, elem_type, elem_val, true);
             }
 
-            llvm::Value *postamble = llvm_builder_emit_string_literal(builder, " }");
+            llvm::Value *postamble = llvm_builder_emit_cstring_literal(builder, " }");
             irb->CreateCall(printf_func, { &postamble, 1 });
             break;
         }
@@ -1146,7 +1145,9 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
             assert(!(bc_reg.flags & BC_REGISTER_FLAG_ARGUMENT));
 
             if (bc_reg.type == &builtin_type_String) {
-                return llvm_builder_emit_string_literal(builder, bc_reg.value.string);
+                assert(bc_reg.flags & BC_REGISTER_FLAG_LITERAL);
+                auto str_reg = bc_reg.value.compound[1];
+                return llvm_builder_emit_string_literal(builder, str_reg.value.string);
             }
 
             switch (bc_reg.type->kind) {
@@ -1271,6 +1272,23 @@ llvm::Constant *llvm_builder_emit_bool_literal(LLVM_Builder *builder, Type *type
 
 llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_Ref str)
 {
+    llvm::Type *llvm_string_type_ = llvm_type_from_ast_type(builder, &builtin_type_String);
+    llvm::StructType *llvm_string_type = static_cast<llvm::StructType *>(llvm_string_type_);
+
+    Dynamic_Array<llvm::Constant *> members;
+    dynamic_array_create(builder->allocator, &members, 2);
+
+    llvm::Constant *length_val = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { .s64 = str.length });
+    llvm::Constant *cstr_val = llvm_builder_emit_cstring_literal(builder, str);
+
+    dynamic_array_append(&members, length_val);
+    dynamic_array_append(&members, cstr_val);
+
+    return llvm::ConstantStruct::get(llvm_string_type, { members.data, (size_t)members.count });
+}
+
+llvm::Constant *llvm_builder_emit_cstring_literal(LLVM_Builder *builder, String_Ref str)
+{
     auto length = strlen(str.data);
     Atom atom = atom_get(&builder->zodiac_context->atoms, str.data, length);
 
@@ -1292,7 +1310,6 @@ llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_R
     hash_table_add(&builder->string_literals, atom, result);
     return result;
 }
-
 
 llvm::Constant *llvm_builder_emit_struct_literal(LLVM_Builder *builder, Type *type, Dynamic_Array<Bytecode_Register> compound)
 {

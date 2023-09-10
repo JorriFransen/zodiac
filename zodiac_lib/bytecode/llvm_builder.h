@@ -139,6 +139,7 @@ ZAPI llvm::Constant *llvm_builder_emit_integer_literal(LLVM_Builder *builder, Ty
 ZAPI llvm::Constant *llvm_builder_emit_float_literal(LLVM_Builder *builder, Type *type, Real_Value real);
 ZAPI llvm::Constant *llvm_builder_emit_bool_literal(LLVM_Builder *builder, Type *type, bool value);
 ZAPI llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_Ref str);
+ZAPI llvm::Constant *llvm_builder_emit_cstring_literal(LLVM_Builder *builder, String_Ref str);
 ZAPI llvm::Constant *llvm_builder_emit_struct_literal(LLVM_Builder *builder, Type *type, Dynamic_Array<Bytecode_Register> compound);
 ZAPI llvm::Constant *llvm_builder_emit_array_literal(LLVM_Builder *builder, Type *type, Dynamic_Array<Bytecode_Register> compound);
 ZAPI void llvm_builder_store_result(LLVM_Builder *builder, const Bytecode_Register &bc_dest_reg, llvm::Value *result_val);

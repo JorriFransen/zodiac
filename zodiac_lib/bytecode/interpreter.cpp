@@ -1606,7 +1606,7 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
     }
 }
 
-void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type)
+void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type, bool quote_strings/*=false*/)
 {
     debug_assert(interp && mem && type);
 
@@ -1665,7 +1665,12 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type)
                 s64 length = *(s64 *)mem;
                 mem += builtin_type_s64.bit_size / 8;
                 char *str = *(char **)mem;
-                fprintf(out_handle, "%.*s", (int)length, str);
+
+                auto fmt = "%.*s";
+                if (quote_strings) {
+                    fmt = "\"%.*s\"";
+                }
+                fprintf(out_handle, fmt, (int)length, str);
                 break;
             }
 
@@ -1764,15 +1769,7 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
         }
 
         case Type_Kind::POINTER: {
-            if (reg.type == &builtin_type_String) {
-                auto fmt = "%s";
-                if (quote_strings) {
-                    fmt = "\"%s\"";
-                }
-                fprintf(out_handle, fmt, reg.value.pointer);
-            } else {
-                fprintf(out_handle, "%p", reg.value.pointer);
-            }
+            fprintf(out_handle, "%p", reg.value.pointer);
             break;
         }
 
@@ -1787,7 +1784,11 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
 
                     assert(length_reg.value.integer.s64 == str_reg.value.string.length);
 
-                    fprintf(out_handle, "%.*s", (int)length_reg.value.integer.s64, str_reg.value.string.data);
+                    auto fmt = "%.*s";
+                    if (quote_strings) {
+                        fmt = "\"%.*s\"";
+                    }
+                    fprintf(out_handle, fmt, (int)length_reg.value.integer.s64, str_reg.value.string.data);
                 } else {
                     interpreter_print_from_memory(interp, reg.value.pointer, reg.type);
                 }
@@ -1815,7 +1816,7 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
                     auto member_type = reg.type->structure.member_types[i];
                     auto member_size = member_type->bit_size / 8;
 
-                    interpreter_print_from_memory(interp, cursor, member_type);
+                    interpreter_print_from_memory(interp, cursor, member_type, true);
 
                     cursor += member_size;
                 }
@@ -1845,7 +1846,7 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
                 auto elem_size = elem_type->bit_size / 8;
                 for (s64 i = 0; i < reg.type->static_array.count; i++) {
                     if (i != 0) fprintf(out_handle, ", ");
-                    interpreter_print_from_memory(interp, cursor, elem_type);
+                    interpreter_print_from_memory(interp, cursor, elem_type, true);
                     cursor += elem_size;
                 }
             }
