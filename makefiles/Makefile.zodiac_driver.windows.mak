@@ -19,7 +19,7 @@ DEFINES := -D_DEBUG -DZIMPORT
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
 SRC_FILES := $(subst /,\, $(call rwildcard,$(SRC_DIR)/,*.cpp))
-DIRECTORIES := \$(SRC_DIR) $(subst $(DIR),,$(shell dir $(SRC_DIR) /S /AD /B | findstr /i src)) #All source directories
+DIRECTORIES := \$(SRC_DIR) $(subst $(DIR),,$(shell dir $(SRC_DIR) /S /AD /B)) #All source directories
 OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)\\%.o)
 
 FULL_ASSEMBLY_PATH := $(BUILD_DIR)/$(ASSEMBLY)$(EXTENSION)

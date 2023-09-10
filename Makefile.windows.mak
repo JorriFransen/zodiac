@@ -35,9 +35,9 @@ $(DYNCALL_MAKEFILE): $(DYNCALL_SOURCE_DIR)
 
 $(DYNCALL_LIB): $(DYNCALL_SOURCE_DIR) $(DYNCALL_MAKEFILE)
 	@echo "Building dyncall..."
-	cd "$(DYNCALL_SOURCE_DIR)" && set MAKEFLAGS= && nmake -f Nmakefile || cd .
+	cd "$(DYNCALL_SOURCE_DIR)" && set MAKEFLAGS= && nmake -nologo -f Nmakefile || cd .
 
 
 .PHONY: clean_dyncall
 clean_dyncall:
-	cd $(DYNCALL_SOURCE_DIR) && nmake -f Nmakefile clean
+	cd $(DYNCALL_SOURCE_DIR) && nmake -nologo -f Nmakefile clean

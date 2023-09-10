@@ -34,7 +34,7 @@ DEFINES := -D_DEBUG -DZEXPORT -D_DLL -D_CRT_SECURE_NO_WARNINGS
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
 SRC_FILES := $(subst /,\, $(call rwildcard,$(SRC_DIR)/,*.cpp))
-DIRECTORIES := \$(SRC_DIR) $(subst $(DIR),,$(shell dir $(SRC_DIR) /S /AD /B | findstr /i src)) #All source directories
+DIRECTORIES := \$(SRC_DIR) $(subst $(DIR),,$(shell dir $(SRC_DIR) /S /AD /B | findstr /i /e /v \zodiac_lib\support)) #All source directories except for support
 OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)\\%.o)
 
 SUPPORT_SRC_FILES := $(subst /,\, $(call rwildcard,$(SUPPORT_SRC_DIR)/,*.cpp))
@@ -46,6 +46,8 @@ SUPPORT_ASSEMBLY_DYN_PATH := $(BUILD_DIR)/$(SUPPORT_ASSEMBLY_DYN)$(SUPPORT_EXTEN
 SUPPORT_ASSEMBLY_STAT_PATH := $(BUILD_DIR)/$(SUPPORT_ASSEMBLY_STAT)$(SUPPORT_EXTENSION_STAT)
 
 all: scaffold llvm llvm_vars compile_support compile link
+
+XD := $(shell dir $(SRC_DIR) /S /AD /B)
 
 .PHONY: scaffold
 scaffold:

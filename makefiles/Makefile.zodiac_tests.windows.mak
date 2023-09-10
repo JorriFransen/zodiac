@@ -19,7 +19,7 @@ DEFINES := -D_DEBUG -DZIMPORT
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
 SRC_FILES := $(subst /,\, $(call rwildcard,$(SRC_DIR)/,*.cpp))
-DIRECTORIES := \$(SRC_DIR) $(subst $(DIR),,$(shell dir $(SRC_DIR) /S /AD /B | findstr /i src)) # Our own source directories
+DIRECTORIES := \$(SRC_DIR) $(subst $(DIR),,$(shell dir $(SRC_DIR) /S /AD /B)) # Our own source directories
 
 # Add munit library
 SRC_FILES += $(MUNIT_SOURCE_FILES)
