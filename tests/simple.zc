@@ -9,8 +9,9 @@ main :: () {
 
     // print("Hello");
 
-    // str : String = "Hello, World!";
+    // str : String = "Hello, World!";
     char := 'b';
+    print(char);
 
     // print(str);
 

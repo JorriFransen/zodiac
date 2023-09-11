@@ -49,6 +49,15 @@ void ast_string_literal_expr_create(Atom atom, AST_Expression *out_expr)
     out_expr->string_literal.atom = atom;
 }
 
+void ast_character_literal_expr_create(char c, AST_Expression *out_expr)
+{
+    debug_assert(out_expr);
+
+    ast_expression_create(AST_Expression_Kind::CHAR_LITERAL, AST_EXPR_FLAG_CONST, out_expr);
+
+    out_expr->character_literal = c;
+}
+
 void ast_null_literal_expr_create(AST_Expression *out_expr)
 {
     debug_assert(out_expr);
@@ -502,6 +511,15 @@ AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Source_Range ra
     return expr;
 }
 
+AST_Expression *ast_character_literal_expr_new(Zodiac_Context *ctx, Source_Range range, char character)
+{
+    debug_assert(ctx);
+
+    auto expr = ast_expression_new(ctx, range);
+    ast_character_literal_expr_create(character, expr);
+    return expr;
+}
+
 AST_Expression *ast_null_literal_expr_new(Zodiac_Context *ctx, Source_Range range)
 {
     debug_assert(ctx);
@@ -903,6 +921,11 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
         case AST_Expression_Kind::STRING_LITERAL: {
             auto atom = expr->string_literal.atom;
             string_builder_append(sb, "\"%.*s\"", (int)atom.length, atom.data);
+            break;
+        }
+
+        case AST_Expression_Kind::CHAR_LITERAL: {
+            string_builder_append(sb, "'%c'", expr->character_literal);
             break;
         }
 

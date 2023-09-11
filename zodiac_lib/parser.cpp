@@ -112,6 +112,13 @@ AST_Expression *parse_expr_operand(Parser *parser)
         Atom content_atom = atom_get(&parser->context->atoms, token_atom.data + 1, token_atom.length - 2);
         return ast_string_literal_expr_new(parser->context, range, content_atom);
 
+    } else if (is_token(parser, TOK_CHAR)) {
+
+        char c = ct.character;
+        next_token(parser);
+
+        return ast_character_literal_expr_new(parser->context, range, c);
+
     } else if (is_token(parser, TOK_KEYWORD)) {
 
         if (match_keyword(parser, keyword_null)) {

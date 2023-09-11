@@ -707,6 +707,7 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
         case AST_Expression_Kind::INTEGER_LITERAL:
         case AST_Expression_Kind::REAL_LITERAL:
         case AST_Expression_Kind::STRING_LITERAL:
+        case AST_Expression_Kind::CHAR_LITERAL:
         case AST_Expression_Kind::NULL_LITERAL:
         case AST_Expression_Kind::BOOL_LITERAL: {
             // Leaf expression
@@ -1132,6 +1133,7 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
         case AST_Expression_Kind::INTEGER_LITERAL:
         case AST_Expression_Kind::REAL_LITERAL:
         case AST_Expression_Kind::STRING_LITERAL:
+        case AST_Expression_Kind::CHAR_LITERAL:
         case AST_Expression_Kind::NULL_LITERAL:
         case AST_Expression_Kind::BOOL_LITERAL:
         case AST_Expression_Kind::RUN_DIRECTIVE: {
@@ -1791,6 +1793,12 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
         case AST_Expression_Kind::STRING_LITERAL: {
             assert(!inferred_type || inferred_type == &builtin_type_String);
             expr->resolved_type = &builtin_type_String;
+            break;
+        }
+
+        case AST_Expression_Kind::CHAR_LITERAL: {
+            assert(!inferred_type || inferred_type == &builtin_type_u8);
+            expr->resolved_type = &builtin_type_u8;
             break;
         }
 

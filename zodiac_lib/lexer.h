@@ -91,10 +91,8 @@ ALL_ZODIAC_KEYWORDS
 ALL_ZODIAC_DIRECTIVES
 #undef ZODIAC_DIRECTIVE
 
-
 ZAPI void zodiac_register_keywords(Atom_Table *at);
 ZAPI bool is_keyword(const Atom &atom);
-
 
 ZAPI void lexer_create(Zodiac_Context *context, Lexer *out_lexer);
 ZAPI void lexer_init_stream(Lexer *lexer, const String_Ref stream, const String_Ref stream_name);

@@ -142,6 +142,7 @@ enum class AST_Expression_Kind
     INTEGER_LITERAL,
     REAL_LITERAL,
     STRING_LITERAL,
+    CHAR_LITERAL,
     NULL_LITERAL,
     BOOL_LITERAL,
 
@@ -191,6 +192,7 @@ struct AST_Expression
         AST_Integer_Literal_Expression integer_literal;
         AST_Real_Literal_Expression real_literal;
         AST_String_Literal_Expression string_literal;
+        char character_literal;
         bool bool_literal;
         AST_Identifier identifier;
         AST_Member_Expression member;
@@ -466,6 +468,7 @@ ZAPI void ast_identifier_create(Atom name, Source_Range range, AST_Identifier *o
 ZAPI void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_expr);
 ZAPI void ast_real_literal_expr_create(Real_Value value, AST_Expression *out_expr);
 ZAPI void ast_string_literal_expr_create(Atom atom, AST_Expression *out_expr);
+ZAPI void ast_character_literal_expr_create(char c, AST_Expression *out_expr);
 ZAPI void ast_null_literal_expr_create(AST_Expression *out_expr);
 ZAPI void ast_bool_literal_expr_create(AST_Expression *out_expr, bool value);
 ZAPI void ast_identifier_expr_create(AST_Identifier ident, AST_Expression *out_expr);
@@ -514,6 +517,7 @@ ZAPI void ast_file_create(Dynamic_Array<AST_Declaration *> decls, AST_File *out_
 ZAPI AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Integer_Value value);
 ZAPI AST_Expression *ast_real_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Real_Value value);
 ZAPI AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Atom atom);
+ZAPI AST_Expression *ast_character_literal_expr_new(Zodiac_Context *ctx, Source_Range range, char character);
 ZAPI AST_Expression *ast_null_literal_expr_new(Zodiac_Context *ctx, Source_Range range);
 ZAPI AST_Expression *ast_bool_literal_expr_new(Zodiac_Context *ctx, Source_Range range, bool value);
 ZAPI AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Source_Range range, Atom atom);

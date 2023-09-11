@@ -558,6 +558,7 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
         case AST_Expression_Kind::INTEGER_LITERAL: assert(false); break;
         case AST_Expression_Kind::REAL_LITERAL: assert(false); break;
         case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
+        case AST_Expression_Kind::CHAR_LITERAL: assert(false); break;
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
         case AST_Expression_Kind::BOOL_LITERAL: assert(false); break;
 
@@ -680,6 +681,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
     if (expr->kind != AST_Expression_Kind::INTEGER_LITERAL &&
         expr->kind != AST_Expression_Kind::REAL_LITERAL &&
         expr->kind != AST_Expression_Kind::STRING_LITERAL &&
+        expr->kind != AST_Expression_Kind::CHAR_LITERAL &&
         expr->kind != AST_Expression_Kind::RUN_DIRECTIVE &&
         !(expr->kind == AST_Expression_Kind::UNARY && expr->unary.op == AST_Unary_Operator::ADDRESS_OF) &&
         EXPR_IS_CONST(expr)) {
@@ -715,6 +717,10 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
         case AST_Expression_Kind::STRING_LITERAL: {
             return bytecode_string_literal(bc->builder, &expr->string_literal.atom);
+        }
+
+        case AST_Expression_Kind::CHAR_LITERAL: {
+            return bytecode_integer_literal(bc->builder, &builtin_type_u8, expr->character_literal);
         }
 
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
@@ -1004,6 +1010,10 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
         case AST_Expression_Kind::STRING_LITERAL: {
             return bytecode_string_literal(bc->builder, &expr->string_literal.atom);
+        }
+
+        case AST_Expression_Kind::CHAR_LITERAL: {
+            assert(false);
         }
 
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;

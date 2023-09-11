@@ -26,7 +26,8 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false); break;
 
-        case AST_Expression_Kind::INTEGER_LITERAL: {
+        case AST_Expression_Kind::INTEGER_LITERAL:
+        case AST_Expression_Kind::CHAR_LITERAL: {
             return expr->integer_literal.value;
         }
 
@@ -153,6 +154,7 @@ bool resolve_constant_bool_expr(AST_Expression *expr)
         case AST_Expression_Kind::INTEGER_LITERAL: assert(false); break;
         case AST_Expression_Kind::REAL_LITERAL: assert(false); break;
         case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
+        case AST_Expression_Kind::CHAR_LITERAL: assert(false); break;
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
 
         case AST_Expression_Kind::BOOL_LITERAL: {
@@ -213,6 +215,7 @@ Real_Value resolve_constant_real_expr(AST_Expression *expr)
         case AST_Expression_Kind::INVALID: assert(false); break;
         case AST_Expression_Kind::INTEGER_LITERAL: assert(false); break;
         case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
+        case AST_Expression_Kind::CHAR_LITERAL: assert(false); break;
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
         case AST_Expression_Kind::BOOL_LITERAL: assert(false); break;
 
@@ -270,6 +273,7 @@ void* constant_resolve_pointer_expr(AST_Expression *expr)
         case AST_Expression_Kind::INTEGER_LITERAL: assert(false); break;
         case AST_Expression_Kind::REAL_LITERAL: assert(false); break;
         case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
+        case AST_Expression_Kind::CHAR_LITERAL: assert(false); break;
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
         case AST_Expression_Kind::BOOL_LITERAL: assert(false); break;
         case AST_Expression_Kind::IDENTIFIER: assert(false); break;
