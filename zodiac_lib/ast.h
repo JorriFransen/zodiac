@@ -396,6 +396,7 @@ enum class AST_Type_Spec_Kind
 {
     INVALID,
 
+    TYPE,
     NAME,
     POINTER,
     STATIC_ARRAY,
@@ -498,6 +499,7 @@ ZAPI void ast_aggregate_decl_create(AST_Identifier *ident, AST_Declaration_Kind 
 ZAPI void ast_run_directive_decl_create(AST_Directive *run_directive, AST_Declaration *out_decl);
 ZAPI void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl);
 
+ZAPI void ast_type_ts_create(Type *type, AST_Type_Spec *out_ts);
 ZAPI void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts);
 ZAPI void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts);
 ZAPI void ast_static_array_ts_create(AST_Expression *length_expr, AST_Type_Spec *element_ts, AST_Type_Spec *out_ts);
@@ -545,6 +547,7 @@ ZAPI AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Range r
 ZAPI AST_Declaration *ast_run_directive_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Directive *run_directive);
 ZAPI AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Range range);
 
+ZAPI AST_Type_Spec *ast_type_ts_new(Zodiac_Context *ctx, Source_Range range, Type *type);
 ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident);
 ZAPI AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *base);
 ZAPI AST_Type_Spec *ast_static_array_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *length_expr, AST_Type_Spec *element_ts);

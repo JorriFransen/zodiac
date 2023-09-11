@@ -55,6 +55,10 @@ void resolver_add_file(Resolver *resolver, AST_File *file)
 {
     debug_assert(file);
 
+    assert(resolver->global_scope);
+    assert(resolver->global_scope->file == nullptr);
+    resolver->global_scope->file = file;
+
     add_builtin_type_symbol(u64);
     add_builtin_type_symbol(s64);
     add_builtin_type_symbol(u32);
@@ -69,11 +73,38 @@ void resolver_add_file(Resolver *resolver, AST_File *file)
 
     add_builtin_type_symbol(void);
     add_builtin_type_symbol(bool);
-    add_builtin_type_symbol(String);
+    // add_builtin_type_symbol(String);
 
-    assert(resolver->global_scope);
-    assert(resolver->global_scope->file == nullptr);
-    resolver->global_scope->file = file;
+    Source_Pos builtin_pos = { "<builtin>", 0, 0 };
+    Source_Range range = { builtin_pos, builtin_pos };
+
+    AST_Identifier string_type_ident;
+    ast_identifier_create(atom_String, range, &string_type_ident);
+
+    AST_Type_Spec *string_length_ts = ast_type_ts_new(resolver->ctx, range, &builtin_type_s64);
+
+    AST_Identifier string_length_ident;
+    ast_identifier_create(atom_get(&resolver->ctx->atoms, "length"), range, &string_length_ident);
+
+    AST_Declaration *string_length_field_decl = ast_field_decl_new(resolver->ctx, range, string_length_ident, string_length_ts);
+
+    auto u8_ptr_type = get_pointer_type(&builtin_type_u8, &resolver->ctx->ast_allocator);
+    AST_Type_Spec *string_data_ts = ast_type_ts_new(resolver->ctx, range, u8_ptr_type);
+
+    AST_Identifier string_data_ident;
+    ast_identifier_create(atom_get(&resolver->ctx->atoms, "data"), range, &string_data_ident);
+
+    AST_Declaration *string_data_field_decl = ast_field_decl_new(resolver->ctx, range, string_data_ident, string_data_ts);
+
+    Dynamic_Array<AST_Declaration *> struct_type_fields;
+    dynamic_array_create(&resolver->ctx->ast_allocator, &struct_type_fields);
+    dynamic_array_append(&struct_type_fields, string_length_field_decl);
+    dynamic_array_append(&struct_type_fields, string_data_field_decl);
+
+    AST_Declaration *string_type_decl = ast_aggregate_decl_new(resolver->ctx, range, string_type_ident, AST_Declaration_Kind::STRUCT, struct_type_fields);
+    add_unresolved_decl_symbol(resolver->ctx, resolver->global_scope, string_type_decl, true);
+    resolver_add_declaration(resolver->ctx, resolver, string_type_decl, resolver->global_scope);
+    string_type_decl->aggregate.resolved_type = &builtin_type_String;
 
     // Register all top level symbols first
     for (s64 i = 0; i < file->declarations.count; i++) {
@@ -789,6 +820,7 @@ void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dyna
         case AST_Type_Spec_Kind::INVALID:
             assert(false);
 
+        case AST_Type_Spec_Kind::TYPE:
         case AST_Type_Spec_Kind::NAME: {
             // Leaf
             break;
@@ -1237,6 +1269,11 @@ bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
     switch (ts->kind) {
         case AST_Type_Spec_Kind::INVALID: assert(false);
 
+        case AST_Type_Spec_Kind::TYPE: {
+            assert(ts->resolved_type);
+            return true;
+        }
+
         case AST_Type_Spec_Kind::NAME: {
             Symbol *sym = scope_get_symbol(scope, ts->identifier.name);
 
@@ -1513,21 +1550,24 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
         }
 
         case AST_Declaration_Kind::STRUCT: {
-            assert(!decl->aggregate.resolved_type);
+            if (decl->aggregate.resolved_type) {
+                assert(decl->aggregate.resolved_type == &builtin_type_String);
+            } else {
 
-            auto temp_member_types = temp_array_create<Type *>(temp_allocator_allocator(), decl->aggregate.fields.count);
+                auto temp_member_types = temp_array_create<Type *>(temp_allocator_allocator(), decl->aggregate.fields.count);
 
-            for (s64 i = 0; i < decl->aggregate.fields.count; i++) {
-                auto field = decl->aggregate.fields[i];
-                assert(field->kind == AST_Declaration_Kind::FIELD);
-                assert(field->field.resolved_type);
+                for (s64 i = 0; i < decl->aggregate.fields.count; i++) {
+                    auto field = decl->aggregate.fields[i];
+                    assert(field->kind == AST_Declaration_Kind::FIELD);
+                    assert(field->field.resolved_type);
 
-                dynamic_array_append(&temp_member_types.array, field->field.resolved_type);
+                    dynamic_array_append(&temp_member_types.array, field->field.resolved_type);
+                }
+
+                auto member_types = temp_array_finalize(&ctx->ast_allocator, &temp_member_types);
+
+                decl->aggregate.resolved_type = get_struct_type(ctx, member_types, decl->identifier.name.data, &ctx->ast_allocator);
             }
-
-            auto member_types = temp_array_finalize(&ctx->ast_allocator, &temp_member_types);
-
-            decl->aggregate.resolved_type = get_struct_type(ctx, member_types, decl->identifier.name.data, &ctx->ast_allocator);
 
             auto sym = scope_get_symbol(scope, decl->identifier.name);
             assert(sym && sym->state == Symbol_State::RESOLVED);
@@ -2210,6 +2250,12 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
     switch (ts->kind) {
 
         case AST_Type_Spec_Kind::INVALID: assert(false);
+
+        case AST_Type_Spec_Kind::TYPE: {
+            assert(ts->resolved_type);
+            return true;
+            break;
+        }
 
         case AST_Type_Spec_Kind::NAME: {
             auto sym = scope_get_symbol(scope, ts->identifier.name);

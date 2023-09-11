@@ -23,5 +23,10 @@ main :: () {
     name : [2]String = { "John", "Doe" };
     print(name);
 
+    print(str.length);
+    print(p.name.length);
+    print(name[0].length);
+    print(name[1].length);
+
     return 0;
 }

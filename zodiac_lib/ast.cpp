@@ -393,10 +393,18 @@ void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl
     out_decl->kind = kind;
 }
 
-void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts)
+void ast_type_ts_create(Type *type, AST_Type_Spec *out_ts)
 {
     debug_assert(out_ts)
 
+    ast_type_spec_create(AST_Type_Spec_Kind::TYPE, out_ts);
+
+    out_ts->resolved_type = type;
+}
+
+void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts)
+{
+    debug_assert(out_ts)
 
     ast_type_spec_create(AST_Type_Spec_Kind::NAME, out_ts);
 
@@ -787,6 +795,15 @@ file_local const char *ast_binop_to_string[(int)AST_Binary_Operator::LAST_BINOP 
     [(int)AST_Binary_Operator::LTEQ] = "<=",
     [(int)AST_Binary_Operator::GTEQ] = ">=",
 };
+
+AST_Type_Spec *ast_type_ts_new(Zodiac_Context *ctx, Source_Range range, Type *type)
+{
+    debug_assert(ctx);
+
+    auto ts = ast_type_spec_new(ctx, range);
+    ast_type_ts_create(type, ts);
+    return ts;
+}
 
 AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident)
 {
@@ -1250,6 +1267,12 @@ file_local void ast__print_type_spec_internal(String_Builder *sb, AST_Type_Spec 
 
     switch (ts->kind) {
         case AST_Type_Spec_Kind::INVALID: assert(false);
+
+        case AST_Type_Spec_Kind::TYPE: {
+            auto type_str = temp_type_string(ts->resolved_type);
+            string_builder_append(sb, "%s", type_str.data);
+            break;
+        }
 
         case AST_Type_Spec_Kind::NAME: {
             string_builder_append(sb, "%s", ts->identifier.name.data);
