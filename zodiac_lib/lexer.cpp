@@ -156,6 +156,21 @@ case (first_char): {                                                \
             break;
         }
 
+        case '\'': {
+            lex->token.kind = TOK_CHAR;
+            lex->stream += 1;
+            lex->token.character = *lex->stream;
+            lex->stream += 1;
+
+            if (*lex->stream != '\'') {
+                report_lex_error(lex, lex->token.range, "Exected \"'\" to end character literal");
+                return false;
+            }
+
+            lex->stream += 1;
+            break;
+        }
+
         case '/': {
             lex->token.kind = (Token_Kind)'/';
             lex->stream += 1;
@@ -318,6 +333,7 @@ file_local String_Ref token_kind_to_string[TOK_LAST + 1] = {
     [TOK_INT] = "INT",
     [TOK_REAL] = "REAL",
     [TOK_STRING] = "STRING",
+    [TOK_CHAR] = "CHAR",
     [TOK_NAME] = "NAME",
     [TOK_KEYWORD] = "KEYWORD",
     [TOK_RIGHT_ARROW] = "->",

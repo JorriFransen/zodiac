@@ -7,26 +7,27 @@ Person :: struct {
 #run main();
 main :: () {
 
-    print("Hello");
+    // print("Hello");
 
-    str : String = "Hello, World!";
+    // str : String = "Hello, World!";
+    char := 'b';
 
-    print(str);
+    // print(str);
 
-    str = "Hello, Zodiac!";
+    // str = "Hello, Zodiac!";
 
-    print(str);
+    // print(str);
 
-    p : Person = { "Bob", 42 };
-    print(p);
+    // p : Person = { "Bob", 42 };
+    // print(p);
 
-    name : [2]String = { "John", "Doe" };
-    print(name);
+    // name : [2]String = { "John", "Doe" };
+    // print(name);
 
-    print(str.length);
-    print(p.name.length);
-    print(name[0].length);
-    print(name[1].length);
+    // print(str.length);
+    // print(p.name.length);
+    // print(name[0].length);
+    // print(name[1].length);
 
     return 0;
 }

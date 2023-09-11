@@ -21,6 +21,7 @@ enum Token_Kind
     TOK_INT = 128,
     TOK_REAL,
     TOK_STRING,
+    TOK_CHAR,
     TOK_NAME,
     TOK_KEYWORD,
 
@@ -47,6 +48,7 @@ struct Token
     {
         u64 integer;
         Real_Value real;
+        char character;
     };
 };
 

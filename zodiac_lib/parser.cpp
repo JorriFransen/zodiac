@@ -244,6 +244,7 @@ AST_Expression *parse_expr_mul(Parser *parser)
     debug_assert(parser);
 
     AST_Expression *lhs = parse_expr_unary(parser);
+    return_if_null(lhs);
 
     while (is_token(parser, '*') || is_token(parser, '/')) {
         char op = cur_tok(parser).kind;
