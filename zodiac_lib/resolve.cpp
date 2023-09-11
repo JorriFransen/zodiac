@@ -73,7 +73,6 @@ void resolver_add_file(Resolver *resolver, AST_File *file)
 
     add_builtin_type_symbol(void);
     add_builtin_type_symbol(bool);
-    // add_builtin_type_symbol(String);
 
     Source_Pos builtin_pos = { "<builtin>", 0, 0 };
     Source_Range range = { builtin_pos, builtin_pos };
