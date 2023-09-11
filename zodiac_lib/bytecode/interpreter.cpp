@@ -1433,10 +1433,21 @@ void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle 
         assert(fn->type->function.return_type->kind != Type_Kind::VOID);
     }
 
-#ifndef NDEBUG
     auto free_register_count = interp->registers.count - interp->used_register_count;
-    assert(free_register_count >= fn->registers.count);
+    if (free_register_count < fn->registers.count) {
 
+        auto old_data = interp->registers.data;
+
+        auto new_count = interp->registers.count * 2;
+        auto new_data = alloc_array<Interpreter_Register>(interp->allocator, new_count);
+        zmemcpy(new_data, old_data, interp->registers.count * sizeof(Interpreter_Register));
+
+        interp->registers = { new_data, new_count };
+
+        free(interp->allocator, old_data);
+    }
+
+#ifndef NDEBUG
     auto free_stack_size = interp->stack_mem.count - interp->stack_mem_used;
     assert(free_stack_size >= fn->required_stack_size);
 #endif
@@ -1790,7 +1801,7 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
                     }
                     fprintf(out_handle, fmt, (int)length_reg.value.integer.s64, str_reg.value.string.data);
                 } else {
-                    interpreter_print_from_memory(interp, reg.value.pointer, reg.type, true);
+                    interpreter_print_from_memory(interp, reg.value.pointer, reg.type, quote_strings);
                 }
 
                 break;
