@@ -58,9 +58,6 @@ jobs:
     artifacts: artifacts.zip
     condition: ALL_PREVIOUS_STEPS_WERE_SUCCESSFUL
   triggers:
-  - !BranchUpdateTrigger
-    branches: main
-    projects: zodiac
   - !PullRequestUpdateTrigger
     projects: zodiac
   retryCondition: never
