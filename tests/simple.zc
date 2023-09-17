@@ -1,8 +1,43 @@
 
+Person :: struct {
+    name: String;
+    age: u8;
+}
+
 #run main();
 main :: () {
-    print(foreign_add(1, 2));
+
+    str := string_copy("abc");
+    print(str);
+    print(str[0]);
+    // str[0] = 'A';
+    print(str);
+
+    print("Hello");
+
+    char := 'b';
+    print(char);
+
+    print(str);
+
+    str = "Hello, Zodiac!";
+
+    print(str);
+
+    p : Person = { "Bob", 42 };
+    print(p);
+
+    name : [2]String = { "John", "Doe" };
+    print(name);
+
+    print(str.length);
+    print(p.name.length);
+    print(name[0].length);
+    print(name[1].length);
+
     return 0;
 }
 
-#foreign foreign_add :: (a: s64, b: s64) -> s64;
+string_copy :: (s: String) {
+    return s;
+}
