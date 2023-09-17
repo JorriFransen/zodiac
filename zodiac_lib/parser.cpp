@@ -154,7 +154,7 @@ AST_Expression *parse_expr_base(Parser *parser)
     AST_Expression *expr = parse_expr_operand(parser);
     return_if_null(expr);
 
-    auto start_pos = cur_tok(parser).range.start;
+    auto start_pos = expr->range.start;
 
     while (is_token(parser, '(') || is_token(parser, '[') || is_token(parser, '.')) {
 

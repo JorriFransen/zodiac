@@ -65,6 +65,7 @@ struct Bytecode_Register;
     ZODIAC_BC_OP(EXTRACT_ELEMENT) \
     ZODIAC_BC_OP(AGG_OFFSET_POINTER) \
     ZODIAC_BC_OP(ARR_OFFSET_POINTER) \
+    ZODIAC_BC_OP(PTR_OFFSET_POINTER) \
     ZODIAC_BC_OP(JMP) \
     ZODIAC_BC_OP(JMP_IF) \
     ZODIAC_BC_OP(PHI) \
@@ -333,6 +334,8 @@ ZAPI Bytecode_Register bytecode_emit_extract_element(Bytecode_Builder *builder, 
 ZAPI Bytecode_Register bytecode_emit_aggregate_offset_pointer(Bytecode_Builder *builder, Bytecode_Register agg_register, s64 index);
 ZAPI Bytecode_Register bytecode_emit_array_offset_pointer(Bytecode_Builder *builder, Bytecode_Register array_register, s64 index);
 ZAPI Bytecode_Register bytecode_emit_array_offset_pointer(Bytecode_Builder *builder, Bytecode_Register array_register, Bytecode_Register index_register);
+ZAPI Bytecode_Register bytecode_emit_ptr_offset_pointer(Bytecode_Builder *builder, Bytecode_Register ptr_reg, s64 index);
+ZAPI Bytecode_Register bytecode_emit_ptr_offset_pointer(Bytecode_Builder *builder, Bytecode_Register ptr_reg, Bytecode_Register index_register);
 
 ZAPI void bytecode_emit_jmp(Bytecode_Builder *builder, Bytecode_Block_Handle block);
 ZAPI void bytecode_emit_jmp_if(Bytecode_Builder *builder, Bytecode_Register cond, Bytecode_Block_Handle then_block, Bytecode_Block_Handle else_block);

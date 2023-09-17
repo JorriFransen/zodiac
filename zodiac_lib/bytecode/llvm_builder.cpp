@@ -770,6 +770,21 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             break;
         }
 
+        case Bytecode_Opcode::PTR_OFFSET_POINTER: {
+            assert(bc_inst.b.type == &builtin_type_s64);
+
+            llvm::Value *llvm_ptr = llvm_builder_emit_register(builder, bc_inst.a);
+            llvm::Value *index = llvm_builder_emit_register(builder, bc_inst.b);
+
+            llvm::Type *llvm_ptr_type = llvm_type_from_ast_type(builder, bc_inst.a.type);
+
+            llvm::Value *indexes[] = { index };
+
+            llvm::Value *result = irb->CreateGEP(llvm_ptr_type, llvm_ptr, indexes);
+            llvm_builder_store_result(builder, bc_inst.dest, result);
+            break;
+        }
+
         case Bytecode_Opcode::JMP: {
             assert(bc_inst.a.kind == Bytecode_Register_Kind::BLOCK);
             auto block_handle = bc_inst.a.block_handle;

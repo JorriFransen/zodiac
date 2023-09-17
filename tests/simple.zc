@@ -7,11 +7,17 @@ Person :: struct {
 #run main();
 main :: () {
 
+    str := string_copy("abc");
+    print(str);
+    print(str[0]);
+    // str[0] = 'A';
+    print(str);
+
     // print("Hello");
 
     // str : String = "Hello, World!";
-    char := 'b';
-    print(char);
+    // char := 'b';
+    // print(char);
 
     // print(str);
 
@@ -31,4 +37,8 @@ main :: () {
     // print(name[1].length);
 
     return 0;
+}
+
+string_copy :: (s: String) {
+    return s;
 }

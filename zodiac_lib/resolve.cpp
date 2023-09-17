@@ -1871,20 +1871,32 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             auto base_expr = expr->index.base;
             assert(EXPR_IS_TYPED(base_expr));
             assert(EXPR_IS_LVALUE(base_expr));
-            assert(base_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY);
 
-            auto static_array_type = base_expr->resolved_type;
+            auto base_type = base_expr->resolved_type;
+
+            bool base_is_array = base_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY;
+
+            if (!base_is_array && base_expr->resolved_type != &builtin_type_String) {
+                fatal_resolve_error(ctx, expr, "Base of index expression is not an array or String");
+                return false;
+            }
 
             auto index_expr = expr->index.index;
             assert(EXPR_IS_TYPED(index_expr));
             assert(index_expr->resolved_type->kind == Type_Kind::INTEGER);
 
-            if (EXPR_IS_CONST(index_expr)) {
-                Integer_Value index_val = resolve_constant_integer_expr(index_expr);
-                assert(index_val.s64 >= 0 && index_val.s64 < static_array_type->static_array.count);
+            if (base_is_array) {
+
+                if (EXPR_IS_CONST(index_expr)) {
+                    Integer_Value index_val = resolve_constant_integer_expr(index_expr);
+                    assert(index_val.s64 >= 0 && index_val.s64 < base_type->static_array.count);
+                }
+
+                expr->resolved_type = base_type->static_array.element_type;
+            } else {
+                expr->resolved_type = &builtin_type_u8;
             }
 
-            expr->resolved_type = static_array_type->static_array.element_type;
             expr->flags |= AST_EXPR_FLAG_LVALUE;
             break;
         }
