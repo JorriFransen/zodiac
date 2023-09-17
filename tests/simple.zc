@@ -1,4 +1,8 @@
 
+#foreign malloc :: (size: s64) -> *u8;
+#foreign free :: (ptr: *u8) -> void;
+#foreign memcpy :: (dest: *u8, src: *u8, size: s64) -> *u8;
+
 Person :: struct {
     name: String;
     age: u8;
@@ -10,7 +14,7 @@ main :: () {
     str := string_copy("abc");
     print(str);
     print(str[0]);
-    // str[0] = 'A';
+    str[0] = 'A';
     print(str);
 
     print("Hello");
@@ -20,6 +24,7 @@ main :: () {
 
     print(str);
 
+    free(str.data);
     str = "Hello, Zodiac!";
 
     print(str);
@@ -38,6 +43,8 @@ main :: () {
     return 0;
 }
 
-string_copy :: (s: String) {
-    return s;
+string_copy :: (s: String) -> String {
+    result : String = { s.length, malloc(s.length) };
+    memcpy(result.data, s.data, s.length);
+    return result;
 }
