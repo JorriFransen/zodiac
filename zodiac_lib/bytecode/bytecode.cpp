@@ -1156,6 +1156,23 @@ Bytecode_Register bytecode_emit_array_offset_pointer(Bytecode_Builder *builder, 
     return result_register;
 }
 
+Bytecode_Register bytecode_emit_ptr_offset_pointer(Bytecode_Builder *builder, Bytecode_Register ptr_reg, s64 index)
+{
+    auto index_register = bytecode_integer_literal(builder, &builtin_type_s64, index);
+    return bytecode_emit_ptr_offset_pointer(builder, ptr_reg, index_register);
+}
+
+Bytecode_Register bytecode_emit_ptr_offset_pointer(Bytecode_Builder *builder, Bytecode_Register ptr_reg, Bytecode_Register index_register)
+{
+    auto ptr_type = ptr_reg.type;
+    assert(ptr_type->kind == Type_Kind::POINTER);
+
+    Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, ptr_type, BC_REGISTER_FLAG_NONE);
+    bytecode_emit_instruction(builder, Bytecode_Opcode::PTR_OFFSET_POINTER, ptr_reg, index_register, result_register);
+
+    return result_register;
+}
+
 void bytecode_emit_jmp(Bytecode_Builder *builder, Bytecode_Block_Handle block)
 {
     auto block_value = bytecode_block_value(builder, block);

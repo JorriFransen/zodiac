@@ -298,6 +298,7 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
 
         BINOP_CASE_(AGG_OFFSET_POINTER)
         BINOP_CASE_(ARR_OFFSET_POINTER)
+        BINOP_CASE_(PTR_OFFSET_POINTER)
 
         case Bytecode_Opcode::JMP: {
             assert(instruction->a.kind == Bytecode_Register_Kind::BLOCK);

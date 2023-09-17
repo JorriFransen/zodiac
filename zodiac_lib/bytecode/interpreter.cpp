@@ -980,6 +980,35 @@ switch (operand.type->bit_size) { \
             break;
         }
 
+        case Bytecode_Opcode::PTR_OFFSET_POINTER: {
+            assert(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
+
+            Interpreter_Register ptr_register = interpreter_load_register(interp, instruction.a);
+            Interpreter_Register index_register = interpreter_load_register(interp, instruction.b);
+
+            auto index = index_register.value.integer.s64;
+            assert(index >= 0);
+
+            u8 *ptr = ptr_register.value.pointer;
+
+            assert(ptr);
+
+            auto element_type = instruction.a.type->pointer.base;
+
+            // @Cleanup: @TODO: @FIXME: alignment?
+            assert(element_type->bit_size % 8 == 0);
+            s64 offset = index * (element_type->bit_size / 8);
+            // assert(offset % 8 == 0);
+            ptr += offset;
+
+            Interpreter_Register result = {
+                .type = instruction.a.type,
+                .value = { .pointer = ptr },
+            };
+
+            interpreter_store_register(interp, result, instruction.dest);
+            break;
+        }
         case Bytecode_Opcode::JMP: {
             assert(instruction.a.kind == Bytecode_Register_Kind::BLOCK);
 

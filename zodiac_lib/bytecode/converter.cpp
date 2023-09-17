@@ -631,7 +631,15 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
         case AST_Expression_Kind::INDEX: {
             Bytecode_Register index_reg = ast_expr_to_bytecode(bc, expr->index.index);
             Bytecode_Register base_reg = ast_lvalue_to_bytecode(bc, expr->index.base);
-            return bytecode_emit_array_offset_pointer(bc->builder, base_reg, index_reg);
+
+            if (base_reg.type->kind == Type_Kind::STATIC_ARRAY) {
+                return bytecode_emit_array_offset_pointer(bc->builder, base_reg, index_reg);
+            } else {
+                assert(base_reg.type == &builtin_type_String);
+                Bytecode_Register data_reg = bytecode_emit_aggregate_offset_pointer(bc->builder, base_reg, 1);
+                data_reg = bytecode_emit_load_pointer(bc->builder, data_reg);
+                return bytecode_emit_ptr_offset_pointer(bc->builder, data_reg, index_reg);
+            }
         }
 
         case AST_Expression_Kind::CALL: assert(false); break;
@@ -796,10 +804,9 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
         }
 
         case AST_Expression_Kind::INDEX: {
-            Bytecode_Register index_reg = ast_expr_to_bytecode(bc, expr->index.index);
-
-            Bytecode_Register base_reg = ast_lvalue_to_bytecode(bc, expr->index.base);
-            Bytecode_Register addr_reg = bytecode_emit_array_offset_pointer(bc->builder, base_reg, index_reg);
+            Bytecode_Register addr_reg = ast_lvalue_to_bytecode(bc, expr);
+            assert(addr_reg.kind == Bytecode_Register_Kind::TEMPORARY);
+            assert(addr_reg.type->kind == Type_Kind::POINTER);
             return bytecode_emit_load_pointer(bc->builder, addr_reg);
         }
 

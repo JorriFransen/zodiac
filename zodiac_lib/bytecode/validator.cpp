@@ -1442,6 +1442,48 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             break;
         }
 
+        case Bytecode_Opcode::PTR_OFFSET_POINTER: {
+
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'a' register of 'PTR_OFFSET_POINTER' must be a temporary");
+                return false;
+            }
+
+            if (instruction->a.type->kind != Type_Kind::POINTER) {
+                bytecode_validator_report_error(validator, "The 'a' register of 'PTR_OFFSET_POINTER' must be a pointer");
+                return false;
+            }
+
+            if (instruction->b.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'b' register of 'PTR_OFFSET_POINTER' must be a temporary");
+                return false;
+            }
+
+            if (instruction->b.type != &builtin_type_s64) {
+                bytecode_validator_report_error(validator, "The 'b' register of 'PTR_OFFSET_POINTER' does not have the right integer type (s64)");
+                return false;
+            }
+
+            Type *result_type = instruction->a.type;
+
+            if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'PTR_OFFSET_POINTER' must be a temporary");
+                return false;
+            }
+
+            if  (instruction->dest.type->kind != Type_Kind::POINTER) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'PTR_OFFSET_POINTER' must be of pointer type (pointer to the array element type)");
+                return false;
+            }
+
+            if (instruction->dest.type != result_type) {
+                bytecode_validator_report_error(validator, "The type of the 'dest' register for 'PTR_OFFSET_POINTER' does not match the source pointer type");
+                return false;
+            }
+
+            return true;
+            break;
+        }
         case Bytecode_Opcode::JMP: {
             if (instruction->a.kind != Bytecode_Register_Kind::BLOCK) {
                 bytecode_validator_report_error(validator, "The 'a' register of 'JMP' must be a block");
