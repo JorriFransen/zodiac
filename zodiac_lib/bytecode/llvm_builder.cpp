@@ -1304,7 +1304,7 @@ llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_R
 
 llvm::Constant *llvm_builder_emit_cstring_literal(LLVM_Builder *builder, String_Ref str)
 {
-    auto length = strlen(str.data);
+    auto length = str.length;
     Atom atom = atom_get(&builder->zodiac_context->atoms, str.data, length);
 
     llvm::Constant *result = nullptr;
