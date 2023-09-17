@@ -13,10 +13,6 @@ public s64 foreign_add(s64 a, s64 b) {
     return a + b;
 }
 
-public s64 foreign_sub(s64 a, s64 b) {
-    return a - b;
-}
-
 static FILE *stdout_handle;
 public void runtime_set_stdout(FILE *file) {
     stdout_handle = file;

@@ -236,8 +236,20 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     assert(decl->function.type->kind == Type_Kind::FUNCTION);
     assert(decl->identifier.name.data);
 
-    Bytecode_Function_Handle fn_handle = bytecode_function_create(bc->builder, decl->identifier.name, decl->function.type);
+    BC_Function_Flag flags = BC_FUNCTION_FLAG_NONE;
+
+    bool foreign = decl->flags & AST_DECL_FLAG_FOREIGN;
+
+    if (foreign) {
+        flags |= BC_FUNCTION_FLAG_FOREIGN;
+    }
+
+    auto fn_handle = bytecode_function_create(bc->builder, decl->identifier.name, decl->function.type, flags);
     hash_table_add(&bc->functions, decl, fn_handle);
+
+    if (foreign) {
+        return;
+    }
 
     auto taa = temp_allocator_allocator();
     auto ta = temp_allocator();
