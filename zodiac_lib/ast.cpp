@@ -308,7 +308,7 @@ void ast_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expre
 {
     debug_assert(out_decl);
 
-    ast_declaration_create(AST_Declaration_Kind::VARIABLE, out_decl);
+    ast_declaration_create(AST_Declaration_Kind::VARIABLE, AST_DECL_FLAG_NONE, out_decl);
 
     out_decl->identifier = ident;
     out_decl->variable.type_spec = ts;
@@ -321,7 +321,7 @@ void ast_constant_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, 
     debug_assert(out_decl);
     debug_assert_msg(value, "Constant variable declaration must have a value");
 
-    ast_declaration_create(AST_Declaration_Kind::CONSTANT_VARIABLE, out_decl);
+    ast_declaration_create(AST_Declaration_Kind::CONSTANT_VARIABLE, AST_DECL_FLAG_NONE, out_decl);
 
     out_decl->identifier = ident;
     out_decl->variable.type_spec = ts;
@@ -333,7 +333,7 @@ void ast_parameter_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_R
 {
     debug_assert(out_decl);
 
-    ast_declaration_create(AST_Declaration_Kind::PARAMETER, out_decl);
+    ast_declaration_create(AST_Declaration_Kind::PARAMETER, AST_DECL_FLAG_NONE, out_decl);
 
     out_decl->identifier = ident;
     out_decl->parameter.type_spec = ts;
@@ -345,7 +345,7 @@ void ast_field_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range
 {
     debug_assert(out_decl);
 
-    ast_declaration_create(AST_Declaration_Kind::FIELD, out_decl);
+    ast_declaration_create(AST_Declaration_Kind::FIELD, AST_DECL_FLAG_NONE, out_decl);
 
     out_decl->identifier = ident;
     out_decl->field.type_spec = ts;
@@ -353,11 +353,11 @@ void ast_field_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range
     out_decl->field.resolved_type = nullptr;
 }
 
-void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynamic_Array<AST_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl)
+void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynamic_Array<AST_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl, AST_Declaration_Flags flags)
 {
     debug_assert(out_decl);
 
-    ast_declaration_create(AST_Declaration_Kind::FUNCTION, out_decl);
+    ast_declaration_create(AST_Declaration_Kind::FUNCTION, flags, out_decl);
 
     out_decl->identifier = ident;
     out_decl->function.params = args;
@@ -378,7 +378,7 @@ void ast_aggregate_decl_create(AST_Identifier ident, AST_Declaration_Kind kind, 
     debug_assert(out_decl);
     debug_assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
 
-    ast_declaration_create(kind, out_decl);
+    ast_declaration_create(kind, AST_DECL_FLAG_NONE, out_decl);
 
     out_decl->identifier = ident;
     out_decl->aggregate.fields = fields;
@@ -390,16 +390,17 @@ void ast_run_directive_decl_create(AST_Directive *run_directive, AST_Declaration
     debug_assert(run_directive && out_decl);
     debug_assert(run_directive->kind == AST_Directive_Kind::RUN);
 
-    ast_declaration_create(AST_Declaration_Kind::RUN_DIRECTIVE, out_decl);
+    ast_declaration_create(AST_Declaration_Kind::RUN_DIRECTIVE, AST_DECL_FLAG_NONE, out_decl);
 
     out_decl->directive = run_directive;
 }
 
-void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration *out_decl)
+void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration_Flags flags, AST_Declaration *out_decl)
 {
     debug_assert(out_decl);
 
     out_decl->kind = kind;
+    out_decl->flags = flags;
 }
 
 void ast_type_ts_create(Type *type, AST_Type_Spec *out_ts)
@@ -761,12 +762,12 @@ AST_Declaration *ast_field_decl_new(Zodiac_Context *ctx, Source_Range range, AST
     return decl;
 }
 
-AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, Dynamic_Array<AST_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body)
+AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, Dynamic_Array<AST_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration_Flags flags)
 {
     debug_assert(ctx);
 
     auto decl = ast_declaration_new(ctx, range);
-    ast_function_decl_create(&ctx->ast_allocator, ident, args, return_ts, body, decl);
+    ast_function_decl_create(&ctx->ast_allocator, ident, args, return_ts, body, decl, flags);
     return decl;
 }
 

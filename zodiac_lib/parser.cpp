@@ -21,10 +21,10 @@ namespace Zodiac
     zodiac_report_error(parser->context, ZODIAC_PARSE_ERROR, range, (fmt), ##__VA_ARGS__); \
 }
 
-#define expect_token(p, c) if (!_expect_token((p), (c))) { return nullptr; }
+#define expect_token(p, c) if (!_expect_token((p), (c))) { return {}; }
 
-#define parse_expression(p) _parse_expression(p); if ((p)->error) { return nullptr; }
-#define parse_statement(...) _parse_statement(__VA_ARGS__); if ((FIRST_VARARG(__VA_ARGS__))->error) { return nullptr; }
+#define parse_expression(p) _parse_expression(p); if ((p)->error) { return {}; }
+#define parse_statement(...) _parse_statement(__VA_ARGS__); if ((FIRST_VARARG(__VA_ARGS__))->error) { return {}; }
 #define parse_type_spec(p) _parse_type_spec(p); if ((p)->error) { return nullptr; }
 
 #define return_if_null(n) { if (!(n)) { debug_assert(parser->error); return nullptr; }}
@@ -310,8 +310,10 @@ AST_Expression *parse_expr_cmp(Parser *parser)
 AST_Expression *_parse_expression(Parser *parser)
 {
     if (is_token(parser, '#')) {
-        AST_Directive *directive = parse_directive(parser, false);
-        assert(directive);
+        Parsed_Directive pd = parse_directive(parser, false);
+        assert(pd.kind == Parsed_Directive_Kind::DATA);
+        assert(pd.data);
+        auto directive = pd.data;
         assert(directive->kind == AST_Directive_Kind::RUN);
 
         return ast_run_directive_expr_new(parser->context, directive->range, directive);
@@ -497,9 +499,16 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
     return result;
 }
 
-AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident)
+AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident, Parsed_Directive pd)
 {
     debug_assert(parser);
+
+    bool foreign = false;
+
+    if (pd.kind != Parsed_Directive_Kind::NONE) {
+        if (pd.kind == Parsed_Directive_Kind::FOREIGN) foreign = true;
+        else assert(false);
+    }
 
     expect_token(parser, '(');
 
@@ -533,24 +542,36 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
 
     AST_Type_Spec *return_ts = nullptr;
 
+    Dynamic_Array<AST_Statement *> statements = {};
+
     if (match_token(parser, TOK_RIGHT_ARROW)) {
         return_ts = parse_type_spec(parser);
+    } else if (foreign) {
+        report_parse_error(parser, ident.range, "Foreign function must specify return type");
     }
 
-    expect_token(parser, '{');
+    AST_Declaration_Flags flags = AST_DECL_FLAG_NONE;
 
-    auto temp_stmts = temp_array_create<AST_Statement *>(&parser->context->temp_allocator);
+    if (!foreign) {
 
-    while (!match_token(parser, '}')) {
-        AST_Statement *stmt = parse_statement(parser);
-        return_if_null(stmt);
+        expect_token(parser, '{');
 
-        dynamic_array_append(&temp_stmts.array, stmt);
+        auto temp_stmts = temp_array_create<AST_Statement *>(&parser->context->temp_allocator);
+
+        while (!match_token(parser, '}')) {
+            AST_Statement *stmt = parse_statement(parser);
+            return_if_null(stmt);
+
+            dynamic_array_append(&temp_stmts.array, stmt);
+        }
+
+        statements = temp_array_finalize(&parser->context->ast_allocator, &temp_stmts);
+    } else {
+        flags |= AST_DECL_FLAG_FOREIGN;
+        expect_token(parser, ';');
     }
 
-    auto statements = temp_array_finalize(&parser->context->ast_allocator, &temp_stmts);
-
-    return ast_function_decl_new(parser->context, ident.range, ident, params, return_ts, statements);
+    return ast_function_decl_new(parser->context, ident.range, ident, params, return_ts, statements, flags);
 }
 
 AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier ident)
@@ -611,7 +632,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
     return ast_aggregate_decl_new(parser->context, ident.range, ident, kind, fields);
 }
 
-AST_Declaration *parse_declaration(Parser *parser)
+AST_Declaration *parse_declaration(Parser *parser, Parsed_Directive  pd)
 {
     AST_Identifier ident = parse_identifier(parser);
     return_if_null(ident.name.data);
@@ -642,7 +663,7 @@ AST_Declaration *parse_declaration(Parser *parser)
                  peek_token(parser).kind == ')') {
 
                 debug_assert(!ts);
-                return parse_function_declaration(parser, ident);
+                return parse_function_declaration(parser, ident, pd);
             }
         }
 
@@ -729,7 +750,7 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
     return nullptr;
 }
 
-AST_Directive *parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
+Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
 {
     debug_assert(parser);
 
@@ -741,8 +762,12 @@ AST_Directive *parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
 
     expect_token(parser, TOK_NAME);
 
+    Parsed_Directive result = {};
+
     // TODO: Use hashes here
     if (directive_name_tok.atom == directive_run) {
+
+        result.kind = Parsed_Directive_Kind::DATA;
 
         if (is_token(parser, '{') || is_keyword(parser, keyword_print)) {
 
@@ -756,20 +781,25 @@ AST_Directive *parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
                     if (member_stmt->kind != AST_Statement_Kind::CALL &&
                         member_stmt->kind != AST_Statement_Kind::PRINT) {
                         report_parse_error(parser, member_stmt->range, "Only print and call statements are allowed in run blocks");
-                        return nullptr;
+                        return {};
                     }
                 }
 
             }
 
-            return ast_run_directive_new(parser->context, { start_pos, stmt->range.end }, stmt);
+            result.data = ast_run_directive_new(parser->context, { start_pos, stmt->range.end }, stmt);
         } else {
 
             AST_Expression *expr = parse_expression(parser);
             if (eat_semicolon) match_token(parser, ';');
-            return ast_run_directive_new(parser->context, { start_pos, expr->range.end }, expr);
+            result.data = ast_run_directive_new(parser->context, { start_pos, expr->range.end }, expr);
         }
 
+        return result;
+
+    } else if (directive_name_tok.atom == directive_foreign) {
+        result.kind = Parsed_Directive_Kind::FOREIGN;
+        return result;
     } else {
         assert_msg(false, "Unknown directive");
     }
@@ -777,7 +807,7 @@ AST_Directive *parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
     assert(directive_name_tok.kind);
     assert(false);
 
-    return nullptr;
+    return {};
 }
 
 AST_File *parse_file(Parser *parser)
@@ -787,22 +817,28 @@ AST_File *parse_file(Parser *parser)
 
     while (!is_token(parser, TOK_EOF)) {
 
-        AST_Directive *directive = nullptr;
+        Parsed_Directive pd = { .kind = Parsed_Directive_Kind::NONE };
 
         // Top level directive
         if (is_token(parser, '#')) {
-            directive = parse_directive(parser);
-            return_if_null(directive);
+            pd = parse_directive(parser);
+            if (pd.kind == Parsed_Directive_Kind::INVALID) return nullptr;
+
+            if (pd.kind == Parsed_Directive_Kind::DATA) { assert(pd.data); }
+            else { assert(!pd.data); }
+
+            
         }
 
         AST_Declaration *decl = nullptr;
 
 
-        if (directive) {
+        if (pd.kind == Parsed_Directive_Kind::DATA) {
+            auto directive = pd.data;
             assert(directive->kind == AST_Directive_Kind::RUN);
             decl = ast_run_directive_decl_new(parser->context, directive->range, directive);
         } else {
-            decl = parse_declaration(parser);
+            decl = parse_declaration(parser, pd);
         }
 
         if (!decl) {

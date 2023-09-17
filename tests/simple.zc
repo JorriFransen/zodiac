@@ -1,9 +1,9 @@
 
-
 #run main();
 main :: () {
     print(foreign_add(1, 2));
     return 0;
 }
 
-#foreign foreign_add :: (a: s64, b: s64);
+#foreign foreign_add :: (a: s64, b: s64) -> s64;
+#foreign foreign_sub :: (a: s64, b: s64) -> s64;

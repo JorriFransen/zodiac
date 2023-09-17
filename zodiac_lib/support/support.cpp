@@ -9,8 +9,12 @@
 #define public extern "C" __declspec(dllexport)
 #endif
 
-public u64 foreign_add(u64 a, u64 b) {
+public s64 foreign_add(s64 a, s64 b) {
     return a + b;
+}
+
+public s64 foreign_sub(s64 a, s64 b) {
+    return a - b;
 }
 
 static FILE *stdout_handle;
