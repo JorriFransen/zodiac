@@ -1996,6 +1996,23 @@ MunitResult Non_Constant_Compound(const MunitParameter params[], void* user_data
     return MUNIT_OK;
 }
 
+MunitResult Foreign_Function(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+#foreign foreign_add :: (a: s64, b: s64) -> s64;
+main :: () {
+    print(foreign_add(1, 2));
+    return 0;
+}
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out = "3" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
 #undef RESOLVE_ERR
 
 }}

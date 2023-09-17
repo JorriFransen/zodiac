@@ -38,6 +38,22 @@ ZAPI void parser_destroy(Parser *parser);
 // expr_run = #run expr_cmp
 // expr = expr_cmp | expr_run
 
+enum class Parsed_Directive_Kind
+{
+    INVALID,
+
+    NONE,
+    FOREIGN,
+
+    DATA,
+};
+
+struct Parsed_Directive
+{
+    Parsed_Directive_Kind kind = Parsed_Directive_Kind::INVALID;
+    AST_Directive *data = nullptr;
+};
+
 ZAPI AST_Identifier parse_identifier(Parser *parser);
 
 ZAPI AST_Expression *parse_expr_compound(Parser *parser);
@@ -52,13 +68,13 @@ ZAPI AST_Expression *_parse_expression(Parser *parser);
 ZAPI AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi = false);
 ZAPI AST_Statement *_parse_statement(Parser *parser, bool optional_semi = false);
 
-ZAPI AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident);
+ZAPI AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident, Parsed_Directive pd);
 ZAPI AST_Declaration *parse_aggregate_decl(Parser *parser, AST_Identifier ident);
-ZAPI AST_Declaration *parse_declaration(Parser *parser);
+ZAPI AST_Declaration *parse_declaration(Parser *parser, Parsed_Directive pd);
 
 ZAPI AST_Type_Spec *_parse_type_spec(Parser *parser);
 
-ZAPI AST_Directive *parse_directive(Parser *parser, bool eat_semicolon = true);
+ZAPI Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon = true);
 
 ZAPI AST_File *parse_file(Parser *parser);
 
