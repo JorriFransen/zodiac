@@ -1,6 +1,5 @@
 
 - #import
-    - Make sure we only import each file once
     - Search default locations (modules/ in the source/install directory)
     - Automatically include modules/builtin.zc
 
