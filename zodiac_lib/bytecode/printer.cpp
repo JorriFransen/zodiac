@@ -430,10 +430,10 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
 
                     case Type_Kind::STRUCTURE: {
                         if (reg.type == &builtin_type_String) {
-                            auto string_length_reg = reg.value.compound[0];
+                            auto string_length_reg = reg.value.compound[1];
                             debug_assert(string_length_reg.type == &builtin_type_s64);
 
-                            auto string_ptr_reg = reg.value.compound[1];
+                            auto string_ptr_reg = reg.value.compound[0];
                             debug_assert(&builtin_type_u8.pointer_to);
                             debug_assert(string_ptr_reg.type == builtin_type_u8.pointer_to);
 

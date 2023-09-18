@@ -14,8 +14,8 @@ SUPPORT_EXTENSION_STAT := .a
 
 include $(PWD)/3rdparty/Makefile.3rdparty.linux.mak
 
-COMMON_COMPILER_FLAGS := -g -Og -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC
-COMMON_LINKER_FLAGS := -g -Og
+COMMON_COMPILER_FLAGS := -g -O0 -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec -fPIC
+COMMON_LINKER_FLAGS := -g -O0
 
 COMPILER_FLAGS := $(COMMON_COMPILER_FLAGS) $(LLVM_CXX_FLAGS)
 INCLUDE_FLAGS := -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS)

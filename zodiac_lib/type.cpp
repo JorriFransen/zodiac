@@ -79,8 +79,8 @@ ZODIAC_BUILTIN_TYPES
 
     Dynamic_Array<Type *> string_member_types;
     dynamic_array_create(&ctx->ast_allocator, &string_member_types, 2);
-    dynamic_array_append(&string_member_types, &builtin_type_s64);
     dynamic_array_append(&string_member_types, get_pointer_type(&builtin_type_u8, &ctx->ast_allocator));
+    dynamic_array_append(&string_member_types, &builtin_type_s64);
 
     create_struct_type(&builtin_type_String, string_member_types, atom_get(&ctx->atoms, "String"));
 

@@ -12,6 +12,7 @@
 #include "source_pos.h"
 #include "type.h"
 #include "util/asserts.h"
+#include "util/logger.h"
 #include "util/zstring.h"
 #include "zodiac_context.h"
 
@@ -97,8 +98,8 @@ void resolver_add_file(Resolver *resolver, AST_File *file)
 
     Dynamic_Array<AST_Declaration *> struct_type_fields;
     dynamic_array_create(&resolver->ctx->ast_allocator, &struct_type_fields);
-    dynamic_array_append(&struct_type_fields, string_length_field_decl);
     dynamic_array_append(&struct_type_fields, string_data_field_decl);
+    dynamic_array_append(&struct_type_fields, string_length_field_decl);
 
     AST_Declaration *string_type_decl = ast_aggregate_decl_new(resolver->ctx, range, string_type_ident, AST_Declaration_Kind::STRUCT, struct_type_fields);
     add_unresolved_decl_symbol(resolver->ctx, resolver->global_scope, string_type_decl, true);
@@ -1233,8 +1234,10 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             assert(sym->kind == Symbol_Kind::MEMBER);
             assert(sym->state == Symbol_State::TYPED);
             assert(member_index >= 0 && member_index < aggregate_type->structure.member_types.count);
+
             expr->member.index_in_parent = member_index;
 
+            ZTRACE("Index in parent of '%s': %i", expr->member.member_name.data, member_index);
             break;
         }
 

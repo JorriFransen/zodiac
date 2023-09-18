@@ -979,8 +979,8 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
                 llvm::Value *fmt_str_lit = llvm_builder_emit_cstring_literal(builder, fmt_str);
                 dynamic_array_append(llvm_print_args, fmt_str_lit);
 
-                llvm::Value *length_val = irb->CreateExtractValue(llvm_val, { 0 });
-                llvm::Value *ptr_val = irb->CreateExtractValue(llvm_val, { 1 });
+                llvm::Value *ptr_val = irb->CreateExtractValue(llvm_val, { 0 });
+                llvm::Value *length_val = irb->CreateExtractValue(llvm_val, { 1 });
 
                 dynamic_array_append(llvm_print_args, length_val);
                 dynamic_array_append(llvm_print_args, ptr_val);
@@ -1161,7 +1161,7 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
 
             if (bc_reg.type == &builtin_type_String) {
                 assert(bc_reg.flags & BC_REGISTER_FLAG_LITERAL);
-                auto str_reg = bc_reg.value.compound[1];
+                auto str_reg = bc_reg.value.compound[0];
                 return llvm_builder_emit_string_literal(builder, str_reg.value.string);
             }
 
@@ -1296,8 +1296,8 @@ llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_R
     llvm::Constant *length_val = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { .s64 = str.length });
     llvm::Constant *cstr_val = llvm_builder_emit_cstring_literal(builder, str);
 
-    dynamic_array_append(&members, length_val);
     dynamic_array_append(&members, cstr_val);
+    dynamic_array_append(&members, length_val);
 
     return llvm::ConstantStruct::get(llvm_string_type, { members.data, (size_t)members.count });
 }

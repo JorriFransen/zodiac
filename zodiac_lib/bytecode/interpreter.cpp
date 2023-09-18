@@ -1703,9 +1703,9 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type, boo
         case Type_Kind::STRUCTURE: {
 
             if (type == &builtin_type_String) {
-                s64 length = *(s64 *)mem;
-                mem += builtin_type_s64.bit_size / 8;
                 char *str = *(char **)mem;
+                mem += builtin_type_s64.bit_size / 8;
+                s64 length = *(s64 *)mem;
 
                 auto fmt = "%.*s";
                 if (quote_strings) {
@@ -1820,8 +1820,8 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
                 if (reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
                     assert(reg.value.compound.count == 2);
 
-                    auto length_reg = reg.value.compound[0];
-                    auto str_reg = reg.value.compound[1];
+                    auto str_reg = reg.value.compound[0];
+                    auto length_reg = reg.value.compound[1];
 
                     assert(length_reg.value.integer.s64 == str_reg.value.string.length);
 

@@ -44,7 +44,7 @@ main :: () {
 }
 
 string_copy :: (s: String) -> String {
-    result : String = { s.length, malloc(s.length) };
+    result : String = { malloc(s.length), s.length };
     memcpy(result.data, s.data, s.length);
     return result;
 }

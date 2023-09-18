@@ -51,8 +51,7 @@ static MunitResult bool_to_string_Bool_Arg_LLVM(const MunitParameter params[], v
     }
 
     // Note that the third print is incorrect in the runtime stdout
-    Expected_Results expected = { .compiletime_std_out = "true\nfalse\nfalse\ntrue",
-                                  .runtime_std_out     = "true\nfalse\ntrue\ntrue" };
+    Expected_Results expected = { .std_out = "true\nfalse\nfalse\ntrue" };
     Zodiac_Options options = {};
 
     // We use this to call the support lib functions, for now it's
@@ -61,13 +60,7 @@ static MunitResult bool_to_string_Bool_Arg_LLVM(const MunitParameter params[], v
     auto result = compile_and_run(code_string, expected, options);
     defer { free_compile_run_results(&result); };
 
-    if (result.result == MUNIT_OK) {
-        // Means the bug isn't fixed yet
-        return MUNIT_SKIP;
-    }
-
-    // Fail if it is magically fixed....
-    return MUNIT_FAIL;
+    return result.result;
 }
 
 

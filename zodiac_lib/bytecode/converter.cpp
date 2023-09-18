@@ -648,7 +648,7 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
                 return bytecode_emit_array_offset_pointer(bc->builder, base_reg, index_reg);
             } else {
                 assert(base_reg.type == &builtin_type_String);
-                Bytecode_Register data_reg = bytecode_emit_aggregate_offset_pointer(bc->builder, base_reg, 1);
+                Bytecode_Register data_reg = bytecode_emit_aggregate_offset_pointer(bc->builder, base_reg, 0);
                 data_reg = bytecode_emit_load_pointer(bc->builder, data_reg);
                 return bytecode_emit_ptr_offset_pointer(bc->builder, data_reg, index_reg);
             }
@@ -1122,10 +1122,11 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
             if (type == &builtin_type_String) {
                 assert(expr->compound.expressions.count == 2);
-                auto length_expr = expr->compound.expressions[0];
+                auto ptr_expr = expr->compound.expressions[0];
+                auto length_expr = expr->compound.expressions[1];
+
                 assert(length_expr->kind == AST_Expression_Kind::INTEGER_LITERAL);
 
-                auto ptr_expr = expr->compound.expressions[1];
                 auto ptr = constant_resolve_pointer_expr(ptr_expr);
                 return bytecode_string_literal(bc->builder, String_Ref((char *)ptr, length_expr->integer_literal.value.s64));
             }
