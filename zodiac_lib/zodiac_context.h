@@ -11,6 +11,7 @@
 namespace Zodiac
 {
 
+struct AST_File;
 struct File_Handle;
 struct Resolver;
 struct Zodiac_Error;
@@ -41,6 +42,19 @@ struct Zodiac_Options
     bool report_errors = true; // Used in the tests to not display errors for succeeding tests
 };
 
+enum class File_To_Parse_Kind
+{
+    PATH,
+    STRING,
+};
+
+struct File_To_Parse
+{
+    File_To_Parse_Kind kind;
+    String_Ref path;
+    String_Ref source;
+};
+
 struct Zodiac_Context
 {
     Atom_Table atoms;
@@ -59,6 +73,9 @@ struct Zodiac_Context
 
     Zodiac_Options options = {};
 
+    Dynamic_Array<File_To_Parse> files_to_parse;
+    Dynamic_Array<AST_File *> parsed_files;
+
     Resolver *resolver;
     Bytecode_Builder *bytecode_builder;
     Bytecode_Converter *bytecode_converter;
@@ -75,19 +92,6 @@ struct Zodiac_Context
     String support_dll_dynamic_path;
 #endif
     String support_lib_static_path;
-};
-
-enum class File_To_Parse_Kind
-{
-    PATH,
-    STRING,
-};
-
-struct File_To_Parse
-{
-    File_To_Parse_Kind kind;
-    String_Ref path;
-    String_Ref source;
 };
 
 ZAPI void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context);

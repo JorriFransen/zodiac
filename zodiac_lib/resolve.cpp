@@ -39,8 +39,6 @@ void resolver_create(Resolver *resolver, Zodiac_Context *ctx)
     resolver->global_scope = scope_new(&ctx->ast_allocator, Scope_Kind::GLOBAL, nullptr);
     resolver->node_allocator = &ctx->ast_allocator;
 
-    dynamic_array_create(&dynamic_allocator, &resolver->files_to_parse);
-    dynamic_array_create(&dynamic_allocator, &resolver->parsed_files);
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_name_resolve);
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_type_resolve);
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_emit_bytecode);
@@ -108,7 +106,7 @@ void resolver_add_file(Resolver *resolver, AST_File *file)
 {
     debug_assert(file);
 
-    dynamic_array_append(&resolver->parsed_files, file);
+    dynamic_array_append(&resolver->ctx->parsed_files, file);
 
     // TODO: Cleanup:
     if (!resolver->global_scope->file) {
@@ -623,7 +621,7 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
                     .path = path,
                 };
 
-                dynamic_array_append(&ctx->resolver->files_to_parse, ftp);
+                dynamic_array_append(&ctx->files_to_parse, ftp);
             }
 
             break;

@@ -467,6 +467,7 @@ struct AST_Directive
 
 struct AST_File
 {
+    String name;
     Dynamic_Array<AST_Declaration *> declarations;
 };
 

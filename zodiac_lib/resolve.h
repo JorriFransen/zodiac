@@ -104,9 +104,6 @@ struct Resolver
 
     Allocator *node_allocator;
 
-    Dynamic_Array<File_To_Parse> files_to_parse;
-    Dynamic_Array<AST_File *> parsed_files;
-
     Dynamic_Array<Flat_Root_Node *> nodes_to_name_resolve;
     Dynamic_Array<Flat_Root_Node *> nodes_to_type_resolve;
     Dynamic_Array<Flat_Root_Node *> nodes_to_emit_bytecode;

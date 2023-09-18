@@ -64,6 +64,9 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
         assert(result);
     }
 
+    dynamic_array_create(&dynamic_allocator, &out_context->files_to_parse);
+    dynamic_array_create(&dynamic_allocator, &out_context->parsed_files);
+
     out_context->resolver = alloc<Resolver>(&dynamic_allocator);
     resolver_create(out_context->resolver, out_context);
 
@@ -145,7 +148,7 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
         }
     }
 
-    dynamic_array_append(&ctx->resolver->files_to_parse, ftp);
+    dynamic_array_append(&ctx->files_to_parse, ftp);
 
     bool parser_done = false;
     bool resolver_done = false;
@@ -230,8 +233,8 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
     }
 
     if (ctx->options.print_ast) {
-        for (s64 i = 0; i < ctx->resolver->parsed_files.count; i++) {
-            ast_print_file(ctx->resolver->parsed_files[i]);
+        for (s64 i = 0; i < ctx->parsed_files.count; i++) {
+            ast_print_file(ctx->parsed_files[i]);
         }
     }
 
@@ -286,8 +289,8 @@ bool zodiac_context_compile(Zodiac_Context *ctx)
 
 bool do_parse_jobs(Zodiac_Context *ctx)
 {
-    for (s64 i = 0; i < ctx->resolver->files_to_parse.count; i++) {
-        auto ftp = &ctx->resolver->files_to_parse[i];
+    for (s64 i = 0; i < ctx->files_to_parse.count; i++) {
+        auto ftp = &ctx->files_to_parse[i];
 
         String src_;
         if (ftp->kind == File_To_Parse_Kind::PATH) {
@@ -341,7 +344,7 @@ bool do_parse_jobs(Zodiac_Context *ctx)
         resolver_add_file(ctx->resolver, file);
     }
 
-    ctx->resolver->files_to_parse.count = 0;
+    ctx->files_to_parse.count = 0;
 
     return true;
 }
