@@ -268,7 +268,7 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
     return true;
 }
 
-bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref code, String_Ref origin)
+bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref code, Atom origin)
 {
     File_To_Parse ftp = {
         .kind = File_To_Parse_Kind::STRING,
@@ -278,11 +278,17 @@ bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref code, String_Ref ori
     return zodiac_context_compile(ctx, ftp);
 }
 
+bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref code, const char *origin)
+{
+    Atom origin_atom = atom_get(&ctx->atoms, origin);
+    return zodiac_context_compile(ctx, code, origin_atom);
+}
+
 bool zodiac_context_compile(Zodiac_Context *ctx)
 {
     File_To_Parse ftp = {
         .kind = File_To_Parse_Kind::PATH,
-        .path = ctx->options.input_file_name,
+        .path = atom_get(&ctx->atoms, ctx->options.input_file_name),
     };
     return zodiac_context_compile(ctx, ftp);
 }
@@ -312,6 +318,7 @@ bool do_parse_jobs(Zodiac_Context *ctx)
         parser_create(ctx, &lexer, &parser);
         defer { parser_destroy(&parser); };
 
+        assert(ftp->path.length);
         AST_File *file = parse_file(&parser);
 
         if (parser.error) {

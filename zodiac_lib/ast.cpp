@@ -492,10 +492,11 @@ void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir)
     out_dir->kind = kind;
 }
 
-void ast_file_create(Dynamic_Array<AST_Declaration *> decls, AST_File *out_file)
+void ast_file_create(Atom name, Dynamic_Array<AST_Declaration *> decls, AST_File *out_file)
 {
     debug_assert(out_file);
 
+    out_file->name = name;
     out_file->declarations = decls;
 }
 
@@ -919,12 +920,12 @@ AST_Directive *ast_directive_new(Zodiac_Context *ctx, Source_Range range)
     return dir;
 }
 
-AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *> decls)
+AST_File *ast_file_new(Zodiac_Context *ctx, Atom name, Dynamic_Array<AST_Declaration *> decls)
 {
     debug_assert(ctx);
 
     auto file = alloc<AST_File>(&ctx->ast_allocator);
-    ast_file_create(decls, file);
+    ast_file_create(name, decls, file);
     return file;
 }
 

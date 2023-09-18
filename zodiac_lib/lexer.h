@@ -58,6 +58,8 @@ struct Lexer
 {
     Zodiac_Context *context;
 
+    String_Ref stream_name;
+
     const char *stream_start;
     const char *stream;
     const char *line_start;

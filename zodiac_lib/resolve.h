@@ -13,7 +13,6 @@ struct AST_Expression;
 struct AST_File;
 struct AST_Statement;
 struct AST_Type_Spec;
-struct File_To_Parse;
 struct Scope;
 struct Source_Range;
 struct Type;

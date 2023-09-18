@@ -51,7 +51,7 @@ enum class File_To_Parse_Kind
 struct File_To_Parse
 {
     File_To_Parse_Kind kind;
-    String_Ref path;
+    Atom path;
     String_Ref source;
 };
 
@@ -98,7 +98,8 @@ ZAPI void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_cont
 ZAPI void zodiac_context_destroy(Zodiac_Context *context);
 
 ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp);
-ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref code, String_Ref origin);
+ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref code, Atom origin);
+ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref code, const char *origin);
 ZAPI bool zodiac_context_compile(Zodiac_Context *ctx);
 
 ZAPI bool do_parse_jobs(Zodiac_Context *ctx);

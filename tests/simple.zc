@@ -1,6 +1,6 @@
 
 #import "modules/builtin.zc"
-// #import "modules/builtin.zc"
+#import "modules/builtin.zc"
 
 Person :: struct {
     name: String;
@@ -40,10 +40,4 @@ main :: () {
     print(name[1].length);
 
     return 0;
-}
-
-string_copy :: (s: String) -> String {
-    result : String = { malloc(s.length), s.length };
-    memcpy(result.data, s.data, s.length);
-    return result;
 }

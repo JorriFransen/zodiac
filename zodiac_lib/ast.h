@@ -467,7 +467,7 @@ struct AST_Directive
 
 struct AST_File
 {
-    String name;
+    Atom name;
     Dynamic_Array<AST_Declaration *> declarations;
 };
 
@@ -522,7 +522,7 @@ ZAPI void ast_run_directive_create(AST_Statement *stmt, AST_Directive *out_dir);
 ZAPI void ast_import_directive_create(Atom path, AST_Directive *out_dir);
 ZAPI void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir);
 
-ZAPI void ast_file_create(Dynamic_Array<AST_Declaration *> decls, AST_File *out_file);
+ZAPI void ast_file_create(Atom name, Dynamic_Array<AST_Declaration *> decls, AST_File *out_file);
 
 ZAPI AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Integer_Value value);
 ZAPI AST_Expression *ast_real_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Real_Value value);
@@ -573,7 +573,7 @@ ZAPI AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range rang
 ZAPI AST_Directive *ast_import_directive_new(Zodiac_Context *ctx, Source_Range range, Atom path);
 ZAPI AST_Directive *ast_directive_new(Zodiac_Context *ctx, Source_Range range);
 
-ZAPI AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *> decls);
+ZAPI AST_File *ast_file_new(Zodiac_Context *ctx, Atom name, Dynamic_Array<AST_Declaration *> decls);
 
 ZAPI void ast_print_expression(String_Builder *sb, AST_Expression *expr);
 ZAPI String ast_print_expression(AST_Expression *expr, Allocator *allocator);

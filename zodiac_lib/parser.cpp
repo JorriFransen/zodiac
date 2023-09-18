@@ -865,7 +865,9 @@ AST_File *parse_file(Parser *parser)
         dynamic_array_append(&decls, decl);
     }
 
-    return ast_file_new(parser->context, decls);
+    assert(parser->lxr->stream_name.length);
+    Atom stream_name = atom_get(&parser->context->atoms, parser->lxr->stream_name);
+    return ast_file_new(parser->context, stream_name, decls);
 }
 
 bool is_keyword(Parser *parser, Atom keyword)

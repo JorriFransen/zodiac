@@ -609,9 +609,28 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
         }
 
         case AST_Declaration_Kind::IMPORT_DIRECTIVE: {
-            String_Ref path = &decl->directive->import.path;
+            Atom path = decl->directive->import.path;
 
-            if (!filesystem_is_regular(path)) {
+            bool already_imported = false;
+
+            for (s64 i = 0; i < ctx->parsed_files.count; i++) {
+                if (ctx->parsed_files[i]->name == path) {
+                    already_imported = true;
+                    break;
+                }
+            }
+            for (s64 i = 0; i < ctx->files_to_parse.count; i++) {
+                if (ctx->files_to_parse[i].path == path) {
+                    already_imported = true;
+                    break;
+                }
+            }
+
+            if (already_imported) {
+                break;
+            }
+
+            if (!filesystem_is_regular(&path)) {
                 fatal_resolve_error(ctx, decl, "Unable to find #import file: '%s'", path.data);
                 return;
             } else {
