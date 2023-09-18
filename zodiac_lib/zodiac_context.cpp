@@ -135,50 +135,31 @@ void zodiac_context_destroy(Zodiac_Context *context)
     linear_allocator_destroy(&context->temp_allocator_state.linear_allocator);
 }
 
-bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source, String_Ref source_name)
+bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
 {
     debug_assert(ctx);
 
-    Lexer lexer;
-    lexer_create(ctx, &lexer);
-    defer { lexer_destroy(&lexer); };
-
-    lexer_init_stream(&lexer, source, source_name);
-
-    Parser parser;
-    parser_create(ctx, &lexer, &parser);
-    defer { parser_destroy(&parser); };
-
-    AST_File *file = parse_file(&parser);
-
-    if (parser.error) {
-        bool lex_err = false;
-        if (ctx->options.report_errors) {
-            for (s64 i = 0; i < ctx->errors.count; i++) {
-                auto &err = ctx->errors[i];
-                assert(err.kind == Zodiac_Error_Kind::ZODIAC_LEX_ERROR || err.kind == Zodiac_Error_Kind::ZODIAC_PARSE_ERROR);
-                if (err.kind == Zodiac_Error_Kind::ZODIAC_LEX_ERROR) {
-                    lex_err = true;
-                }
-
-                if (err.kind == Zodiac_Error_Kind::ZODIAC_PARSE_ERROR && lex_err) {
-                    continue;
-                }
-
-                auto start = err.source_range.start;
-                fprintf(stderr, "%s:%llu:%llu: error: %s\n", start.name.data, start.line, start.index_in_line, err.message.data);
-            }
+    if (ftp.kind == File_To_Parse_Kind::PATH) {
+        if (!filesystem_is_regular(ftp.path)) {
+            ZFATAL("Invalid path '%.*s' (input_file_name)", (int)ftp.path.length, ftp.path.data);
         }
-
-        return false;
     }
 
-    assert(file);
+    dynamic_array_append(&ctx->resolver->files_to_parse, ftp);
 
-    resolver_add_file(ctx->resolver, file);
-
+    bool parser_done = false;
     bool resolver_done = false;
-    while (!resolver_done) {
+
+    while (!parser_done || !resolver_done) {
+        parser_done = do_parse_jobs(ctx);
+
+        if (ctx->options.report_errors) {
+            if (resolver_report_errors(ctx->resolver)) {
+                return false;
+            }
+        } else if (ctx->errors.count) return false;
+
+
         resolver_done = resolver_cycle(ctx->resolver);
 
         if (ctx->options.report_errors) {
@@ -248,7 +229,11 @@ bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source, String_Ref s
         ctx->resolver->nodes_to_run_bytecode.count = 0;
     }
 
-    if (ctx->options.print_ast) ast_print_file(file);
+    if (ctx->options.print_ast) {
+        for (s64 i = 0; i < ctx->resolver->parsed_files.count; i++) {
+            ast_print_file(ctx->resolver->parsed_files[i]);
+        }
+    }
 
     if (ctx->options.print_bytecode) bytecode_print(ctx->bytecode_builder, temp_allocator_allocator());
 
@@ -280,28 +265,85 @@ bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source, String_Ref s
     return true;
 }
 
-bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source_file_name)
+bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref code, String_Ref origin)
 {
-    debug_assert(ctx);
-
-    if (!filesystem_is_regular(source_file_name)) {
-        ZFATAL("Invalid path '%.*s' (input_file_name)", (int)source_file_name.length, source_file_name.data);
-    }
-
-    String file_content = {};
-    bool read_result = filesystem_read_entire_file(&dynamic_allocator, source_file_name, &file_content);
-    assert(read_result);
-
-    bool result = zodiac_context_compile(ctx, file_content, source_file_name);
-
-    free(&dynamic_allocator, file_content.data);
-
-    return result;
+    File_To_Parse ftp = {
+        .kind = File_To_Parse_Kind::STRING,
+        .path = origin,
+        .source = code,
+    };
+    return zodiac_context_compile(ctx, ftp);
 }
 
 bool zodiac_context_compile(Zodiac_Context *ctx)
 {
-    return zodiac_context_compile(ctx, ctx->options.input_file_name);
+    File_To_Parse ftp = {
+        .kind = File_To_Parse_Kind::PATH,
+        .path = ctx->options.input_file_name,
+    };
+    return zodiac_context_compile(ctx, ftp);
+}
+
+bool do_parse_jobs(Zodiac_Context *ctx)
+{
+    for (s64 i = 0; i < ctx->resolver->files_to_parse.count; i++) {
+        auto ftp = &ctx->resolver->files_to_parse[i];
+
+        String src_;
+        if (ftp->kind == File_To_Parse_Kind::PATH) {
+
+            bool read_res = filesystem_read_entire_file(&dynamic_allocator, ftp->path, &src_);
+            assert(read_res);
+            ftp->source = src_;
+        } else {
+            assert(ftp->kind == File_To_Parse_Kind::STRING);
+        }
+
+        Lexer lexer;
+        lexer_create(ctx, &lexer);
+        defer { lexer_destroy(&lexer); };
+
+        lexer_init_stream(&lexer, ftp->source, ftp->path);
+
+        Parser parser;
+        parser_create(ctx, &lexer, &parser);
+        defer { parser_destroy(&parser); };
+
+        AST_File *file = parse_file(&parser);
+
+        if (parser.error) {
+            bool lex_err = false;
+            if (ctx->options.report_errors) {
+                for (s64 i = 0; i < ctx->errors.count; i++) {
+                    auto &err = ctx->errors[i];
+                    assert(err.kind == Zodiac_Error_Kind::ZODIAC_LEX_ERROR || err.kind == Zodiac_Error_Kind::ZODIAC_PARSE_ERROR);
+                    if (err.kind == Zodiac_Error_Kind::ZODIAC_LEX_ERROR) {
+                        lex_err = true;
+                    }
+
+                    if (err.kind == Zodiac_Error_Kind::ZODIAC_PARSE_ERROR && lex_err) {
+                        continue;
+                    }
+
+                    auto start = err.source_range.start;
+                    fprintf(stderr, "%s:%llu:%llu: error: %s\n", start.name.data, start.line, start.index_in_line, err.message.data);
+                }
+            }
+
+            return false;
+        }
+
+        if (ftp->kind == File_To_Parse_Kind::PATH) {
+             free(&dynamic_allocator, src_.data);
+        }
+
+        assert(file);
+        resolver_add_file(ctx->resolver, file);
+    }
+
+    ctx->resolver->files_to_parse.count = 0;
+
+    return true;
 }
 
 }

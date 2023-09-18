@@ -1,0 +1,5 @@
+
+#foreign malloc :: (size: s64) -> *u8;
+#foreign free :: (ptr: *u8) -> void;
+#foreign memcpy :: (dest: *u8, src: *u8, size: s64) -> *u8;
+

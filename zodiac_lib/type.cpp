@@ -299,6 +299,7 @@ Type *sym_decl_type(Symbol *sym)
         }
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
+        case AST_Declaration_Kind::IMPORT_DIRECTIVE: assert(false); break;
     }
 
     assert(false);

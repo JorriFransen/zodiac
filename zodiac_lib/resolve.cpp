@@ -8,6 +8,7 @@
 #include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
+#include "platform/filesystem.h"
 #include "scope.h"
 #include "source_pos.h"
 #include "type.h"
@@ -21,6 +22,12 @@
 namespace Zodiac
 {
 
+#define add_builtin_type_symbol(type)                                                                                                \
+{                                                                                                                                    \
+    auto sym = add_typed_symbol(resolver->ctx, resolver->global_scope, Symbol_Kind::TYPE, (SYM_FLAG_BUILTIN), atom_##type, nullptr); \
+    sym->builtin_type = &builtin_type_##type;                                                                                        \
+}
+
 void resolver_create(Resolver *resolver, Zodiac_Context *ctx)
 {
     debug_assert(resolver);
@@ -32,33 +39,15 @@ void resolver_create(Resolver *resolver, Zodiac_Context *ctx)
     resolver->global_scope = scope_new(&ctx->ast_allocator, Scope_Kind::GLOBAL, nullptr);
     resolver->node_allocator = &ctx->ast_allocator;
 
+    dynamic_array_create(&dynamic_allocator, &resolver->files_to_parse);
+    dynamic_array_create(&dynamic_allocator, &resolver->parsed_files);
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_name_resolve);
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_type_resolve);
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_emit_bytecode);
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_run_bytecode);
-}
-
-void resolver_destroy(Resolver *resolver)
-{
-    dynamic_array_free(&resolver->nodes_to_name_resolve);
-    dynamic_array_free(&resolver->nodes_to_type_resolve);
-    dynamic_array_free(&resolver->nodes_to_emit_bytecode);
-    dynamic_array_free(&resolver->nodes_to_run_bytecode);
-}
-
-#define add_builtin_type_symbol(type)                                                                                                \
-{                                                                                                                                    \
-    auto sym = add_typed_symbol(resolver->ctx, resolver->global_scope, Symbol_Kind::TYPE, (SYM_FLAG_BUILTIN), atom_##type, nullptr); \
-    sym->builtin_type = &builtin_type_##type;                                                                                        \
-}
-
-void resolver_add_file(Resolver *resolver, AST_File *file)
-{
-    debug_assert(file);
 
     assert(resolver->global_scope);
     assert(resolver->global_scope->file == nullptr);
-    resolver->global_scope->file = file;
 
     add_builtin_type_symbol(u64);
     add_builtin_type_symbol(s64);
@@ -105,6 +94,26 @@ void resolver_add_file(Resolver *resolver, AST_File *file)
     add_unresolved_decl_symbol(resolver->ctx, resolver->global_scope, string_type_decl, true);
     resolver_add_declaration(resolver->ctx, resolver, string_type_decl, resolver->global_scope);
     string_type_decl->aggregate.resolved_type = &builtin_type_String;
+}
+
+void resolver_destroy(Resolver *resolver)
+{
+    dynamic_array_free(&resolver->nodes_to_name_resolve);
+    dynamic_array_free(&resolver->nodes_to_type_resolve);
+    dynamic_array_free(&resolver->nodes_to_emit_bytecode);
+    dynamic_array_free(&resolver->nodes_to_run_bytecode);
+}
+
+void resolver_add_file(Resolver *resolver, AST_File *file)
+{
+    debug_assert(file);
+
+    dynamic_array_append(&resolver->parsed_files, file);
+
+    // TODO: Cleanup:
+    if (!resolver->global_scope->file) {
+        resolver->global_scope->file = file;
+    }
 
     // Register all top level symbols first
     for (s64 i = 0; i < file->declarations.count; i++) {
@@ -477,7 +486,8 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
     Scope *parameter_scope = nullptr;
     Scope *local_scope = nullptr;
 
-    if (decl->kind != AST_Declaration_Kind::RUN_DIRECTIVE) {
+    if (decl->kind != AST_Declaration_Kind::RUN_DIRECTIVE &&
+        decl->kind != AST_Declaration_Kind::IMPORT_DIRECTIVE) {
 
         assert(decl->identifier.name.data);
         auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
@@ -597,6 +607,25 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
             flatten_directive(resolver, decl->directive, scope, dest);
+            break;
+        }
+
+        case AST_Declaration_Kind::IMPORT_DIRECTIVE: {
+            String_Ref path = &decl->directive->import.path;
+
+            if (!filesystem_is_regular(path)) {
+                fatal_resolve_error(ctx, decl, "Unable to find #import file: '%s'", path.data);
+                return;
+            } else {
+
+                File_To_Parse ftp = {
+                    .kind = File_To_Parse_Kind::PATH,
+                    .path = path,
+                };
+
+                dynamic_array_append(&ctx->resolver->files_to_parse, ftp);
+            }
+
             break;
         }
     }
@@ -981,7 +1010,8 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
     bool global = DECL_IS_GLOBAL(decl);
     Symbol *decl_sym = nullptr;
 
-    if (decl->kind != AST_Declaration_Kind::RUN_DIRECTIVE) {
+    if (decl->kind != AST_Declaration_Kind::RUN_DIRECTIVE &&
+        decl->kind != AST_Declaration_Kind::IMPORT_DIRECTIVE) {
 
         assert(decl->identifier.name.data);
         decl_sym = scope_get_symbol(scope, decl->identifier.name);
@@ -1055,6 +1085,10 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
         }
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
+            return true;
+        }
+
+        case AST_Declaration_Kind::IMPORT_DIRECTIVE: {
             return true;
         }
     }
@@ -1589,6 +1623,11 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                 return false;
             }
 
+            result = true;
+            break;
+        }
+
+        case AST_Declaration_Kind::IMPORT_DIRECTIVE: {
             result = true;
             break;
         }

@@ -86,6 +86,7 @@ ALL_ZODIAC_KEYWORDS
 #define ALL_ZODIAC_DIRECTIVES \
     ZODIAC_DIRECTIVE(run) \
     ZODIAC_DIRECTIVE(foreign) \
+    ZODIAC_DIRECTIVE(import) \
 
 // Emit atom declarations for all directives
 #define ZODIAC_DIRECTIVE(n) ZAPI extern Atom directive_##n;

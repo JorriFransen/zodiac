@@ -77,11 +77,26 @@ struct Zodiac_Context
     String support_lib_static_path;
 };
 
+enum class File_To_Parse_Kind
+{
+    PATH,
+    STRING,
+};
+
+struct File_To_Parse
+{
+    File_To_Parse_Kind kind;
+    String_Ref path;
+    String_Ref source;
+};
+
 ZAPI void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context);
 ZAPI void zodiac_context_destroy(Zodiac_Context *context);
 
-ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source, String_Ref source_name);
-ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source_file_name);
+ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp);
+ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref code, String_Ref origin);
 ZAPI bool zodiac_context_compile(Zodiac_Context *ctx);
+
+ZAPI bool do_parse_jobs(Zodiac_Context *ctx);
 
 }

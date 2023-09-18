@@ -13,6 +13,7 @@ struct AST_Expression;
 struct AST_File;
 struct AST_Statement;
 struct AST_Type_Spec;
+struct File_To_Parse;
 struct Scope;
 struct Source_Range;
 struct Type;
@@ -102,6 +103,9 @@ struct Resolver
     Scope *global_scope;
 
     Allocator *node_allocator;
+
+    Dynamic_Array<File_To_Parse> files_to_parse;
+    Dynamic_Array<AST_File *> parsed_files;
 
     Dynamic_Array<Flat_Root_Node *> nodes_to_name_resolve;
     Dynamic_Array<Flat_Root_Node *> nodes_to_type_resolve;
