@@ -630,7 +630,7 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
                 break;
             }
 
-            if (!filesystem_is_regular(&path)) {
+            if (!filesystem_is_regular(path)) {
                 fatal_resolve_error(ctx, decl, "Unable to find #import file: '%s'", path.data);
                 return;
             } else {

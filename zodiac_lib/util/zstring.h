@@ -48,7 +48,6 @@ struct String_Ref
     ZAPI String_Ref(const char *cstr, s64 length) : data(cstr), length(length) {}
     ZAPI String_Ref(const std::string &std_str) : data(std_str.c_str()), length((s64)std_str.length()) {}
     ZAPI String_Ref(const String &zstr) : data(zstr.data), length(zstr.length) {}
-    ZAPI String_Ref(const Atom *atom);
     ZAPI String_Ref(const Atom &atom);
 
     ZAPI const char &operator[](s64 index) const {

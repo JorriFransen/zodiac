@@ -284,7 +284,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             assert(var_decl->variable.resolved_type);
 
             Type *alloc_type = var_decl->variable.resolved_type;
-            auto alloc_name = String_Ref(&var_decl->identifier.name);
+            auto alloc_name = String_Ref(var_decl->identifier.name);
             alloc_name = bytecode_unique_register_name_in_function(bc->builder, fn_handle, alloc_name);
             auto alloc_reg = bytecode_emit_alloc(bc->builder, alloc_type, alloc_name.data);
 
@@ -741,7 +741,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
         }
 
         case AST_Expression_Kind::STRING_LITERAL: {
-            return bytecode_string_literal(bc->builder, &expr->string_literal.atom);
+            return bytecode_string_literal(bc->builder, expr->string_literal.atom);
         }
 
         case AST_Expression_Kind::CHAR_LITERAL: {
@@ -1034,7 +1034,7 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
         }
 
         case AST_Expression_Kind::STRING_LITERAL: {
-            return bytecode_string_literal(bc->builder, &expr->string_literal.atom);
+            return bytecode_string_literal(bc->builder, expr->string_literal.atom);
         }
 
         case AST_Expression_Kind::CHAR_LITERAL: {

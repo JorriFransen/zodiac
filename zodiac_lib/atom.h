@@ -40,11 +40,11 @@ inline bool operator==(const Atom &lhs, const Atom &rhs)
 }
 
 ZINLINE bool operator==(const Atom &lhs, const char *cstr) {
-    return string_equal(&lhs, cstr);
+    return string_equal(lhs, cstr);
 }
 
 ZINLINE bool operator!=(const Atom &lhs, const char *cstr) {
-    return !string_equal(&lhs, cstr);
+    return !string_equal(lhs, cstr);
 }
 
 inline bool operator !=(const Atom &lhs, const Atom &rhs)
