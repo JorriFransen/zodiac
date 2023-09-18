@@ -155,7 +155,7 @@ Atom atom_get(Atom_Table *at, const char *cstr, s64 length)
     while (iteration_count < at->capacity) {
 
         if (at->hashes[hash_index] == hash &&
-            string_equal(&at->atoms[hash_index], String_Ref(cstr, length))) {
+            string_equal(at->atoms[hash_index], String_Ref(cstr, length))) {
 
             return at->atoms[hash_index];
 

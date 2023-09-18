@@ -60,7 +60,7 @@ String string_create(Allocator *allocator, char *cstr)
     return string_create(allocator, cstr, length);
 }
 
-String_Ref::String_Ref(const Atom *atom) : data(atom->data), length(atom->length) {}
+String_Ref::String_Ref(const Atom &atom) : data(atom.data), length(atom.length) {}
 
 #ifdef ZPLATFORM_WINDOWS
 
