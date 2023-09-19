@@ -1,6 +1,7 @@
 
+DIR := $(shell pwd)
 
-include $(PWD)/3rdparty/Makefile.3rdparty.linux.mak
+include $(DIR)/3rdparty/Makefile.3rdparty.linux.mak
 
 COMMON_FLAGS := --no-print-directory
 

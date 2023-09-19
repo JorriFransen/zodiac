@@ -14,8 +14,7 @@ SUPPORT_EXTENSION_DYN := .dll
 SUPPORT_ASSEMBLY_STAT := libzrs_s
 SUPPORT_EXTENSION_STAT := .lib
 
-CWD := $(shell cd)
-include $(CWD)/3rdparty/Makefile.3rdparty.windows.mak
+include $(DIR)/3rdparty/Makefile.3rdparty.windows.mak
 
 COMMON_LINKER_FLAGS := -g -lmsvcrtd -Wl,-nodefaultlib:libcmt
 
@@ -51,7 +50,7 @@ scaffold:
 compile_support:
 	@echo Compiling $(SUPPORT_ASSEMBLY_DYN)
 
-.PHONY: compile scaffold
+.PHONY: compile
 compile:
 	@echo Compiling $(ASSEMBLY)
 
