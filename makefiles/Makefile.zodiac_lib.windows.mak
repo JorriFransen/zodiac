@@ -46,15 +46,15 @@ scaffold:
 	-@setlocal enableextensions enabledelayedexpansion && mkdir $(addprefix $(OBJ_DIR), $(SUPPORT_DIRECTORIES)) 2>NUL || cd .
 	-@setlocal enableextensions enabledelayedexpansion && mkdir $(BUILD_DIR) 2>NUL || cd .
 
-.PHONY: compile_support scaffold
+.PHONY: compile_support
 compile_support:
 	@echo Compiling $(SUPPORT_ASSEMBLY_DYN)
 
 .PHONY: compile
-compile:
+compile: scaffold
 	@echo Compiling $(ASSEMBLY)
 
-$(OBJ_DIR)\\%.cpp.o: %.cpp scaffold
+$(OBJ_DIR)\\%.cpp.o: %.cpp
 	@echo $< -^> $@
 	@clang $< $(COMPILER_FLAGS) -c -o $(subst /,\, $@) $(DEFINES) $(INCLUDE_FLAGS)
 
