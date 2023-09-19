@@ -27,6 +27,8 @@ void free_compile_run_results(Compile_Run_Results *r)
 
 Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expected_results, Zodiac_Options options/*={}*/) {
 
+    temporary_allocator_reset(temp_allocator());
+
     if (expected_results.std_out.length) {
         munit_assert_int64(expected_results.compiletime_std_out.length, ==, 0);
         munit_assert_int64(expected_results.runtime_std_out.length, ==, 0);

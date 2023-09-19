@@ -254,6 +254,7 @@ bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source, String_Ref s
 
     Bytecode_Validator validator = {};
     bytecode_validator_init(ctx, temp_allocator_allocator(), &validator, ctx->bytecode_builder->functions, nullptr);
+    defer { bytecode_validator_free(&validator); };
     bool bytecode_valid = validate_bytecode(&validator);
 
     if (!bytecode_valid) {
