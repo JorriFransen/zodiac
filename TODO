@@ -9,6 +9,8 @@
 
 - Some tests are failing on windows
 
+- Some tests are failing on windows
+
 - When emitting non constant compound expressions some of it's members/elements might be constant. Constant members should be emitted to a value first, which we can then use to insert the non const values into.
 
 - Some way to get static array length
