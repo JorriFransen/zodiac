@@ -1266,16 +1266,15 @@ Run_Wrapper_Result execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function
     ZTRACE("Executing run wrapper: '%s'", fn->name.data);
 #endif // NDEBUG
 
-    auto ca = c_allocator();
-    Interpreter *run_interp = alloc<Interpreter>(ca);
-    interpreter_init(ca, bc->context, run_interp);
+    Interpreter *run_interp = alloc<Interpreter>(&dynamic_allocator);
+    interpreter_init(&dynamic_allocator, bc->context, run_interp);
 
     auto run_prog = bytecode_get_program(bc->builder);
 
     run_interp->std_out = stdout_file;
     Interpreter_Register result = interpreter_start(run_interp, run_prog, fn_handle);
 
-    return { ca, run_interp, result };
+    return { &dynamic_allocator, run_interp, result };
 }
 
 void free_run_wrapper_result(Run_Wrapper_Result *result)
