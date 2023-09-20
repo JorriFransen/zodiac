@@ -38,7 +38,6 @@ struct Compile_Run_Results
     MunitResult result;
     Bytecode_Program program;
 
-    Bytecode_Builder builder;
     Zodiac_Context context;
 };
 

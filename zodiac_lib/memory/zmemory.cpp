@@ -3,6 +3,7 @@
 #include "defines.h"
 #include "memory/allocator.h"
 #include "memory/dynamic_allocator.h"
+#include "memory/temporary_allocator.h"
 
 namespace Zodiac
 {
@@ -13,7 +14,7 @@ Allocator dynamic_allocator;
 
 bool memory_system_initialize()
 {
-    if (memory_system_initialized) assert(false && !"Memory system already initialized");
+    if (memory_system_initialized)  return true;
 
     bool result = dynamic_allocator_create(MEBIBYTE(1), &dynamic_allocator_state);
     assert(result);
@@ -22,7 +23,19 @@ bool memory_system_initialize()
 
     memory_system_initialized = true;
 
+    // This should initialize the temporary allocator
+    temp_allocator();
+
     return true;
+}
+
+void memory_system_deinitialize()
+{
+    deinitialize_global_temp_allocator();
+
+    dynamic_allocator_destroy(&dynamic_allocator_state);
+
+    memory_system_initialized = false;
 }
 
 }

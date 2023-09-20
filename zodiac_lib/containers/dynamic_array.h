@@ -225,4 +225,9 @@ file_local Dynamic_Array<T> temp_array_finalize(Allocator *allocator, Temp_Array
     return result;
 }
 
+template <typename T>
+void dynamic_array_append(Temp_Array<T> *ta, T element) {
+    dynamic_array_append(&ta->array, element);
+}
+
 }

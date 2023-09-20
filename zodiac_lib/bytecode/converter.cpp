@@ -465,7 +465,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
         case AST_Statement_Kind::IF: {
             auto cfn = (Bytecode_Function_Handle)bc->builder->insert_fn_index;
-            auto ta = &bc->context->temp_allocator;
+            auto ta = temp_allocator_allocator();
 
             auto temp_blocks = temp_array_create<Bytecode_Block_Handle>(ta);
 

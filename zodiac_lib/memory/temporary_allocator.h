@@ -20,6 +20,8 @@ struct Temporary_Allocator_Mark
 ZAPI Temporary_Allocator *temp_allocator();
 ZAPI Allocator *temp_allocator_allocator();
 
+ZAPI void deinitialize_global_temp_allocator();
+
 ZAPI void temporary_allocator_create(u64 size, void *memory, Temporary_Allocator *out_allocator);
 ZAPI void temporary_allocator_destroy(Temporary_Allocator *allocator);
 ZAPI Allocator temporary_allocator_allocator(Temporary_Allocator *state);

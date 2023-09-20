@@ -15,6 +15,7 @@ ZAPI extern Dynamic_Allocator dynamic_allocator_state;
 ZAPI extern Allocator dynamic_allocator;
 
 ZAPI bool memory_system_initialize();
+ZAPI void memory_system_deinitialize();
 
 ZAPI ZINLINE void *zallocate(u64 size)
 {

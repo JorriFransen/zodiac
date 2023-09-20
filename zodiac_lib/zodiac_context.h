@@ -27,7 +27,7 @@ using namespace Bytecode;
 struct Zodiac_Options
 {
     String_Ref input_file_name = {};
-    String_Ref output_file_name = string_copy(c_allocator(), DEFAULT_OUTPUT_FILENAME);
+    String_Ref output_file_name = DEFAULT_OUTPUT_FILENAME;
 
     bool dont_emit_binary = false;
 
@@ -51,9 +51,6 @@ struct Zodiac_Context
 
     Linear_Allocator bytecode_allocator_state;
     Allocator bytecode_allocator;
-
-    Temporary_Allocator temp_allocator_state;
-    Allocator temp_allocator;
 
     Temporary_Allocator error_allocator_state;
     Allocator error_allocator;

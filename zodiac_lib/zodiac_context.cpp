@@ -49,15 +49,11 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
     linear_allocator_create(MEBIBYTE(1), nullptr, &out_context->bytecode_allocator_state);
     out_context->bytecode_allocator = linear_allocator_allocator(&out_context->bytecode_allocator_state);
 
-    temporary_allocator_create(KIBIBYTE(64), nullptr, &out_context->temp_allocator_state);
-    out_context->temp_allocator = temporary_allocator_allocator(&out_context->temp_allocator_state);
-
     temporary_allocator_create(KIBIBYTE(8), nullptr, &out_context->error_allocator_state);
     out_context->error_allocator = temporary_allocator_allocator(&out_context->error_allocator_state);
 
     dynamic_array_create(c_allocator(), &out_context->errors);
     out_context->fatal_resolve_error = false;
-
 
     if (!type_system_initialized) {
         bool result = type_system_initialize(out_context);
@@ -113,9 +109,6 @@ void zodiac_context_destroy(Zodiac_Context *context)
 
     auto ca = c_allocator();
 
-    if (context->options.input_file_name.length) free(ca, context->options.input_file_name.data);
-    if (context->options.output_file_name.length) free(ca, context->options.output_file_name.data);
-
     dynamic_array_free(&context->errors);
 
     resolver_destroy(context->resolver);
@@ -132,7 +125,14 @@ void zodiac_context_destroy(Zodiac_Context *context)
 
     linear_allocator_destroy(&context->ast_allocator_state);
     linear_allocator_destroy(&context->bytecode_allocator_state);
-    linear_allocator_destroy(&context->temp_allocator_state.linear_allocator);
+    linear_allocator_destroy(&context->error_allocator_state.linear_allocator);
+
+#ifdef ZPLATFORM_WINDOWS
+    free(ca, context->support_dll_dynamic_path.data);
+#endif // ZPLATFORM_WINDOWS
+
+    free(ca, context->support_lib_dynamic_path.data);
+    free(ca, context->support_lib_static_path.data);
 }
 
 bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source, String_Ref source_name)

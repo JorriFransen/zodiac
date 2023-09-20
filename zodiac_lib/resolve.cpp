@@ -1364,7 +1364,7 @@ bool type_resolve_node(Resolver *resolver, Flat_Node *node)
                     return false;
                 }
 
-                auto param_types = temp_array_create<Type *>(&resolver->ctx->temp_allocator, func_decl->function.params.count);
+                auto param_types = temp_array_create<Type *>(temp_allocator_allocator(), func_decl->function.params.count);
 
                 for (u64 i = 0; i < func_decl->function.params.count; i++) {
 
@@ -1528,7 +1528,7 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             // Only implicitly infer a void return type from the body when there is no return type_spec
             if (!decl->function.type && !decl->function.inferred_return_type) {
                 if (!decl->function.return_ts) {
-                    auto param_types = temp_array_create<Type *>(&ctx->temp_allocator);
+                    auto param_types = temp_array_create<Type *>(temp_allocator_allocator());
 
                     for (s64 i = 0; i < decl->function.params.count; i++) {
                         auto param = decl->function.params[i];

@@ -23,7 +23,7 @@ void parse_command_line_options(Zodiac_Options *opts, int argc, const char **arg
 {
     assert(opts);
 
-    auto ca = c_allocator();
+    auto da = &dynamic_allocator;
 
     cxxopts::Options cxxoptions("zodiac", "zodiac " ZODIAC_VERSION);
 
@@ -62,8 +62,8 @@ void parse_command_line_options(Zodiac_Options *opts, int argc, const char **arg
         platform_exit(0);
     }
 
-    opts->input_file_name = string_copy(ca, result["input_file_name"].as<std::string>());
-    opts->output_file_name = string_copy(ca, result["output_file_name"].as<std::string>());
+    opts->input_file_name = string_copy(da, result["input_file_name"].as<std::string>());
+    opts->output_file_name = string_copy(da, result["output_file_name"].as<std::string>());
 
     opts->dont_emit_binary = result["no_binary"].as<bool>();
 

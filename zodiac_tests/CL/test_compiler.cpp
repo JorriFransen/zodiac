@@ -21,13 +21,14 @@ namespace Compiler_Tests {
 
 void free_compile_run_results(Compile_Run_Results *r)
 {
-    bytecode_builder_free(&r->builder);
     zodiac_context_destroy(&r->context);
+
+    memory_system_deinitialize();
 }
 
 Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expected_results, Zodiac_Options options/*={}*/) {
 
-    temporary_allocator_reset(temp_allocator());
+    memory_system_initialize();
 
     if (expected_results.std_out.length) {
         munit_assert_int64(expected_results.compiletime_std_out.length, ==, 0);
@@ -73,7 +74,7 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
         return result;
     }
 
-    print_bytecode(&result.builder);
+    print_bytecode(result.context.bytecode_builder);
 
     result.program = bytecode_get_program(result.context.bytecode_builder);
 

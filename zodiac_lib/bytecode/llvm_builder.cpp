@@ -135,6 +135,7 @@ void llvm_builder_free(LLVM_Builder *builder)
     hash_table_free(&builder->struct_types);
     hash_table_free(&builder->string_literals);
     hash_table_free(&builder->stored_registers);
+    hash_table_free(&builder->globals);
 
     stack_free(&builder->arg_stack);
 
@@ -1290,8 +1291,7 @@ llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_R
     llvm::Type *llvm_string_type_ = llvm_type_from_ast_type(builder, &builtin_type_String);
     llvm::StructType *llvm_string_type = static_cast<llvm::StructType *>(llvm_string_type_);
 
-    Dynamic_Array<llvm::Constant *> members;
-    dynamic_array_create(builder->allocator, &members, 2);
+    auto members = temp_array_create<llvm::Constant *>(temp_allocator_allocator(), 2);
 
     llvm::Constant *length_val = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { .s64 = str.length });
     llvm::Constant *cstr_val = llvm_builder_emit_cstring_literal(builder, str);
@@ -1299,7 +1299,11 @@ llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_R
     dynamic_array_append(&members, cstr_val);
     dynamic_array_append(&members, length_val);
 
-    return llvm::ConstantStruct::get(llvm_string_type, { members.data, (size_t)members.count });
+    auto result = llvm::ConstantStruct::get(llvm_string_type, { members.array.data, (size_t)members.array.count });
+
+    temp_array_destroy(&members);
+
+    return result;
 }
 
 llvm::Constant *llvm_builder_emit_cstring_literal(LLVM_Builder *builder, String_Ref str)
@@ -1335,15 +1339,18 @@ llvm::Constant *llvm_builder_emit_struct_literal(LLVM_Builder *builder, Type *ty
     llvm::Type *_llvm_struct_type = llvm_type_from_ast_type(builder, type);
     auto llvm_struct_type = static_cast<llvm::StructType *>(_llvm_struct_type);
 
-    Dynamic_Array<llvm::Constant *> members;
-    dynamic_array_create(builder->allocator, &members, compound.count);
+    auto members = temp_array_create<llvm::Constant *>(temp_allocator_allocator(), compound.count);
 
     for (s64 i = 0; i < compound.count; i++) {
         auto mem_val = llvm_builder_emit_constant(builder, compound[i]);
         dynamic_array_append(&members, mem_val);
     }
 
-    return llvm::ConstantStruct::get(llvm_struct_type, { members.data, (size_t)members.count });
+    auto result = llvm::ConstantStruct::get(llvm_struct_type, { members.array.data, (size_t)members.array.count });
+
+    temp_array_destroy(&members);
+
+    return result;
 }
 
 llvm::Constant *llvm_builder_emit_array_literal(LLVM_Builder *builder, Type *type, Dynamic_Array<Bytecode_Register> compound)
@@ -1354,15 +1361,18 @@ llvm::Constant *llvm_builder_emit_array_literal(LLVM_Builder *builder, Type *typ
     llvm::Type *_llvm_array_type = llvm_type_from_ast_type(builder, type);
     auto llvm_array_type = static_cast<llvm::ArrayType *>(_llvm_array_type);
 
-    Dynamic_Array<llvm::Constant *> members;
-    dynamic_array_create(builder->allocator, &members, compound.count);
+    auto members = temp_array_create<llvm::Constant *>(temp_allocator_allocator(), compound.count);
 
     for (s64 i = 0; i < compound.count; i++) {
         auto mem_val = llvm_builder_emit_constant(builder, compound[i]);
         dynamic_array_append(&members, mem_val);
     }
 
-    return llvm::ConstantArray::get(llvm_array_type, { members.data, (size_t)members.count });
+    auto result = llvm::ConstantArray::get(llvm_array_type, { members.array.data, (size_t)members.array.count });
+
+    temp_array_destroy(&members);
+
+    return result;
 }
 
 void llvm_builder_store_result(LLVM_Builder *builder, const Bytecode_Register &bc_dest_reg, llvm::Value *result_val)
@@ -1517,7 +1527,8 @@ void llvm_builder_emit_binary(LLVM_Builder *builder)
     //auto reloc_model = llvm::Reloc::PIC_;
 
     llvm::TargetMachine *llvm_target_machine = llvm_target->createTargetMachine(builder->target_triple.data, cpu, features, opt, reloc_model);
-    builder->llvm_module->setDataLayout(llvm_target_machine->createDataLayout());
+    llvm::DataLayout llvm_data_layout = llvm_target_machine->createDataLayout();
+    builder->llvm_module->setDataLayout(llvm_data_layout);
 
     String_Builder _sb;
     String_Builder* sb = &_sb;

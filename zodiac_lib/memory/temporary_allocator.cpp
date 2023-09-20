@@ -37,6 +37,12 @@ Allocator *temp_allocator_allocator()
     return &temp_allocator_allocator_;
 }
 
+void deinitialize_global_temp_allocator()
+{
+    temporary_allocator_destroy(&temp_allocator_data);
+    temp_allocator_initialized = false;
+}
+
 void temporary_allocator_create(u64 size, void *memory, Temporary_Allocator *out_allocator)
 {
     assert(size && out_allocator);
