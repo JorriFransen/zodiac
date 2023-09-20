@@ -18,7 +18,7 @@ namespace Zodiac {
 namespace Compiler_Tests {
 
 #define RESOLVE_ERR(f, m) (Expected_Error { .kind = ZODIAC_RESOLVE_ERROR, .fatal = (f), .message = (m)})
-#define PARSE_ERR(f, m) (Expected_Error { .kind = ZODIAC_PARSE_ERROR, .fatal = (f), .message = (m)})
+#define PARSE_ERR(m) (Expected_Error { .kind = ZODIAC_PARSE_ERROR, .fatal = true, .message = (m)})
 
 void free_compile_run_results(Compile_Run_Results *r)
 {
@@ -56,16 +56,25 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
 
     zodiac_context_compile(&result.context, code_str, "<test_code>");
 
-    if (result.context.errors.count != expected_results.errors.count) {
+    int fatal_err_count = 0;
+    for (s64 i = 0; i < result.context.errors.count; i++) {
+        auto err = result.context.errors[i];
+        if (err.fatal) fatal_err_count += 1;
+    }
+
+    if (fatal_err_count != expected_results.errors.count) {
         resolver_report_errors(result.context.resolver);
     }
 
-    munit_assert_int64(result.context.errors.count, ==, expected_results.errors.count);
+    munit_assert_int64(fatal_err_count, ==, expected_results.errors.count);
     if (expected_results.errors.count) {
 
+        s64 actual_index = 0;
         for (s64 i = 0; i < expected_results.errors.count; i++) {
             auto expected_err = &expected_results.errors[i];
-            auto actual_err = &result.context.errors[i];
+
+            while (!result.context.errors[actual_index].fatal) actual_index += 1;
+            auto actual_err = &result.context.errors[actual_index++];
 
             munit_assert(expected_err->kind == actual_err->kind);
             munit_assert(expected_err->fatal == actual_err->fatal);
@@ -169,7 +178,10 @@ MunitResult Infer_Void_Return(const MunitParameter params[], void* user_data_or_
 
         auto fn = &result.program.functions[i];
 
-        if (fn->name != "main") {
+        if (fn->name == "infer_void_return1" ||
+            fn->name == "infer_void_return2" ||
+            fn->name == "void_return_ts") {
+
             auto fn_type = fn->type;
             munit_assert(fn_type->kind == Type_Kind::FUNCTION);
 
@@ -1916,7 +1928,7 @@ MunitResult Run_Block_Only_Print_And_Call(const MunitParameter params[], void* u
     )CODE_STR";
 
     Expected_Results expected = {
-        .errors = Array_Ref<Expected_Error>({ PARSE_ERR(false, "Only print and call statements are allowed in run blocks")})
+        .errors = Array_Ref<Expected_Error>({ PARSE_ERR("Only print and call statements are allowed in run blocks")})
     };
 
     auto result = compile_and_run(code_string, expected);
@@ -1935,7 +1947,7 @@ MunitResult Run_Local_Unused(const MunitParameter params[], void* user_data_or_f
     )CODE_STR";
 
     Expected_Results expected = {
-        .errors = Array_Ref<Expected_Error>({ PARSE_ERR(false, "Result value of #run in local scope is not used")})
+        .errors = Array_Ref<Expected_Error>({ PARSE_ERR("Result value of #run in local scope is not used")})
     };
 
     auto result = compile_and_run(code_string, expected);

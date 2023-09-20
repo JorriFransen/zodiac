@@ -22,7 +22,7 @@ enum File_Mode : u32
 
 
 #ifdef ZPLATFORM_LINUX
-#define     ZODIAC_PATH_SEPERATOR "/"
+#define     ZODIAC_PATH_SEPARATOR "/"
 #elif ZPLATFORM_WINDOWS
 #define     ZODIAC_PATH_SEPERATOR "\\"
 #else

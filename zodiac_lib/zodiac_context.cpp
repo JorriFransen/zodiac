@@ -91,7 +91,10 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
     auto tmp_install_dir = filesystem_dir_name(temp_allocator_allocator(), out_context->compiler_exe_dir);
     assert(filesystem_exists(tmp_install_dir));
 
-    out_context->module_dir = string_format(&dynamic_allocator, "%s" ZODIAC_PATH_SEPERATOR "%s", tmp_install_dir.data, "modules");
+    out_context->module_dir = string_format(&dynamic_allocator, "%s" ZODIAC_PATH_SEPARATOR "%s", tmp_install_dir.data, "modules");
+    assert(filesystem_exists(out_context->module_dir));
+
+    out_context->builtin_module_path = string_format(&dynamic_allocator, "%s" ZODIAC_PATH_SEPARATOR "%s", out_context->module_dir.data, "builtin.zc");
     assert(filesystem_exists(out_context->module_dir));
 
 #ifdef ZPLATFORM_LINUX
@@ -141,6 +144,8 @@ void zodiac_context_destroy(Zodiac_Context *context)
 
     free(&dynamic_allocator, context->compiler_exe_path.data);
     free(&dynamic_allocator, context->compiler_exe_dir.data);
+    free(&dynamic_allocator, context->module_dir.data);
+    free(&dynamic_allocator, context->builtin_module_path.data);
 
     linear_allocator_destroy(&context->ast_allocator_state);
     linear_allocator_destroy(&context->bytecode_allocator_state);
@@ -164,6 +169,13 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
         }
     }
 
+    // Add the builtin module
+    File_To_Parse builtin_ftp = {
+        .kind = File_To_Parse_Kind::PATH,
+        .path = atom_get(&ctx->atoms, ctx->builtin_module_path),
+    };
+
+    dynamic_array_append(&ctx->files_to_parse, builtin_ftp);
     dynamic_array_append(&ctx->files_to_parse, ftp);
 
     bool parser_done = false;

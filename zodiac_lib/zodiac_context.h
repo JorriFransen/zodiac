@@ -85,6 +85,7 @@ struct Zodiac_Context
     String compiler_exe_path;
     String compiler_exe_dir;
     String module_dir;
+    String builtin_module_path;
 
     String support_lib_dynamic_path;
 #ifdef ZPLATFORM_WINDOWS
