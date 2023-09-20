@@ -231,21 +231,20 @@ Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator)
     return result;
 }
 
-file_local Type *builtin_string_type = nullptr;
 Type *get_string_type(Zodiac_Context *ctx)
 {
-    if (builtin_string_type) {
-        return builtin_string_type;
+    if (ctx->builtin_string_type) {
+        return ctx->builtin_string_type;
     }
 
     for (s64 i = 0; i < struct_types.count; i++) {
         auto st = struct_types[i];
         if (st->structure.name == atom_String) {
             auto u8_ptr_type = get_pointer_type(&builtin_type_u8, &ctx->ast_allocator);
-            assert(st->structure.member_types[0] == u8_ptr_type); 
-            assert(st->structure.member_types[1] == &builtin_type_s64); 
+            assert(st->structure.member_types[0] == u8_ptr_type);
+            assert(st->structure.member_types[1] == &builtin_type_s64);
 
-            builtin_string_type = st; 
+            ctx->builtin_string_type = st;
             return st;
         }
     }
