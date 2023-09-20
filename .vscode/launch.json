@@ -10,7 +10,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
-            "console": "internalConsole",
+            "console": "integratedTerminal",
         },
         {
             "name": "(Windows) Launch tests",
@@ -21,7 +21,7 @@
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/bin",
             "environment": [],
-            "console": "internalConsole",
+            "console": "integratedTerminal",
         },
         {
             "name": "(Linux) Launch",

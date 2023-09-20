@@ -13,7 +13,7 @@ namespace Zodiac
 
 struct Dynamic_Alloc_Header
 {
-    u8 *start; // NOTE: Since the size is stored in 32 bits, we should be able to store the lower 32 bits of the start addess, and replace those in the pointer passed to free.
+    u8 *start;
     u32 size;
     u16 alignment;
 };
@@ -177,7 +177,22 @@ u64 dynamic_allocator_free_space(Dynamic_Allocator *state)
     return total;
 }
 
-ZAPI u64 dynamic_allocator__header_size()
+u64 dynamic_allocator_used_space(Dynamic_Allocator *state)
+{
+    u64 total = 0;
+
+    auto block = state->first_block;
+
+    while (block) {
+        total += block->freelist.total_size - freelist_free_space(&block->freelist);
+
+        block = block->next;
+    }
+
+    return total;
+}
+
+u64 dynamic_allocator__header_size()
 {
     return sizeof(Dynamic_Alloc_Header);
 }

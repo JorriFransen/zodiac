@@ -53,8 +53,6 @@ bool visit_bytecode(Bytecode_Visitor *visitor)
             continue;
         }
 
-        ZTRACE("Validating bytecode function: '%s'", fn->name.data);
-
         bool r = true;
         if (visitor->visit_function) {
             if (!visitor->visit_function(visitor, fn_handle)) {
@@ -73,8 +71,6 @@ bool visit_bytecode(Bytecode_Visitor *visitor)
         } else {
             result = false;
         }
-
-        ZTRACE("\t%s", r ? "OK" : "FAIL");
     }
 
     return result;

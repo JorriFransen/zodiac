@@ -48,7 +48,7 @@ void free_platform_info(Platform_Info *info)
 
 struct Alloc_Header
 {
-    void *start; // NOTE: Since the size is stored in 32 bits, we should be able to store the lower 32 bits of the start addess, and replace those in the pointer passed to free.
+    void *start;
     u32 size;
     u16 alignment;
 };

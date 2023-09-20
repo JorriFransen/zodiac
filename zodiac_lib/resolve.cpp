@@ -1236,8 +1236,6 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             assert(member_index >= 0 && member_index < aggregate_type->structure.member_types.count);
 
             expr->member.index_in_parent = member_index;
-
-            ZTRACE("Index in parent of '%s': %i", expr->member.member_name.data, member_index);
             break;
         }
 

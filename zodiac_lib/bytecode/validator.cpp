@@ -11,6 +11,7 @@
 #include "source_pos.h"
 #include "type.h"
 #include "util/asserts.h"
+#include "util/logger.h"
 #include "util/string_builder.h"
 #include "zodiac_context.h"
 
@@ -111,6 +112,11 @@ bool validate_function(Bytecode_Visitor *visitor, Bytecode_Function_Handle fn_ha
     Bytecode_Validator *validator = static_cast<Bytecode_Validator *>(visitor->user_data);
     assert(validator);
 
+    if (validator->context->options.trace_bytecode_validation) {
+        auto fn = &visitor->functions[fn_handle];
+        ZTRACE("Validating bytecode function: '%s'", fn->name.data);
+    }
+
     auto err_count = validator->errors.count;
 
     assert(fn_handle >= 0 && fn_handle < visitor->functions.count);
@@ -120,6 +126,9 @@ bool validate_function(Bytecode_Visitor *visitor, Bytecode_Function_Handle fn_ha
     if (!result && err_count == validator->errors.count) {
         bytecode_validator_report_error(validator, "Validate function returned false for '%s', but no error has been reported...", function->name);
     }
+
+    if (validator->context->options.trace_bytecode_validation)
+        ZTRACE("\t%s", result ? "OK" : "FAIL");
 
     return result;
 }

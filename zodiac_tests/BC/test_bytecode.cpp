@@ -69,6 +69,7 @@ MunitResult Building_1(const MunitParameter params[], void* user_data_or_fixture
 {
     Zodiac_Context zc;
     init_test_context(&zc);
+    defer { zodiac_context_destroy(&zc); };
 
     Bytecode_Builder bb = bytecode_builder_create(c_allocator(), &zc);
     defer { bytecode_builder_free(&bb); };

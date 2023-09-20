@@ -17,11 +17,10 @@ file_local Allocator temp_allocator_allocator_;
 Temporary_Allocator *temp_allocator()
 {
     if (!temp_allocator_initialized) {
-        auto c_alloc = c_allocator();
-        const auto size = MEBIBYTE(1);
-        void *mem = alloc(c_alloc, size);
 
-        temporary_allocator_create(size, mem, &temp_allocator_data);
+        const auto size = MEBIBYTE(1);
+
+        temporary_allocator_create(size, nullptr, &temp_allocator_data);
         temp_allocator_allocator_ = temporary_allocator_allocator(&temp_allocator_data);
 
         temp_allocator_initialized = true;

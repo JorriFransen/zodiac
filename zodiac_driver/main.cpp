@@ -16,11 +16,12 @@ int main(int argc, const char **argv) {
 
     Zodiac_Context c;
     zodiac_context_create(options, &c);
-    defer { zodiac_context_destroy(&c); };
 
     if (!zodiac_context_compile(&c)) {
         return -1;
     }
+
+    zodiac_context_destroy(&c);
 
     return 0;
 }
