@@ -2,7 +2,6 @@
 
 #include <munit/munit.h>
 
-#include "ast.h"
 #include "bytecode/interpreter.h"
 #include "bytecode/llvm_builder.h"
 #include "bytecode/validator.h"
