@@ -18,8 +18,9 @@ namespace Zodiac
 #define FIRST_VARARG(N, ...) N
 
 #define report_parse_error(parser, range, fmt, ...) { \
-    parser->error = true; \
-    zodiac_report_error(parser->context, ZODIAC_PARSE_ERROR, range, (fmt), ##__VA_ARGS__); \
+    (parser)->error = true; \
+    auto handle = zodiac_report_error((parser)->context, ZODIAC_PARSE_ERROR, range, (fmt), ##__VA_ARGS__); \
+    (parser)->context->errors[handle].fatal = true; \
 }
 
 #define expect_token(p, c) if (!_expect_token((p), (c))) { return {}; }

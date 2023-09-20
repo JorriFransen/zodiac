@@ -620,7 +620,7 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
 
             // Check the modules directory first
             {
-                String test_path = string_format(ta, "%s" ZODIAC_PATH_SEPERATOR "%s", resolver->ctx->module_dir.data, relative_path.data);
+                String test_path = string_format(ta, "%s" ZODIAC_PATH_SEPARATOR "%s", resolver->ctx->module_dir.data, relative_path.data);
 
                 if (filesystem_is_regular(test_path)) {
                     path = atom_get(&resolver->ctx->atoms, test_path);
@@ -633,7 +633,7 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
                 String current_file_dir = filesystem_dir_name(ta, decl->range.start.name);
                 assert(filesystem_is_dir(current_file_dir));
 
-                String test_path = string_format(ta, "%s" ZODIAC_PATH_SEPERATOR "%s", current_file_dir.data, relative_path.data);
+                String test_path = string_format(ta, "%s" ZODIAC_PATH_SEPARATOR "%s", current_file_dir.data, relative_path.data);
 
                 if (string_equal(decl->range.start.name, test_path)) {
                     ZWARN("#import imports it's own file: '%s'", test_path.data);

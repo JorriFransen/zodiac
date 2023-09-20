@@ -1,7 +1,3 @@
-
-#import "builtin.zc"
-#import "builtin.zc"
-
 #import "person.zc"
 
 #run main();

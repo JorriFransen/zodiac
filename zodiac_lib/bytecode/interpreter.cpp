@@ -91,7 +91,7 @@ Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytecode_F
         FFI_Handle ffi_handle = ffi_load_function(&interp->ffi, ffn->name);
         assert(ffi_handle);
 
-        assert(ffn->ffi_handle == nullptr);
+        assert(ffn->ffi_handle == nullptr || ffn->ffi_handle == ffi_handle);
         ffn->ffi_handle = ffi_handle;
     }
 
