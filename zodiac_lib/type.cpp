@@ -37,9 +37,8 @@ Type builtin_type_s8;
 Type builtin_type_r64;
 Type builtin_type_r32;
 
-Type builtin_type_String;
-
 Dynamic_Array<Type *> function_types;
+Dynamic_Array<Type *> struct_types;
 Dynamic_Array<Type *> static_array_types;
 
 bool type_system_initialize(Zodiac_Context *ctx)
@@ -57,6 +56,7 @@ ZODIAC_BUILTIN_TYPES
 #undef ZODIAC_NUMERIC_TYPE_DEF
 
     dynamic_array_create(&dynamic_allocator, &function_types);
+    dynamic_array_create(&dynamic_allocator, &struct_types);
     dynamic_array_create(&dynamic_allocator, &static_array_types);
 
     create_type(&builtin_type_unsized_integer, Type_Kind::UNSIZED_INTEGER, 0, TYPE_FLAG_INT);
@@ -81,8 +81,6 @@ ZODIAC_BUILTIN_TYPES
     dynamic_array_create(&ctx->ast_allocator, &string_member_types, 2);
     dynamic_array_append(&string_member_types, get_pointer_type(&builtin_type_u8, &ctx->ast_allocator));
     dynamic_array_append(&string_member_types, &builtin_type_s64);
-
-    create_struct_type(&builtin_type_String, string_member_types, atom_get(&ctx->atoms, "String"));
 
     type_system_initialized = true;
     return true;
@@ -145,6 +143,8 @@ void create_struct_type(Type *type, Dynamic_Array<Type *> member_types, Atom nam
 
     type->structure.name = name;
     type->structure.member_types = member_types;
+
+    dynamic_array_append(&struct_types, type);
 }
 
 void create_static_array_type(Type *type, Type *element_type, u64 count)
@@ -229,6 +229,28 @@ Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator)
     dynamic_array_append(&static_array_types, result);
 
     return result;
+}
+
+file_local Type *builtin_string_type = nullptr;
+Type *get_string_type(Zodiac_Context *ctx)
+{
+    if (builtin_string_type) {
+        return builtin_string_type;
+    }
+
+    for (s64 i = 0; i < struct_types.count; i++) {
+        auto st = struct_types[i];
+        if (st->structure.name == atom_String) {
+            auto u8_ptr_type = get_pointer_type(&builtin_type_u8, &ctx->ast_allocator);
+            assert(st->structure.member_types[0] == u8_ptr_type); 
+            assert(st->structure.member_types[1] == &builtin_type_s64); 
+
+            builtin_string_type = st; 
+            return st;
+        }
+    }
+
+    assert_msg(false, "Builting string type could not be found");
 }
 
 Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Allocator *allocator, bool vararg/*=false*/)

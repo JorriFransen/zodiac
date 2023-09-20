@@ -429,7 +429,7 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
                     }
 
                     case Type_Kind::STRUCTURE: {
-                        if (reg.type == &builtin_type_String) {
+                        if (reg.type == get_string_type(builder->zodiac_context)) {
                             auto string_length_reg = reg.value.compound[1];
                             debug_assert(string_length_reg.type == &builtin_type_s64);
 
