@@ -9,7 +9,6 @@
 #include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
-#include "platform/filesystem.h"
 #include "scope.h"
 #include "source_pos.h"
 #include "type.h"
