@@ -106,7 +106,7 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
     auto dynamic_support_dll_name = "\\libzrs.dll";
     auto static_support_lib_name = "\\libzrs_s.lib";
 
-    out_context->support_dll_dynamic_path = string_append(c_allocator(), out_context->compiler_exe_dir, dynamic_support_dll_name);
+    out_context->support_dll_dynamic_path = string_append(&dynamic_allocator, out_context->compiler_exe_dir, dynamic_support_dll_name);
     assert(filesystem_exists(out_context->support_dll_dynamic_path));
 #else
     static_assert(false, "Unsupported platform");
@@ -152,7 +152,7 @@ void zodiac_context_destroy(Zodiac_Context *context)
     linear_allocator_destroy(&context->error_allocator_state.linear_allocator);
 
 #ifdef ZPLATFORM_WINDOWS
-    free(ca, context->support_dll_dynamic_path.data);
+    free(&dynamic_allocator, context->support_dll_dynamic_path.data);
 #endif // ZPLATFORM_WINDOWS
 
     free(&dynamic_allocator, context->support_lib_dynamic_path.data);

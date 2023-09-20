@@ -15,7 +15,7 @@ INCLUDE_FLAGS := -Izodiac_lib -I$(SRC_DIR) $(CXXOPTS_INCLUDE_FLAGS) $(DYNCALL_IN
 LINKER_FLAGS := $(BUILD_DIR)\libzodiac.lib -lmsvcrtd -Wl,-nodefaultlib:libcmt
 DEFINES := -D_DEBUG -DZIMPORT
 
-ifdef ZODIAC_VDL
+ifneq ($(ZODIAC_VDL), 0)
 	INCLUDE_FLAGS += -I"C:\Program Files (x86)\Visual Leak Detector\include"
 	LINKER_FLAGS += "C:\Program Files (x86)\Visual Leak Detector\lib\Win64\vld.lib"
 	DEFINES += -DZODIAC_VDL
