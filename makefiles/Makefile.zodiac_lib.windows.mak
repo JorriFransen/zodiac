@@ -23,6 +23,12 @@ INCLUDE_FLAGS := -I$(SRC_DIR) $(DYNCALL_INCLUDE_FLAGS) $(LLVM_INCLUDE_FLAGS)
 LINKER_FLAGS := $(COMMON_LINKER_FLAGS) -shared -loleaut32 $(DYNCALL_LINK_FLAGS) $(LLVM_LINKER_FLAGS)
 DEFINES := -D_DEBUG -DZEXPORT -D_DLL -D_CRT_SECURE_NO_WARNINGS
 
+ifdef ZODIAC_VDL
+	INCLUDE_FLAGS += -I"C:\Program Files (x86)\Visual Leak Detector\include"
+	LINKER_FLAGS += "C:\Program Files (x86)\Visual Leak Detector\lib\Win64\vld.lib"
+	DEFINES += -DZODIAC_VDL
+endif
+
 # Make does not offer a recursive wildcard function, so here's one:
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 

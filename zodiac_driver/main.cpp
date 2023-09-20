@@ -4,6 +4,10 @@
 #include "util/logger.h"
 #include "zodiac_context.h"
 
+#ifdef ZODIAC_VLD
+#include "vld.h"
+#endif // ZODIAC_VLD
+
 using namespace Zodiac;
 
 int main(int argc, const char **argv) {
@@ -22,6 +26,8 @@ int main(int argc, const char **argv) {
     }
 
     zodiac_context_destroy(&c);
+
+    memory_system_deinitialize();
 
     return 0;
 }

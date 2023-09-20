@@ -23,6 +23,10 @@
 
 #include <stdio.h>
 
+#ifdef ZODIAC_VDL
+#include "vld.h"
+#endif // ZODIAC_VDL
+
 namespace Zodiac
 {
 
