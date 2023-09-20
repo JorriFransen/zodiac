@@ -2029,6 +2029,69 @@ main :: () {
 
     return MUNIT_OK;
 }
+
+MunitResult Strings(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        Person :: struct {
+            name: String;
+            age: u8;
+        }
+        main :: () {
+
+            str := string_copy("abc");
+            print(str);
+            print(str[0]);
+            str[0] = 'A';
+            print(str);
+
+            print("Hello");
+
+            char := 'b';
+            print(char);
+
+            print(str);
+
+            free(str.data);
+            str = "Hello, Zodiac!";
+
+            print(str);
+
+            p : Person = { "Bob", 42 };
+            print(p);
+
+            name : [2]String = { "John", "Doe" };
+            print(name);
+
+            print(str.length);
+            print(p.name.length);
+            print(name[0].length);
+            print(name[1].length);
+
+            return 0;
+        })CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(abc
+97
+Abc
+Hello
+98
+Abc
+Hello, Zodiac!
+{ "Bob", 42 }
+{ "John", "Doe" }
+14
+3
+4
+3)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef RESOLVE_ERR
 
 }}
