@@ -1,5 +1,4 @@
 #include "command_line_arguments.h"
-#include "defines.h"
 #include "memory/zmemory.h"
 #include "util/logger.h"
 #include "zodiac_context.h"

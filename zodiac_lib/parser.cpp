@@ -6,6 +6,7 @@
 #include "containers/dynamic_array.h"
 #include "defines.h"
 #include "error.h"
+#include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 #include "source_pos.h"
 #include "util/asserts.h"
@@ -797,6 +798,19 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
 
         return result;
 
+    } else if (directive_name_tok.atom == directive_import) {
+
+        auto str_lit_tok = cur_tok(parser);
+        expect_token(parser, TOK_STRING);
+
+        assert(str_lit_tok.atom.data[0] == '"' && str_lit_tok.atom.data[str_lit_tok.atom.length-1] == '"');
+        auto path = atom_get(&parser->context->atoms, str_lit_tok.atom.data + 1, str_lit_tok.atom.length - 2);
+
+        result.kind = Parsed_Directive_Kind::DATA;
+        result.data = ast_import_directive_new(parser->context, { start_pos, str_lit_tok.range.end }, path);
+        return result;
+
+
     } else if (directive_name_tok.atom == directive_foreign) {
         result.kind = Parsed_Directive_Kind::FOREIGN;
         return result;
@@ -827,7 +841,6 @@ AST_File *parse_file(Parser *parser)
             if (pd.kind == Parsed_Directive_Kind::DATA) { assert(pd.data); }
             else { assert(!pd.data); }
 
-
         }
 
         AST_Declaration *decl = nullptr;
@@ -835,8 +848,12 @@ AST_File *parse_file(Parser *parser)
 
         if (pd.kind == Parsed_Directive_Kind::DATA) {
             auto directive = pd.data;
-            assert(directive->kind == AST_Directive_Kind::RUN);
-            decl = ast_run_directive_decl_new(parser->context, directive->range, directive);
+             if (directive->kind == AST_Directive_Kind::RUN) {
+                 decl = ast_run_directive_decl_new(parser->context, directive->range, directive);
+             } else {
+                 assert(directive->kind == AST_Directive_Kind::IMPORT);
+                 decl = ast_import_directive_decl_new(parser->context, directive->range, directive);
+             }
         } else {
             decl = parse_declaration(parser, pd);
         }
@@ -849,7 +866,9 @@ AST_File *parse_file(Parser *parser)
         dynamic_array_append(&decls, decl);
     }
 
-    return ast_file_new(parser->context, decls);
+    assert(parser->lxr->stream_name.length);
+    Atom stream_name = atom_get(&parser->context->atoms, parser->lxr->stream_name);
+    return ast_file_new(parser->context, stream_name, decls);
 }
 
 bool is_keyword(Parser *parser, Atom keyword)

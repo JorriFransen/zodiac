@@ -58,6 +58,8 @@ struct Lexer
 {
     Zodiac_Context *context;
 
+    String_Ref stream_name;
+
     const char *stream_start;
     const char *stream;
     const char *line_start;
@@ -86,6 +88,7 @@ ALL_ZODIAC_KEYWORDS
 #define ALL_ZODIAC_DIRECTIVES \
     ZODIAC_DIRECTIVE(run) \
     ZODIAC_DIRECTIVE(foreign) \
+    ZODIAC_DIRECTIVE(import) \
 
 // Emit atom declarations for all directives
 #define ZODIAC_DIRECTIVE(n) ZAPI extern Atom directive_##n;

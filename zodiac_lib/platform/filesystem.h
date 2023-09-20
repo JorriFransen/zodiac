@@ -20,6 +20,15 @@ enum File_Mode : u32
     FILE_MODE_WRITE = 0x02,
 };
 
+
+#ifdef ZPLATFORM_LINUX
+#define     ZODIAC_PATH_SEPERATOR "/"
+#elif ZPLATFORM_WINDOWS
+#define     ZODIAC_PATH_SEPERATOR "\\"
+#else
+    static_assert(false, "Unsupported platform");
+#endif // ZPLATFORM_...
+
 ZAPI bool filesystem_exists(const String_Ref path);
 ZAPI bool filesystem_is_link(const String_Ref path);
 ZAPI bool filesystem_is_regular(const String_Ref path);

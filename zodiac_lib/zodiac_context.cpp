@@ -40,6 +40,8 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
 
     *out_context = {};
 
+    auto temp_mark = temporary_allocator_get_mark(temp_allocator());
+
     out_context->options = options;
     if (options.verbose) {
         logging_system_set_max_level(Log_Level::TRACE);
@@ -64,6 +66,9 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
         assert(result);
     }
 
+    dynamic_array_create(&dynamic_allocator, &out_context->files_to_parse);
+    dynamic_array_create(&dynamic_allocator, &out_context->parsed_files);
+
     out_context->resolver = alloc<Resolver>(&dynamic_allocator);
     resolver_create(out_context->resolver, out_context);
 
@@ -77,11 +82,17 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
 
     zodiac_register_keywords(&out_context->atoms);
 
-    out_context->compiler_exe_path = filesystem_exe_path(c_allocator());
+    out_context->compiler_exe_path = filesystem_exe_path(&dynamic_allocator);
     assert(filesystem_exists(out_context->compiler_exe_path));
 
-    out_context->compiler_exe_dir = filesystem_dir_name(c_allocator(), out_context->compiler_exe_path);
+    out_context->compiler_exe_dir = filesystem_dir_name(&dynamic_allocator, out_context->compiler_exe_path);
     assert(filesystem_exists(out_context->compiler_exe_dir));
+
+    auto tmp_install_dir = filesystem_dir_name(temp_allocator_allocator(), out_context->compiler_exe_dir);
+    assert(filesystem_exists(tmp_install_dir));
+
+    out_context->module_dir = string_format(&dynamic_allocator, "%s" ZODIAC_PATH_SEPERATOR "%s", tmp_install_dir.data, "modules");
+    assert(filesystem_exists(out_context->module_dir));
 
 #ifdef ZPLATFORM_LINUX
     auto dynamic_support_lib_name = "/libzrs.so";
@@ -94,14 +105,17 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
 
     out_context->support_dll_dynamic_path = string_append(c_allocator(), out_context->compiler_exe_dir, dynamic_support_dll_name);
     assert(filesystem_exists(out_context->support_dll_dynamic_path));
-
+#else
+    static_assert(false, "Unsupported platform");
 #endif
 
-    out_context->support_lib_dynamic_path = string_append(c_allocator(), out_context->compiler_exe_dir, dynamic_support_lib_name);
+    out_context->support_lib_dynamic_path = string_append(&dynamic_allocator, out_context->compiler_exe_dir, dynamic_support_lib_name);
     assert(filesystem_exists(out_context->support_lib_dynamic_path));
 
-    out_context->support_lib_static_path = string_append(c_allocator(), out_context->compiler_exe_dir, static_support_lib_name);
+    out_context->support_lib_static_path = string_append(&dynamic_allocator, out_context->compiler_exe_dir, static_support_lib_name);
     assert(filesystem_exists(out_context->support_lib_static_path));
+
+    temporary_allocator_reset(temp_allocator(), temp_mark);
 }
 
 void zodiac_context_destroy(Zodiac_Context *context)
@@ -111,9 +125,10 @@ void zodiac_context_destroy(Zodiac_Context *context)
 
     atom_table_free(&context->atoms);
 
-    auto ca = c_allocator();
-
     dynamic_array_free(&context->errors);
+
+    dynamic_array_free(&context->files_to_parse);
+    dynamic_array_free(&context->parsed_files);
 
     resolver_destroy(context->resolver);
     free(&dynamic_allocator, context->resolver);
@@ -124,8 +139,8 @@ void zodiac_context_destroy(Zodiac_Context *context)
     bytecode_converter_destroy(context->bytecode_converter);
     free(&dynamic_allocator, context->bytecode_converter);
 
-    free(ca, context->compiler_exe_path.data);
-    free(ca, context->compiler_exe_dir.data);
+    free(&dynamic_allocator, context->compiler_exe_path.data);
+    free(&dynamic_allocator, context->compiler_exe_dir.data);
 
     linear_allocator_destroy(&context->ast_allocator_state);
     linear_allocator_destroy(&context->bytecode_allocator_state);
@@ -135,54 +150,35 @@ void zodiac_context_destroy(Zodiac_Context *context)
     free(ca, context->support_dll_dynamic_path.data);
 #endif // ZPLATFORM_WINDOWS
 
-    free(ca, context->support_lib_dynamic_path.data);
-    free(ca, context->support_lib_static_path.data);
+    free(&dynamic_allocator, context->support_lib_dynamic_path.data);
+    free(&dynamic_allocator, context->support_lib_static_path.data);
 }
 
-bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source, String_Ref source_name)
+bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
 {
     debug_assert(ctx);
 
-    Lexer lexer;
-    lexer_create(ctx, &lexer);
-    defer { lexer_destroy(&lexer); };
-
-    lexer_init_stream(&lexer, source, source_name);
-
-    Parser parser;
-    parser_create(ctx, &lexer, &parser);
-    defer { parser_destroy(&parser); };
-
-    AST_File *file = parse_file(&parser);
-
-    if (parser.error) {
-        bool lex_err = false;
-        if (ctx->options.report_errors) {
-            for (s64 i = 0; i < ctx->errors.count; i++) {
-                auto &err = ctx->errors[i];
-                assert(err.kind == Zodiac_Error_Kind::ZODIAC_LEX_ERROR || err.kind == Zodiac_Error_Kind::ZODIAC_PARSE_ERROR);
-                if (err.kind == Zodiac_Error_Kind::ZODIAC_LEX_ERROR) {
-                    lex_err = true;
-                }
-
-                if (err.kind == Zodiac_Error_Kind::ZODIAC_PARSE_ERROR && lex_err) {
-                    continue;
-                }
-
-                auto start = err.source_range.start;
-                fprintf(stderr, "%s:%llu:%llu: error: %s\n", start.name.data, start.line, start.index_in_line, err.message.data);
-            }
+    if (ftp.kind == File_To_Parse_Kind::PATH) {
+        if (!filesystem_is_regular(ftp.path)) {
+            ZFATAL("Invalid path '%.*s' (input_file_name)", (int)ftp.path.length, ftp.path.data);
         }
-
-        return false;
     }
 
-    assert(file);
+    dynamic_array_append(&ctx->files_to_parse, ftp);
 
-    resolver_add_file(ctx->resolver, file);
-
+    bool parser_done = false;
     bool resolver_done = false;
-    while (!resolver_done) {
+
+    while (!parser_done || !resolver_done) {
+        parser_done = do_parse_jobs(ctx);
+
+        if (ctx->options.report_errors) {
+            if (resolver_report_errors(ctx->resolver)) {
+                return false;
+            }
+        } else if (ctx->errors.count) return false;
+
+
         resolver_done = resolver_cycle(ctx->resolver);
 
         if (ctx->options.report_errors) {
@@ -252,7 +248,11 @@ bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source, String_Ref s
         ctx->resolver->nodes_to_run_bytecode.count = 0;
     }
 
-    if (ctx->options.print_ast) ast_print_file(file);
+    if (ctx->options.print_ast) {
+        for (s64 i = 0; i < ctx->parsed_files.count; i++) {
+            ast_print_file(ctx->parsed_files[i]);
+        }
+    }
 
     if (ctx->options.print_bytecode) bytecode_print(ctx->bytecode_builder, temp_allocator_allocator());
 
@@ -285,28 +285,92 @@ bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source, String_Ref s
     return true;
 }
 
-bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source_file_name)
+bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref code, Atom origin)
 {
-    debug_assert(ctx);
+    File_To_Parse ftp = {
+        .kind = File_To_Parse_Kind::STRING,
+        .path = origin,
+        .source = code,
+    };
+    return zodiac_context_compile(ctx, ftp);
+}
 
-    if (!filesystem_is_regular(source_file_name)) {
-        ZFATAL("Invalid path '%.*s' (input_file_name)", (int)source_file_name.length, source_file_name.data);
-    }
-
-    String file_content = {};
-    bool read_result = filesystem_read_entire_file(&dynamic_allocator, source_file_name, &file_content);
-    assert(read_result);
-
-    bool result = zodiac_context_compile(ctx, file_content, source_file_name);
-
-    free(&dynamic_allocator, file_content.data);
-
-    return result;
+bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref code, const char *origin)
+{
+    Atom origin_atom = atom_get(&ctx->atoms, origin);
+    return zodiac_context_compile(ctx, code, origin_atom);
 }
 
 bool zodiac_context_compile(Zodiac_Context *ctx)
 {
-    return zodiac_context_compile(ctx, ctx->options.input_file_name);
+    File_To_Parse ftp = {
+        .kind = File_To_Parse_Kind::PATH,
+        .path = atom_get(&ctx->atoms, ctx->options.input_file_name),
+    };
+    return zodiac_context_compile(ctx, ftp);
+}
+
+bool do_parse_jobs(Zodiac_Context *ctx)
+{
+    for (s64 i = 0; i < ctx->files_to_parse.count; i++) {
+        auto ftp = &ctx->files_to_parse[i];
+
+        String src_;
+        if (ftp->kind == File_To_Parse_Kind::PATH) {
+
+            bool read_res = filesystem_read_entire_file(&dynamic_allocator, ftp->path, &src_);
+            assert(read_res);
+            ftp->source = src_;
+        } else {
+            assert(ftp->kind == File_To_Parse_Kind::STRING);
+        }
+
+        Lexer lexer;
+        lexer_create(ctx, &lexer);
+        defer { lexer_destroy(&lexer); };
+
+        lexer_init_stream(&lexer, ftp->source, ftp->path);
+
+        Parser parser;
+        parser_create(ctx, &lexer, &parser);
+        defer { parser_destroy(&parser); };
+
+        assert(ftp->path.length);
+        AST_File *file = parse_file(&parser);
+
+        if (parser.error) {
+            bool lex_err = false;
+            if (ctx->options.report_errors) {
+                for (s64 i = 0; i < ctx->errors.count; i++) {
+                    auto &err = ctx->errors[i];
+                    assert(err.kind == Zodiac_Error_Kind::ZODIAC_LEX_ERROR || err.kind == Zodiac_Error_Kind::ZODIAC_PARSE_ERROR);
+                    if (err.kind == Zodiac_Error_Kind::ZODIAC_LEX_ERROR) {
+                        lex_err = true;
+                    }
+
+                    if (err.kind == Zodiac_Error_Kind::ZODIAC_PARSE_ERROR && lex_err) {
+                        continue;
+                    }
+
+                    auto start = err.source_range.start;
+                    fprintf(stderr, "%s:%llu:%llu: error: %s\n", start.name.data, start.line, start.index_in_line, err.message.data);
+                }
+            }
+
+            return false;
+        }
+
+        if (ftp->kind == File_To_Parse_Kind::PATH) {
+             free(&dynamic_allocator, src_.data);
+        }
+
+        assert(file);
+        resolver_add_file(ctx->resolver, file);
+    }
+
+    ctx->files_to_parse.count = 0;
+
+    return true;
 }
 
 }

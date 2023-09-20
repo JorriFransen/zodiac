@@ -1527,8 +1527,7 @@ void llvm_builder_emit_binary(LLVM_Builder *builder)
     //auto reloc_model = llvm::Reloc::PIC_;
 
     llvm::TargetMachine *llvm_target_machine = llvm_target->createTargetMachine(builder->target_triple.data, cpu, features, opt, reloc_model);
-    llvm::DataLayout llvm_data_layout = llvm_target_machine->createDataLayout();
-    builder->llvm_module->setDataLayout(llvm_data_layout);
+    builder->llvm_module->setDataLayout(llvm_target_machine->createDataLayout());
 
     String_Builder _sb;
     String_Builder* sb = &_sb;

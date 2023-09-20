@@ -1,0 +1,6 @@
+
+Person :: struct {
+    name: String;
+    age: u8;
+}
+

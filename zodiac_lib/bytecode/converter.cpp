@@ -9,6 +9,7 @@
 #include "error.h"
 #include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
+#include "memory/zmemory.h"
 #include "platform/filesystem.h"
 #include "resolve.h"
 #include "scope.h"
@@ -219,6 +220,10 @@ bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             debug_assert(!hash_table_find(&bc->run_directives, directive));
             hash_table_add(&bc->run_directives, directive, fn_handle);
 
+            break;
+        }
+
+        case AST_Declaration_Kind::IMPORT_DIRECTIVE: {
             break;
         }
     }
@@ -626,6 +631,7 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
                 case AST_Declaration_Kind::STRUCT: assert(false); break;
                 case AST_Declaration_Kind::UNION: assert(false); break;
                 case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
+                case AST_Declaration_Kind::IMPORT_DIRECTIVE: assert(false); break;
             }
         }
 
@@ -798,6 +804,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                 case AST_Declaration_Kind::STRUCT: assert(false); break;
                 case AST_Declaration_Kind::UNION: assert(false); break;
                 case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
+                case AST_Declaration_Kind::IMPORT_DIRECTIVE: assert(false); break;
             }
 
             break;

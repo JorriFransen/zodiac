@@ -11,6 +11,7 @@
 namespace Zodiac
 {
 
+struct AST_File;
 struct File_Handle;
 struct Resolver;
 struct Zodiac_Error;
@@ -42,6 +43,19 @@ struct Zodiac_Options
     bool trace_bytecode_validation = false;
 };
 
+enum class File_To_Parse_Kind
+{
+    PATH,
+    STRING,
+};
+
+struct File_To_Parse
+{
+    File_To_Parse_Kind kind;
+    Atom path;
+    String_Ref source;
+};
+
 struct Zodiac_Context
 {
     Atom_Table atoms;
@@ -57,6 +71,9 @@ struct Zodiac_Context
 
     Zodiac_Options options = {};
 
+    Dynamic_Array<File_To_Parse> files_to_parse;
+    Dynamic_Array<AST_File *> parsed_files;
+
     Resolver *resolver;
     Bytecode_Builder *bytecode_builder;
     Bytecode_Converter *bytecode_converter;
@@ -67,6 +84,7 @@ struct Zodiac_Context
 
     String compiler_exe_path;
     String compiler_exe_dir;
+    String module_dir;
 
     String support_lib_dynamic_path;
 #ifdef ZPLATFORM_WINDOWS
@@ -78,8 +96,11 @@ struct Zodiac_Context
 ZAPI void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context);
 ZAPI void zodiac_context_destroy(Zodiac_Context *context);
 
-ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source, String_Ref source_name);
-ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref source_file_name);
+ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp);
+ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref code, Atom origin);
+ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref code, const char *origin);
 ZAPI bool zodiac_context_compile(Zodiac_Context *ctx);
+
+ZAPI bool do_parse_jobs(Zodiac_Context *ctx);
 
 }

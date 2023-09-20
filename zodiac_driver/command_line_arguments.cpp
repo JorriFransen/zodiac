@@ -1,7 +1,7 @@
 #include "command_line_arguments.h"
 
 #include "defines.h"
-#include "memory/allocator.h"
+#include "memory/zmemory.h"
 #include "platform/filesystem.h"
 #include "platform/platform.h"
 #include "util/asserts.h"

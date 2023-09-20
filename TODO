@@ -1,13 +1,18 @@
 
-- File with builtin type declarations (like struct)
+- #import
+    - Automatically include modules/builtin.zc
+
+- Slices (just call them arrays maybe?)
+
+- Defer
+
+- Some tests are failing on windows
 
 - When emitting non constant compound expressions some of it's members/elements might be constant. Constant members should be emitted to a value first, which we can then use to insert the non const values into.
 
 - Some way to get static array length
 
 - Try to report (fatal) errors before executing run directives
-
-- Slices (just call them arrays maybe?)
 
 - Support multiple adjacent function parameters with the same typespec (parser). Like we do for struct fields.
 

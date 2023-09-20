@@ -395,6 +395,13 @@ void ast_run_directive_decl_create(AST_Directive *run_directive, AST_Declaration
     out_decl->directive = run_directive;
 }
 
+void ast_import_directive_decl_create(AST_Directive *import_directive, AST_Declaration *out_decl)
+{
+    ast_declaration_create(AST_Declaration_Kind::IMPORT_DIRECTIVE, AST_DECL_FLAG_NONE, out_decl);
+
+    out_decl->directive = import_directive;
+}
+
 void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration_Flags flags, AST_Declaration *out_decl)
 {
     debug_assert(out_decl);
@@ -471,6 +478,13 @@ void ast_run_directive_create(AST_Statement *stmt, AST_Directive *out_dir)
     out_dir->run.scope = nullptr;
 }
 
+void ast_import_directive_create(Atom path, AST_Directive *out_dir)
+{
+    ast_directive_create(AST_Directive_Kind::IMPORT, out_dir);
+
+    out_dir->import.path = path;
+}
+
 void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir)
 {
     debug_assert(out_dir);
@@ -478,10 +492,11 @@ void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir)
     out_dir->kind = kind;
 }
 
-void ast_file_create(Dynamic_Array<AST_Declaration *> decls, AST_File *out_file)
+void ast_file_create(Atom name, Dynamic_Array<AST_Declaration *> decls, AST_File *out_file)
 {
     debug_assert(out_file);
 
+    out_file->name = name;
     out_file->declarations = decls;
 }
 
@@ -791,6 +806,13 @@ AST_Declaration *ast_run_directive_decl_new(Zodiac_Context *ctx, Source_Range ra
     return decl;
 }
 
+AST_Declaration *ast_import_directive_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Directive *import_directive)
+{
+    auto decl = ast_declaration_new(ctx, range);
+    ast_import_directive_decl_create(import_directive, decl);
+    return decl;
+}
+
 AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Range range)
 {
     debug_assert(ctx);
@@ -870,6 +892,14 @@ AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AS
     return result;
 }
 
+AST_Directive *ast_import_directive_new(Zodiac_Context *ctx, Source_Range range, Atom path)
+{
+    AST_Directive *result = ast_directive_new(ctx, range);
+    ast_import_directive_create(path, result);
+
+    return result;
+}
+
 AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Statement *stmt)
 {
     debug_assert(ctx && stmt);
@@ -890,12 +920,12 @@ AST_Directive *ast_directive_new(Zodiac_Context *ctx, Source_Range range)
     return dir;
 }
 
-AST_File *ast_file_new(Zodiac_Context *ctx, Dynamic_Array<AST_Declaration *> decls)
+AST_File *ast_file_new(Zodiac_Context *ctx, Atom name, Dynamic_Array<AST_Declaration *> decls)
 {
     debug_assert(ctx);
 
     auto file = alloc<AST_File>(&ctx->ast_allocator);
-    ast_file_create(decls, file);
+    ast_file_create(name, decls, file);
     return file;
 }
 
@@ -1262,6 +1292,11 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
             string_builder_append(sb, "#run ");
             ast_print_expression(sb, decl->directive->run.expr);
+            break;
+        }
+
+        case AST_Declaration_Kind::IMPORT_DIRECTIVE: {
+            string_builder_append(sb, "#import \"%s\"", decl->directive->import.path);
             break;
         }
     }

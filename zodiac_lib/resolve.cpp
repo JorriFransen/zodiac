@@ -8,6 +8,7 @@
 #include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
+#include "platform/filesystem.h"
 #include "scope.h"
 #include "source_pos.h"
 #include "type.h"
@@ -20,6 +21,12 @@
 
 namespace Zodiac
 {
+
+#define add_builtin_type_symbol(type)                                                                                                \
+{                                                                                                                                    \
+    auto sym = add_typed_symbol(resolver->ctx, resolver->global_scope, Symbol_Kind::TYPE, (SYM_FLAG_BUILTIN), atom_##type, nullptr); \
+    sym->builtin_type = &builtin_type_##type;                                                                                        \
+}
 
 void resolver_create(Resolver *resolver, Zodiac_Context *ctx)
 {
@@ -36,29 +43,9 @@ void resolver_create(Resolver *resolver, Zodiac_Context *ctx)
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_type_resolve);
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_emit_bytecode);
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_run_bytecode);
-}
-
-void resolver_destroy(Resolver *resolver)
-{
-    dynamic_array_free(&resolver->nodes_to_name_resolve);
-    dynamic_array_free(&resolver->nodes_to_type_resolve);
-    dynamic_array_free(&resolver->nodes_to_emit_bytecode);
-    dynamic_array_free(&resolver->nodes_to_run_bytecode);
-}
-
-#define add_builtin_type_symbol(type)                                                                                                \
-{                                                                                                                                    \
-    auto sym = add_typed_symbol(resolver->ctx, resolver->global_scope, Symbol_Kind::TYPE, (SYM_FLAG_BUILTIN), atom_##type, nullptr); \
-    sym->builtin_type = &builtin_type_##type;                                                                                        \
-}
-
-void resolver_add_file(Resolver *resolver, AST_File *file)
-{
-    debug_assert(file);
 
     assert(resolver->global_scope);
     assert(resolver->global_scope->file == nullptr);
-    resolver->global_scope->file = file;
 
     add_builtin_type_symbol(u64);
     add_builtin_type_symbol(s64);
@@ -105,6 +92,26 @@ void resolver_add_file(Resolver *resolver, AST_File *file)
     add_unresolved_decl_symbol(resolver->ctx, resolver->global_scope, string_type_decl, true);
     resolver_add_declaration(resolver->ctx, resolver, string_type_decl, resolver->global_scope);
     string_type_decl->aggregate.resolved_type = &builtin_type_String;
+}
+
+void resolver_destroy(Resolver *resolver)
+{
+    dynamic_array_free(&resolver->nodes_to_name_resolve);
+    dynamic_array_free(&resolver->nodes_to_type_resolve);
+    dynamic_array_free(&resolver->nodes_to_emit_bytecode);
+    dynamic_array_free(&resolver->nodes_to_run_bytecode);
+}
+
+void resolver_add_file(Resolver *resolver, AST_File *file)
+{
+    debug_assert(file);
+
+    dynamic_array_append(&resolver->ctx->parsed_files, file);
+
+    // TODO: Cleanup:
+    if (!resolver->global_scope->file) {
+        resolver->global_scope->file = file;
+    }
 
     // Register all top level symbols first
     for (s64 i = 0; i < file->declarations.count; i++) {
@@ -477,7 +484,8 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
     Scope *parameter_scope = nullptr;
     Scope *local_scope = nullptr;
 
-    if (decl->kind != AST_Declaration_Kind::RUN_DIRECTIVE) {
+    if (decl->kind != AST_Declaration_Kind::RUN_DIRECTIVE &&
+        decl->kind != AST_Declaration_Kind::IMPORT_DIRECTIVE) {
 
         assert(decl->identifier.name.data);
         auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
@@ -597,6 +605,77 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
             flatten_directive(resolver, decl->directive, scope, dest);
+            break;
+        }
+
+        case AST_Declaration_Kind::IMPORT_DIRECTIVE: {
+            auto ta = temp_allocator_allocator();
+            auto ta_mark = temporary_allocator_get_mark(temp_allocator());
+            defer { temporary_allocator_reset(temp_allocator(), ta_mark); };
+
+            Atom relative_path = decl->directive->import.path;
+
+            Atom path;
+            bool found = false;
+
+            // Check the modules directory first
+            {
+                String test_path = string_format(ta, "%s" ZODIAC_PATH_SEPERATOR "%s", resolver->ctx->module_dir.data, relative_path.data);
+
+                if (filesystem_is_regular(test_path)) {
+                    path = atom_get(&resolver->ctx->atoms, test_path);
+                    found = true;
+                }
+            }
+
+            if (!found) {
+                // Check relative to the file this #import is in
+                String current_file_dir = filesystem_dir_name(ta, decl->range.start.name);
+                assert(filesystem_is_dir(current_file_dir));
+
+                String test_path = string_format(ta, "%s" ZODIAC_PATH_SEPERATOR "%s", current_file_dir.data, relative_path.data);
+
+                if (string_equal(decl->range.start.name, test_path)) {
+                    ZWARN("#import imports it's own file: '%s'", test_path.data);
+                }
+
+                if (filesystem_is_regular(test_path)) {
+                    path = atom_get(&resolver->ctx->atoms, test_path);
+                    found = true;
+                }
+            }
+
+            if (!found) {
+                fatal_resolve_error(ctx, decl, "Unable to find #import file: '%s'", relative_path.data);
+                return;
+            }
+
+            bool already_imported = false;
+
+            for (s64 i = 0; i < ctx->parsed_files.count; i++) {
+                if (ctx->parsed_files[i]->name == path) {
+                    already_imported = true;
+                    break;
+                }
+            }
+            for (s64 i = 0; i < ctx->files_to_parse.count; i++) {
+                if (ctx->files_to_parse[i].path == path) {
+                    already_imported = true;
+                    break;
+                }
+            }
+
+            if (already_imported) {
+                break;
+            }
+
+            File_To_Parse ftp = {
+                .kind = File_To_Parse_Kind::PATH,
+                .path = path,
+            };
+
+            dynamic_array_append(&ctx->files_to_parse, ftp);
+
             break;
         }
     }
@@ -981,7 +1060,8 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
     bool global = DECL_IS_GLOBAL(decl);
     Symbol *decl_sym = nullptr;
 
-    if (decl->kind != AST_Declaration_Kind::RUN_DIRECTIVE) {
+    if (decl->kind != AST_Declaration_Kind::RUN_DIRECTIVE &&
+        decl->kind != AST_Declaration_Kind::IMPORT_DIRECTIVE) {
 
         assert(decl->identifier.name.data);
         decl_sym = scope_get_symbol(scope, decl->identifier.name);
@@ -1055,6 +1135,10 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
         }
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
+            return true;
+        }
+
+        case AST_Declaration_Kind::IMPORT_DIRECTIVE: {
             return true;
         }
     }
@@ -1587,6 +1671,11 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                 return false;
             }
 
+            result = true;
+            break;
+        }
+
+        case AST_Declaration_Kind::IMPORT_DIRECTIVE: {
             result = true;
             break;
         }

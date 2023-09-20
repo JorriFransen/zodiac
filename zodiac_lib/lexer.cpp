@@ -82,6 +82,8 @@ void lexer_init_stream(Lexer *lexer, const String_Ref stream, const String_Ref s
 {
     assert(lexer && lexer->context && stream.data);
 
+    lexer->stream_name = stream_name;
+
     lexer->stream_start = stream.data;
     lexer->stream = stream.data;
     lexer->line_start = stream.data;

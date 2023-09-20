@@ -1,12 +1,8 @@
 
-#foreign malloc :: (size: s64) -> *u8;
-#foreign free :: (ptr: *u8) -> void;
-#foreign memcpy :: (dest: *u8, src: *u8, size: s64) -> *u8;
+#import "builtin.zc"
+#import "builtin.zc"
 
-Person :: struct {
-    name: String;
-    age: u8;
-}
+#import "person.zc"
 
 #run main();
 main :: () {
@@ -41,10 +37,4 @@ main :: () {
     print(name[1].length);
 
     return 0;
-}
-
-string_copy :: (s: String) -> String {
-    result : String = { malloc(s.length), s.length };
-    memcpy(result.data, s.data, s.length);
-    return result;
 }

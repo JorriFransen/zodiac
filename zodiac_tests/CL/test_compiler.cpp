@@ -7,6 +7,7 @@
 #include "common.h"
 #include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
+#include "memory/zmemory.h"
 #include "platform/filesystem.h"
 #include "platform/platform.h"
 #include "resolve.h"

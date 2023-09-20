@@ -192,6 +192,10 @@ bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declarati
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
             return true;
         }
+
+        case AST_Declaration_Kind::IMPORT_DIRECTIVE: {
+            return true;
+        }
     }
 
     assert(kind != Symbol_Kind::INVALID);

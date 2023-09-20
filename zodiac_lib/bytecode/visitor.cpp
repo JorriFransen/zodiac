@@ -1,11 +1,9 @@
 #include "bytecode/visitor.h"
 
-#include "atom.h"
 #include "common.h"
 #include "defines.h"
 #include "type.h"
 #include "util/asserts.h"
-#include "util/logger.h"
 
 #include <stdio.h>
 
