@@ -380,7 +380,11 @@ String platform_dir_name(Allocator *allocator, const String_Ref path)
 
     _wsplitpath_s(wide_path.data, drive_name, _MAX_DRIVE, dir_name, _MAX_DIR, nullptr, 0, nullptr, 0);
 
-    Wide_String result = string_append(temp_allocator_allocator(), Wide_String_Ref(drive_name), Wide_String_Ref(dir_name));
+    // Remove trailing '\\'
+    auto cut_dir_name = Wide_String_Ref(dir_name);
+    cut_dir_name.length -= 1;
+
+    Wide_String result = string_append(temp_allocator_allocator(), Wide_String_Ref(drive_name), cut_dir_name);
 
     return string_create(allocator, result.data, result.length);
 }
