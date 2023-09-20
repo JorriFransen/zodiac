@@ -118,6 +118,8 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
     out_context->support_lib_static_path = string_append(&dynamic_allocator, out_context->compiler_exe_dir, static_support_lib_name);
     assert(filesystem_exists(out_context->support_lib_static_path));
 
+    out_context->builtin_string_type = nullptr;
+
     temporary_allocator_reset(temp_allocator(), temp_mark);
 }
 
