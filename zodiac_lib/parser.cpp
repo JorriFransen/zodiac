@@ -722,15 +722,18 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
                 length_expr = parse_expression(parser);
             }
 
-            auto end_pos = cur_tok(parser).range.end;
             if (!match_token(parser, ']')) return nullptr;
 
             AST_Type_Spec *base_ts = parse_type_spec(parser);
 
             assert(base_ts);
-            assert(length_expr);
 
-            return ast_static_array_ts_new(parser->context, { t.range.start, end_pos }, length_expr, base_ts);
+            Source_Range range = { t.range.start, base_ts->range.end };
+            if (length_expr) {
+                return ast_static_array_ts_new(parser->context, range, length_expr, base_ts);
+            } else {
+                return ast_slice_ts_new(parser->context, range, base_ts);
+            }
         }
 
         case TOK_NAME: {

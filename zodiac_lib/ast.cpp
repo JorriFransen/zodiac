@@ -447,6 +447,13 @@ void ast_static_array_ts_create(AST_Expression *length_expr, AST_Type_Spec *elem
     out_ts->static_array.element_ts = element_ts;
 }
 
+void ast_slice_ts_create(AST_Type_Spec *element_ts, AST_Type_Spec *out_ts)
+{
+    ast_type_spec_create(AST_Type_Spec_Kind::SLICE, out_ts);
+
+    out_ts->slice.element_ts = element_ts;
+}
+
 void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts)
 {
     debug_assert(out_ts);
@@ -870,6 +877,13 @@ AST_Type_Spec *ast_static_array_ts_new(Zodiac_Context *ctx, Source_Range range, 
 
     auto ts = ast_type_spec_new(ctx, range);
     ast_static_array_ts_create(length_expr, element_ts, ts);
+    return ts;
+}
+
+AST_Type_Spec *ast_slice_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *element_ts)
+{
+    auto ts = ast_type_spec_new(ctx, range);
+    ast_slice_ts_create(element_ts, ts);
     return ts;
 }
 
@@ -1348,6 +1362,12 @@ file_local void ast__print_type_spec_internal(String_Builder *sb, AST_Type_Spec 
             string_builder_append(sb, "[");
             ast_print_expression(sb, ts->static_array.length_expr);
             string_builder_append(sb, "]");
+            ast__print_type_spec_internal(sb, ts->static_array.element_ts, indent);
+            break;
+        }
+
+        case AST_Type_Spec_Kind::SLICE: {
+            string_builder_append(sb, "[]");
             ast__print_type_spec_internal(sb, ts->static_array.element_ts, indent);
             break;
         }

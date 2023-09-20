@@ -1134,6 +1134,7 @@ void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_co
             case Type_Kind::BOOLEAN: assert(false); break;
             case Type_Kind::STRUCTURE: assert(false); break;
             case Type_Kind::STATIC_ARRAY: assert(false); break;
+            case Type_Kind::SLICE: assert(false); break;
         }
 
         assert(arg_ptr);
@@ -1165,6 +1166,7 @@ void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_co
             case Type_Kind::BOOLEAN: assert(false); break;
             case Type_Kind::STRUCTURE: assert(false); break;
             case Type_Kind::STATIC_ARRAY: assert(false); break;
+            case Type_Kind::SLICE: assert(false); break;
         }
 
         assert(return_val_ptr || dest_reg->type->kind == Type_Kind::VOID);
@@ -1328,6 +1330,8 @@ Interpreter_Register interpreter_load_pointer(Interpreter *interp, u8 *source, T
             zmemcpy(ptr, source, size);
             break;
         }
+
+        case Type_Kind::SLICE: assert(false); break;
     }
 
     return result;
@@ -1443,6 +1447,8 @@ void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source,
             }
             break;
         }
+
+        case Type_Kind::SLICE: assert(false); break;
     }
 }
 
@@ -1639,6 +1645,8 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
                 break;
             }
 
+            case Type_Kind::SLICE: assert(false); break;
+
             case Type_Kind::FUNCTION: assert(false); break;
         }
 
@@ -1760,6 +1768,8 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type, boo
 
             break;
         }
+
+        case Type_Kind::SLICE: assert(false); break;
 
         case Type_Kind::FUNCTION: assert(false); break;
     }

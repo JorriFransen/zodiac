@@ -1,36 +1,10 @@
 #import "person.zc"
 
 #run main();
+
 main :: () {
 
-    str := string_copy("abc");
-    print(str);
-    print(str[0]);
-    str[0] = 'A';
-    print(str);
-
-    print("Hello");
-
-    char := 'b';
-    print(char);
-
-    print(str);
-
-    free(str.data);
-    str = "Hello, Zodiac!";
-
-    print(str);
-
-    p : Person = { "Bob", 42 };
-    print(p);
-
-    name : [2]String = { "John", "Doe" };
-    print(name);
-
-    print(str.length);
-    print(p.name.length);
-    print(name[0].length);
-    print(name[1].length);
+    slice : []s64;
 
     return 0;
 }

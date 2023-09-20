@@ -1092,6 +1092,7 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
                     break;
                 }
 
+                case Type_Kind::SLICE: assert(false);
                 case Type_Kind::FUNCTION: assert(false);
             }
 
@@ -1338,6 +1339,7 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
             break;
         }
 
+        case Type_Kind::SLICE: assert(false); break;
         case Type_Kind::FUNCTION: assert(false); break;
     }
 
@@ -1463,6 +1465,8 @@ AST_Expression *interpreter_memory_to_ast_expression(Bytecode_Converter *bc, u8*
             result = ast_compound_expr_new(bc->context, range, value_exprs);
             break;
         }
+
+        case Type_Kind::SLICE: assert(false); break;
 
         case Type_Kind::FUNCTION: assert(false); break;
     }

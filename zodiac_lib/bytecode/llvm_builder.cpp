@@ -1199,6 +1199,8 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
                 case Type_Kind::STATIC_ARRAY: {
                     return llvm_builder_emit_array_literal(builder, bc_reg.type, bc_reg.value.compound);
                 }
+
+                case Type_Kind::SLICE: assert(false); break;
             }
             break;
         }
@@ -1480,6 +1482,10 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
             llvm::Type *elem_type = llvm_type_from_ast_type(builder, ast_type->static_array.element_type);
             return llvm::ArrayType::get(elem_type, ast_type->static_array.count);
             break;
+        }
+
+        case Type_Kind::SLICE: {
+            return llvm_type_from_ast_type(builder, ast_type->slice.struct_type);
         }
     }
 

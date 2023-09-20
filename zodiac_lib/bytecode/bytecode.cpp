@@ -681,11 +681,8 @@ Bytecode_Register bytecode_emit_cast(Bytecode_Builder *builder, Type *target_typ
         case Type_Kind::FUNCTION: assert(false); break;
         case Type_Kind::BOOLEAN: assert(false); break;
         case Type_Kind::STRUCTURE: assert(false); break;
-
-        case Type_Kind::STATIC_ARRAY: {
-            assert(false);
-            break;
-        }
+        case Type_Kind::STATIC_ARRAY: assert(false); break;
+        case Type_Kind::SLICE: assert(false); break;
     }
 
     assert(false);
@@ -863,6 +860,10 @@ void bytecode_emit_return(Bytecode_Builder *builder, Bytecode_Register return_va
 
 Bytecode_Register bytecode_emit_alloc(Bytecode_Builder *builder, Type *type, const char *name)
 {
+    if (type->kind == Type_Kind::SLICE) {
+        type = type->slice.struct_type;
+    }
+
     Bytecode_Register type_register = bytecode_type_value(builder, type);
     Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::ALLOC, type, BC_REGISTER_FLAG_NONE, name);
     bytecode_emit_instruction(builder, Bytecode_Opcode::ALLOC, type_register, {}, result_register);

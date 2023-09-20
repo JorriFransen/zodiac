@@ -39,8 +39,11 @@ Type builtin_type_r32;
 
 Type builtin_type_String;
 
+s64 pointer_size;
 Dynamic_Array<Type *> function_types;
+Dynamic_Array<Type *> struct_types;
 Dynamic_Array<Type *> static_array_types;
+Dynamic_Array<Type *> slice_types;
 
 bool type_system_initialize(Zodiac_Context *ctx)
 {
@@ -56,8 +59,12 @@ ZODIAC_BUILTIN_TYPES
 #undef ZODIAC_NAME_TYPE_DEF
 #undef ZODIAC_NUMERIC_TYPE_DEF
 
+    pointer_size = 64;
+
     dynamic_array_create(&dynamic_allocator, &function_types);
+    dynamic_array_create(&dynamic_allocator, &struct_types);
     dynamic_array_create(&dynamic_allocator, &static_array_types);
+    dynamic_array_create(&dynamic_allocator, &slice_types);
 
     create_type(&builtin_type_unsized_integer, Type_Kind::UNSIZED_INTEGER, 0, TYPE_FLAG_INT);
     create_type(&builtin_type_void, Type_Kind::VOID, 0);
@@ -122,7 +129,7 @@ void create_pointer_type(Type *type, Type *base_type)
     assert(base_type);
     assert(!base_type->pointer_to);
 
-    create_type(type, Type_Kind::POINTER, 64);
+    create_type(type, Type_Kind::POINTER, pointer_size);
 
     type->pointer.base = base_type;
 
@@ -145,6 +152,8 @@ void create_struct_type(Type *type, Dynamic_Array<Type *> member_types, Atom nam
 
     type->structure.name = name;
     type->structure.member_types = member_types;
+
+    dynamic_array_append(&struct_types, type);
 }
 
 void create_static_array_type(Type *type, Type *element_type, u64 count)
@@ -163,6 +172,20 @@ void create_static_array_type(Type *type, Type *element_type, u64 count)
 
     type->static_array.element_type = element_type;
     type->static_array.count = count;
+}
+
+void create_slice_type(Type *type, Type *element_type, Type *struct_type)
+{
+    assert(struct_type->kind == Type_Kind::STRUCTURE);
+    assert(struct_type->structure.member_types[0]->kind == Type_Kind::POINTER);
+    assert(struct_type->structure.member_types[0]->pointer.base == element_type);
+
+
+
+    create_type(type, Type_Kind::SLICE, struct_type->bit_size, TYPE_FLAG_NONE);
+
+    type->slice.element_type = element_type;
+    type->slice.struct_type = struct_type;
 }
 
 void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types, bool vararg/*false*/)
@@ -204,6 +227,26 @@ Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allo
     assert(member_types.count);
     assert(allocator);
 
+    for (s64 si = 0; si < struct_types.count; si++) {
+
+        auto ex_type = struct_types[si];
+
+        if (ex_type->structure.member_types.count != member_types.count) continue;
+
+        bool member_match = true;
+        for (s64 mi = 0; mi < ex_type->structure.member_types.count; mi++) {
+            if (ex_type->structure.member_types[mi] != member_types[mi]) {
+                member_match = false;
+                break;
+            }
+        }
+
+        if (member_match && ex_type->structure.name == name) {
+            return ex_type;
+        }
+
+    }
+
     auto result = alloc<Type>(allocator);
     auto members_copy = dynamic_array_copy(member_types, allocator);
 
@@ -227,6 +270,33 @@ Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator)
     Type *result = alloc<Type>(allocator);
     create_static_array_type(result, element_type, count);
     dynamic_array_append(&static_array_types, result);
+
+    return result;
+}
+
+Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocator)
+{
+    for (u64 i = 0; i < slice_types.count; i++) {
+
+        auto sat = slice_types[i];
+        if (sat->slice.element_type == element_type) {
+            return sat;
+        }
+    }
+
+    Type *members[] = { get_pointer_type(element_type, allocator),
+                        &builtin_type_s64 };
+
+    auto mark = temporary_allocator_get_mark(temp_allocator());
+    auto name_ = string_format(temp_allocator_allocator(), "slice.%s", temp_type_string(element_type));
+    auto name = atom_get(&ctx->atoms, name_);
+    temporary_allocator_reset(temp_allocator(), mark);
+
+    Type *struct_type = get_struct_type(members, name, allocator);
+
+    Type *result = alloc<Type>(allocator);
+    create_slice_type(result, element_type, struct_type);
+    dynamic_array_append(&slice_types, result);
 
     return result;
 }
@@ -361,6 +431,7 @@ bool valid_static_type_conversion(Type *from, Type *to)
         case Type_Kind::STRUCTURE:  return false;
 
         case Type_Kind::STATIC_ARRAY: assert(false);
+        case Type_Kind::SLICE: assert(false);
         case Type_Kind::FUNCTION: assert(false);
     }
 
@@ -412,6 +483,12 @@ void type_to_string(Type *type, String_Builder *sb)
 
         case Type_Kind::STATIC_ARRAY: {
             string_builder_append(sb, "[%lu]", type->static_array.count);
+            type_to_string(type->static_array.element_type, sb);
+            break;
+        }
+
+        case Type_Kind::SLICE: {
+            string_builder_append(sb, "[]");
             type_to_string(type->static_array.element_type, sb);
             break;
         }

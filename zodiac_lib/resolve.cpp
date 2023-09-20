@@ -926,6 +926,11 @@ void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dyna
             flatten_type_spec(resolver, ts->static_array.element_ts, scope, dest);
             break;
         }
+
+        case AST_Type_Spec_Kind::SLICE: {
+            flatten_type_spec(resolver, ts->slice.element_ts, scope, dest);
+            break;
+        }
     }
 
     Flat_Node flat_ts = to_flat_node(ts, scope);
@@ -1395,7 +1400,8 @@ bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
         }
 
         case AST_Type_Spec_Kind::POINTER:
-        case AST_Type_Spec_Kind::STATIC_ARRAY: {
+        case AST_Type_Spec_Kind::STATIC_ARRAY:
+        case AST_Type_Spec_Kind::SLICE: {
             // Leaf
             break;
         }
@@ -2418,6 +2424,15 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
             auto elem_type = elem_ts->resolved_type;
 
             ts->resolved_type = get_static_array_type(elem_type, length_val.s64, &ctx->ast_allocator);
+            return true;
+        }
+
+        case AST_Type_Spec_Kind::SLICE: {
+            auto elem_ts = ts->slice.element_ts;
+            assert(elem_ts->resolved_type);
+            auto elem_type = elem_ts->resolved_type;
+
+            ts->resolved_type = get_slice_type(ctx,elem_type, &ctx->ast_allocator);
             return true;
         }
     }

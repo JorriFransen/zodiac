@@ -1,6 +1,8 @@
 
 - Slices (just call them arrays maybe?)
 
+- FFI with different return types
+
 - Defer
 
 - Some tests are failing on windows
