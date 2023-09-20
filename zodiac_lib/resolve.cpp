@@ -61,37 +61,6 @@ void resolver_create(Resolver *resolver, Zodiac_Context *ctx)
 
     add_builtin_type_symbol(void);
     add_builtin_type_symbol(bool);
-
-    Source_Pos builtin_pos = { "<builtin>", 0, 0 };
-    Source_Range range = { builtin_pos, builtin_pos };
-
-    AST_Identifier string_type_ident;
-    ast_identifier_create(atom_String, range, &string_type_ident);
-
-    AST_Type_Spec *string_length_ts = ast_type_ts_new(resolver->ctx, range, &builtin_type_s64);
-
-    AST_Identifier string_length_ident;
-    ast_identifier_create(atom_get(&resolver->ctx->atoms, "length"), range, &string_length_ident);
-
-    AST_Declaration *string_length_field_decl = ast_field_decl_new(resolver->ctx, range, string_length_ident, string_length_ts);
-
-    auto u8_ptr_type = get_pointer_type(&builtin_type_u8, &resolver->ctx->ast_allocator);
-    AST_Type_Spec *string_data_ts = ast_type_ts_new(resolver->ctx, range, u8_ptr_type);
-
-    AST_Identifier string_data_ident;
-    ast_identifier_create(atom_get(&resolver->ctx->atoms, "data"), range, &string_data_ident);
-
-    AST_Declaration *string_data_field_decl = ast_field_decl_new(resolver->ctx, range, string_data_ident, string_data_ts);
-
-    Dynamic_Array<AST_Declaration *> struct_type_fields;
-    dynamic_array_create(&resolver->ctx->ast_allocator, &struct_type_fields);
-    dynamic_array_append(&struct_type_fields, string_data_field_decl);
-    dynamic_array_append(&struct_type_fields, string_length_field_decl);
-
-    AST_Declaration *string_type_decl = ast_aggregate_decl_new(resolver->ctx, range, string_type_ident, AST_Declaration_Kind::STRUCT, struct_type_fields);
-    add_unresolved_decl_symbol(resolver->ctx, resolver->global_scope, string_type_decl, true);
-    resolver_add_declaration(resolver->ctx, resolver, string_type_decl, resolver->global_scope);
-    string_type_decl->aggregate.resolved_type = &builtin_type_String;
 }
 
 void resolver_destroy(Resolver *resolver)
@@ -170,8 +139,6 @@ bool resolver_report_errors(Resolver *resolver)
     for (s64 i = 0; i < c->errors.count; i++) {
 
         auto err = c->errors[i];
-
-        if (!c->fatal_resolve_error) assert(!err.fatal);
 
         bool print = c->fatal_resolve_error == err.fatal;
 
@@ -1637,7 +1604,7 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
 
         case AST_Declaration_Kind::STRUCT: {
             if (decl->aggregate.resolved_type) {
-                assert(decl->aggregate.resolved_type == &builtin_type_String);
+                assert(decl->aggregate.resolved_type == get_string_type(ctx));
             } else {
 
                 auto temp_member_types = temp_array_create<Type *>(temp_allocator_allocator(), decl->aggregate.fields.count);
@@ -1881,8 +1848,9 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
         }
 
         case AST_Expression_Kind::STRING_LITERAL: {
-            assert(!inferred_type || inferred_type == &builtin_type_String);
-            expr->resolved_type = &builtin_type_String;
+            auto string_type = get_string_type(ctx);
+            assert(!inferred_type || inferred_type == string_type);
+            expr->resolved_type = string_type;
             break;
         }
 
@@ -1966,7 +1934,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
             bool base_is_array = base_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY;
 
-            if (!base_is_array && base_expr->resolved_type != &builtin_type_String) {
+            if (!base_is_array && base_expr->resolved_type != get_string_type(ctx)) {
                 fatal_resolve_error(ctx, expr, "Base of index expression is not an array or String");
                 return false;
             }

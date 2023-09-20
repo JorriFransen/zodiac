@@ -397,8 +397,6 @@ Bytecode_Register bytecode_boolean_literal(Bytecode_Builder *builder, Type *type
 
 Bytecode_Register bytecode_string_literal(Bytecode_Builder *bb, String_Ref str)
 {
-    debug_assert(&builtin_type_String);
-
     Dynamic_Array<Bytecode_Register> values;
     dynamic_array_create<Bytecode_Register>(bb->bytecode_allocator, &values, 2);
 
@@ -410,7 +408,7 @@ Bytecode_Register bytecode_string_literal(Bytecode_Builder *bb, String_Ref str)
     dynamic_array_append(&values, string_memory_register);
     dynamic_array_append(&values, bytecode_integer_literal(bb, &builtin_type_s64, str.length));
 
-    return bytecode_aggregate_literal(bb, values, &builtin_type_String);
+    return bytecode_aggregate_literal(bb, values, get_string_type(bb->zodiac_context));
 }
 
 Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Dynamic_Array<Bytecode_Register> members, Type *type)
