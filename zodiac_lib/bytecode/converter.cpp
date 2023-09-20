@@ -653,7 +653,7 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
             if (base_reg.type->kind == Type_Kind::STATIC_ARRAY) {
                 return bytecode_emit_array_offset_pointer(bc->builder, base_reg, index_reg);
             } else {
-                assert(base_reg.type == &builtin_type_String);
+                assert(base_reg.type == get_string_type(bc->context));
                 Bytecode_Register data_reg = bytecode_emit_aggregate_offset_pointer(bc->builder, base_reg, 0);
                 data_reg = bytecode_emit_load_pointer(bc->builder, data_reg);
                 return bytecode_emit_ptr_offset_pointer(bc->builder, data_reg, index_reg);
@@ -1127,7 +1127,7 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
         case AST_Expression_Kind::COMPOUND: {
             assert((type->flags & TYPE_FLAG_AGGREGATE) || type->kind == Type_Kind::STATIC_ARRAY);
 
-            if (type == &builtin_type_String) {
+            if (type == get_string_type(bc->context)) {
                 assert(expr->compound.expressions.count == 2);
                 auto ptr_expr = expr->compound.expressions[0];
                 auto length_expr = expr->compound.expressions[1];

@@ -119,9 +119,8 @@ ZAPI extern Type builtin_type_s8;
 ZAPI extern Type builtin_type_r64;
 ZAPI extern Type builtin_type_r32;
 
-ZAPI extern Type builtin_type_String;
-
 ZAPI extern Dynamic_Array<Type *> function_types;
+ZAPI extern Dynamic_Array<Type *> struct_types;
 ZAPI extern Dynamic_Array<Type *> static_array_types;
 
 ZAPI bool type_system_initialize(Zodiac_Context *ctx);
@@ -139,6 +138,7 @@ ZAPI Type *get_struct_type(Zodiac_Context *zc, Array_Ref<Type *> member_types, c
 ZAPI Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allocator);
 ZAPI Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator);
 ZAPI Type *get_function_type(Type *return_type, Array_Ref<Type *> param_types, Allocator *allocator, bool vararg = false);
+ZAPI Type *get_string_type(Zodiac_Context *ctx);
 
 ZAPI Type *sym_decl_type(Symbol *sym);
 

@@ -1653,6 +1653,8 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type, boo
 
     auto out_handle = (FILE *)interp->std_out.handle;
 
+    auto string_type = get_string_type(interp->context);
+
     switch (type->kind) {
         case Type_Kind::INVALID: assert(false); break;
         case Type_Kind::VOID: assert(false); break;
@@ -1702,7 +1704,7 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type, boo
 
         case Type_Kind::STRUCTURE: {
 
-            if (type == &builtin_type_String) {
+            if (type == string_type) {
                 char *str = *(char **)mem;
                 mem += builtin_type_s64.bit_size / 8;
                 s64 length = *(s64 *)mem;
@@ -1771,6 +1773,8 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
 
     auto out_handle = (FILE *)interp->std_out.handle;
 
+    auto string_type = get_string_type(interp->context);
+
     switch (reg.type->kind) {
         default: assert(false); break;
 
@@ -1816,7 +1820,7 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
 
         case Type_Kind::STRUCTURE: {
 
-            if (reg.type == &builtin_type_String) {
+            if (reg.type == string_type) {
                 if (reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
                     assert(reg.value.compound.count == 2);
 
