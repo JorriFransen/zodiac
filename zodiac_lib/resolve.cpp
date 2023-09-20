@@ -5,6 +5,7 @@
 #include "common.h"
 #include "constant_resolver.h"
 #include "error.h"
+#include "platform/filesystem.h"
 #include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
