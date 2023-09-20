@@ -465,6 +465,8 @@ void find_visual_studio_by_fighting_through_microsoft_craziness(Windows_SDK_Info
         auto library_path = concat(bstr_inst_path, L"\\VC\\Tools\\MSVC\\", version, L"\\lib\\x64");
         auto library_file = concat(library_path, L"\\vcruntime.lib");  // @Speed: Could have library_path point to this string, with a smaller count, to save on memory flailing!
 
+        defer { free(library_file); };
+
         if (os_file_exists(library_file)) {
             auto link_exe_path = concat(bstr_inst_path, L"\\VC\\Tools\\MSVC\\", version, L"\\bin\\Hostx64\\x64");
             result->vs_exe_path     = link_exe_path;
