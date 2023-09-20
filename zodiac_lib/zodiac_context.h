@@ -14,6 +14,7 @@ namespace Zodiac
 struct AST_File;
 struct File_Handle;
 struct Resolver;
+struct Type;
 struct Zodiac_Error;
 
 namespace Bytecode {
@@ -92,6 +93,8 @@ struct Zodiac_Context
     String support_dll_dynamic_path;
 #endif
     String support_lib_static_path;
+
+    Type *builtin_string_type;
 };
 
 ZAPI void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context);
