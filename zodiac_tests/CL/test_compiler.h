@@ -95,6 +95,7 @@ MunitResult Run_Block_Only_Print_And_Call(const MunitParameter params[], void* u
 MunitResult Run_Local_Unused(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Non_Constant_Compound(const MunitParameter params[], void* user_data_or_fixture);
 MunitResult Foreign_Function(const MunitParameter params[], void* user_data_or_fixture);
+MunitResult Strings(const MunitParameter params[], void* user_data_or_fixture);
 
 START_TESTS(compiler_tests)
     DEFINE_TEST(Return_0),
@@ -148,6 +149,7 @@ START_TESTS(compiler_tests)
     DEFINE_TEST(Run_Local_Unused),
     DEFINE_TEST(Non_Constant_Compound),
     DEFINE_TEST(Foreign_Function),
+    DEFINE_TEST(Strings),
 END_TESTS()
 
 }}
