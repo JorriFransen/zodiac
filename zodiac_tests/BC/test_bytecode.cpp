@@ -2,6 +2,7 @@
 
 #include <munit/munit.h>
 
+#include "ast.h"
 #include "bytecode/interpreter.h"
 #include "bytecode/llvm_builder.h"
 #include "bytecode/validator.h"
@@ -33,6 +34,9 @@ void init_test_context(Zodiac_Context *zc)
 
     zodiac_context_create(options, zc);
 
+    Type *members[] = { get_pointer_type(&builtin_type_u8, &zc->ast_allocator),
+                        &builtin_type_s64 };
+    get_struct_type(zc, members, "String", &zc->ast_allocator);
 }
 
 #define PRINT_NEWLINE bytecode_emit_print(&bb, bytecode_string_literal(&bb, "\n"));
