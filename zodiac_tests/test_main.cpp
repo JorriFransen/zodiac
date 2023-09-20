@@ -16,6 +16,10 @@
 #include "test_string_builder.h"
 #include "test_strings.h"
 
+#ifdef ZODIAC_VLD
+#include "vld.h"
+#endif // ZODIAC_VLD
+
 namespace Zodiac
 {
 
