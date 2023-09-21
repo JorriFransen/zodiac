@@ -325,6 +325,8 @@ ZAPI Bytecode_Register bytecode_emit_load_alloc(Bytecode_Builder *builder, Bytec
 ZAPI void bytecode_emit_store_pointer(Bytecode_Builder *builder, Bytecode_Register source, Bytecode_Register dest);
 ZAPI Bytecode_Register bytecode_emit_load_pointer(Bytecode_Builder *builder, Bytecode_Register source);
 
+ZAPI void bytecode_emit_assignment(Bytecode_Builder *builder, Bytecode_Register value_reg, Bytecode_Register lvalue_reg);
+
 ZAPI Bytecode_Register bytecode_emit_insert_value(Bytecode_Builder *builder, Bytecode_Register aggregate, Bytecode_Register new_elem_val, Type *struct_type, s64 index);
 ZAPI Bytecode_Register bytecode_emit_extract_value(Bytecode_Builder *builder, Bytecode_Register aggregate, s64 index);
 

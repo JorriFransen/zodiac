@@ -2033,6 +2033,11 @@ main :: () {
 MunitResult Strings(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        string_copy :: (s: String) -> String {
+            result : String = { malloc(s.length), s.length };
+            memcpy(result.data, s.data, s.length);
+            return result;
+        }
         Person :: struct {
             name: String;
             age: u8;

@@ -445,9 +445,13 @@ bool valid_static_type_conversion(Type *from, Type *to)
             break;
         }
 
-        case Type_Kind::STRUCTURE:  return false;
+        case Type_Kind::STRUCTURE: return false;
 
-        case Type_Kind::STATIC_ARRAY: assert(false);
+        case Type_Kind::STATIC_ARRAY: {
+            if (to->kind == Type_Kind::SLICE && from->static_array.element_type == to->static_array.element_type) return true;
+            return false;
+        }
+
         case Type_Kind::SLICE: assert(false);
         case Type_Kind::FUNCTION: assert(false);
     }
