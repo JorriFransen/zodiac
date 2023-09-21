@@ -3,12 +3,14 @@
 main :: () {
 
     arr : [4]s64 = { 1, 2, 3, 4 };
-    // slice : []s64 = arr;
-    slice : []s64;
 
-    slice = arr;
+    slice : []s64 = arr;
 
-    // print(arr);
-    // print(slice);
+    // slice : []s64;
+    // slice = arr;
+
+    print(arr);
+    print(*arr);
+    print(slice);
     return 0;
 }

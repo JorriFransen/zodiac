@@ -1706,7 +1706,12 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type, boo
         }
 
         case Type_Kind::POINTER: {
-                assert(false);
+            void *val = *(bool **)mem;
+            if (val) {
+                fprintf(out_handle, "%p", val);
+            } else {
+                fprintf(out_handle, "null");
+            }
             break;
         }
 

@@ -411,6 +411,11 @@ Bytecode_Register bytecode_string_literal(Bytecode_Builder *bb, String_Ref str)
     return bytecode_aggregate_literal(bb, values, get_string_type(bb->zodiac_context));
 }
 
+Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Array_Ref<Bytecode_Register> members, Type *type)
+{
+    return bytecode_aggregate_literal(bb, dynamic_array_copy(members, bb->bytecode_allocator), type);
+}
+
 Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Dynamic_Array<Bytecode_Register> members, Type *type)
 {
     debug_assert(bb && members.count && type);
@@ -448,6 +453,11 @@ Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Dynamic_Array
     result.value.compound = members;
 
     return result;
+}
+
+Bytecode_Register bytecode_array_literal(Bytecode_Builder *bb, Array_Ref<Bytecode_Register> values, Type *type)
+{
+    return bytecode_array_literal(bb, dynamic_array_copy(values, bb->bytecode_allocator), type);
 }
 
 Bytecode_Register bytecode_array_literal(Bytecode_Builder *bb, Dynamic_Array<Bytecode_Register> values, Type *type)

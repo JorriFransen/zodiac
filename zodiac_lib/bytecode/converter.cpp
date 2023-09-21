@@ -1168,10 +1168,20 @@ void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, 
         lvalue_type = lvalue_type->pointer.base;
     }
 
-    Bytecode_Register value_reg = ast_expr_to_bytecode(bc, value_expr);
+    Bytecode_Register value_reg;
     if (value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && lvalue_type->flags & TYPE_FLAG_SLICE_STRUCT) {
         assert(lvalue_type->kind == Type_Kind::STRUCTURE);
-        assert(false);
+
+        Bytecode_Register arr_reg = ast_lvalue_to_bytecode(bc, value_expr);
+        assert(arr_reg.type->kind == Type_Kind::STATIC_ARRAY);
+        Bytecode_Register ptr_reg = bytecode_emit_array_offset_pointer(bc->builder, arr_reg, 0);
+        Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, value_expr->resolved_type->static_array.count);
+
+        value_reg = bytecode_emit_insert_value(bc->builder, {}, ptr_reg, lvalue_type, 0);
+        value_reg = bytecode_emit_insert_value(bc->builder, value_reg, length_reg, lvalue_type, 1);
+
+    } else {
+        value_reg = ast_expr_to_bytecode(bc, value_expr);
     }
 
     assert(value_reg.type == lvalue_type);
