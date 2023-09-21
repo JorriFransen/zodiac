@@ -289,6 +289,7 @@ Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocat
     temporary_allocator_reset(temp_allocator(), mark);
 
     Type *struct_type = get_struct_type(members, name, allocator);
+    struct_type->flags |= TYPE_FLAG_SLICE_STRUCT;
 
     Type *result = alloc<Type>(allocator);
     create_slice_type(result, element_type, struct_type);

@@ -1693,9 +1693,12 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
             assert(lvalue_expr->resolved_type);
             assert(value_expr->resolved_type);
 
-            if (value_expr->resolved_type != lvalue_expr->resolved_type &&
-                valid_static_type_conversion(value_expr->resolved_type, lvalue_expr->resolved_type)) {
-                value_expr->resolved_type = lvalue_expr->resolved_type;
+            if (value_expr->resolved_type != lvalue_expr->resolved_type) {
+                if (valid_static_type_conversion(value_expr->resolved_type, lvalue_expr->resolved_type)) {
+                    // ok
+                } else {
+                    assert(false); // report error
+                }
             }
 
             break;

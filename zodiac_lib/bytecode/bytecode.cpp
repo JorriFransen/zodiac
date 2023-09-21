@@ -989,21 +989,6 @@ Bytecode_Register bytecode_emit_load_pointer(Bytecode_Builder *builder, Bytecode
     return result_register;
 }
 
-void bytecode_emit_assignment(Bytecode_Builder *builder, Bytecode_Register value_reg, Bytecode_Register lvalue_reg)
-{
-    if (lvalue_reg.kind == Bytecode_Register_Kind::ALLOC) {
-        bytecode_emit_store_alloc(builder, value_reg, lvalue_reg);
-    } else if (lvalue_reg.kind == Bytecode_Register_Kind::GLOBAL) {
-        bytecode_emit_store_global(builder, value_reg, lvalue_reg.index);
-    } else if (lvalue_reg.kind == Bytecode_Register_Kind::TEMPORARY) {
-        assert(lvalue_reg.type->kind == Type_Kind::POINTER);
-        assert(lvalue_reg.type->pointer.base == value_reg.type);
-        bytecode_emit_store_pointer(builder, value_reg, lvalue_reg);
-    } else {
-        assert(false);
-    }
-}
-
 Bytecode_Register bytecode_emit_insert_value(Bytecode_Builder *builder, Bytecode_Register aggregate, Bytecode_Register new_elem_val, Type *struct_type, s64 index)
 {
     assert(struct_type);

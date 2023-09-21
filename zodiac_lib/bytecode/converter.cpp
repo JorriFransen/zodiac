@@ -173,8 +173,7 @@ bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                     assert(found)
 
                     if (!EXPR_IS_CONST(decl->variable.value) || decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE) { // Constant should have been emitted when registering the allocation
-                        Bytecode_Register value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
-                        bytecode_emit_assignment(bc->builder, value_reg, alloc_reg);
+                        assignment_to_bytecode(bc, decl->variable.value, alloc_reg);
                     }
                 }
             }
@@ -317,14 +316,13 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             for (s64 i = 0; i < decl->function.variables.count; i++) {
                 AST_Declaration *var_decl = decl->function.variables[i];
                 if (var_decl->variable.value && EXPR_IS_CONST(var_decl->variable.value) && var_decl->variable.value->kind != AST_Expression_Kind::RUN_DIRECTIVE) {
-                    Bytecode_Register value = ast_expr_to_bytecode(bc, var_decl->variable.value);
 
                     // TODO: Temporarily store this on the stack from before?
                     Bytecode_Register alloc_reg;
                     bool found = hash_table_find(&bc->allocations, var_decl, &alloc_reg);
                     assert(found)
 
-                    bytecode_emit_assignment(bc->builder, value, alloc_reg);
+                    assignment_to_bytecode(bc, var_decl->variable.value, alloc_reg);
                 }
             }
 
@@ -344,8 +342,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                 auto const_decl = sym->decl;
 
                 assert(const_decl->variable.value);
-                Bytecode_Register value = ast_expr_to_bytecode(bc, const_decl->variable.value);
-                bytecode_emit_assignment(bc->builder, value, alloc_reg);
+                assignment_to_bytecode(bc, const_decl->variable.value, alloc_reg);
             }
         }
 
@@ -357,7 +354,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             assert(found);
 
             auto arg_reg = bytecode_emit_load_argument(bc->builder, i);
-            bytecode_emit_assignment(bc->builder, arg_reg, alloc_reg);
+            bytecode_emit_store_alloc(bc->builder, arg_reg, alloc_reg);
         }
 
         Bytecode_Block_Handle start_block_handle = bytecode_append_block(bc->builder, fn_handle, "start");
@@ -446,9 +443,8 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
         case AST_Statement_Kind::ASSIGN: {
             Bytecode_Register lvalue_reg = ast_lvalue_to_bytecode(bc, stmt->assign.dest);
-            Bytecode_Register value_reg = ast_expr_to_bytecode(bc, stmt->assign.value);
 
-            bytecode_emit_assignment(bc->builder, value_reg, lvalue_reg);
+            assignment_to_bytecode(bc, stmt->assign.value, lvalue_reg);
             break;
         }
 
@@ -1160,6 +1156,37 @@ Bytecode_Register ast_const_compound_expr_to_bytecode(Bytecode_Converter *bc, AS
         return bytecode_array_literal(bc->builder, values, type);
     }
 
+}
+
+void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, Bytecode_Register lvalue_reg)
+{
+
+    Type *lvalue_type = lvalue_reg.type;
+
+    if (lvalue_reg.kind == Bytecode_Register_Kind::TEMPORARY) {
+        assert(lvalue_reg.type->kind == Type_Kind::POINTER);
+        lvalue_type = lvalue_type->pointer.base;
+    }
+
+    Bytecode_Register value_reg = ast_expr_to_bytecode(bc, value_expr);
+    if (value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && lvalue_type->flags & TYPE_FLAG_SLICE_STRUCT) {
+        assert(lvalue_type->kind == Type_Kind::STRUCTURE);
+        assert(false);
+    }
+
+    assert(value_reg.type == lvalue_type);
+
+    if (lvalue_reg.kind == Bytecode_Register_Kind::ALLOC) {
+        bytecode_emit_store_alloc(bc->builder, value_reg, lvalue_reg);
+    } else if (lvalue_reg.kind == Bytecode_Register_Kind::GLOBAL) {
+        bytecode_emit_store_global(bc->builder, value_reg, lvalue_reg.index);
+    } else if (lvalue_reg.kind == Bytecode_Register_Kind::TEMPORARY) {
+        assert(lvalue_reg.type->kind == Type_Kind::POINTER);
+        assert(lvalue_reg.type->pointer.base == value_reg.type);
+        bytecode_emit_store_pointer(bc->builder, value_reg, lvalue_reg);
+    } else {
+        assert(false);
+    }
 }
 
 Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directive *run_directive)
