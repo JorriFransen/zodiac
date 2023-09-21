@@ -37,8 +37,6 @@ Type builtin_type_s8;
 Type builtin_type_r64;
 Type builtin_type_r32;
 
-Type builtin_type_String;
-
 s64 pointer_size;
 Dynamic_Array<Type *> function_types;
 Dynamic_Array<Type *> struct_types;
@@ -88,8 +86,6 @@ ZODIAC_BUILTIN_TYPES
     dynamic_array_create(&ctx->ast_allocator, &string_member_types, 2);
     dynamic_array_append(&string_member_types, get_pointer_type(&builtin_type_u8, &ctx->ast_allocator));
     dynamic_array_append(&string_member_types, &builtin_type_s64);
-
-    create_struct_type(&builtin_type_String, string_member_types, atom_get(&ctx->atoms, "String"));
 
     type_system_initialized = true;
     return true;
@@ -299,6 +295,27 @@ Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocat
     dynamic_array_append(&slice_types, result);
 
     return result;
+}
+
+Type *get_string_type(Zodiac_Context *ctx)
+{
+    if (ctx->builtin_string_type) {
+        return ctx->builtin_string_type;
+    }
+
+    for (s64 i = 0; i < struct_types.count; i++) {
+        auto st = struct_types[i];
+        if (st->structure.name == atom_String) {
+            auto u8_ptr_type = get_pointer_type(&builtin_type_u8, &ctx->ast_allocator);
+            assert(st->structure.member_types[0] == u8_ptr_type);
+            assert(st->structure.member_types[1] == &builtin_type_s64);
+
+            ctx->builtin_string_type = st;
+            return st;
+        }
+    }
+
+    assert_msg(false, "Builting string type could not be found");
 }
 
 Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Allocator *allocator, bool vararg/*=false*/)

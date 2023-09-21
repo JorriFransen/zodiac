@@ -972,7 +972,7 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
         }
 
         case Type_Kind::STRUCTURE: {
-            if (type == &builtin_type_String) {
+            if (type == get_string_type(builder->zodiac_context))  {
                 auto fmt_str = "%.*s";
                 if (quote_strings) {
                     fmt_str = "\"%.*s\"";
@@ -1160,7 +1160,7 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
         case Bytecode_Register_Kind::TEMPORARY: {
             assert(!(bc_reg.flags & BC_REGISTER_FLAG_ARGUMENT));
 
-            if (bc_reg.type == &builtin_type_String) {
+            if (bc_reg.type == get_string_type(builder->zodiac_context)) {
                 assert(bc_reg.flags & BC_REGISTER_FLAG_LITERAL);
                 auto str_reg = bc_reg.value.compound[0];
                 return llvm_builder_emit_string_literal(builder, str_reg.value.string);
@@ -1290,7 +1290,7 @@ llvm::Constant *llvm_builder_emit_bool_literal(LLVM_Builder *builder, Type *type
 
 llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_Ref str)
 {
-    llvm::Type *llvm_string_type_ = llvm_type_from_ast_type(builder, &builtin_type_String);
+    llvm::Type *llvm_string_type_ = llvm_type_from_ast_type(builder, get_string_type(builder->zodiac_context));
     llvm::StructType *llvm_string_type = static_cast<llvm::StructType *>(llvm_string_type_);
 
     auto members = temp_array_create<llvm::Constant *>(temp_allocator_allocator(), 2);
