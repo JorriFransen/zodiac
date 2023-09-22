@@ -163,13 +163,15 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
     Dynamic_Array<Bytecode_Register> registers = {};
     Dynamic_Array<Bytecode_Block> blocks = {};
     Dynamic_Array<Bytecode_Phi_Args> phi_args = {};
-
+    Dynamic_Array<Type *> param_types = {};
 
     if (!is_foreign) {
         dynamic_array_create(builder->bytecode_allocator, &registers);
         dynamic_array_create(builder->bytecode_allocator, &blocks);
         dynamic_array_create(builder->bytecode_allocator, &phi_args);
     }
+
+    dynamic_array_create(builder->bytecode_allocator, &param_types, fn_type->function.parameter_types.count);
 
     assert(fn_type->function.parameter_types.count < I32_MAX);
     s32 arg_count = (s32)fn_type->function.parameter_types.count;
@@ -181,6 +183,7 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
         .registers = registers,
         .blocks = blocks,
         .phi_args = phi_args,
+        .param_types = param_types,
         .arg_count = arg_count,
         .required_stack_size = 0,
     };
@@ -195,6 +198,8 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
                 param_type = param_type->slice.struct_type;
             }
 
+            dynamic_array_append(&result.param_types, param_type);
+
             Bytecode_Register arg_register = {
                 .kind = Bytecode_Register_Kind::TEMPORARY,
                 .flags = BC_REGISTER_FLAG_ARGUMENT,
@@ -207,6 +212,15 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
 
     } else {
         dynamic_array_append(&builder->foreign_functions, (Bytecode_Function_Handle)index);
+
+        for (s64 i = 0; i < fn_type->function.parameter_types.count; i++) {
+            auto param_type = fn_type->function.parameter_types[i];
+            if (param_type->kind == Type_Kind::SLICE) {
+                assert(false);
+            }
+
+            dynamic_array_append(&result.param_types, param_type);
+        }
     }
 
     dynamic_array_append(&builder->functions, result);

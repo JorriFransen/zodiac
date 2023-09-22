@@ -720,7 +720,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             bool arg_match = true;
             for (s64 i = 0; i < fn_arg_count; i++) {
                 auto arg_reg = stack_peek_ptr(&visitor->arg_stack, (fn_arg_count - 1) - i);
-                if (arg_reg->type != fn->registers[i].type) {
+                if (arg_reg->type != fn->param_types[i]) {
                     bytecode_validator_report_error(validator, "Mismatching type for argument %d", i);
                     arg_match = false;
                 }

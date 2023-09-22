@@ -200,6 +200,8 @@ struct Bytecode_Function
     Dynamic_Array<Bytecode_Block> blocks = {};
     Dynamic_Array<Bytecode_Phi_Args> phi_args = {};
 
+    Dynamic_Array<Type *> param_types = {};
+
     s32 arg_count;
     s32 required_stack_size = 0;
 
