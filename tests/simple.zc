@@ -32,5 +32,7 @@ main :: () {
     print(name[0].length);
     print(name[1].length);
 
+    print(*p);
+
     return 0;
 }

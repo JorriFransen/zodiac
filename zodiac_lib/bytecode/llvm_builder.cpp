@@ -964,7 +964,7 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
         }
 
         case Type_Kind::POINTER: {
-            auto fmt_str = "%p";
+            auto fmt_str = "0x%llx";
             llvm::Value *fmt_str_lit = llvm_builder_emit_cstring_literal(builder, fmt_str);
             dynamic_array_append(llvm_print_args, fmt_str_lit);
             dynamic_array_append(llvm_print_args, llvm_val);
