@@ -20,6 +20,10 @@ main :: () {
     print(slice3);
     print_slice(slice3);
 
+    slice4 : []s64 = { 12, 23, 34, 45, 56, 67, 78, 89, 90 };
+    print(slice4);
+    print_slice(slice4);
+
     print_slice({2, 3, 4});
 
     return 0;
