@@ -171,6 +171,9 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
         dynamic_array_create(builder->bytecode_allocator, &phi_args);
     }
 
+    assert(fn_type->function.parameter_types.count < I32_MAX);
+    s32 arg_count = (s32)fn_type->function.parameter_types.count;
+
     Bytecode_Function result = {
         .flags = flags,
         .name = fn_name,
@@ -178,6 +181,7 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
         .registers = registers,
         .blocks = blocks,
         .phi_args = phi_args,
+        .arg_count = arg_count,
         .required_stack_size = 0,
     };
 
@@ -186,11 +190,16 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
 
             auto arg_index = result.registers.count;
 
+            auto param_type = fn_type->function.parameter_types[i];
+            if (param_type->kind == Type_Kind::SLICE) {
+                param_type = param_type->slice.struct_type;
+            }
+
             Bytecode_Register arg_register = {
                 .kind = Bytecode_Register_Kind::TEMPORARY,
                 .flags = BC_REGISTER_FLAG_ARGUMENT,
                 .index = (s64)arg_index,
-                .type = fn_type->function.parameter_types[i],
+                .type = param_type,
             };
             dynamic_array_append(&result.registers, arg_register);
         }

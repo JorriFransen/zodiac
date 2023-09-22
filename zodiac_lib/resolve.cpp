@@ -416,19 +416,24 @@ Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error
 
         case Infer_Target::COMPOUND: {
             assert((inferred_type->flags & TYPE_FLAG_AGGREGATE) ||
-                   inferred_type->kind == Type_Kind::STATIC_ARRAY);
+                   inferred_type->kind == Type_Kind::STATIC_ARRAY ||
+                   inferred_type->kind == Type_Kind::SLICE);
 
             auto index = infer_node->target.index;
 
             if (inferred_type->kind == Type_Kind::STRUCTURE) {
+
                 assert(inferred_type->structure.member_types.count > infer_node->target.index);
-
                 inferred_type = inferred_type->structure.member_types[index];
-            } else {
-                assert(inferred_type->kind == Type_Kind::STATIC_ARRAY);
-                assert(index >= 0 && index < inferred_type->static_array.count);
 
+            } else if (inferred_type->kind == Type_Kind::STATIC_ARRAY) {
+
+                assert(index >= 0 && index < inferred_type->static_array.count);
                 inferred_type = inferred_type->static_array.element_type;
+
+            } else {
+                assert(inferred_type->kind == Type_Kind::SLICE);
+                inferred_type = inferred_type->slice.element_type;
             }
 
             assert(inferred_type);
@@ -2001,7 +2006,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                 if (arg_type != param_type) {
                     if (valid_static_type_conversion(arg_type, param_type)) {
-                        arg_expr->resolved_type = param_type;
+                        // ok
                     } else {
                         match = false;
                     }
@@ -2057,7 +2062,8 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                             dynamic_array_insert(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
                         } else {
                             auto current_function = enclosing_function(scope);
-                            dynamic_array_append(&current_function->function.const_lvalues, { operand, sym->decl });
+                            dynamic_array_append(&current_function->function.implicit_lvalues,
+                                                 { AST_Implicit_LValue_Kind::CONST_LVALUE, operand, { sym->decl } });
                         }
 
                     } else if (!EXPR_IS_LVALUE(operand)) {
@@ -2303,6 +2309,39 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                         all_const = false;
                     }
                 }
+
+            } else if (inferred_type->kind == Type_Kind::SLICE) {
+                expr->flags |= AST_EXPR_FLAG_SLICE_COMPOUND;
+                auto slice_type = inferred_type;
+
+                auto slice_element_type = slice_type->slice.element_type;
+
+                for (s64 i = 0; i < compound_member_count; i++) {
+                    auto compound_member_expr = expr->compound.expressions[i];
+                    Type *compound_member_type = compound_member_expr->resolved_type;
+
+                    if (slice_element_type != compound_member_type) {
+                        fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
+                        fatal_resolve_error(ctx, compound_member_expr, "    Expected: %s", temp_type_string(slice_element_type));
+                        fatal_resolve_error(ctx, compound_member_expr, "    Got: %s", temp_type_string(compound_member_type));
+                        return false;
+                    }
+
+                    if (!(compound_member_expr->flags & AST_EXPR_FLAG_LITERAL)) {
+                        all_literal = false;
+                    }
+                    if (!(compound_member_expr->flags & AST_EXPR_FLAG_CONST)) {
+                        all_const = false;
+                    }
+                }
+
+                inferred_type = get_static_array_type(inferred_type->slice.element_type, compound_member_count, &ctx->ast_allocator);
+                expr->resolved_type = inferred_type;
+
+                auto fn = enclosing_function(scope);
+                assert(fn);
+                assert(slice_type->kind == Type_Kind::SLICE);
+                dynamic_array_append(&fn->function.implicit_lvalues, { AST_Implicit_LValue_Kind::SLICE_COMPOUND, expr, .slice_type = slice_type });
 
             } else {
                 assert_msg(false, "Invalid inferred type for compound expression");

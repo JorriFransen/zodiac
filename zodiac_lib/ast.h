@@ -165,11 +165,12 @@ enum class AST_Expression_Kind
 typedef u32 AST_Expression_Flags;
 enum AST_Expression_Flag : AST_Expression_Flags
 {
-    AST_EXPR_FLAG_NONE     = 0x00,
-    AST_EXPR_FLAG_TYPED    = 0x01,
-    AST_EXPR_FLAG_CONST    = 0x02,
-    AST_EXPR_FLAG_LITERAL  = 0x04,
-    AST_EXPR_FLAG_LVALUE   = 0x08,
+    AST_EXPR_FLAG_NONE           = 0x000,
+    AST_EXPR_FLAG_TYPED          = 0x001,
+    AST_EXPR_FLAG_CONST          = 0x002,
+    AST_EXPR_FLAG_LITERAL        = 0x004,
+    AST_EXPR_FLAG_LVALUE         = 0x008,
+    AST_EXPR_FLAG_SLICE_COMPOUND = 0x010,
 };
 
 
@@ -318,17 +319,29 @@ struct AST_Variable_Declaration
     Type *resolved_type;
 };
 
-struct AST_Const_LValue
+enum class AST_Implicit_LValue_Kind
 {
-    AST_Expression *expr; // The expression that 'identifies' the declaration
-    AST_Declaration *decl;
+    CONST_LVALUE,
+    SLICE_COMPOUND,
+};
+
+struct AST_Implicit_LValue
+{
+    AST_Implicit_LValue_Kind kind;
+
+    AST_Expression *expr;
+
+    union {
+        AST_Declaration *decl;
+        Type *slice_type;
+    };
 };
 
 struct AST_Function_Declaration
 {
     Dynamic_Array<AST_Declaration *> params;
     Dynamic_Array<AST_Declaration *> variables;
-    Dynamic_Array<AST_Const_LValue> const_lvalues;
+    Dynamic_Array<AST_Implicit_LValue> implicit_lvalues;
 
     AST_Type_Spec *return_ts;
 

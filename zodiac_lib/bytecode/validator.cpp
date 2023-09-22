@@ -709,8 +709,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            const auto &params = fn->type->function.parameter_types;
-            auto fn_arg_count = params.count;
+            auto fn_arg_count = fn->arg_count;
             auto pushed_arg_count = stack_count(&visitor->arg_stack);
 
             if (fn_arg_count > pushed_arg_count) {
@@ -721,7 +720,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             bool arg_match = true;
             for (s64 i = 0; i < fn_arg_count; i++) {
                 auto arg_reg = stack_peek_ptr(&visitor->arg_stack, (fn_arg_count - 1) - i);
-                if (arg_reg->type != params[i]) {
+                if (arg_reg->type != fn->registers[i].type) {
                     bytecode_validator_report_error(validator, "Mismatching type for argument %d", i);
                     arg_match = false;
                 }

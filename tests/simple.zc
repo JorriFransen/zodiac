@@ -6,11 +6,25 @@ main :: () {
 
     slice : []s64 = arr;
 
-    // slice : []s64;
-    // slice = arr;
+    slice2 : []s64;
+    slice2 = arr;
 
     print(arr);
     print(*arr);
     print(slice);
+    print_slice(slice);
+    print(slice2);
+    print_slice(slice2);
+
+    slice3 : []s64 = { 11, 22, 33, 44, 55 };
+    print(slice3);
+    print_slice(slice3);
+
+    print_slice({2, 3, 4});
+
     return 0;
+}
+
+print_slice :: (s: []s64) {
+    print(s);
 }

@@ -33,7 +33,7 @@ struct Bytecode_Converter
     Hash_Table<AST_Declaration *, Bytecode_Register> allocations;
 
     // TODO: should these be separated per function?
-    Hash_Table<AST_Expression *, Bytecode_Register> const_lvalues;
+    Hash_Table<AST_Expression *, Bytecode_Register> implicit_lvalues;
 
     // TODO: should these be separated per file?
     Hash_Table<AST_Declaration *, Bytecode_Global_Handle> globals;
