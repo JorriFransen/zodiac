@@ -709,7 +709,18 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
             break;
         }
 
-        case AST_Statement_Kind::WHILE: assert(false);
+        case AST_Statement_Kind::WHILE: {
+
+            auto while_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+            assert(!stmt->while_stmt.scope);
+            stmt->while_stmt.scope = while_scope;
+
+            flatten_expression(resolver, stmt->while_stmt.cond, while_scope, dest);
+
+            flatten_statement(resolver, stmt->while_stmt.do_stmt, while_scope, dest);
+
+            break;
+        }
 
         case AST_Statement_Kind::RETURN: {
 
@@ -1152,11 +1163,10 @@ bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
             break;
         }
 
-        case AST_Statement_Kind::IF: {
+        case AST_Statement_Kind::IF:
+        case AST_Statement_Kind::WHILE: {
             break; // all resolved
         }
-
-        case AST_Statement_Kind::WHILE: assert(false);
 
         case AST_Statement_Kind::RETURN: {
             // Leaf, optional value should have been resolved already
@@ -1711,7 +1721,16 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
             break;
         }
 
-        case AST_Statement_Kind::WHILE: assert(false);
+        case AST_Statement_Kind::WHILE: {
+
+            auto cond = stmt->while_stmt.cond;
+
+            if (cond->resolved_type->kind != Type_Kind::BOOLEAN) {
+                fatal_resolve_error(resolver->ctx, cond, "Expected boolean type, got: %s", temp_type_string(cond->resolved_type).data);
+                return false;
+            }
+            break;
+        }
 
         case AST_Statement_Kind::RETURN: {
             AST_Declaration *fn_decl = enclosing_function(scope);

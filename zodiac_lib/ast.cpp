@@ -1084,8 +1084,8 @@ file_local void ast__print_statement_internal(String_Builder *sb, AST_Statement 
         string_builder_append(sb, " {\n");
         for (u64 i = 0; i < stmt->block.statements.count; i++) {
             ast_print_statement(sb, stmt->block.statements[i], indent + 1);
+            string_builder_append(sb, "\n");
         }
-        string_builder_append(sb, "\n");
         ast_print_indent(sb, indent);
         string_builder_append(sb, "}");
 

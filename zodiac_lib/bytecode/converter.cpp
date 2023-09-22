@@ -537,7 +537,27 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             break;
         }
 
-        case AST_Statement_Kind::WHILE: assert(false); break;
+        case AST_Statement_Kind::WHILE: {
+
+            auto cfn = (Bytecode_Function_Handle)bc->builder->insert_fn_index;
+
+            auto while_cond_block = bytecode_append_block(bc->builder, cfn, "while.cond");
+            auto while_do_block = bytecode_append_block(bc->builder, cfn, "while.do");
+            auto post_while_block = bytecode_append_block(bc->builder, cfn, "while.post");
+
+            bytecode_emit_jmp(bc->builder, while_cond_block);
+
+            bytecode_set_insert_point(bc->builder, cfn, while_cond_block);
+            auto cond_reg = ast_expr_to_bytecode(bc, stmt->while_stmt.cond);
+            bytecode_emit_jmp_if(bc->builder, cond_reg, while_do_block, post_while_block);
+
+            bytecode_set_insert_point(bc->builder, cfn, while_do_block);
+            ast_stmt_to_bytecode(bc, stmt->while_stmt.do_stmt);
+            bytecode_emit_jmp(bc->builder, while_cond_block);
+
+            bytecode_set_insert_point(bc->builder, cfn, post_while_block);
+            break;
+        }
 
         case AST_Statement_Kind::RETURN: {
             if (stmt->return_stmt.value) {
@@ -939,14 +959,26 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
                 case AST_Binary_Operator::EQ: {
                     return bytecode_emit_eq(bc->builder, lhs_reg, rhs_reg);
-                    break;
                 }
 
-                case AST_Binary_Operator::NEQ: assert(false); break;
-                case AST_Binary_Operator::LT: assert(false); break;
-                case AST_Binary_Operator::GT: assert(false); break;
-                case AST_Binary_Operator::LTEQ: assert(false); break;
-                case AST_Binary_Operator::GTEQ: assert(false); break;
+                case AST_Binary_Operator::NEQ: {
+                    return bytecode_emit_neq(bc->builder, lhs_reg, rhs_reg);
+                }
+
+                case AST_Binary_Operator::LT: {
+                    return bytecode_emit_lt(bc->builder, lhs_reg, rhs_reg);
+                }
+
+                case AST_Binary_Operator::GT: {
+                    return bytecode_emit_gt(bc->builder, lhs_reg, rhs_reg);
+                }
+
+                case AST_Binary_Operator::LTEQ: {
+                    return bytecode_emit_lteq(bc->builder, lhs_reg, rhs_reg);
+                }
+                case AST_Binary_Operator::GTEQ: {
+                    return bytecode_emit_gteq(bc->builder, lhs_reg, rhs_reg);
+                }
             }
             break;
         }
