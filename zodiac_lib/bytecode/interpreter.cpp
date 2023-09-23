@@ -1829,7 +1829,7 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
         }
 
         case Type_Kind::POINTER: {
-            fprintf(out_handle, "%p", reg.value.pointer);
+            fprintf(out_handle, "0x%llx", (unsigned long long)reg.value.pointer);
             break;
         }
 

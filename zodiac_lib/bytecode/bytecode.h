@@ -156,6 +156,8 @@ struct Bytecode_Block
     Dynamic_Array<Bytecode_Instruction> instructions = {};
 
     bool terminated = false;
+
+    Bytecode_Block_Handle next = -1;
 };
 
 struct Bytecode_Instruction_Handle
@@ -201,6 +203,9 @@ struct Bytecode_Function
     Dynamic_Array<Bytecode_Phi_Args> phi_args = {};
 
     Dynamic_Array<Type *> param_types = {};
+
+    Bytecode_Function_Handle first_block_handle = -1;
+    Bytecode_Function_Handle last_block_handle = -1;
 
     s32 arg_count;
     s32 required_stack_size = 0;
@@ -263,8 +268,11 @@ ZAPI Bytecode_Function_Handle bytecode_foreign_function_create(Bytecode_Builder 
 ZAPI Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, const char *cstr_name, Type *type, bool constant, Bytecode_Register initial_value = {});
 ZAPI Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, Atom name, Type *type, bool constant, Bytecode_Register initial_value = {});
 
+ZAPI Bytecode_Block_Handle bytecode_create_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, const char *cstr_name);
+ZAPI Bytecode_Block_Handle bytecode_create_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Atom name);
 ZAPI Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, const char* cstr_name);
 ZAPI Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Atom name);
+ZAPI Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Bytecode_Block_Handle block_handle);
 
 ZAPI void bytecode_set_insert_point(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Bytecode_Block_Handle block_handle);
 ZAPI Bytecode_Block *bytecode_get_insert_block(Bytecode_Builder *builder);

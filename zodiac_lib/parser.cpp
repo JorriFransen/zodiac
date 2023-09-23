@@ -368,6 +368,32 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         return ast_while_stmt_new(parser->context, { start_pos, do_stmt->range.end }, cond, do_stmt);
 
+    } else if (match_keyword(parser, keyword_for)) {
+
+        bool expect_rparen = false;
+        if (match_token(parser, '(')) {
+            expect_rparen = true;
+        }
+
+        AST_Declaration *init_decl = parse_declaration(parser, {});
+        assert(init_decl);
+
+        AST_Expression *cond_expr = parse_expression(parser);
+        expect_token(parser, ';');
+
+        AST_Statement *inc_stmt = parse_statement(parser, true);
+
+        auto end_pos = inc_stmt->range.end;
+
+        if (expect_rparen) {
+            end_pos = cur_tok(parser).range.end;
+            expect_token(parser, ')');
+        }
+
+        AST_Statement *body_stmt = parse_statement(parser);
+
+        return ast_for_stmt_new(parser->context, { start_pos, end_pos }, init_decl, cond_expr, inc_stmt, body_stmt);
+
     } else if (match_keyword(parser, keyword_return)) {
 
         AST_Expression *value = nullptr;

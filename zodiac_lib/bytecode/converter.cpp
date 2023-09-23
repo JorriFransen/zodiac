@@ -461,6 +461,8 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
     assert(bc);
     assert(stmt);
 
+    auto cfn = (Bytecode_Function_Handle)bc->builder->insert_fn_index;
+
     switch (stmt->kind) {
         case AST_Statement_Kind::INVALID: assert(false); break;
 
@@ -496,26 +498,25 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
         }
 
         case AST_Statement_Kind::IF: {
-            auto cfn = (Bytecode_Function_Handle)bc->builder->insert_fn_index;
             auto ta = temp_allocator_allocator();
 
             auto temp_blocks = temp_array_create<Bytecode_Block_Handle>(ta);
 
             for (s64 i = 0; i < stmt->if_stmt.blocks.count; i++) {
                 if (i > 0) {
-                    auto elif_handle = bytecode_append_block(bc->builder, cfn, "elif_cond");
+                    auto elif_handle = bytecode_create_block(bc->builder, cfn, "elif_cond");
                     dynamic_array_append(&temp_blocks.array, elif_handle);
                 }
-                auto block_handle = bytecode_append_block(bc->builder, cfn, "then");
+                auto block_handle = bytecode_create_block(bc->builder, cfn, "then");
                 dynamic_array_append(&temp_blocks.array, block_handle);
             }
 
             if (stmt->if_stmt.else_stmt) {
-                auto block_handle = bytecode_append_block(bc->builder, cfn, "else");
+                auto block_handle = bytecode_create_block(bc->builder, cfn, "else");
                 dynamic_array_append(&temp_blocks.array, block_handle);
             }
 
-            auto post_if_block_handle = bytecode_append_block(bc->builder, cfn, "post_if");
+            auto post_if_block_handle = bytecode_create_block(bc->builder, cfn, "post_if");
             dynamic_array_append(&temp_blocks.array, post_if_block_handle);
 
             auto block_index = 0;
@@ -524,6 +525,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
                 if (i > 0) {
                     // The first condition doesn't need it's own block
+                    bytecode_append_block(bc->builder, cfn, temp_blocks[block_index]);
                     bytecode_set_insert_point(bc->builder, cfn, temp_blocks.array[block_index++]);
                 }
                 Bytecode_Register cond_reg = ast_expr_to_bytecode(bc, if_block->cond);
@@ -533,6 +535,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
                 bytecode_emit_jmp_if(bc->builder, cond_reg, then_block, else_block);
 
+                bytecode_append_block(bc->builder, cfn, then_block);
                 bytecode_set_insert_point(bc->builder, cfn, then_block);
                 ast_stmt_to_bytecode(bc, if_block->then);
                 bytecode_set_insert_point(bc->builder, cfn, then_block);
@@ -548,6 +551,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                 assert(temp_blocks.array.count >= 2);
                 auto else_block = temp_blocks.array[temp_blocks.array.count - 2];
 
+                bytecode_append_block(bc->builder, cfn, else_block);
                 bytecode_set_insert_point(bc->builder, cfn, else_block);
                 ast_stmt_to_bytecode(bc, stmt->if_stmt.else_stmt);
                 bytecode_set_insert_point(bc->builder, cfn, else_block);
@@ -557,6 +561,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                 }
             }
 
+            bytecode_append_block(bc->builder, cfn, post_if_block_handle);
             bytecode_set_insert_point(bc->builder, cfn, post_if_block_handle);
 
             temp_array_destroy(&temp_blocks);
@@ -564,7 +569,51 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             break;
         }
 
-        case AST_Statement_Kind::WHILE: assert(false); break;
+        case AST_Statement_Kind::WHILE: {
+
+            auto while_cond_block = bytecode_append_block(bc->builder, cfn, "while.cond");
+            auto while_body_block = bytecode_create_block(bc->builder, cfn, "while.body");
+            auto post_while_block = bytecode_create_block(bc->builder, cfn, "while.post");
+
+            bytecode_emit_jmp(bc->builder, while_cond_block);
+
+            bytecode_set_insert_point(bc->builder, cfn, while_cond_block);
+            auto cond_reg = ast_expr_to_bytecode(bc, stmt->while_stmt.cond);
+            bytecode_emit_jmp_if(bc->builder, cond_reg, while_body_block, post_while_block);
+
+            while_body_block = bytecode_append_block(bc->builder, cfn, while_body_block);
+            bytecode_set_insert_point(bc->builder, cfn, while_body_block);
+            ast_stmt_to_bytecode(bc, stmt->while_stmt.body_stmt);
+            bytecode_emit_jmp(bc->builder, while_cond_block);
+
+            post_while_block = bytecode_append_block(bc->builder, cfn, post_while_block);
+            bytecode_set_insert_point(bc->builder, cfn, post_while_block);
+            break;
+        }
+
+
+        case AST_Statement_Kind::FOR: {
+
+            auto for_cond_block = bytecode_append_block(bc->builder, cfn, "for.cond");
+            auto for_body_block = bytecode_create_block(bc->builder, cfn, "for.body");
+            auto post_for_block = bytecode_create_block(bc->builder, cfn, "for.post");
+
+            bytecode_emit_jmp(bc->builder, for_cond_block);
+
+            bytecode_set_insert_point(bc->builder, cfn, for_cond_block);
+            auto cond_reg = ast_expr_to_bytecode(bc, stmt->for_stmt.cond_expr);
+            bytecode_emit_jmp_if(bc->builder, cond_reg, for_body_block, post_for_block);
+
+            for_body_block = bytecode_append_block(bc->builder, cfn, for_body_block);
+            bytecode_set_insert_point(bc->builder, cfn, for_body_block);
+            ast_stmt_to_bytecode(bc, stmt->for_stmt.body_stmt);
+            ast_stmt_to_bytecode(bc, stmt->for_stmt.inc_stmt);
+            bytecode_emit_jmp(bc->builder, for_cond_block);
+
+            post_for_block = bytecode_append_block(bc->builder, cfn, post_for_block);
+            bytecode_set_insert_point(bc->builder, cfn, post_for_block);
+            break;
+        }
 
         case AST_Statement_Kind::RETURN: {
             if (stmt->return_stmt.value) {
@@ -981,14 +1030,26 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
                 case AST_Binary_Operator::EQ: {
                     return bytecode_emit_eq(bc->builder, lhs_reg, rhs_reg);
-                    break;
                 }
 
-                case AST_Binary_Operator::NEQ: assert(false); break;
-                case AST_Binary_Operator::LT: assert(false); break;
-                case AST_Binary_Operator::GT: assert(false); break;
-                case AST_Binary_Operator::LTEQ: assert(false); break;
-                case AST_Binary_Operator::GTEQ: assert(false); break;
+                case AST_Binary_Operator::NEQ: {
+                    return bytecode_emit_neq(bc->builder, lhs_reg, rhs_reg);
+                }
+
+                case AST_Binary_Operator::LT: {
+                    return bytecode_emit_lt(bc->builder, lhs_reg, rhs_reg);
+                }
+
+                case AST_Binary_Operator::GT: {
+                    return bytecode_emit_gt(bc->builder, lhs_reg, rhs_reg);
+                }
+
+                case AST_Binary_Operator::LTEQ: {
+                    return bytecode_emit_lteq(bc->builder, lhs_reg, rhs_reg);
+                }
+                case AST_Binary_Operator::GTEQ: {
+                    return bytecode_emit_gteq(bc->builder, lhs_reg, rhs_reg);
+                }
             }
             break;
         }
@@ -1145,12 +1206,31 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
         case AST_Expression_Kind::MEMBER: assert(false); break;
         case AST_Expression_Kind::INDEX: assert(false); break;
         case AST_Expression_Kind::CALL: assert(false); break;
-        case AST_Expression_Kind::UNARY: assert(false); break;
+
+        case AST_Expression_Kind::UNARY: {
+
+
+            switch (expr->unary.op) {
+
+                case AST_Unary_Operator::INVALID: assert(false); break;
+
+                case AST_Unary_Operator::PLUS:
+                case AST_Unary_Operator::MINUS: {
+                    Integer_Value result = resolve_constant_integer_expr(expr, type);
+                    return bytecode_integer_literal(bc->builder, type, result);
+                }
+
+                case AST_Unary_Operator::ADDRESS_OF: assert(false); break;
+                case AST_Unary_Operator::DEREF: assert(false); break;
+            }
+
+
+        }
 
         case AST_Expression_Kind::BINARY: {
             assert(type->kind == Type_Kind::INTEGER);
             Integer_Value result = resolve_constant_integer_binary_expr(expr, type);
-            return  bytecode_integer_literal(bc->builder, type, result);
+            return bytecode_integer_literal(bc->builder, type, result);
             break;
         }
 

@@ -61,7 +61,32 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
         case AST_Expression_Kind::MEMBER: assert(false); break;
         case AST_Expression_Kind::INDEX: assert(false); break;
         case AST_Expression_Kind::CALL: assert(false); break;
-        case AST_Expression_Kind::UNARY: assert(false); break;
+
+        case AST_Expression_Kind::UNARY: {
+            switch (expr->unary.op) {
+                case AST_Unary_Operator::INVALID: assert(false); break;
+
+                case AST_Unary_Operator::PLUS: {
+                    return resolve_constant_integer_expr(expr->unary.operand);
+                }
+
+                case AST_Unary_Operator::MINUS: {
+                    Integer_Value operand_val = resolve_constant_integer_expr(expr->unary.operand, type);
+                    switch (type->bit_size) {
+                        default: assert(false);
+                        case 8: operand_val.s8 = -operand_val.s8;
+                        case 16: operand_val.s16 = -operand_val.s16;
+                        case 32: operand_val.s32 = -operand_val.s32;
+                        case 64: operand_val.s64 = -operand_val.s64;
+                    }
+
+                    return operand_val;
+                }
+
+                case AST_Unary_Operator::ADDRESS_OF: assert(false); break;
+                case AST_Unary_Operator::DEREF: assert(false); break;
+            }
+        }
 
         case AST_Expression_Kind::BINARY: {
             return resolve_constant_integer_binary_expr(expr, type);
@@ -87,6 +112,7 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
 Integer_Value resolve_constant_integer_binary_expr(AST_Expression *expr, Type *type/*=nullptr*/)
 {
     assert(expr);
+    assert(expr->kind == AST_Expression_Kind::BINARY);
     assert(EXPR_IS_CONST(expr));
     assert(expr->resolved_type);
 

@@ -119,10 +119,14 @@ void bytecode_print_function(const Bytecode_Builder *builder, const Bytecode_Fun
     string_builder_append(sb, "\n");
 
     if (!is_foreign) {
-        for (s64 i = 0; i < function->blocks.count; i++) {
-            bytecode_print_block(builder, function, &function->blocks[i], sb, 2);
-        }
+        assert(function->blocks.count);
+        Bytecode_Function_Handle block_handle = function->first_block_handle;
 
+        while (block_handle >= 0) {
+            assert(block_handle < function->blocks.count);
+            bytecode_print_block(builder, function, &function->blocks[block_handle], sb, 2);
+            block_handle = function->blocks[block_handle].next;
+        }
     }
 }
 

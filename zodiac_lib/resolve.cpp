@@ -714,7 +714,34 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
             break;
         }
 
-        case AST_Statement_Kind::WHILE: assert(false);
+        case AST_Statement_Kind::WHILE: {
+
+            auto while_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+            assert(!stmt->while_stmt.scope);
+            stmt->while_stmt.scope = while_scope;
+
+            flatten_expression(resolver, stmt->while_stmt.cond, while_scope, dest);
+
+            flatten_statement(resolver, stmt->while_stmt.body_stmt, while_scope, dest);
+
+            break;
+        }
+
+
+        case AST_Statement_Kind::FOR: {
+
+            auto for_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+            assert(!stmt->for_stmt.scope);
+            stmt->for_stmt.scope = for_scope;
+
+            flatten_declaration(resolver, stmt->for_stmt.init_decl, for_scope, dest);
+            flatten_expression(resolver, stmt->for_stmt.cond_expr, for_scope, dest);
+            flatten_statement(resolver, stmt->for_stmt.inc_stmt, for_scope, dest);
+
+            flatten_statement(resolver, stmt->for_stmt.body_stmt, for_scope, dest);
+
+            break;
+        }
 
         case AST_Statement_Kind::RETURN: {
 
@@ -809,12 +836,11 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
         }
 
         case AST_Expression_Kind::UNARY: {
-            flatten_expression(resolver, expr->unary.operand, scope, dest);
+            flatten_expression(resolver, expr->unary.operand, scope, dest, infer_node);
             break;
         }
 
         case AST_Expression_Kind::BINARY: {
-            // assert(infer_type_from);
 
             Infer_Node *infer_from = infer_node;
             if (expr->binary.lhs->kind == AST_Expression_Kind::INTEGER_LITERAL) {
@@ -1162,11 +1188,19 @@ bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
             break;
         }
 
-        case AST_Statement_Kind::IF: {
+        case AST_Statement_Kind::IF:
+        case AST_Statement_Kind::WHILE: {
             break; // all resolved
         }
 
-        case AST_Statement_Kind::WHILE: assert(false);
+        case AST_Statement_Kind::FOR: {
+            if (stmt->for_stmt.init_decl->kind != AST_Declaration_Kind::VARIABLE) {
+                fatal_resolve_error(ctx, stmt->for_stmt.init_decl, "Expected variable declaration in 'for'");
+                result = false;
+                break;
+            }
+            break;
+        }
 
         case AST_Statement_Kind::RETURN: {
             // Leaf, optional value should have been resolved already
@@ -1725,7 +1759,26 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
             break;
         }
 
-        case AST_Statement_Kind::WHILE: assert(false);
+        case AST_Statement_Kind::WHILE: {
+
+            auto cond = stmt->while_stmt.cond;
+
+            if (cond->resolved_type->kind != Type_Kind::BOOLEAN) {
+                fatal_resolve_error(resolver->ctx, cond, "Expected boolean type, got: %s", temp_type_string(cond->resolved_type).data);
+                return false;
+            }
+            break;
+        }
+
+        case AST_Statement_Kind::FOR: {
+
+            auto cond_expr = stmt->for_stmt.cond_expr;
+            if (cond_expr->resolved_type->kind != Type_Kind::BOOLEAN) {
+                fatal_resolve_error(resolver->ctx, cond_expr, "Expected boolean type in 'for' conditional, got: '%'", temp_type_string(cond_expr->resolved_type));
+                return false;
+            }
+            break;
+        }
 
         case AST_Statement_Kind::RETURN: {
             AST_Declaration *fn_decl = enclosing_function(scope);
@@ -2039,7 +2092,21 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                 case AST_Unary_Operator::PLUS:
                 case AST_Unary_Operator::MINUS: {
-                    assert(false);
+                    if (operand->resolved_type->kind != Type_Kind::INTEGER &&
+                        operand->resolved_type->kind != Type_Kind::UNSIZED_INTEGER) {
+                        fatal_resolve_error(ctx, operand, "Expected integer type after unary %c", expr->unary.op);
+                        return false;
+                    }
+
+                    if (operand->resolved_type->kind == Type_Kind::INTEGER) {
+                        if (expr->unary.op == AST_Unary_Operator::MINUS &&
+                            !operand->resolved_type->integer.sign) {
+                            fatal_resolve_error(ctx, operand, "Expected signed integer after unary '-'");
+                            return false;
+                        }
+                    }
+
+                    expr->resolved_type = operand->resolved_type;
                     break;
                 }
 
