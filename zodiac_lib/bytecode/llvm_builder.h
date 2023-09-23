@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bytecode/bytecode.h"
+#include "containers/dynamic_array.h"
 #include "containers/hash_table.h"
 #include "containers/stack.h"
 #include "defines.h"
@@ -73,8 +74,6 @@ struct Real_Value;
 struct Type;
 struct Zodiac_Context;
 union Integer_Value;
-
-template <typename Element_Type> struct Dynamic_Array;
 
 namespace Bytecode {
 
