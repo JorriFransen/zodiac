@@ -722,6 +722,22 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
             break;
         }
 
+
+        case AST_Statement_Kind::FOR: {
+
+            auto for_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+            assert(!stmt->for_stmt.scope);
+            stmt->for_stmt.scope = for_scope;
+
+            flatten_statement(resolver, stmt->for_stmt.init_stmt, for_scope, dest);
+            flatten_expression(resolver, stmt->for_stmt.cond_expr, for_scope, dest);
+            flatten_statement(resolver, stmt->for_stmt.inc_stmt, for_scope, dest);
+
+            flatten_statement(resolver, stmt->for_stmt.body_stmt, for_scope, dest);
+
+            break;
+        }
+
         case AST_Statement_Kind::RETURN: {
 
             if (stmt->return_stmt.value) {
@@ -1164,7 +1180,8 @@ bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
         }
 
         case AST_Statement_Kind::IF:
-        case AST_Statement_Kind::WHILE: {
+        case AST_Statement_Kind::WHILE:
+        case AST_Statement_Kind::FOR: {
             break; // all resolved
         }
 
@@ -1803,6 +1820,8 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
 
             break;
         }
+
+        case AST_Statement_Kind::FOR: assert(false); break;
     }
 
     if (result) {

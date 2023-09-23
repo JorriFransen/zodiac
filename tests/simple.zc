@@ -3,23 +3,8 @@
 
 main :: () {
 
-    // for (i := 0; i < 11; i = i + 1) {
-    //     print("i: ", i);
-    // }
-
-    x := 0;
-    while x < 11 {
-        print(x);
-
-        if (x > 1) {
-            print(x * x);
-        } else if (x == 0) {
-            print("00");
-        } else {
-            print("11");
-        }
-
-        x = x + 1;
+    for (i := 0; i < 11; i = i + 1) {
+        print("i: ", i);
     }
 
     return 0;

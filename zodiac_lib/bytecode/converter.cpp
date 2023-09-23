@@ -585,6 +585,8 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             bytecode_emit_print(bc->builder, newline_value_reg);
             break;
         }
+
+        case AST_Statement_Kind::FOR: assert(false); break;
     }
 
     return true;
