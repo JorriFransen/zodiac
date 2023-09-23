@@ -20,7 +20,6 @@ zodiac_disable_msvc_llvm_warnings()
 #include <llvm/ADT/StringRef.h>
 #include <llvm/ADT/Twine.h>
 #include <llvm/IR/Argument.h>
-#include <llvm/IR/BasicBlock.h>
 
 // iwyu complains about this on some platforms, constantfolder us used by the Create*Cast functions from llvm.
 #include <llvm/IR/ConstantFolder.h> // IWYU pragma: keep
@@ -228,19 +227,36 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
 
     assert(stack_count(&builder->arg_stack) == 0);
 
+    Bytecode_Block_Handle bc_block_handle = bc_func->first_block_handle;
+
+    auto block_indices = temp_array_create<s64>(temp_allocator_allocator(), bc_func->blocks.count);
+    block_indices.array.count = bc_func->blocks.count;
+
     for (s64 block_index = 0; block_index < bc_func->blocks.count; block_index++) {
-        Bytecode_Block *bc_block = &bc_func->blocks[block_index];
+
+        assert(bc_block_handle >= 0 && bc_block_handle < bc_func->blocks.count);
+        Bytecode_Block *bc_block = &bc_func->blocks[bc_block_handle];
 
         llvm::StringRef block_name(bc_block->name.data, bc_block->name.length);
         llvm::BasicBlock::Create(*builder->llvm_context, block_name, llvm_func);
+
+        block_indices[bc_block_handle] = block_index;
+
+        bc_block_handle = bc_block->next;
     }
+
+    assert(bc_block_handle == -1);
 
     auto llvm_block_it = llvm_func->begin();
 
     bool result = true;
 
+    bc_block_handle = bc_func->first_block_handle;
+
     for (s64 block_index = 0; block_index < bc_func->blocks.count; block_index++, llvm_block_it++) {
-        Bytecode_Block *bc_block = &bc_func->blocks[block_index];
+        assert(bc_block_handle >= 0 && bc_block_handle < bc_func->blocks.count);
+        Bytecode_Block *bc_block = &bc_func->blocks[bc_block_handle];
+
         llvm::BasicBlock *llvm_block = &*llvm_block_it;
         builder->ir_builder->SetInsertPoint(llvm_block);
 
@@ -249,7 +265,7 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
         for (s64 inst_index = 0; inst_index < bc_block->instructions.count; inst_index++) {
             Bytecode_Instruction &bc_inst = bc_block->instructions[inst_index];
 
-            bool inst_result = llvm_builder_emit_instruction(builder, bc_inst);
+            bool inst_result = llvm_builder_emit_instruction(builder, bc_inst, block_indices.array);
             assert(inst_result);
             if (!inst_result) {
                 ZERROR("[llvm_builder] Unable to emit instruction (index '%lli') from function '%.*s'\n",
@@ -265,7 +281,11 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
                     (int)bc_func->name.length, bc_func->name.data);
             result = false;
         }
+
+        bc_block_handle = bc_block->next;
     }
+
+    assert(bc_block_handle == -1);
 
     assert(stack_count(&builder->arg_stack) == 0);
     builder->current_function = nullptr;
@@ -332,7 +352,7 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
     break; \
 }
 
-bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruction &bc_inst)
+bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruction &bc_inst, Array_Ref<s64> block_indices)
 {
     auto irb = builder->ir_builder;
     auto ast_allocator = &builder->zodiac_context->ast_allocator;
@@ -790,8 +810,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             assert(bc_inst.a.kind == Bytecode_Register_Kind::BLOCK);
             auto block_handle = bc_inst.a.block_handle;
             assert(block_handle >= 0 && (size_t)block_handle < builder->current_function->size());
-            auto llvm_block_it = builder->current_function->begin();
-            llvm::BasicBlock *llvm_block = &*std::next(llvm_block_it, block_handle);
+            auto llvm_block = llvm_block_by_index(builder, block_indices[block_handle]);
             irb->CreateBr(llvm_block);
             break;
         }
@@ -805,16 +824,14 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             auto then_block_handle = bc_inst.b.block_handle;
             auto else_block_handle = bc_inst.dest.block_handle;
 
-            auto llvm_block_it = builder->current_function->begin();
-
 #ifndef NDEBUG
             auto block_count = builder->current_function->size();
 #endif
             assert(then_block_handle >= 0 && (size_t)then_block_handle < block_count);
             assert(else_block_handle >= 0 && (size_t)else_block_handle < block_count);
 
-            llvm::BasicBlock *llvm_then_block = &*std::next(llvm_block_it, then_block_handle);
-            llvm::BasicBlock *llvm_else_block = &*std::next(llvm_block_it, else_block_handle);
+            auto llvm_then_block = llvm_block_by_index(builder, block_indices[then_block_handle]);
+            auto llvm_else_block = llvm_block_by_index(builder, block_indices[else_block_handle]);
 
             irb->CreateCondBr(llvm_cond, llvm_then_block, llvm_else_block);
             break;
@@ -1486,6 +1503,12 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
     assert(false);
     ZFATAL("[llvm_builder] Unhandled case in llvm_type_from_ast_type\n");
     return nullptr;
+}
+
+llvm::BasicBlock *llvm_block_by_index(LLVM_Builder *builder, s64 index)
+{
+    auto llvm_block_it = builder->current_function->begin();
+    return &*std::next(llvm_block_it, index);
 }
 
 llvm::Function *llvm_get_intrinsic(LLVM_Builder *builder, Type *fn_type, const char *name)

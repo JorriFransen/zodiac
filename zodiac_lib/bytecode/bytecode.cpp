@@ -257,18 +257,16 @@ Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, Atom na
     return (Bytecode_Global_Handle)index;
 }
 
-Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, const char* cstr_name)
+Bytecode_Block_Handle bytecode_create_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, const char *cstr_name)
 {
     Atom atom = atom_get(&builder->zodiac_context->atoms, cstr_name);
-    return bytecode_append_block(builder, fn_handle, atom);
+    return bytecode_create_block(builder, fn_handle, atom);
 }
 
-Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Atom name)
+Bytecode_Block_Handle bytecode_create_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Atom name)
 {
     assert(fn_handle >= 0 && fn_handle < builder->functions.count);
     auto fn = &builder->functions[fn_handle];
-
-    auto index = fn->blocks.count;
 
     bool duplicate = false;
     for (s64 i = 0; i < fn->blocks.count; i++) {
@@ -310,9 +308,41 @@ Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_
 
     dynamic_array_create(builder->bytecode_allocator, &block.instructions);
 
+    auto index = fn->blocks.count;
     dynamic_array_append(&fn->blocks, block);
 
     return index;
+}
+
+Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, const char* cstr_name)
+{
+    Atom atom = atom_get(&builder->zodiac_context->atoms, cstr_name);
+    return bytecode_append_block(builder, fn_handle, atom);
+}
+
+Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Atom name)
+{
+    assert(fn_handle >= 0 && fn_handle < builder->functions.count);
+
+    auto result = bytecode_create_block(builder, fn_handle, name);
+    return bytecode_append_block(builder, fn_handle, result);
+}
+
+Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Bytecode_Block_Handle block_handle)
+{
+    assert(fn_handle >= 0 && fn_handle < builder->functions.count);
+    auto fn = &builder->functions[fn_handle];
+
+    if (fn->first_block_handle < 0) {
+        fn->first_block_handle = block_handle;
+        fn->last_block_handle = block_handle;
+    } else {
+        auto last_block = &fn->blocks[fn->last_block_handle];
+        last_block->next = block_handle;
+        fn->last_block_handle = block_handle;
+    }
+
+    return block_handle;
 }
 
 void bytecode_set_insert_point(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Bytecode_Block_Handle block_handle)

@@ -46,6 +46,7 @@ zodiac_disable_msvc_llvm_warnings()
 
 namespace llvm {
 
+class BasicBlock;
 class Constant;
 class Function;
 class GlobalVariable;
@@ -129,7 +130,7 @@ ZAPI void llvm_builder_emit_global(LLVM_Builder *builder, Bytecode_Global_Handle
 ZAPI void llvm_builder_register_function(LLVM_Builder *builder, Bytecode_Function_Handle fn_handle);
 ZAPI bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle fn_handle);
 
-ZAPI bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruction &bc_inst);
+ZAPI bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruction &bc_inst, Array_Ref<s64> block_indices);
 
 ZAPI void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm::Value *llvm_val, bool quote_strings = false);
 
@@ -145,6 +146,8 @@ ZAPI llvm::Constant *llvm_builder_emit_array_literal(LLVM_Builder *builder, Type
 ZAPI void llvm_builder_store_result(LLVM_Builder *builder, const Bytecode_Register &bc_dest_reg, llvm::Value *result_val);
 
 ZAPI llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type);
+
+ZAPI llvm::BasicBlock *llvm_block_by_index(LLVM_Builder *builder, s64 index);
 
 ZAPI llvm::Function *llvm_get_intrinsic(LLVM_Builder *builder, Type *fn_type, const char *name);
 

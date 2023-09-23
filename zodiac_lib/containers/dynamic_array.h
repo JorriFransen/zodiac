@@ -193,6 +193,14 @@ struct Temp_Array
 {
     Temporary_Allocator_Mark mark;
     Dynamic_Array<T> array;
+
+    T& operator[](s64 index) {
+        return array.operator[](index);
+    }
+
+    const T& operator[](s64 index) const {
+        return array.operator[](index);
+    }
 };
 
 template <typename T>

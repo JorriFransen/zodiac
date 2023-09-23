@@ -476,19 +476,19 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
             for (s64 i = 0; i < stmt->if_stmt.blocks.count; i++) {
                 if (i > 0) {
-                    auto elif_handle = bytecode_append_block(bc->builder, cfn, "elif_cond");
+                    auto elif_handle = bytecode_create_block(bc->builder, cfn, "elif_cond");
                     dynamic_array_append(&temp_blocks.array, elif_handle);
                 }
-                auto block_handle = bytecode_append_block(bc->builder, cfn, "then");
+                auto block_handle = bytecode_create_block(bc->builder, cfn, "then");
                 dynamic_array_append(&temp_blocks.array, block_handle);
             }
 
             if (stmt->if_stmt.else_stmt) {
-                auto block_handle = bytecode_append_block(bc->builder, cfn, "else");
+                auto block_handle = bytecode_create_block(bc->builder, cfn, "else");
                 dynamic_array_append(&temp_blocks.array, block_handle);
             }
 
-            auto post_if_block_handle = bytecode_append_block(bc->builder, cfn, "post_if");
+            auto post_if_block_handle = bytecode_create_block(bc->builder, cfn, "post_if");
             dynamic_array_append(&temp_blocks.array, post_if_block_handle);
 
             auto block_index = 0;
@@ -497,6 +497,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
                 if (i > 0) {
                     // The first condition doesn't need it's own block
+                    bytecode_append_block(bc->builder, cfn, temp_blocks[block_index]);
                     bytecode_set_insert_point(bc->builder, cfn, temp_blocks.array[block_index++]);
                 }
                 Bytecode_Register cond_reg = ast_expr_to_bytecode(bc, if_block->cond);
@@ -506,6 +507,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
                 bytecode_emit_jmp_if(bc->builder, cond_reg, then_block, else_block);
 
+                bytecode_append_block(bc->builder, cfn, then_block);
                 bytecode_set_insert_point(bc->builder, cfn, then_block);
                 ast_stmt_to_bytecode(bc, if_block->then);
                 bytecode_set_insert_point(bc->builder, cfn, then_block);
@@ -521,6 +523,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                 assert(temp_blocks.array.count >= 2);
                 auto else_block = temp_blocks.array[temp_blocks.array.count - 2];
 
+                bytecode_append_block(bc->builder, cfn, else_block);
                 bytecode_set_insert_point(bc->builder, cfn, else_block);
                 ast_stmt_to_bytecode(bc, stmt->if_stmt.else_stmt);
                 bytecode_set_insert_point(bc->builder, cfn, else_block);
@@ -530,6 +533,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                 }
             }
 
+            bytecode_append_block(bc->builder, cfn, post_if_block_handle);
             bytecode_set_insert_point(bc->builder, cfn, post_if_block_handle);
 
             temp_array_destroy(&temp_blocks);
@@ -542,8 +546,8 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             auto cfn = (Bytecode_Function_Handle)bc->builder->insert_fn_index;
 
             auto while_cond_block = bytecode_append_block(bc->builder, cfn, "while.cond");
-            auto while_do_block = bytecode_append_block(bc->builder, cfn, "while.do");
-            auto post_while_block = bytecode_append_block(bc->builder, cfn, "while.post");
+            auto while_do_block = bytecode_create_block(bc->builder, cfn, "while.do");
+            auto post_while_block = bytecode_create_block(bc->builder, cfn, "while.post");
 
             bytecode_emit_jmp(bc->builder, while_cond_block);
 
@@ -551,10 +555,12 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             auto cond_reg = ast_expr_to_bytecode(bc, stmt->while_stmt.cond);
             bytecode_emit_jmp_if(bc->builder, cond_reg, while_do_block, post_while_block);
 
+            while_do_block = bytecode_append_block(bc->builder, cfn, while_do_block);
             bytecode_set_insert_point(bc->builder, cfn, while_do_block);
             ast_stmt_to_bytecode(bc, stmt->while_stmt.do_stmt);
             bytecode_emit_jmp(bc->builder, while_cond_block);
 
+            post_while_block = bytecode_append_block(bc->builder, cfn, post_while_block);
             bytecode_set_insert_point(bc->builder, cfn, post_while_block);
             break;
         }
