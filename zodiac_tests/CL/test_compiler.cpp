@@ -2092,6 +2092,59 @@ Hello, Zodiac!
     return MUNIT_OK;
 }
 
+MunitResult While(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () {
+            x := 0;
+            while x < 11 {
+                print(x);
+
+                if (x > 1) {
+                    print(x * x);
+                } else if (x == 0) {
+                    print("00");
+                } else {
+                    print("11");
+                }
+
+                x = x + 1;
+            }
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(0
+00
+1
+11
+2
+4
+3
+9
+4
+16
+5
+25
+6
+36
+7
+49
+8
+64
+9
+81
+10
+100)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef RESOLVE_ERR
 
 }}

@@ -96,7 +96,9 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Run_Local_Unused) \
     X(Non_Constant_Compound) \
     X(Foreign_Function) \
-    X(Strings)
+    X(Strings) \
+    X(While) \
+
 
 // Function declarations
 #define X(name) MunitResult name(const MunitParameter params[], void *user_data_or_fixture);
