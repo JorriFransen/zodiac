@@ -267,22 +267,22 @@ void ast_if_stmt_create(Dynamic_Array<AST_If_Block> blocks, AST_Statement *else_
     out_stmt->if_stmt.else_scope = nullptr;
 }
 
-void ast_while_stmt_create(AST_Expression *cond, AST_Statement *do_stmt, AST_Statement *out_stmt)
+void ast_while_stmt_create(AST_Expression *cond, AST_Statement *body_stmt, AST_Statement *out_stmt)
 {
-    debug_assert(cond && do_stmt && out_stmt);
+    debug_assert(cond && body_stmt && out_stmt);
 
     ast_statement_create(AST_Statement_Kind::WHILE, out_stmt);
 
     out_stmt->while_stmt.cond = cond;
-    out_stmt->while_stmt.do_stmt = do_stmt;
+    out_stmt->while_stmt.body_stmt = body_stmt;
     out_stmt->while_stmt.scope = nullptr;
 }
 
-void ast_for_stmt_create(AST_Statement *init_stmt, AST_Expression *cond_expr, AST_Statement *inc_stmt, AST_Statement *body_stmt, AST_Statement *out_stmt)
+void ast_for_stmt_create(AST_Declaration *init_decl, AST_Expression *cond_expr, AST_Statement *inc_stmt, AST_Statement *body_stmt, AST_Statement *out_stmt)
 {
     ast_statement_create(AST_Statement_Kind::FOR, out_stmt);
 
-    out_stmt->for_stmt.init_stmt = init_stmt;
+    out_stmt->for_stmt.init_decl = init_decl;
     out_stmt->for_stmt.cond_expr = cond_expr;
     out_stmt->for_stmt.inc_stmt = inc_stmt;
     out_stmt->for_stmt.body_stmt = body_stmt;
@@ -714,19 +714,19 @@ AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynamic_
     return stmt;
 }
 
-AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *cond, AST_Statement *do_stmt)
+AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *cond, AST_Statement *body_stmt)
 {
-    debug_assert(ctx && cond && do_stmt);
+    debug_assert(ctx && cond && body_stmt);
 
     auto stmt = ast_statement_new(ctx, range);
-    ast_while_stmt_create(cond, do_stmt, stmt);
+    ast_while_stmt_create(cond, body_stmt, stmt);
     return stmt;
 }
 
-AST_Statement *ast_for_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Statement *init_stmt, AST_Expression *cond_expr, AST_Statement *inc_stmt, AST_Statement *body_stmt)
+AST_Statement *ast_for_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Declaration *init_decl, AST_Expression *cond_expr, AST_Statement *inc_stmt, AST_Statement *body_stmt)
 {
     auto stmt = ast_statement_new(ctx, range);
-    ast_for_stmt_create(init_stmt, cond_expr, inc_stmt, body_stmt, stmt);
+    ast_for_stmt_create(init_decl, cond_expr, inc_stmt, body_stmt, stmt);
     return stmt;
 }
 
@@ -1190,7 +1190,19 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
             semicolon = false;
             string_builder_append(sb, "while ");
             ast_print_expression(sb, stmt->while_stmt.cond);
-            ast__print_statement_internal(sb, stmt->while_stmt.do_stmt, indent, false);
+            ast__print_statement_internal(sb, stmt->while_stmt.body_stmt, indent, false);
+            break;
+        }
+
+        case AST_Statement_Kind::FOR: {
+            semicolon = false;
+            string_builder_append(sb, "for ");
+            ast_print_declaration(sb, stmt->for_stmt.init_decl);
+            string_builder_append(sb, " ");
+            ast_print_expression(sb, stmt->for_stmt.cond_expr);
+            string_builder_append(sb, "; ");
+            ast_print_statement(sb, stmt->for_stmt.inc_stmt);
+            ast__print_statement_internal(sb, stmt->for_stmt.body_stmt, indent, false);
             break;
         }
 
@@ -1215,8 +1227,6 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
             string_builder_append(sb, ")");
             break;
         }
-
-        case AST_Statement_Kind::FOR: assert(false); break;
     }
 
     if (semicolon) string_builder_append(sb, ";");

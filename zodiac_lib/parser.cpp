@@ -375,8 +375,8 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
             expect_rparen = true;
         }
 
-        AST_Statement *init_stmt = parse_statement(parser);
-        // Parse statement handles the semicolon
+        AST_Declaration *init_decl = parse_declaration(parser, {});
+        assert(init_decl);
 
         AST_Expression *cond_expr = parse_expression(parser);
         expect_token(parser, ';');
@@ -392,7 +392,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         AST_Statement *body_stmt = parse_statement(parser);
 
-        return ast_for_stmt_new(parser->context, { start_pos, end_pos }, init_stmt, cond_expr, inc_stmt, body_stmt);
+        return ast_for_stmt_new(parser->context, { start_pos, end_pos }, init_decl, cond_expr, inc_stmt, body_stmt);
 
     } else if (match_keyword(parser, keyword_return)) {
 

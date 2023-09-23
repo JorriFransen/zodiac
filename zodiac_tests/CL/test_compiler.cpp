@@ -2145,6 +2145,45 @@ R"OUT_STR(0
     return MUNIT_OK;
 }
 
+MunitResult For(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () {
+            for (i := 0; i < 11; i = i + 1) {
+                x := i;
+
+                if (x > 1) {
+                    x = x * x;
+                } else if (x == 0) {
+                    x = -2;
+                } else {
+                    x = -1;
+                }
+                print("i: ", i, ", x: ", x);
+            }
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(i: 0, x: -2
+i: 1, x: -1
+i: 2, x: 4
+i: 3, x: 9
+i: 4, x: 16
+i: 5, x: 25
+i: 6, x: 36
+i: 7, x: 49
+i: 8, x: 64
+i: 9, x: 81
+i: 10, x: 100)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef RESOLVE_ERR
 
 }}

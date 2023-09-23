@@ -98,6 +98,7 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Foreign_Function) \
     X(Strings) \
     X(While) \
+    X(For) \
 
 
 // Function declarations
