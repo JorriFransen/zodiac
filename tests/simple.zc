@@ -4,28 +4,29 @@
 main :: () {
 
     arr : [4]s64 = { 1, 2, 3, 4 };
+    print(arr.length);
 
-    slice : []s64 = arr;
+    // slice : []s64 = arr;
 
-    slice2 : []s64;
-    slice2 = arr;
+    // slice2 : []s64;
+    // slice2 = arr;
 
-    print(arr);
-    print(*arr);
-    print(slice);
-    print_slice(slice);
-    print(slice2);
-    print_slice(slice2);
+    // print(arr);
+    // print(*arr);
+    // print(slice);
+    // print_slice(slice);
+    // print(slice2);
+    // print_slice(slice2);
 
-    slice3 : []s64 = { 11, 22, 33, 44, 55 };
-    print(slice3);
-    print_slice(slice3);
+    // slice3 : []s64 = { 11, 22, 33, 44, 55 };
+    // print(slice3);
+    // print_slice(slice3);
 
-    slice4 : []s64 = { 12, 23, 34, 45, 56, 67, 78, 89, 90 };
-    print(slice4);
-    print_slice(slice4);
+    // slice4 : []s64 = { 12, 23, 34, 45, 56, 67, 78, 89, 90 };
+    // print(slice4);
+    // print_slice(slice4);
 
-    print_slice({2, 3, 4});
+    // print_slice({2, 3, 4});
 
     return 0;
 }

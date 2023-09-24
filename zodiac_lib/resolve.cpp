@@ -1308,6 +1308,13 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
                 aggregate_type = aggregate_type->pointer.base;
             } else if (aggregate_type->kind == Type_Kind::SLICE) {
                 aggregate_type = aggregate_type->slice.struct_type;
+            } else if (aggregate_type->kind == Type_Kind::STATIC_ARRAY) {
+                if (expr->member.member_name != atom_get(&ctx->atoms, "length")) {
+                    fatal_resolve_error(ctx, expr, "Static array does not have member: '%s'", expr->member.member_name.data);
+                    result = false;
+                }
+                break;
+
             }
 
             assert(aggregate_type->flags & TYPE_FLAG_AGGREGATE);
@@ -1979,6 +1986,9 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 aggregate_type = aggregate_type->pointer.base;
             } else if (aggregate_type->kind == Type_Kind::SLICE) {
                 aggregate_type = aggregate_type->slice.struct_type;
+            } else if (aggregate_type->kind == Type_Kind::STATIC_ARRAY) {
+                expr->resolved_type = &builtin_type_s64;
+                break;
             }
             assert(aggregate_type->flags & TYPE_FLAG_AGGREGATE);
 
