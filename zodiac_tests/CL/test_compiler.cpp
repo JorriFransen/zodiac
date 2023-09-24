@@ -2189,6 +2189,83 @@ i: 10, x: 100)OUT_STR" };
     return MUNIT_OK;
 }
 
+MunitResult Local_Slices(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        Vec2 :: struct { x, y: s32; }
+        main :: () {
+            arr : [4]s64 = { 1, 2, 3, 4 };
+            slice : []s64 = arr;
+            println(slice[1]);
+            slice[1] = 22;
+            println(slice[1]);
+
+            vecs : []Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }};
+            println(vecs);
+            println_slice_vec(vecs);
+            println_slice_vec(vecs);
+
+            slice2 : []s64;
+            slice2 = arr;
+            println(arr);
+            println(slice);
+            println_slice_s64(slice);
+            println(slice2);
+            println_slice_s64(slice2);
+
+            slice3 : []s64 = { 11, 22, 33, 44, 55 };
+            println(slice3);
+            println_slice_s64(slice3);
+
+            slice4 : []s64 = { 12, 23, 34, 45, 56, 67, 78, 89, 90 };
+            println(slice4);
+            println_slice_s64(slice4);
+
+            println_slice_s64({2, 3, 4});
+
+            return 0;
+        }
+        println_slice_s64 :: (s: []s64) {
+            print("{ ");
+            for (i := 0; i < s.length; i = i + 1) {
+                if i > 0 print(", ");
+                print(s[i]);
+            }
+            println(" }");
+        }
+        println_slice_vec :: (s: []Vec2) {
+            print("{ ");
+            for (i := 0; i < s.length; i = i + 1)  {
+                if i > 0 print(", ");
+                print(s[i]);
+            }
+            println(" }");
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(2
+22
+{ { 1, 2 }, { 3, 4 }, { 5, 6 } }
+{ { 1, 2 }, { 3, 4 }, { 5, 6 } }
+{ { 1, 2 }, { 3, 4 }, { 5, 6 } }
+{ 1, 22, 3, 4 }
+{ 1, 22, 3, 4 }
+{ 1, 22, 3, 4 }
+{ 1, 22, 3, 4 }
+{ 1, 22, 3, 4 }
+{ 11, 22, 33, 44, 55 }
+{ 11, 22, 33, 44, 55 }
+{ 12, 23, 34, 45, 56, 67, 78, 89, 90 }
+{ 12, 23, 34, 45, 56, 67, 78, 89, 90 }
+{ 2, 3, 4 })OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef RESOLVE_ERR
 
 }}
