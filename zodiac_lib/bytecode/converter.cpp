@@ -631,8 +631,11 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                 bytecode_emit_print(bc->builder, value_reg);
             }
 
-            auto newline_value_reg = bytecode_string_literal(bc->builder, "\n");
-            bytecode_emit_print(bc->builder, newline_value_reg);
+            if (stmt->print_expr.newline) {
+                auto newline_value_reg = bytecode_string_literal(bc->builder, "\n");
+                bytecode_emit_print(bc->builder, newline_value_reg);
+            }
+
             break;
         }
     }
