@@ -727,7 +727,16 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
             Bytecode_Register base_reg = ast_lvalue_to_bytecode(bc, expr->index.base);
 
             if (base_reg.type->kind == Type_Kind::STATIC_ARRAY) {
+
                 return bytecode_emit_array_offset_pointer(bc->builder, base_reg, index_reg);
+
+            } else if (base_reg.type->kind == Type_Kind::STRUCTURE && base_reg.type->flags & TYPE_FLAG_SLICE_STRUCT) {
+
+                Bytecode_Register ptr_reg = bytecode_emit_aggregate_offset_pointer(bc->builder, base_reg, 0);
+                ptr_reg = bytecode_emit_load_pointer(bc->builder, ptr_reg);
+
+                return bytecode_emit_ptr_offset_pointer(bc->builder, ptr_reg, index_reg);
+
             } else {
                 assert(base_reg.type == get_string_type(bc->context));
                 Bytecode_Register data_reg = bytecode_emit_aggregate_offset_pointer(bc->builder, base_reg, 0);

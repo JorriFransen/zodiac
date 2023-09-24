@@ -4,9 +4,11 @@
 main :: () {
 
     arr : [4]s64 = { 1, 2, 3, 4 };
-    print(arr.length);
 
-    // slice : []s64 = arr;
+    slice : []s64 = arr;
+    print(slice[1]);
+    slice[1] = 22;
+    print(slice[1]);
 
     // slice2 : []s64;
     // slice2 = arr;
@@ -34,7 +36,7 @@ main :: () {
 print_slice :: (s: []s64) {
     print("{");
     for i := 0; i < s.length; i = i + 1 {
-        print("  x,");
+        print(s[i]);
     }
     print("}");
 }

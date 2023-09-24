@@ -2032,9 +2032,10 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             auto base_type = base_expr->resolved_type;
 
             bool base_is_array = base_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY;
+            bool base_is_slice = base_expr->resolved_type->kind == Type_Kind::SLICE;
 
-            if (!base_is_array && base_expr->resolved_type != get_string_type(ctx)) {
-                fatal_resolve_error(ctx, expr, "Base of index expression is not an array or String");
+            if (!base_is_array && !base_is_slice && base_expr->resolved_type != get_string_type(ctx)) {
+                fatal_resolve_error(ctx, expr, "Base of index expression is not an array, slice or String");
                 return false;
             }
 
@@ -2050,6 +2051,11 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 }
 
                 expr->resolved_type = base_type->static_array.element_type;
+
+            } else if (base_is_slice) {
+
+                expr->resolved_type = base_type->slice.element_type;
+
             } else {
                 expr->resolved_type = &builtin_type_u8;
             }
