@@ -1,6 +1,8 @@
 
 #run main();
 
+Vec2 :: struct { x, y: s32; }
+
 main :: () {
 
     arr : [4]s64 = { 1, 2, 3, 4 };
@@ -11,25 +13,32 @@ main :: () {
     print(slice[1]);
     print(slice);
 
-    // slice2 : []s64;
-    // slice2 = arr;
+    vecs : []Vec2 = { { 1, 2 }, { 3, 4 }};
+    print(vecs);
 
-    // print(arr);
-    // print(*arr);
-    // print(slice);
-    // print_slice(slice);
-    // print(slice2);
-    // print_slice(slice2);
+    slice2 : []s64;
+    slice2 = arr;
 
-    // slice3 : []s64 = { 11, 22, 33, 44, 55 };
-    // print(slice3);
-    // print_slice(slice3);
+    print(arr);
+    print(*arr);
+    print(slice);
+    print_slice(slice);
+    print(slice2);
+    print_slice(slice2);
 
-    // slice4 : []s64 = { 12, 23, 34, 45, 56, 67, 78, 89, 90 };
-    // print(slice4);
-    // print_slice(slice4);
+    slice3 : []s64 = { 11, 22, 33, 44, 55 };
+    print(slice3);
+    print_slice(slice3);
 
-    // print_slice({2, 3, 4});
+    slice4 : []s64 = { 12, 23, 34, 45, 56, 67, 78, 89, 90 };
+    print(slice4);
+    print_slice(slice4);
+
+    print_slice({2, 3, 4});
+
+    if (true) {
+        print("hi");
+    }
 
     return 0;
 }
@@ -37,7 +46,7 @@ main :: () {
 print_slice :: (s: []s64) {
     print("{");
     for i := 0; i < s.length; i = i + 1 {
-        print(s[i]);
+        print("  ", s[i], ",");
     }
     print("}");
 }

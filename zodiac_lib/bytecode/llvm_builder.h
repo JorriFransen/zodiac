@@ -88,6 +88,12 @@ enum class LLVM_Target_Platform
 
 ZAPI void llvm_builder_init(LLVM_Builder *builder, Allocator *allocator, Bytecode_Builder *bytecode_builder);
 
+struct LLVM_Block
+{
+    Bytecode_Block_Handle bc_block_handle;
+    llvm::BasicBlock *llvm_block;
+};
+
 struct LLVM_Builder
 {
     Allocator *allocator = nullptr;
@@ -110,6 +116,8 @@ struct LLVM_Builder
 
     llvm::Function *current_function = nullptr;
     Bytecode_Function *current_bytecode_function = nullptr;
+    LLVM_Block current_block = {};
+
     Hash_Table<s64, llvm::Value *> stored_registers = {}; // Result registers/temps for current_function
     Hash_Table<s64, llvm::GlobalVariable *> globals = {};
     Stack<llvm::Value *> arg_stack = {};
@@ -129,9 +137,9 @@ ZAPI void llvm_builder_emit_global(LLVM_Builder *builder, Bytecode_Global_Handle
 ZAPI void llvm_builder_register_function(LLVM_Builder *builder, Bytecode_Function_Handle fn_handle);
 ZAPI bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle fn_handle);
 
-ZAPI bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruction &bc_inst, Array_Ref<s64> block_indices);
+ZAPI bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruction &bc_inst, Array_Ref<LLVM_Block> block_indices);
 
-ZAPI void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm::Value *llvm_val, bool quote_strings = false);
+ZAPI void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Array_Ref<LLVM_Block> blocks, Type *type, llvm::Value *llvm_val, bool quote_strings = false);
 
 ZAPI llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Register &bc_reg);
 ZAPI llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode_Register &bc_reg);
@@ -146,7 +154,7 @@ ZAPI void llvm_builder_store_result(LLVM_Builder *builder, const Bytecode_Regist
 
 ZAPI llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type);
 
-ZAPI llvm::BasicBlock *llvm_block_by_index(LLVM_Builder *builder, s64 index);
+ZAPI llvm::BasicBlock *get_llvm_block(LLVM_Builder *builder, Array_Ref<LLVM_Block> blocks, Bytecode_Block_Handle handle);
 
 ZAPI llvm::Function *llvm_get_intrinsic(LLVM_Builder *builder, Type *fn_type, const char *name);
 
