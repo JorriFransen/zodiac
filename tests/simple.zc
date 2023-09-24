@@ -11,10 +11,10 @@ main :: () {
     println(slice[1]);
     slice[1] = 22;
     println(slice[1]);
-    println(slice);
 
-    vecs : []Vec2 = { { 1, 2 }, { 3, 4 }};
+    vecs : []Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }};
     println(vecs);
+    println_slice_vec(vecs);
     println_slice_vec(vecs);
 
     slice2 : []s64;
@@ -26,6 +26,7 @@ main :: () {
     println_slice_s64(slice);
     println(slice2);
     println_slice_s64(slice2);
+    println(slice2.data);
 
     slice3 : []s64 = { 11, 22, 33, 44, 55 };
     println(slice3);
@@ -34,6 +35,7 @@ main :: () {
     slice4 : []s64 = { 12, 23, 34, 45, 56, 67, 78, 89, 90 };
     println(slice4);
     println_slice_s64(slice4);
+    println(slice4.data);
 
     println_slice_s64({2, 3, 4});
 

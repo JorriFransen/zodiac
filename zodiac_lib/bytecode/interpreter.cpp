@@ -559,16 +559,20 @@ switch (operand.type->bit_size) { \
                      return_value.type->kind == Type_Kind::STATIC_ARRAY) {
 
                     if (return_value.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
-                        assert(return_value.type->bit_size % 8 == 0);
-                        auto size = return_value.type->bit_size / 8;
-                        u8 *ptr = new_frame->sp;
-                        new_frame->sp += size;
 
-                        interpreter_copy_compound_literal_into_memory(interp, ptr, return_value);
-                        return_value = { .type = return_value.type, .pointer = ptr };
+                        Interpreter_Register dest_reg = interpreter_load_register(interp, dest_register);
+                        if (!dest_reg.pointer) {
+                            assert(return_value.type->bit_size % 8 == 0);
+                            auto size = return_value.type->bit_size / 8;
+                            dest_reg.pointer = new_frame->sp;
+                            new_frame->sp += size;
+                        }
+
+                        interpreter_copy_compound_literal_into_memory(interp, dest_reg.pointer, return_value);
+                        return_value = dest_reg;
 
                     } else {
-                        return_value = interpreter_load_pointer(interp, return_value.pointer, return_value.type);
+                        interpreter_load_pointer(interp, return_value.pointer, &return_value, return_value.type);
                     }
                 }
                 interpreter_store_register(interp, return_value, dest_register);
@@ -664,9 +668,11 @@ switch (operand.type->bit_size) { \
             assert(global_register.pointer);
 
             assert(instruction.dest.kind == Bytecode_Register_Kind::TEMPORARY);
-            Interpreter_Register loaded_value = interpreter_load_pointer(interp, global_register.pointer, global_register.type);
+            Interpreter_Register dest_reg = interpreter_load_register(interp, instruction.dest);
 
-            interpreter_store_register(interp, loaded_value, instruction.dest);
+            interpreter_load_pointer(interp, global_register.pointer, &dest_reg, global_register.type);
+
+            interpreter_store_register(interp, dest_reg, instruction.dest);
             break;
         }
 
@@ -686,9 +692,11 @@ switch (operand.type->bit_size) { \
             assert(alloc_register.pointer);
 
             assert(instruction.dest.kind == Bytecode_Register_Kind::TEMPORARY);
-            Interpreter_Register loaded_value = interpreter_load_pointer(interp, alloc_register.pointer, alloc_register.type);
 
-            interpreter_store_register(interp, loaded_value, instruction.dest);
+            Interpreter_Register dest_reg = interpreter_load_register(interp, instruction.dest);
+            interpreter_load_pointer(interp, alloc_register.pointer, &dest_reg, alloc_register.type);
+
+            interpreter_store_register(interp, dest_reg, instruction.dest);
             break;
         }
 
@@ -709,9 +717,10 @@ switch (operand.type->bit_size) { \
 
             assert(ptr_register.value.pointer && "LOAD_PTR Attempting to load from a null pointer");
 
-            Interpreter_Register loaded_value = interpreter_load_pointer(interp, ptr_register.value.pointer, instruction.dest.type);
+            Interpreter_Register dest_reg = interpreter_load_register(interp, instruction.dest);
+            interpreter_load_pointer(interp, ptr_register.value.pointer, &dest_reg, instruction.dest.type);
 
-            interpreter_store_register(interp, loaded_value, instruction.dest);
+            interpreter_store_register(interp, dest_reg, instruction.dest);
             break;
         }
 
@@ -733,16 +742,16 @@ switch (operand.type->bit_size) { \
             auto size = struct_type->bit_size / 8;
             assert(frame->sp + size <= frame->stack_mem.data + frame->stack_mem.count);
 
-            u8 *ptr = frame->sp;
-            frame->sp += size;
+            Interpreter_Register dest_reg = interpreter_load_register(interp, instruction.dest);
 
-            Interpreter_Register result_value = {
-                .type = struct_type,
-                .pointer = ptr,
-            };
+            if (!dest_reg.pointer) {
+                u8 *ptr = frame->sp;
+                frame->sp += size;
+                dest_reg.pointer = ptr;
+            }
 
             if (instruction.a.kind == Bytecode_Register_Kind::UNDEF) {
-                memset(result_value.pointer, 0, size);
+                memset(dest_reg.pointer, 0, size);
             } else {
                 assert_msg(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY,
                            "[Interpreter] a register of INSERT_VALUE must be a temporary register or <undef>");
@@ -752,7 +761,7 @@ switch (operand.type->bit_size) { \
                 //                  the same register...
                 Interpreter_Register old_value = interpreter_load_register(interp, instruction.a);
                 assert(old_value.type == struct_type);
-                interpreter_store_pointer(interp, old_value, result_value.pointer);
+                interpreter_store_pointer(interp, old_value, dest_reg.pointer);
             }
 
             u64 member_offset = 0;
@@ -763,12 +772,12 @@ switch (operand.type->bit_size) { \
                 member_offset += (mem_type->bit_size / 8);
             }
 
-            u8 *elem_ptr = result_value.pointer + member_offset;
+            u8 *elem_ptr = dest_reg.pointer + member_offset;
 
             Interpreter_Register new_value = interpreter_load_register(interp, instruction.b);
             interpreter_store_pointer(interp, new_value, elem_ptr);
 
-            interpreter_store_register(interp, result_value, instruction.dest);
+            interpreter_store_register(interp, dest_reg, instruction.dest);
 
             break;
         }
@@ -797,9 +806,10 @@ switch (operand.type->bit_size) { \
             }
 
             Type *member_type = member_types[index];
-            Interpreter_Register result = interpreter_load_pointer(interp, ptr, member_type);
+            Interpreter_Register dest_reg = interpreter_load_register(interp, instruction.dest);
+            interpreter_load_pointer(interp, ptr, &dest_reg, member_type);
 
-            interpreter_store_register(interp, result, instruction.dest);
+            interpreter_store_register(interp, dest_reg, instruction.dest);
 
             break;
         }
@@ -818,16 +828,17 @@ switch (operand.type->bit_size) { \
             auto size = array_type->bit_size / 8;
             assert(frame->sp + size <= frame->stack_mem.data + frame->stack_mem.count);
 
-            u8 *ptr = frame->sp;
-            frame->sp += size;
+            Interpreter_Register dest_reg = interpreter_load_register(interp, instruction.dest);
 
-            Interpreter_Register result_value = {
-                .type = array_type,
-                .pointer = ptr,
-            };
+            if (!dest_reg.pointer) {
+                u8 *ptr = frame->sp;
+                frame->sp += size;
+                dest_reg.pointer = ptr;
+            }
+
 
             if (instruction.a.kind == Bytecode_Register_Kind::UNDEF) {
-                memset(result_value.pointer, 0, size);
+                memset(dest_reg.pointer, 0, size);
             } else {
                 assert_msg(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY, "[Interpreter] a register of INSERT_ELEMENT must be a temporary register");
 
@@ -836,18 +847,18 @@ switch (operand.type->bit_size) { \
                 //                  the same register...
                 Interpreter_Register old_value = interpreter_load_register(interp, instruction.a);
                 assert(old_value.type == array_type);
-                interpreter_store_pointer(interp, old_value, result_value.pointer);
+                interpreter_store_pointer(interp, old_value, dest_reg.pointer);
             }
 
             assert(element_type->bit_size % 8 == 0);
             u64 elem_offset = instruction.additional_index * (element_type->bit_size / 8);
             assert(elem_offset % 8 == 0);
-            u8 *elem_ptr = result_value.pointer + elem_offset;
+            u8 *elem_ptr = dest_reg.pointer + elem_offset;
 
             Interpreter_Register new_value = interpreter_load_register(interp, instruction.b);
             interpreter_store_pointer(interp, new_value, elem_ptr);
 
-            interpreter_store_register(interp, result_value, instruction.dest);
+            interpreter_store_register(interp, dest_reg, instruction.dest);
 
             break;
         }
@@ -871,9 +882,10 @@ switch (operand.type->bit_size) { \
             assert(elem_offset % 8 == 0);
             u8 *elem_ptr = array_val.pointer + elem_offset;
 
-            Interpreter_Register result = interpreter_load_pointer(interp, elem_ptr, element_type);
+            Interpreter_Register dest_reg = interpreter_load_register(interp, instruction.dest);
+            interpreter_load_pointer(interp, elem_ptr, &dest_reg, element_type);
 
-            interpreter_store_register(interp, result, instruction.dest);
+            interpreter_store_register(interp, dest_reg, instruction.dest);
 
             break;
         }
@@ -1261,13 +1273,9 @@ Interpreter_Register interpreter_load_register(Interpreter *interp,
     return {};
 }
 
-Interpreter_Register interpreter_load_pointer(Interpreter *interp, u8 *source, Type *type)
+void interpreter_load_pointer(Interpreter *interp, u8 *source, Interpreter_Register *dest, Type *type)
 {
     assert(interp);
-
-    Interpreter_Register result = {
-        .type = type,
-    };
 
     switch (type->kind) {
         case Type_Kind::INVALID: assert(false); break;
@@ -1278,10 +1286,10 @@ Interpreter_Register interpreter_load_pointer(Interpreter *interp, u8 *source, T
             switch (type->bit_size) {
                 // @Cleanup: @TODO: @FIXME: alignment?
                 default: assert(false && !"interpreter_load_pointer unhandled integer bit width"); break;
-                case 8: result.value.integer.u8 = *((u8 *)source); break;
-                case 16: result.value.integer.u16 = *((u16 *)source); break;
-                case 32: result.value.integer.u32 = *((u32 *)source); break;
-                case 64: result.value.integer.u64 = *((u64 *)source); break;
+                case 8: dest->value.integer.u8 = *((u8 *)source); break;
+                case 16: dest->value.integer.u16 = *((u16 *)source); break;
+                case 32: dest->value.integer.u32 = *((u32 *)source); break;
+                case 64: dest->value.integer.u64 = *((u64 *)source); break;
             }
             break;
         }
@@ -1290,8 +1298,8 @@ Interpreter_Register interpreter_load_pointer(Interpreter *interp, u8 *source, T
             switch (type->bit_size) {
                 // @Cleanup: @TODO: @FIXME: alignment?
                 default: assert(false && !"interpreter_load_pointer unhandled integer bit width"); break;
-                case 32: result.value.real.r32 = *((float *)source); break;
-                case 64: result.value.real.r64 = *((double *)source); break;
+                case 32: dest->value.real.r32 = *((float *)source); break;
+                case 64: dest->value.real.r64 = *((double *)source); break;
             }
             break;
         }
@@ -1301,7 +1309,7 @@ Interpreter_Register interpreter_load_pointer(Interpreter *interp, u8 *source, T
             assert(type->bit_size == 64);
 
             // @Cleanup: @TODO: @FIXME: alignment?
-            result.value.pointer = *((u8 **)source); break;
+            dest->value.pointer = *((u8 **)source); break;
             break;
         }
 
@@ -1309,32 +1317,32 @@ Interpreter_Register interpreter_load_pointer(Interpreter *interp, u8 *source, T
 
         case Type_Kind::BOOLEAN: {
             // @Cleanup: @TODO: @FIXME: alignment?
-            result.value.boolean = *((bool *)source);
+            dest->value.boolean = *((bool *)source);
             break;
         }
 
         case Type_Kind::STRUCTURE:
         case Type_Kind::STATIC_ARRAY: {
-            auto frame = stack_top_ptr(&interp->frames);
-
             // @Cleanup: @TODO: @FIXME: alignment?
             assert (type->bit_size % 8 == 0);
             auto size = type->bit_size / 8;
-            assert(frame->sp + size <= frame->stack_mem.data + frame->stack_mem.count);
+            if (!dest->pointer) {
+                auto frame = stack_top_ptr(&interp->frames);
 
-            u8 *ptr = frame->sp;
-            frame->sp += size;
+                assert(frame->sp + size <= frame->stack_mem.data + frame->stack_mem.count);
 
-            result.pointer = ptr;
+                u8 *ptr = frame->sp;
+                frame->sp += size;
 
-            zmemcpy(ptr, source, size);
+                dest->pointer = ptr;
+            }
+
+            zmemcpy(dest->pointer, source, size);
             break;
         }
 
         case Type_Kind::SLICE: assert(false); break;
     }
-
-    return result;
 }
 
 void interpreter_store_register(Interpreter *interp, Interpreter_Register source,
@@ -1501,13 +1509,19 @@ void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle 
     if (fn->required_stack_size) {
         new_frame.stack_mem = Array_Ref<u8>(&interp->stack_mem[interp->stack_mem_used], fn->required_stack_size),
         new_frame.sp = &new_frame.stack_mem[0];
+        zmemset(new_frame.stack_mem.data, 0, new_frame.stack_mem.count * sizeof(new_frame.stack_mem.data[0]));
     }
 
     interp->used_register_count += fn->registers.count;
-    interp->stack_mem_used += fn->required_stack_size;
+    if (fn->registers.count) {
 
-    for (s64 i = 0; i < new_frame.registers.count; i++) {
-        new_frame.registers[i].type = fn->registers[i].type;
+        interp->stack_mem_used += fn->required_stack_size;
+
+        zmemset(new_frame.registers.data, 0, new_frame.registers.count * sizeof(new_frame.registers.data[0]));
+
+        for (s64 i = 0; i < new_frame.registers.count; i++) {
+            new_frame.registers[i].type = fn->registers[i].type;
+        }
     }
 
     stack_push(&interp->frames, new_frame);
