@@ -9,6 +9,8 @@
 #include "util/string_builder.h"
 #include "zodiac_context.h"
 
+#include "resolve.h"
+
 namespace Zodiac
 {
 
@@ -290,6 +292,19 @@ Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocat
 
     Type *struct_type = get_struct_type(members, name, allocator);
     struct_type->flags |= TYPE_FLAG_SLICE_STRUCT;
+
+    auto global_scope = ctx->resolver->global_scope;
+    auto sym = add_typed_symbol(ctx, global_scope, Symbol_Kind::TYPE, SYM_FLAG_BUILTIN, name, nullptr);
+    sym->aggregate.scope = scope_new(&ctx->ast_allocator, Scope_Kind::AGGREGATE, global_scope);
+    sym->builtin_type = struct_type;
+
+    Atom data_name = atom_get(&ctx->atoms, "data");
+    auto data_sym = scope_add_symbol(ctx, sym->aggregate.scope, Symbol_Kind::MEMBER, Symbol_State::TYPED, SYM_FLAG_BUILTIN, data_name, nullptr);
+    data_sym->builtin_type = members[0];
+
+    Atom length_name = atom_get(&ctx->atoms, "length");
+    auto length_sym = scope_add_symbol(ctx, sym->aggregate.scope, Symbol_Kind::MEMBER, Symbol_State::TYPED, SYM_FLAG_BUILTIN, length_name, nullptr);
+    length_sym->builtin_type = members[1];
 
     Type *result = alloc<Type>(allocator);
     create_slice_type(result, element_type, struct_type);

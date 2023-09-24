@@ -31,5 +31,9 @@ main :: () {
 }
 
 print_slice :: (s: []s64) {
-    print(s);
+    print("{");
+    for i := 0; i < s.length; i = i + 1 {
+        print("  x,");
+    }
+    print("}");
 }

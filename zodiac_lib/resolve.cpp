@@ -1302,10 +1302,14 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             }
 
             auto aggregate_type = base_expr->resolved_type;
+
             if (aggregate_type->kind == Type_Kind::POINTER) {
-            assert(aggregate_type->pointer.base->flags & TYPE_FLAG_AGGREGATE);
+                assert(aggregate_type->pointer.base->flags & TYPE_FLAG_AGGREGATE);
                 aggregate_type = aggregate_type->pointer.base;
+            } else if (aggregate_type->kind == Type_Kind::SLICE) {
+                aggregate_type = aggregate_type->slice.struct_type;
             }
+
             assert(aggregate_type->flags & TYPE_FLAG_AGGREGATE);
 
             assert(aggregate_type->structure.name.length);
@@ -1319,10 +1323,20 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             s64 member_index;
             auto sym = scope_get_symbol_direct(type_sym->aggregate.scope, expr->member.member_name, &member_index);
             if (!sym) {
-                assert(type_sym->decl);
-                fatal_resolve_error(ctx, expr, "'%s' is not a member of aggregate type '%s'", expr->member.member_name.data, aggregate_type->structure.name.data);
-                fatal_resolve_error(ctx, type_sym->decl, "'%s' was declared here", aggregate_type->structure.name);
-                result = false;
+                if (type_sym->decl) {
+                    fatal_resolve_error(ctx, expr, "'%s' is not a member of aggregate type '%s'", expr->member.member_name.data, aggregate_type->structure.name.data);
+                    fatal_resolve_error(ctx, type_sym->decl, "'%s' was declared here", aggregate_type->structure.name);
+                    result = false;
+                } else {
+                    assert(type_sym->flags & SYM_FLAG_BUILTIN);
+                    assert(type_sym->builtin_type);
+                    if (type_sym->builtin_type->flags & TYPE_FLAG_SLICE_STRUCT) {
+                        fatal_resolve_error(ctx, expr, "'%s' is not a member of type 'slice'", expr->member.member_name.data);
+                        result = false;
+                    } else {
+                        assert(false);
+                    }
+                }
                 break;
             }
             assert(sym);
@@ -1963,8 +1977,10 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             if (aggregate_type->kind == Type_Kind::POINTER) {
                 via_pointer = true;
                 aggregate_type = aggregate_type->pointer.base;
+            } else if (aggregate_type->kind == Type_Kind::SLICE) {
+                aggregate_type = aggregate_type->slice.struct_type;
             }
-            assert((aggregate_type->flags & TYPE_FLAG_AGGREGATE) == TYPE_FLAG_AGGREGATE);
+            assert(aggregate_type->flags & TYPE_FLAG_AGGREGATE);
 
             auto type_sym = scope_get_symbol(scope, aggregate_type->structure.name);
             assert(type_sym);
@@ -1975,19 +1991,25 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             assert(sym && sym->kind == Symbol_Kind::MEMBER);
             assert(sym->state == Symbol_State::TYPED);
 
-            auto mem_decl = sym->decl;
-            assert(mem_decl && mem_decl->kind == AST_Declaration_Kind::FIELD);
-            assert(mem_decl->field.resolved_type);
+            if (sym->flags & SYM_FLAG_BUILTIN) {
+                assert(sym->builtin_type);
+                expr->resolved_type = sym->builtin_type;
+                expr->flags |= AST_EXPR_FLAG_LVALUE;
+            } else {
+                auto mem_decl = sym->decl;
+                assert(mem_decl && mem_decl->kind == AST_Declaration_Kind::FIELD);
+                assert(mem_decl->field.resolved_type);
 
-            expr->resolved_type = mem_decl->field.resolved_type;
+                expr->resolved_type = mem_decl->field.resolved_type;
 
-            if (via_pointer) {
-                if (EXPR_IS_LVALUE(base_expr)) {
+                if (via_pointer) {
+                    if (EXPR_IS_LVALUE(base_expr)) {
+                        expr->flags |= AST_EXPR_FLAG_LVALUE;
+                    }
+                } else {
+                    assert(EXPR_IS_LVALUE(base_expr));
                     expr->flags |= AST_EXPR_FLAG_LVALUE;
                 }
-            } else {
-                assert(EXPR_IS_LVALUE(base_expr));
-                expr->flags |= AST_EXPR_FLAG_LVALUE;
             }
             break;
         }
