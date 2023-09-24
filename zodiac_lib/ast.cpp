@@ -299,13 +299,14 @@ void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
     out_stmt->return_stmt.scope = nullptr;
 }
 
-void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, AST_Statement *out_stmt)
+void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, bool newline, AST_Statement *out_stmt)
 {
     debug_assert(out_stmt);
 
     ast_statement_create(AST_Statement_Kind::PRINT, out_stmt);
 
     out_stmt->print_expr.expressions = exprs;
+    out_stmt->print_expr.newline = newline;
 }
 
 void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
@@ -746,12 +747,12 @@ AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_
     return stmt;
 }
 
-AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> exprs)
+AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> exprs, bool newline)
 {
     debug_assert(ctx);
 
     auto stmt = ast_statement_new(ctx, range);
-    ast_print_stmt_create(exprs, stmt);
+    ast_print_stmt_create(exprs, newline, stmt);
     return stmt;
 }
 

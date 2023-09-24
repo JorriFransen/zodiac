@@ -406,7 +406,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         return ast_return_stmt_new(parser->context, { start_pos, end_pos }, value);
 
-    } else if (match_keyword(parser, keyword_print)) {
+    } else if (match_keyword(parser, keyword_println)) {
 
         auto temp_print_exprs = temp_array_create<AST_Expression *>(temp_allocator_allocator());
 
@@ -433,7 +433,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         auto print_exprs = temp_array_finalize(&parser->context->ast_allocator, &temp_print_exprs);
 
-        return ast_print_statement_new(parser->context, { start_pos, end_pos }, print_exprs);
+        return ast_print_statement_new(parser->context, { start_pos, end_pos }, print_exprs, true);
     }
 
     Token t = cur_tok(parser);
@@ -801,7 +801,7 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
 
         result.kind = Parsed_Directive_Kind::DATA;
 
-        if (is_token(parser, '{') || is_keyword(parser, keyword_print)) {
+        if (is_token(parser, '{') || is_keyword(parser, keyword_println)) {
 
             AST_Statement *stmt = parse_statement(parser, true);
 

@@ -269,6 +269,7 @@ struct AST_Return_Statement
 struct AST_Print_Expression
 {
     Dynamic_Array<AST_Expression *> expressions;
+    bool newline;
 };
 
 enum class AST_Statement_Kind
@@ -529,7 +530,7 @@ ZAPI void ast_if_stmt_create(Dynamic_Array<AST_If_Block> blocks, AST_Statement *
 ZAPI void ast_while_stmt_create(AST_Expression *cond, AST_Statement *body_stmt, AST_Statement *out_stmt);
 ZAPI void ast_for_stmt_create(AST_Statement *init_stmt, AST_Expression *cond_expr, AST_Statement *inc_stmt, AST_Statement *body_stmt, AST_Statement *out_stmt);
 ZAPI void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt);
-ZAPI void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, AST_Statement *out_stmt);
+ZAPI void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, bool newline, AST_Statement *out_stmt);
 ZAPI void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt);
 
 ZAPI void ast_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
@@ -582,7 +583,7 @@ ZAPI AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, Source_Range range, Dyn
 ZAPI AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *cond, AST_Statement *body_stmt);
 ZAPI AST_Statement *ast_for_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Declaration *init_decl, AST_Expression *cond_expr, AST_Statement *inc_stmt, AST_Statement *body_stmt);
 ZAPI AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *value);
-ZAPI AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> exprs);
+ZAPI AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> exprs, bool newline);
 ZAPI AST_Statement *ast_statement_new(Zodiac_Context *ctx, Source_Range range);
 
 ZAPI AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value);

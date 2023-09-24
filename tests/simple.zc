@@ -8,45 +8,41 @@ main :: () {
     arr : [4]s64 = { 1, 2, 3, 4 };
 
     slice : []s64 = arr;
-    print(slice[1]);
+    println(slice[1]);
     slice[1] = 22;
-    print(slice[1]);
-    print(slice);
+    println(slice[1]);
+    println(slice);
 
     vecs : []Vec2 = { { 1, 2 }, { 3, 4 }};
-    print(vecs);
+    println(vecs);
 
     slice2 : []s64;
     slice2 = arr;
 
-    print(arr);
-    print(*arr);
-    print(slice);
+    println(arr);
+    println(*arr);
+    println(slice);
     print_slice(slice);
-    print(slice2);
+    println(slice2);
     print_slice(slice2);
 
     slice3 : []s64 = { 11, 22, 33, 44, 55 };
-    print(slice3);
+    println(slice3);
     print_slice(slice3);
 
     slice4 : []s64 = { 12, 23, 34, 45, 56, 67, 78, 89, 90 };
-    print(slice4);
+    println(slice4);
     print_slice(slice4);
 
     print_slice({2, 3, 4});
-
-    if (true) {
-        print("hi");
-    }
 
     return 0;
 }
 
 print_slice :: (s: []s64) {
-    print("{");
+    println("{");
     for i := 0; i < s.length; i = i + 1 {
-        print("  ", s[i], ",");
+        println("  ", s[i], ",");
     }
-    print("}");
+    println("}");
 }
