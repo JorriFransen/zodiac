@@ -1730,6 +1730,32 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type, boo
                 break;
             }
 
+            if (type->flags & TYPE_FLAG_SLICE_STRUCT) {
+
+                assert(type->structure.member_types.count == 2);
+                assert(type->structure.member_types[0]->kind == Type_Kind::POINTER);
+                auto element_type = type->structure.member_types[0]->pointer.base;
+
+                u8 *data = *(u8 **)mem;
+                mem += builtin_type_s64.bit_size / 8;
+                s64 length = *(s64 *)mem;
+
+                fprintf(out_handle, "{ ");
+
+                auto cur = data;
+                for (s64 i = 0; i < length; i++) {
+                    if (i > 0) fprintf(out_handle, ", ");
+                    interpreter_print_from_memory(interp, cur, element_type, quote_strings);
+
+                    // TODO: FIXME: Alignment
+                    cur += element_type->bit_size / 8;
+                }
+
+                fprintf(out_handle, " }");
+
+                break;
+            };
+
             fprintf(out_handle, "{ ");
 
             u8 *cursor = mem;
@@ -1853,6 +1879,12 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
                     interpreter_print_from_memory(interp, reg.value.pointer, reg.type, quote_strings);
                 }
 
+                break;
+            }
+
+            if (reg.type->flags & TYPE_FLAG_SLICE_STRUCT) {
+                assert(!(reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL));
+                interpreter_print_from_memory(interp, reg.value.pointer, reg.type, quote_strings);
                 break;
             }
 

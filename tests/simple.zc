@@ -9,6 +9,7 @@ main :: () {
     print(slice[1]);
     slice[1] = 22;
     print(slice[1]);
+    print(slice);
 
     // slice2 : []s64;
     // slice2 = arr;
