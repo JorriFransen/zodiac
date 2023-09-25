@@ -34,19 +34,22 @@ void bytecode_print(const Bytecode_Builder *builder, Allocator *allocator)
 
 void bytecode_print(const Bytecode_Builder *builder, String_Builder *sb)
 {
-    // TODO: Non builtin types
-    // auto &tt = builder->zodiac_context->type_table;
+    for (s64 si = 0; si < struct_types.count; si++) {
+        auto st = struct_types[si];
+        type_to_string(st, sb);
+        string_builder_append(sb, " :: { ");
 
-    // for (s64 i = 0; i < tt.count; i++) {
-    //     auto type = tt[i];
-    //     if (type->kind == Type_Kind::STRUCTURE) {
-    //         assert(type->atom.length);
-    //         string_builder_append(sb, "%%%.*s = ", (int)type->atom.length, type->atom.data);
-    //         type_to_string(type, sb);
-    //         string_builder_append(sb, "\n");
-    //     }
-    // }
-    // if (tt.count) string_builder_append(sb, "\n");
+        for (s64 mi = 0; mi < st->structure.member_types.count; mi++) {
+            if (mi != 0) string_builder_append(sb, ", ");
+
+            type_to_string(st->structure.member_types[mi], sb);
+        }
+
+        string_builder_append(sb, " }\n");
+
+    }
+    if (struct_types.count) string_builder_append(sb, "\n");
+
 
     for (s64 i = 0; i < builder->globals.count; i++ ) {
         auto glob = &builder->globals[i];
@@ -458,6 +461,16 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
                     }
 
                     case Type_Kind::STATIC_ARRAY: {
+                        string_builder_append(sb, "{ ");
+                        for (s64 i = 0; i < reg.value.compound.count; i++) {
+                            if (i != 0) string_builder_append(sb, ", ");
+                            bytecode_print_register(builder, fn, reg.value.compound[i], sb);
+                        }
+                        string_builder_append(sb, " }");
+                        break;
+                    }
+
+                    case Type_Kind::SLICE: {
                         string_builder_append(sb, "{ ");
                         for (s64 i = 0; i < reg.value.compound.count; i++) {
                             if (i != 0) string_builder_append(sb, ", ");

@@ -163,13 +163,18 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
     Dynamic_Array<Bytecode_Register> registers = {};
     Dynamic_Array<Bytecode_Block> blocks = {};
     Dynamic_Array<Bytecode_Phi_Args> phi_args = {};
-
+    Dynamic_Array<Type *> param_types = {};
 
     if (!is_foreign) {
         dynamic_array_create(builder->bytecode_allocator, &registers);
         dynamic_array_create(builder->bytecode_allocator, &blocks);
         dynamic_array_create(builder->bytecode_allocator, &phi_args);
     }
+
+    dynamic_array_create(builder->bytecode_allocator, &param_types, fn_type->function.parameter_types.count);
+
+    assert(fn_type->function.parameter_types.count < I32_MAX);
+    s32 arg_count = (s32)fn_type->function.parameter_types.count;
 
     Bytecode_Function result = {
         .flags = flags,
@@ -178,6 +183,8 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
         .registers = registers,
         .blocks = blocks,
         .phi_args = phi_args,
+        .param_types = param_types,
+        .arg_count = arg_count,
         .required_stack_size = 0,
     };
 
@@ -186,11 +193,18 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
 
             auto arg_index = result.registers.count;
 
+            auto param_type = fn_type->function.parameter_types[i];
+            if (param_type->kind == Type_Kind::SLICE) {
+                param_type = param_type->slice.struct_type;
+            }
+
+            dynamic_array_append(&result.param_types, param_type);
+
             Bytecode_Register arg_register = {
                 .kind = Bytecode_Register_Kind::TEMPORARY,
                 .flags = BC_REGISTER_FLAG_ARGUMENT,
                 .index = (s64)arg_index,
-                .type = fn_type->function.parameter_types[i],
+                .type = param_type,
             };
             dynamic_array_append(&result.registers, arg_register);
         }
@@ -198,6 +212,15 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
 
     } else {
         dynamic_array_append(&builder->foreign_functions, (Bytecode_Function_Handle)index);
+
+        for (s64 i = 0; i < fn_type->function.parameter_types.count; i++) {
+            auto param_type = fn_type->function.parameter_types[i];
+            if (param_type->kind == Type_Kind::SLICE) {
+                assert(false);
+            }
+
+            dynamic_array_append(&result.param_types, param_type);
+        }
     }
 
     dynamic_array_append(&builder->functions, result);
@@ -231,7 +254,8 @@ Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, const c
 Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, Atom name, Type *type, bool constant, Bytecode_Register initial_value /*={}*/)
 {
     if (initial_value.kind != Bytecode_Register_Kind::INVALID) {
-        assert(initial_value.flags & BC_REGISTER_FLAG_CONSTANT);
+        assert((initial_value.flags & BC_REGISTER_FLAG_CONSTANT) ||
+               (initial_value.flags & BC_REGISTER_FLAG_LITERAL));
     }
 
     Bytecode_Global global_var = {
@@ -441,6 +465,11 @@ Bytecode_Register bytecode_string_literal(Bytecode_Builder *bb, String_Ref str)
     return bytecode_aggregate_literal(bb, values, get_string_type(bb->zodiac_context));
 }
 
+Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Array_Ref<Bytecode_Register> members, Type *type)
+{
+    return bytecode_aggregate_literal(bb, dynamic_array_copy(members, bb->bytecode_allocator), type);
+}
+
 Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Dynamic_Array<Bytecode_Register> members, Type *type)
 {
     debug_assert(bb && members.count && type);
@@ -452,7 +481,7 @@ Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Dynamic_Array
 
     for (s64 i = 0; i < members.count; i++) {
 
-        if (!(members[i].flags & BC_REGISTER_FLAG_LITERAL)) {
+        if (!(members[i].flags & BC_REGISTER_FLAG_LITERAL) && members[i].kind != Bytecode_Register_Kind::GLOBAL) {
             all_literal = false;
         }
 
@@ -478,6 +507,11 @@ Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Dynamic_Array
     result.value.compound = members;
 
     return result;
+}
+
+Bytecode_Register bytecode_array_literal(Bytecode_Builder *bb, Array_Ref<Bytecode_Register> values, Type *type)
+{
+    return bytecode_array_literal(bb, dynamic_array_copy(values, bb->bytecode_allocator), type);
 }
 
 Bytecode_Register bytecode_array_literal(Bytecode_Builder *bb, Dynamic_Array<Bytecode_Register> values, Type *type)
@@ -709,11 +743,8 @@ Bytecode_Register bytecode_emit_cast(Bytecode_Builder *builder, Type *target_typ
         case Type_Kind::FUNCTION: assert(false); break;
         case Type_Kind::BOOLEAN: assert(false); break;
         case Type_Kind::STRUCTURE: assert(false); break;
-
-        case Type_Kind::STATIC_ARRAY: {
-            assert(false);
-            break;
-        }
+        case Type_Kind::STATIC_ARRAY: assert(false); break;
+        case Type_Kind::SLICE: assert(false); break;
     }
 
     assert(false);
@@ -891,6 +922,10 @@ void bytecode_emit_return(Bytecode_Builder *builder, Bytecode_Register return_va
 
 Bytecode_Register bytecode_emit_alloc(Bytecode_Builder *builder, Type *type, const char *name)
 {
+    if (type->kind == Type_Kind::SLICE) {
+        type = type->slice.struct_type;
+    }
+
     Bytecode_Register type_register = bytecode_type_value(builder, type);
     Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::ALLOC, type, BC_REGISTER_FLAG_NONE, name);
     bytecode_emit_instruction(builder, Bytecode_Opcode::ALLOC, type_register, {}, result_register);
@@ -1117,7 +1152,8 @@ Bytecode_Register bytecode_emit_aggregate_offset_pointer(Bytecode_Builder *build
 {
     Type *agg_type = nullptr;
 
-    if (agg_register.kind == Bytecode_Register_Kind::ALLOC) {
+    if (agg_register.kind == Bytecode_Register_Kind::ALLOC ||
+        agg_register.kind == Bytecode_Register_Kind::GLOBAL) {
         agg_type = agg_register.type;
 
     } else if (agg_register.kind == Bytecode_Register_Kind::TEMPORARY) {

@@ -1,6 +1,5 @@
 #include "bytecode/visitor.h"
 
-#include "common.h"
 #include "defines.h"
 #include "type.h"
 #include "util/asserts.h"
@@ -173,7 +172,7 @@ void visit_instruction_post(Bytecode_Visitor *visitor, Bytecode_Instruction *ins
         if (stack_count(&visitor->arg_stack) < arg_count) {
             fprintf(stderr, "WARNING: mismatching arg count detected in visit_instruction_post\n");
         }
-        auto args_to_pop = min(stack_count(&visitor->arg_stack), (s64)arg_count);
+        auto args_to_pop = (s64)arg_count;
         stack_pop(&visitor->arg_stack, args_to_pop);
 
     } else if (op == Bytecode_Opcode::PUSH_ARG) {

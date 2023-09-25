@@ -7,9 +7,9 @@ BASE_DIR := zodiac_driver
 SRC_DIR := $(BASE_DIR)
 ASSEMBLY := zodiac
 EXTENSION :=
-COMPILER_FLAGS := -g -O0 -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec
+COMPILER_FLAGS := -ggdb -O0 -MD -MP -Wall -Wvla -Werror -Wno-c99-designator -fdeclspec
 INCLUDE_FLAGS := -Izodiac_lib -I$(SRC_DIR) $(CXXOPTS_INCLUDE_FLAGS) $(DYNCALL_INCLUDE_FLAGS)
-LINKER_FLAGS := -g -O0 -L$(BUILD_DIR) -lzodiac -Wl,-rpath,'$$ORIGIN'
+LINKER_FLAGS := -ggdb -O0 -L$(BUILD_DIR) -lzodiac -Wl,-rpath,'$$ORIGIN'
 DEFINES := -D_DEBUG -DZIMPORT
 
 SRC_FILES := $(shell find $(SRC_DIR) -name *.cpp)

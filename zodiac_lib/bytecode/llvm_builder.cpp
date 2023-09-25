@@ -179,7 +179,11 @@ void llvm_builder_emit_global(LLVM_Builder *builder, Bytecode_Global_Handle glob
 
     if (glob->initial_value.kind != Bytecode_Register_Kind::INVALID) {
         assert(glob->initial_value.kind == Bytecode_Register_Kind::TEMPORARY);
-        assert(glob->initial_value.flags & BC_REGISTER_FLAG_CONSTANT);
+
+        // This assumes these non const literals point to already initialized globals...
+        assert((glob->initial_value.flags & BC_REGISTER_FLAG_CONSTANT) ||
+               (glob->initial_value.flags & BC_REGISTER_FLAG_LITERAL));
+
         llvm::Constant *init_val = llvm_builder_emit_constant(builder, glob->initial_value);
         llvm_glob_var->setInitializer(init_val);
     } else {
@@ -230,8 +234,7 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
 
     Bytecode_Block_Handle bc_block_handle = bc_func->first_block_handle;
 
-    auto block_indices = temp_array_create<s64>(temp_allocator_allocator(), bc_func->blocks.count);
-    block_indices.array.count = bc_func->blocks.count;
+    auto blocks = temp_array_create<LLVM_Block>(temp_allocator_allocator(), bc_func->blocks.count);
 
     for (s64 block_index = 0; block_index < bc_func->blocks.count; block_index++) {
 
@@ -239,34 +242,33 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
         Bytecode_Block *bc_block = &bc_func->blocks[bc_block_handle];
 
         llvm::StringRef block_name(bc_block->name.data, bc_block->name.length);
-        llvm::BasicBlock::Create(*builder->llvm_context, block_name, llvm_func);
+        auto llvm_block = llvm::BasicBlock::Create(*builder->llvm_context, block_name, llvm_func);
 
-        block_indices[bc_block_handle] = block_index;
+        dynamic_array_append(&blocks, { bc_block_handle, llvm_block });
 
         bc_block_handle = bc_block->next;
     }
 
     assert(bc_block_handle == -1);
 
-    auto llvm_block_it = llvm_func->begin();
-
     bool result = true;
 
     bc_block_handle = bc_func->first_block_handle;
 
-    for (s64 block_index = 0; block_index < bc_func->blocks.count; block_index++, llvm_block_it++) {
+    for (s64 block_index = 0; block_index < bc_func->blocks.count; block_index++) {
         assert(bc_block_handle >= 0 && bc_block_handle < bc_func->blocks.count);
         Bytecode_Block *bc_block = &bc_func->blocks[bc_block_handle];
 
-        llvm::BasicBlock *llvm_block = &*llvm_block_it;
+        llvm::BasicBlock *llvm_block = get_llvm_block(builder, blocks.array, bc_block_handle);
         builder->ir_builder->SetInsertPoint(llvm_block);
+        builder->current_block = { bc_block_handle, llvm_block };
 
         bool block_result = true;
 
         for (s64 inst_index = 0; inst_index < bc_block->instructions.count; inst_index++) {
             Bytecode_Instruction &bc_inst = bc_block->instructions[inst_index];
 
-            bool inst_result = llvm_builder_emit_instruction(builder, bc_inst, block_indices.array);
+            bool inst_result = llvm_builder_emit_instruction(builder, bc_inst, blocks.array);
             assert(inst_result);
             if (!inst_result) {
                 ZERROR("[llvm_builder] Unable to emit instruction (index '%lli') from function '%.*s'\n",
@@ -353,7 +355,7 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
     break; \
 }
 
-bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruction &bc_inst, Array_Ref<s64> block_indices)
+bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruction &bc_inst, Array_Ref<LLVM_Block> blocks)
 {
     auto irb = builder->ir_builder;
     auto ast_allocator = &builder->zodiac_context->ast_allocator;
@@ -488,7 +490,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
         case Bytecode_Opcode::PRINT: {
             llvm::Value *llvm_val = llvm_builder_emit_register(builder, bc_inst.a);
-            llvm_builder_emit_print_instruction(builder, bc_inst.a.type, llvm_val);
+            llvm_builder_emit_print_instruction(builder, blocks, bc_inst.a.type, llvm_val);
             break;
         }
 
@@ -738,7 +740,8 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
             Type *struct_type = nullptr;
 
-            if (bc_inst.a.kind == Bytecode_Register_Kind::ALLOC) {
+            if (bc_inst.a.kind == Bytecode_Register_Kind::ALLOC ||
+                bc_inst.a.kind == Bytecode_Register_Kind::GLOBAL) {
                 struct_type = bc_inst.a.type;
             } else {
                 assert(bc_inst.a.kind == Bytecode_Register_Kind::TEMPORARY);
@@ -811,7 +814,9 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             assert(bc_inst.a.kind == Bytecode_Register_Kind::BLOCK);
             auto block_handle = bc_inst.a.block_handle;
             assert(block_handle >= 0 && (size_t)block_handle < builder->current_function->size());
-            auto llvm_block = llvm_block_by_index(builder, block_indices[block_handle]);
+
+            auto llvm_block = get_llvm_block(builder, blocks, block_handle);
+
             irb->CreateBr(llvm_block);
             break;
         }
@@ -831,8 +836,8 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             assert(then_block_handle >= 0 && (size_t)then_block_handle < block_count);
             assert(else_block_handle >= 0 && (size_t)else_block_handle < block_count);
 
-            auto llvm_then_block = llvm_block_by_index(builder, block_indices[then_block_handle]);
-            auto llvm_else_block = llvm_block_by_index(builder, block_indices[else_block_handle]);
+            auto llvm_then_block = get_llvm_block(builder, blocks, then_block_handle);
+            auto llvm_else_block = get_llvm_block(builder, blocks, else_block_handle);
 
             irb->CreateCondBr(llvm_cond, llvm_then_block, llvm_else_block);
             break;
@@ -875,7 +880,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 #undef EMIT_FLOAT_BINOP
 
 
-void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm::Value *llvm_val, bool quote_strings/*=false*/)
+void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Array_Ref<LLVM_Block> blocks, Type *type, llvm::Value *llvm_val, bool quote_strings/*=false*/)
 {
     debug_assert(builder && type && llvm_val);
 
@@ -1004,6 +1009,84 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
                 dynamic_array_append(llvm_print_args, length_val);
                 dynamic_array_append(llvm_print_args, ptr_val);
 
+            } else if (type->flags & TYPE_FLAG_SLICE_STRUCT) {
+
+                use_printf = false;
+
+                llvm::Value *zero_val = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { 0 });
+                llvm::Value *one_val = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { 1 });
+
+                Type *element_type = type->structure.member_types[0]->pointer.base;
+                auto llvm_element_type = llvm_type_from_ast_type(builder, element_type);
+
+                llvm::Value *preamble = llvm_builder_emit_cstring_literal(builder, "{ ");
+                irb->CreateCall(printf_func, { &preamble, 1 });
+
+                auto current_bc_block = &builder->current_bytecode_function->blocks[builder->current_block.bc_block_handle];
+                auto nbh = current_bc_block->next;
+                auto current_llvm_block = irb->GetInsertBlock();
+
+                llvm::BasicBlock *slice_cond_block;
+                llvm::BasicBlock *slice_print_comma_cond_block;
+                llvm::BasicBlock *slice_print_comma_block;
+                llvm::BasicBlock *slice_print_block;
+                llvm::BasicBlock *slice_post_print_block;
+                if (nbh == -1) {
+
+                    slice_cond_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.cond", builder->current_function);
+                    slice_print_comma_cond_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.comma.cond", builder->current_function);
+                    slice_print_comma_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.comma", builder->current_function);
+                    slice_print_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.body", builder->current_function);
+                    slice_post_print_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.post", builder->current_function);
+                } else {
+
+                    auto next_llvm_block = get_llvm_block(builder, blocks, nbh);
+                    slice_cond_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.cond", builder->current_function, next_llvm_block);
+                    slice_print_comma_cond_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.comma.cond", builder->current_function, next_llvm_block);
+                    slice_print_comma_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.comma", builder->current_function, next_llvm_block);
+                    slice_print_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.body", builder->current_function, next_llvm_block);
+                    slice_post_print_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.post", builder->current_function, next_llvm_block);
+                }
+
+                llvm::Value *data_val = irb->CreateExtractValue(llvm_val, { 0 });
+                llvm::Value *length_val = irb->CreateExtractValue(llvm_val, { 1 });
+                llvm::Value *initial_index_reg = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { 0 });
+
+                irb->CreateBr(slice_cond_block);
+
+                irb->SetInsertPoint(slice_cond_block);
+                auto index_val = irb->CreatePHI(initial_index_reg->getType(), 2);
+                index_val->addIncoming(initial_index_reg, current_llvm_block);
+
+                llvm::Value *cond = irb->CreateICmpSLT(index_val, length_val);
+                irb->CreateCondBr(cond, slice_print_comma_cond_block, slice_post_print_block);
+
+                irb->SetInsertPoint(slice_print_comma_cond_block);
+                llvm::Value *comma_cond = irb->CreateICmpSGT(index_val, zero_val);
+                irb->CreateCondBr(comma_cond, slice_print_comma_block, slice_print_block);
+
+                irb->SetInsertPoint(slice_print_comma_block);
+                llvm::Value *comma = llvm_builder_emit_cstring_literal(builder, ", ");
+                irb->CreateCall(printf_func, { &comma, 1 });
+                irb->CreateBr(slice_print_block);
+
+                irb->SetInsertPoint(slice_print_block);
+
+                llvm::Value *elem_ptr_val = irb->CreateGEP(data_val->getType(), data_val, { index_val });
+                llvm::Value *elem_val = irb->CreateLoad(llvm_element_type, elem_ptr_val);
+
+                llvm_builder_emit_print_instruction(builder, blocks, element_type, elem_val, quote_strings);
+
+                llvm::Value *new_index_val = irb->CreateAdd(index_val, one_val);
+                irb->CreateBr(slice_cond_block);
+
+                index_val->addIncoming(new_index_val, slice_print_block);
+
+                irb->SetInsertPoint(slice_post_print_block);
+
+                llvm::Value *postamble = llvm_builder_emit_cstring_literal(builder, " }");
+                irb->CreateCall(printf_func, { &postamble, 1 });
+
             } else {
                 use_printf = false;
 
@@ -1018,7 +1101,7 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
 
                     unsigned indexes[] = { (unsigned)i } ;
                     llvm::Value *mem_val = irb->CreateExtractValue(llvm_val, indexes);
-                    llvm_builder_emit_print_instruction(builder, type->structure.member_types[i], mem_val, true);
+                    llvm_builder_emit_print_instruction(builder, blocks, type->structure.member_types[i], mem_val, true);
                 }
 
                 llvm::Value *postamble = llvm_builder_emit_cstring_literal(builder, " }");
@@ -1043,7 +1126,7 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Type *type, llvm
 
                 unsigned indexes[] = { (unsigned)i };
                 llvm::Value *elem_val = irb->CreateExtractValue(llvm_val, indexes);
-                llvm_builder_emit_print_instruction(builder, elem_type, elem_val, true);
+                llvm_builder_emit_print_instruction(builder, blocks, elem_type, elem_val, true);
             }
 
             llvm::Value *postamble = llvm_builder_emit_cstring_literal(builder, " }");
@@ -1167,7 +1250,10 @@ llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Re
 
 llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode_Register &bc_reg)
 {
-    assert(bc_reg.flags & BC_REGISTER_FLAG_CONSTANT);
+    // This assumes these non const literals point to already initialized globals...
+    assert((bc_reg.flags & BC_REGISTER_FLAG_CONSTANT) ||
+           (bc_reg.flags & BC_REGISTER_FLAG_LITERAL) ||
+           bc_reg.kind == Bytecode_Register_Kind::GLOBAL);
 
     switch (bc_reg.kind) {
         case Bytecode_Register_Kind::INVALID: {
@@ -1217,6 +1303,8 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
                 case Type_Kind::STATIC_ARRAY: {
                     return llvm_builder_emit_array_literal(builder, bc_reg.type, bc_reg.value.compound);
                 }
+
+                case Type_Kind::SLICE: assert(false); break;
             }
             break;
         }
@@ -1246,7 +1334,11 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
         }
 
         case Bytecode_Register_Kind::GLOBAL: {
-            assert(false);
+            llvm::GlobalVariable *global;
+            bool found = hash_table_find(&builder->globals, bc_reg.index, &global);
+            assert(found);
+
+            return global;
             break;
         }
 
@@ -1499,6 +1591,10 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
             return llvm::ArrayType::get(elem_type, ast_type->static_array.count);
             break;
         }
+
+        case Type_Kind::SLICE: {
+            return llvm_type_from_ast_type(builder, ast_type->slice.struct_type);
+        }
     }
 
     assert(false);
@@ -1506,10 +1602,18 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
     return nullptr;
 }
 
-llvm::BasicBlock *llvm_block_by_index(LLVM_Builder *builder, s64 index)
+llvm::BasicBlock *get_llvm_block(LLVM_Builder *builder, Array_Ref<LLVM_Block> blocks, Bytecode_Block_Handle handle)
 {
-    auto llvm_block_it = builder->current_function->begin();
-    return &*std::next(llvm_block_it, index);
+    assert(handle >= 0 && handle < blocks.count);
+
+    if (blocks[handle].bc_block_handle == handle) return blocks[handle].llvm_block;
+
+    for (s64 i = 0; i < blocks.count; i++) {
+        if (blocks[i].bc_block_handle == handle) return blocks[i].llvm_block;
+    }
+
+    assert_msg(false, "llvm_get_block: Unable to find block");
+    return nullptr;
 }
 
 llvm::Function *llvm_get_intrinsic(LLVM_Builder *builder, Type *fn_type, const char *name)

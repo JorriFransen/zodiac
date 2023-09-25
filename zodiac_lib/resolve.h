@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast.h"
 #include "containers/dynamic_array.h"
 #include "defines.h"
 
@@ -7,12 +8,6 @@ namespace Zodiac
 {
 
 struct Allocator;
-struct AST_Declaration;
-struct AST_Directive;
-struct AST_Expression;
-struct AST_File;
-struct AST_Statement;
-struct AST_Type_Spec;
 struct Scope;
 struct Source_Range;
 struct Type;
@@ -58,7 +53,7 @@ enum class Flat_Node_Kind
     TYPE_SPEC,
 
     FUNCTION_PROTO,
-    GLOBAL_CONST_LVALUE,
+    IMPLICIT_LVALUE,
     RUN,
 };
 
@@ -75,10 +70,7 @@ struct Flat_Node
             AST_Expression *expr;
             Infer_Node *infer_type_from;
         } expr;
-        struct {
-            AST_Expression *expr;
-            AST_Declaration *decl;
-        } const_lvalue;
+        AST_Implicit_LValue implicit_lvalue;
         AST_Type_Spec *ts;
 
         struct {
