@@ -415,9 +415,13 @@ Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error
         }
 
         case Infer_Target::COMPOUND: {
-            assert((inferred_type->flags & TYPE_FLAG_AGGREGATE) ||
+            if (!((inferred_type->flags & TYPE_FLAG_AGGREGATE) ||
                    inferred_type->kind == Type_Kind::STATIC_ARRAY ||
-                   inferred_type->kind == Type_Kind::SLICE);
+                   inferred_type->kind == Type_Kind::SLICE)) {
+
+                fatal_resolve_error(ctx, error_loc, "Invalid type for compound literal: '%s'", temp_type_string(inferred_type));
+                return nullptr;
+            }
 
             auto index = infer_node->target.index;
 
@@ -875,7 +879,10 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
 
         case AST_Expression_Kind::COMPOUND: {
 
-            assert(infer_node);
+            if (!infer_node) {
+                fatal_resolve_error(resolver->ctx, expr, "Could not infer type for compound literal");
+                return;
+            }
 
             for (s64 i = 0; i < expr->compound.expressions.count; i++) {
                 Infer_Node *infer_from = compound_infer_node_new(resolver->ctx, infer_node, i);
