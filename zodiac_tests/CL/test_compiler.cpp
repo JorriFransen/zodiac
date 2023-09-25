@@ -2226,6 +2226,8 @@ MunitResult Local_Slices(const MunitParameter params[], void* user_data_or_fixtu
             const_arr : [5]s64 : { 5, 4, 3, 2, 1 };
             slice_from_const : []s64 = const_arr;
             println(const_arr);
+            slice_from_const = const_arr;
+            println(const_arr);
 
             return 0;
         }
@@ -2263,7 +2265,65 @@ R"OUT_STR(2
 { 12, 23, 34, 45, 56, 67, 78, 89, 90 }
 { 12, 23, 34, 45, 56, 67, 78, 89, 90 }
 { 2, 3, 4 }
+{ 5, 4, 3, 2, 1 }
 { 5, 4, 3, 2, 1 })OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Global_Slices(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        global_arr : [4]s64 = { 1, 2, 3, 4 };
+        global_slice : []s64 = { 11, 22, 33, 44, 55 };
+        global_const_arr : [5]s64 : { 5, 4, 3, 2, 1 };
+        global_slice_from_global_const_arr : []s64 = global_const_arr;
+
+        main :: () {
+            println("global_arr: ", global_arr);
+            local_slice : []s64 = global_arr;
+            println("local_slice: ", local_slice);
+            local_slice[1] = global_arr[1] * local_slice[1];
+            println("global_arr: ", global_arr);
+            println("local_slice: ", local_slice);
+            println("global_slice: ", global_slice);
+            println("global_slice.length: ", global_slice.length);
+            println("global_const_arr: ", global_const_arr);
+            local_slice_from_global_const : []s64 = global_const_arr;
+            println("local_slice_from_global_const: ", local_slice_from_global_const);
+            local_slice_from_global_const[2] = 33;
+            println("global_const_arr: ", global_const_arr);
+            println("local_slice_from_global_const: ", local_slice_from_global_const);
+            println("global_const_arr: ", global_const_arr);
+            println("global_slice_from_global_const_arr: ", global_slice_from_global_const_arr);
+            global_slice_from_global_const_arr[3] = 42;
+            println("global_const_arr: ", global_const_arr);
+            println("global_slice_from_global_const_arr: ", global_slice_from_global_const_arr);
+            global_slice_from_global_const_arr = global_const_arr;
+            println("global_slice_from_global_const_arr: ", global_slice_from_global_const_arr);
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(global_arr: { 1, 2, 3, 4 }
+local_slice: { 1, 2, 3, 4 }
+global_arr: { 1, 4, 3, 4 }
+local_slice: { 1, 4, 3, 4 }
+global_slice: { 11, 22, 33, 44, 55 }
+global_slice.length: 5
+global_const_arr: { 5, 4, 3, 2, 1 }
+local_slice_from_global_const: { 5, 4, 3, 2, 1 }
+global_const_arr: { 5, 4, 3, 2, 1 }
+local_slice_from_global_const: { 5, 4, 33, 2, 1 }
+global_const_arr: { 5, 4, 3, 2, 1 }
+global_slice_from_global_const_arr: { 5, 4, 3, 2, 1 }
+global_const_arr: { 5, 4, 3, 2, 1 }
+global_slice_from_global_const_arr: { 5, 4, 3, 42, 1 }
+global_slice_from_global_const_arr: { 5, 4, 3, 2, 1 })OUT_STR" };
 
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };

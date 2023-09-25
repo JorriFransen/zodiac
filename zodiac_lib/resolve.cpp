@@ -1575,13 +1575,20 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                 assert(EXPR_IS_CONST(decl->variable.value) || decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE);
             }
 
-            if (decl->variable.value && scope->kind != Scope_Kind::GLOBAL &&
+            if (decl->variable.value &&
                 decl->variable.resolved_type->kind == Type_Kind::SLICE &&
                 decl->variable.value->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
 
-                auto current_function = enclosing_function(scope);
                 AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_COMPOUND, decl->variable.value, .slice_type = decl->variable.resolved_type };
-                dynamic_array_append(&current_function->function.implicit_lvalues, implicit_lval);
+                if (scope->kind != Scope_Kind::GLOBAL) {
+                    auto current_function = enclosing_function(scope);
+                    dynamic_array_append(&current_function->function.implicit_lvalues, implicit_lval);
+                } else {
+                    auto flat_node = alloc<Flat_Root_Node>(ctx->resolver->node_allocator);
+                    flat_node->root.kind = Flat_Node_Kind::IMPLICIT_LVALUE;
+                    flat_node->root.implicit_lvalue = implicit_lval;
+                    dynamic_array_insert(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
+                }
             }
 
             auto sym = scope_get_symbol(scope, decl->identifier.name);
@@ -1767,6 +1774,14 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                     // ok
                 } else {
                     assert(false); // report error
+                }
+
+                if (lvalue_expr->resolved_type->kind == Type_Kind::SLICE &&
+                    value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
+
+                    auto current_function = enclosing_function(scope);
+                    AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_COMPOUND, value_expr, .slice_type = lvalue_expr->resolved_type };
+                    dynamic_array_append(&current_function->function.implicit_lvalues, implicit_lval);
                 }
             }
 
