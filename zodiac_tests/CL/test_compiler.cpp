@@ -2223,6 +2223,10 @@ MunitResult Local_Slices(const MunitParameter params[], void* user_data_or_fixtu
 
             println_slice_s64({2, 3, 4});
 
+            const_arr : [5]s64 : { 5, 4, 3, 2, 1 };
+            slice_from_const : []s64 = const_arr;
+            println(const_arr);
+
             return 0;
         }
         println_slice_s64 :: (s: []s64) {
@@ -2258,7 +2262,8 @@ R"OUT_STR(2
 { 11, 22, 33, 44, 55 }
 { 12, 23, 34, 45, 56, 67, 78, 89, 90 }
 { 12, 23, 34, 45, 56, 67, 78, 89, 90 }
-{ 2, 3, 4 })OUT_STR" };
+{ 2, 3, 4 }
+{ 5, 4, 3, 2, 1 })OUT_STR" };
 
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };

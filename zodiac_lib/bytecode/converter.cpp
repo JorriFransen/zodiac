@@ -352,10 +352,14 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                 Bytecode_Register array_alloc_reg = bytecode_emit_alloc(bc->builder, array_alloc_type, array_alloc_name.data);
                 dynamic_array_append(&slice_compound_arrays, array_alloc_reg);
 
-                auto slice_alloc_name = bytecode_unique_register_name_in_function(bc->builder, fn_handle, "slv");
-                Bytecode_Register slice_alloc_reg = bytecode_emit_alloc(bc->builder, implicit_lval.slice_type->slice.struct_type, slice_alloc_name.data);
+                if (implicit_lval.expr->kind == AST_Expression_Kind::COMPOUND) {
+                    auto slice_alloc_name = bytecode_unique_register_name_in_function(bc->builder, fn_handle, "slv");
+                    Bytecode_Register slice_alloc_reg = bytecode_emit_alloc(bc->builder, implicit_lval.slice_type->slice.struct_type, slice_alloc_name.data);
 
-                hash_table_add(&bc->implicit_lvalues, implicit_lval.expr, slice_alloc_reg);
+                    hash_table_add(&bc->implicit_lvalues, implicit_lval.expr, slice_alloc_reg);
+                } else {
+                    hash_table_add(&bc->implicit_lvalues, implicit_lval.expr, array_alloc_reg);
+                }
             }
 
             has_inits = true;
@@ -394,17 +398,19 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
                     assignment_to_bytecode(bc, expr, array_alloc);
 
-                    Bytecode_Register slice_alloc;
-                    bool found = hash_table_find(&bc->implicit_lvalues, expr, &slice_alloc);
-                    assert(found);
+                    if (implicit_lvalue.expr->kind == AST_Expression_Kind::COMPOUND) {
+                        Bytecode_Register slice_alloc;
+                        bool found = hash_table_find(&bc->implicit_lvalues, expr, &slice_alloc);
+                        assert(found);
 
-                    Bytecode_Register ptr_reg = bytecode_emit_array_offset_pointer(bc->builder, array_alloc, 0);
-                    Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, expr->compound.expressions.count);
-                    Bytecode_Register slice_reg = bytecode_emit_insert_value(bc->builder, {}, ptr_reg, slice_type->slice.struct_type, 0);
+                        Bytecode_Register ptr_reg = bytecode_emit_array_offset_pointer(bc->builder, array_alloc, 0);
+                        Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, expr->compound.expressions.count);
+                        Bytecode_Register slice_reg = bytecode_emit_insert_value(bc->builder, {}, ptr_reg, slice_type->slice.struct_type, 0);
 
-                    slice_reg = bytecode_emit_insert_value(bc->builder, slice_reg, length_reg, slice_type->slice.struct_type, 1);
+                        slice_reg = bytecode_emit_insert_value(bc->builder, slice_reg, length_reg, slice_type->slice.struct_type, 1);
 
-                    bytecode_emit_store_alloc(bc->builder, slice_reg, slice_alloc);
+                        bytecode_emit_store_alloc(bc->builder, slice_reg, slice_alloc);
+                    }
                 }
             }
 
@@ -1372,15 +1378,33 @@ void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, 
 
             value_reg = bytecode_emit_insert_value(bc->builder, {}, ptr_reg, lvalue_type, 0);
             value_reg = bytecode_emit_insert_value(bc->builder, value_reg, length_reg, lvalue_type, 1);
-        } else {
+
+        } else if (value_expr->kind == AST_Expression_Kind::COMPOUND){
 
             Bytecode_Register slice_alloc_reg;
             bool found = hash_table_find(&bc->implicit_lvalues, value_expr, &slice_alloc_reg);
             assert(found);
 
+            assert(slice_alloc_reg.kind == Bytecode_Register_Kind::ALLOC);
             value_reg = bytecode_emit_load_alloc(bc->builder, slice_alloc_reg);
-        }
 
+        } else {
+
+            Bytecode_Register array_alloc_reg;
+            bool found = hash_table_find(&bc->implicit_lvalues, value_expr, &array_alloc_reg);
+            assert(found);
+
+            assert(array_alloc_reg.kind == Bytecode_Register_Kind::ALLOC);
+
+            auto ptr_reg = bytecode_emit_array_offset_pointer(bc->builder, array_alloc_reg, 0);
+
+            auto length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, array_alloc_reg.type->static_array.count);
+
+
+            value_reg = bytecode_emit_insert_value(bc->builder, {}, ptr_reg, lvalue_type, 0);
+            value_reg = bytecode_emit_insert_value(bc->builder, value_reg, length_reg, lvalue_type, 1);
+
+        }
 
     } else {
         value_reg = ast_expr_to_bytecode(bc, value_expr);

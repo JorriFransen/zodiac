@@ -1575,6 +1575,15 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                 assert(EXPR_IS_CONST(decl->variable.value) || decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE);
             }
 
+            if (decl->variable.value && scope->kind != Scope_Kind::GLOBAL &&
+                decl->variable.resolved_type->kind == Type_Kind::SLICE &&
+                decl->variable.value->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
+
+                auto current_function = enclosing_function(scope);
+                AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_COMPOUND, decl->variable.value, .slice_type = decl->variable.resolved_type };
+                dynamic_array_append(&current_function->function.implicit_lvalues, implicit_lval);
+            }
+
             auto sym = scope_get_symbol(scope, decl->identifier.name);
             assert(sym && sym->state == Symbol_State::RESOLVED);
             sym->state = Symbol_State::TYPED;

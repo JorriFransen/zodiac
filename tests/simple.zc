@@ -1,22 +1,31 @@
 
 #run main();
 
-// global_arr : [4]s64 = { 1, 2, 3, 4 };
-global_slice : []s64 = { 11, 22, 33, 44, 55 };
+global_arr : [4]s64 = { 1, 2, 3, 4 };
+// global_slice : []s64 = { 11, 22, 33, 44, 55 };
 
 main :: () {
-    // println("global_arr: ", global_arr);
-    // println("*global_arr: ", *global_arr);
+    println("global_arr: ", global_arr);
+    println("*global_arr: ", *global_arr);
 
-    // println();
+    println();
 
-    // local_slice : []s64 = global_arr;
-    // println("local_slice: ", local_slice);
-    // println("local_slice.data: ", local_slice.data);
+    local_slice : []s64 = global_arr;
+    println("local_slice: ", local_slice);
+    println("local_slice.data: ", local_slice.data);
+
+    println();
+
+    local_slice[1] = global_arr[1] * local_slice[1];
+    println("global_arr: ", global_arr);
+    println("local_slice: ", local_slice);
+
+    println();
 
     println("global_slice: ", global_slice);
     println("global_slice.data: ", global_slice.data);
     println("global_slice.length: ", global_slice.length);
+
     return 0;
 }
 
