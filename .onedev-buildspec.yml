@@ -90,10 +90,3 @@ jobs:
   maxRetries: 3
   retryDelay: 30
   timeout: 3600
-  postBuildActions:
-  - !SendNotificationAction
-    condition: failed or cancelled or timed out
-    receivers: committers
-  - !SendNotificationAction
-    condition: successful and previous is failed
-    receivers: committers-since-previous-successful
