@@ -81,35 +81,60 @@ bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
             case Flat_Node_Kind::EXPR: assert(false); break;
             case Flat_Node_Kind::TYPE_SPEC: assert(false); break;
 
-            case Flat_Node_Kind::GLOBAL_CONST_LVALUE: {
+            case Flat_Node_Kind::IMPLICIT_LVALUE: {
+                auto implicit_lval = root_node->root.implicit_lvalue;
 
-                auto expr = root_node->root.const_lvalue.expr;
-                auto decl = root_node->root.const_lvalue.decl;
+                auto expr = implicit_lval.expr;
 
                 auto ta = temp_allocator();
                 auto taa = temp_allocator_allocator();
                 auto mark = temporary_allocator_get_mark(ta);
 
-                assert(expr->kind == AST_Expression_Kind::IDENTIFIER);
-                auto sym = scope_get_symbol(expr->identifier.scope, expr->identifier);
-                assert(sym->decl && sym->decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
-                auto const_decl = sym->decl;
 
-                assert(const_decl->variable.value);
-                Bytecode_Register value_reg = ast_expr_to_bytecode(bc, const_decl->variable.value);
+                if (implicit_lval.kind == AST_Implicit_LValue_Kind::CONST_LVALUE) {
+                    auto decl = implicit_lval.decl;
+                    assert(expr->kind == AST_Expression_Kind::IDENTIFIER);
+                    auto sym = scope_get_symbol(expr->identifier.scope, expr->identifier);
+                    assert(sym->decl && sym->decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
+                    auto const_decl = sym->decl;
 
-                Type *alloc_type = expr->resolved_type;
-                auto alloc_name = atom_get(&bc->context->atoms, string_append(taa, "clv_", decl->identifier.name.data));
-                alloc_name = bytecode_unique_global_name(bc->builder, alloc_name);
-                bytecode_create_global(bc->builder, alloc_name, alloc_type, false, value_reg);
+                    assert(const_decl->variable.value);
+                    Bytecode_Register value_reg = ast_expr_to_bytecode(bc, const_decl->variable.value);
 
-                temporary_allocator_reset(ta, mark);
+                    Type *alloc_type = expr->resolved_type;
+                    auto alloc_name = atom_get(&bc->context->atoms, string_append(taa, "clv_", decl->identifier.name.data));
+                    alloc_name = bytecode_unique_global_name(bc->builder, alloc_name);
+                    bytecode_create_global(bc->builder, alloc_name, alloc_type, false, value_reg);
 
-                Bytecode_Register global_reg;
-                bool found = hash_table_find(&bc->builder->global_registers, alloc_name, &global_reg);
-                assert(found);
+                    temporary_allocator_reset(ta, mark);
 
-                hash_table_add(&bc->implicit_lvalues, expr, global_reg);
+                    Bytecode_Register global_reg;
+                    bool found = hash_table_find(&bc->builder->global_registers, alloc_name, &global_reg);
+                    assert(found);
+
+                    hash_table_add(&bc->implicit_lvalues, expr, global_reg);
+                } else {
+                    assert(implicit_lval.kind == AST_Implicit_LValue_Kind::SLICE_COMPOUND);
+
+                    Atom array_alloc_name = atom_get(&bc->context->atoms, "scs");
+                    array_alloc_name = bytecode_unique_global_name(bc->builder, array_alloc_name);
+
+                    Type *array_type = implicit_lval.expr->resolved_type;
+
+                    Bytecode_Register value_reg = ast_const_expr_to_bytecode(bc, implicit_lval.expr);
+                    bytecode_create_global(bc->builder, array_alloc_name, array_type, false, value_reg);
+
+                    Bytecode_Register global_reg;
+                    bool found = hash_table_find(&bc->builder->global_registers, array_alloc_name, &global_reg);
+                    assert(found);
+
+                    Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, array_type->static_array.count);
+
+                    Bytecode_Register members[2] = { global_reg, length_reg };
+                    Bytecode_Register slice_reg = bytecode_aggregate_literal(bc->builder, members, implicit_lval.slice_type->slice.struct_type);
+
+                    hash_table_add(&bc->implicit_lvalues, expr, slice_reg);
+                }
                 break;
             };
 

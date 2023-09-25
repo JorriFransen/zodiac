@@ -1045,7 +1045,7 @@ bool name_resolve_node(Resolver *resolver, Flat_Node *node)
             return true;
         }
 
-        case Flat_Node_Kind::GLOBAL_CONST_LVALUE: assert(false); break;
+        case Flat_Node_Kind::IMPLICIT_LVALUE: assert(false); break;
 
         case Flat_Node_Kind::RUN: assert(false); break;
 
@@ -1519,7 +1519,7 @@ bool type_resolve_node(Resolver *resolver, Flat_Node *node)
             return true;
         }
 
-        case Flat_Node_Kind::GLOBAL_CONST_LVALUE: assert(false); break;
+        case Flat_Node_Kind::IMPLICIT_LVALUE: assert(false); break;
 
         case Flat_Node_Kind::RUN: assert(false); break;
     }
@@ -2159,21 +2159,22 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                         assert(sym->decl);
                         assert(sym->decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
 
+                        AST_Implicit_LValue implicit_lvalue = { AST_Implicit_LValue_Kind::CONST_LVALUE, operand, .decl = sym->decl };
+
                         if (scope->kind != Scope_Kind::FUNCTION_LOCAL && scope->kind != Scope_Kind::FUNCTION_PARAMETER) {
                             assert(scope->kind == Scope_Kind::GLOBAL);
-                            auto flat_node = alloc<Flat_Root_Node>(ctx->resolver->node_allocator);
-                            flat_node->root.kind = Flat_Node_Kind::GLOBAL_CONST_LVALUE;
-                            flat_node->root.const_lvalue = { operand, sym->decl };
+                            auto flat_node = alloc<Flat_Root_Node>(resolver->node_allocator);
+                            flat_node->root.kind = Flat_Node_Kind::IMPLICIT_LVALUE;
+                            flat_node->root.implicit_lvalue = implicit_lvalue;
                             dynamic_array_insert(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
                         } else {
                             auto current_function = enclosing_function(scope);
-                            dynamic_array_append(&current_function->function.implicit_lvalues,
-                                                 { AST_Implicit_LValue_Kind::CONST_LVALUE, operand, { sym->decl } });
+                            dynamic_array_append(&current_function->function.implicit_lvalues, implicit_lvalue);
                         }
 
                     } else if (!EXPR_IS_LVALUE(operand)) {
 
-                        fatal_resolve_error(ctx, expr, "The operand to dereference ('*') is not an lvalue");
+                        fatal_resolve_error(ctx, expr, "The operand to pointer-to ('*') is not an lvalue");
                         fatal_resolve_error(ctx, operand, "Operand: '%s'", ast_print_expression(operand, &ctx->error_allocator).data);
                         return false;
                     }
@@ -2443,10 +2444,22 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 inferred_type = get_static_array_type(inferred_type->slice.element_type, compound_member_count, &ctx->ast_allocator);
                 expr->resolved_type = inferred_type;
 
-                auto fn = enclosing_function(scope);
-                assert(fn);
-                assert(slice_type->kind == Type_Kind::SLICE);
-                dynamic_array_append(&fn->function.implicit_lvalues, { AST_Implicit_LValue_Kind::SLICE_COMPOUND, expr, .slice_type = slice_type });
+                AST_Implicit_LValue implicit_lvalue = { AST_Implicit_LValue_Kind::SLICE_COMPOUND, expr, .slice_type = slice_type };
+
+                if (scope->kind == Scope_Kind::GLOBAL) {
+
+                    auto flat_node = alloc<Flat_Root_Node>(resolver->node_allocator);
+                    flat_node->root.kind = Flat_Node_Kind::IMPLICIT_LVALUE;
+                    flat_node->root.implicit_lvalue = implicit_lvalue ;
+                    dynamic_array_insert(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
+
+                } else {
+                    auto fn = enclosing_function(scope);
+                    assert(fn);
+                    assert(slice_type->kind == Type_Kind::SLICE);
+                    dynamic_array_append(&fn->function.implicit_lvalues, implicit_lvalue);
+                }
+
 
             } else {
                 assert_msg(false, "Invalid inferred type for compound expression");

@@ -1,7 +1,24 @@
 
 #run main();
 
+global_arr : [4]s64 = { 1, 2, 3, 4 };
+global_slice : []s64 = { 11, 22, 33, 44, 55 };
+
+
+
+
 main :: () {
+    println("global_arr: ", global_arr);
+    println("*global_arr: ", *global_arr);
+
+    println();
+
+    local_slice : []s64 = global_arr;
+    println("local_slice: ", local_slice);
+    println("local_slice.data: ", local_slice.data);
+
+    println("global_slice: ", global_slice);
+    // println("global_slice.data: ", global_slice.data);
     return 0;
 }
 
