@@ -179,7 +179,11 @@ void llvm_builder_emit_global(LLVM_Builder *builder, Bytecode_Global_Handle glob
 
     if (glob->initial_value.kind != Bytecode_Register_Kind::INVALID) {
         assert(glob->initial_value.kind == Bytecode_Register_Kind::TEMPORARY);
-        assert(glob->initial_value.flags & BC_REGISTER_FLAG_CONSTANT);
+
+        // This assumes these non const literals point to already initialized globals...
+        assert((glob->initial_value.flags & BC_REGISTER_FLAG_CONSTANT) ||
+               (glob->initial_value.flags & BC_REGISTER_FLAG_LITERAL));
+
         llvm::Constant *init_val = llvm_builder_emit_constant(builder, glob->initial_value);
         llvm_glob_var->setInitializer(init_val);
     } else {
@@ -736,7 +740,8 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
             Type *struct_type = nullptr;
 
-            if (bc_inst.a.kind == Bytecode_Register_Kind::ALLOC) {
+            if (bc_inst.a.kind == Bytecode_Register_Kind::ALLOC ||
+                bc_inst.a.kind == Bytecode_Register_Kind::GLOBAL) {
                 struct_type = bc_inst.a.type;
             } else {
                 assert(bc_inst.a.kind == Bytecode_Register_Kind::TEMPORARY);
@@ -1245,7 +1250,10 @@ llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Re
 
 llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode_Register &bc_reg)
 {
-    assert(bc_reg.flags & BC_REGISTER_FLAG_CONSTANT);
+    // This assumes these non const literals point to already initialized globals...
+    assert((bc_reg.flags & BC_REGISTER_FLAG_CONSTANT) ||
+           (bc_reg.flags & BC_REGISTER_FLAG_LITERAL) ||
+           bc_reg.kind == Bytecode_Register_Kind::GLOBAL);
 
     switch (bc_reg.kind) {
         case Bytecode_Register_Kind::INVALID: {
@@ -1326,7 +1334,11 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
         }
 
         case Bytecode_Register_Kind::GLOBAL: {
-            assert(false);
+            llvm::GlobalVariable *global;
+            bool found = hash_table_find(&builder->globals, bc_reg.index, &global);
+            assert(found);
+
+            return global;
             break;
         }
 

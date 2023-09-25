@@ -178,12 +178,22 @@ bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             if (DECL_IS_GLOBAL(decl)) {
 
                 Type *global_type = decl->variable.resolved_type;
+                if (global_type->kind == Type_Kind::SLICE) {
+                    global_type = global_type->slice.struct_type;
+                }
                 assert(global_type);
                 auto global_name = decl->identifier.name;
 
                 Bytecode_Register initial_value_reg = {};
-                if (decl->variable.value) {
-                    initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
+                auto value_expr = decl->variable.value;
+                if (value_expr) {
+                    if (value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && global_type->flags & TYPE_FLAG_SLICE_STRUCT) {
+
+                        bool found = hash_table_find(&bc->implicit_lvalues, value_expr, &initial_value_reg);
+                        assert(found);
+                    } else {
+                        initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
+                    }
                 }
 
                 auto global_handle = bytecode_create_global(bc->builder, global_name, global_type, false, initial_value_reg);

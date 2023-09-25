@@ -254,7 +254,8 @@ Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, const c
 Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, Atom name, Type *type, bool constant, Bytecode_Register initial_value /*={}*/)
 {
     if (initial_value.kind != Bytecode_Register_Kind::INVALID) {
-        assert(initial_value.flags & BC_REGISTER_FLAG_CONSTANT);
+        assert((initial_value.flags & BC_REGISTER_FLAG_CONSTANT) ||
+               (initial_value.flags & BC_REGISTER_FLAG_LITERAL));
     }
 
     Bytecode_Global global_var = {
@@ -480,7 +481,7 @@ Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Dynamic_Array
 
     for (s64 i = 0; i < members.count; i++) {
 
-        if (!(members[i].flags & BC_REGISTER_FLAG_LITERAL)) {
+        if (!(members[i].flags & BC_REGISTER_FLAG_LITERAL) && members[i].kind != Bytecode_Register_Kind::GLOBAL) {
             all_literal = false;
         }
 
@@ -1151,7 +1152,8 @@ Bytecode_Register bytecode_emit_aggregate_offset_pointer(Bytecode_Builder *build
 {
     Type *agg_type = nullptr;
 
-    if (agg_register.kind == Bytecode_Register_Kind::ALLOC) {
+    if (agg_register.kind == Bytecode_Register_Kind::ALLOC ||
+        agg_register.kind == Bytecode_Register_Kind::GLOBAL) {
         agg_type = agg_register.type;
 
     } else if (agg_register.kind == Bytecode_Register_Kind::TEMPORARY) {

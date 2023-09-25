@@ -892,6 +892,7 @@ switch (operand.type->bit_size) { \
 
         case Bytecode_Opcode::AGG_OFFSET_POINTER: {
             assert(instruction.a.kind == Bytecode_Register_Kind::ALLOC ||
+                   instruction.a.kind == Bytecode_Register_Kind::GLOBAL ||
                    instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
 
             Interpreter_Register agg_register = interpreter_load_register(interp, instruction.a);
@@ -914,7 +915,8 @@ switch (operand.type->bit_size) { \
 
             u8 *ptr = nullptr;
 
-            if (instruction.a.kind == Bytecode_Register_Kind::ALLOC) {
+            if (instruction.a.kind == Bytecode_Register_Kind::ALLOC ||
+                instruction.a.kind == Bytecode_Register_Kind::GLOBAL) {
                 ptr = agg_register.pointer;
             } else {
                 assert(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
@@ -1592,11 +1594,27 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
         if (!is_array) {
             member_type = compound_type->structure.member_types[cmi];
         }
+
         Bytecode_Register bc_mem_reg = source.value.compound[cmi];
+        Interpreter_Register mem_reg;
 
-        assert(member_type == bc_mem_reg.type);
+        if (bc_mem_reg.kind == Bytecode_Register_Kind::GLOBAL) {
 
-        Interpreter_Register mem_reg = interpreter_load_register(interp, bc_mem_reg);
+            assert(member_type->kind == Type_Kind::POINTER);
+            mem_reg = interpreter_load_register(interp, bc_mem_reg);
+            assert(mem_reg.pointer);
+            if (mem_reg.type->kind == Type_Kind::STATIC_ARRAY) {
+                assert(member_type->kind == Type_Kind::POINTER);
+                assert(member_type->pointer.base == mem_reg.type->static_array.element_type);
+                mem_reg.type = member_type;
+            } else {
+                assert(false);
+            }
+
+        } else {
+            assert(member_type == bc_mem_reg.type);
+            mem_reg = interpreter_load_register(interp, bc_mem_reg);
+        }
 
         // @Cleanup: @TODO: @FIXME: alignment
         auto copy_size = mem_reg.type->bit_size / 8;

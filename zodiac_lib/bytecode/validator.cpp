@@ -1309,7 +1309,8 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
         case Bytecode_Opcode::AGG_OFFSET_POINTER: {
             Type *aggregate_type = nullptr;
 
-            if (instruction->a.kind == Bytecode_Register_Kind::ALLOC) {
+            if (instruction->a.kind == Bytecode_Register_Kind::ALLOC ||
+                instruction->a.kind == Bytecode_Register_Kind::GLOBAL) {
                 aggregate_type = instruction->a.type;
 
             } else if (instruction->a.kind == Bytecode_Register_Kind::TEMPORARY) {
@@ -1322,7 +1323,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 aggregate_type = instruction->a.type->pointer.base;
 
             } else {
-                bytecode_validator_report_error(validator, "The 'a' register of 'AGG_OFFSET_POINTER' must be a temporary or an alloc");
+                bytecode_validator_report_error(validator, "The 'a' register of 'AGG_OFFSET_POINTER' must be a temporary, alloc or global");
                 return false;
             }
 
