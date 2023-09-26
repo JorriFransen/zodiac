@@ -2140,6 +2140,16 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     resolve_error(ctx, arg_expr, "    Got: %s", temp_type_string(arg_type));
                     return false;
                 }
+
+                if (param_type->kind == Type_Kind::SLICE && arg_expr->kind == AST_Expression_Kind::COMPOUND) {
+                    assert(arg_type->kind == Type_Kind::STATIC_ARRAY);
+                    assert(arg_expr->flags & AST_EXPR_FLAG_SLICE_COMPOUND);
+
+                    auto current_fn = enclosing_function(scope);
+
+                    AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_COMPOUND, arg_expr, .slice_type = param_type };
+                    dynamic_array_append(&current_fn->function.implicit_lvalues, implicit_lval);
+                }
             }
 
             auto return_type = func_decl->function.type->function.return_type;
@@ -2474,23 +2484,6 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                 inferred_type = get_static_array_type(inferred_type->slice.element_type, compound_member_count, &ctx->ast_allocator);
                 expr->resolved_type = inferred_type;
-
-                AST_Implicit_LValue implicit_lvalue = { AST_Implicit_LValue_Kind::SLICE_COMPOUND, expr, .slice_type = slice_type };
-
-                if (scope->kind == Scope_Kind::GLOBAL) {
-
-                    auto flat_node = alloc<Flat_Root_Node>(resolver->node_allocator);
-                    flat_node->root.kind = Flat_Node_Kind::IMPLICIT_LVALUE;
-                    flat_node->root.implicit_lvalue = implicit_lvalue ;
-                    dynamic_array_insert(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
-
-                } else {
-                    auto fn = enclosing_function(scope);
-                    assert(fn);
-                    assert(slice_type->kind == Type_Kind::SLICE);
-                    dynamic_array_append(&fn->function.implicit_lvalues, implicit_lvalue);
-                }
-
 
             } else {
                 assert_msg(false, "Invalid inferred type for compound expression");

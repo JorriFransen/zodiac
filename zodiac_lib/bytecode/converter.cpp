@@ -993,7 +993,6 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
                     arg_reg = bytecode_emit_load_alloc(bc->builder, slice_alloc);
 
-
                 } else {
                     arg_reg = ast_expr_to_bytecode(bc, arg_expr);
                 }

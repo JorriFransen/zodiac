@@ -1,5 +1,9 @@
 
 - Slices
+    - The following code emits duplicate ALLOCS atm:
+    - Untangle the implicit lvalue system (add some parameters to control what is emitted)
+
+
 
 - FFI with different return types
 

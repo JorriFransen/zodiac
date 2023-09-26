@@ -1,8 +1,20 @@
 
 #run main();
 
-
 main :: () {
+
+    slice: []s64 = { 1, 2 };
+    println(slice);
+    print_slice(slice);
+    print_slice({1, 2, 3});
+
+    arr : [4]s64 = { 1, 2, 3, 4 };
+    slice_from_arr : []s64 = arr;
+    println(slice_from_arr);
+
     return 0;
 }
 
+print_slice :: (s: []s64) {
+    println(s);
+}
