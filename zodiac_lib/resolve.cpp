@@ -1586,13 +1586,26 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                 decl->variable.resolved_type->kind == Type_Kind::SLICE &&
                 decl->variable.value->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
 
-                bool needs_array_alloc = decl->variable.value->kind == AST_Expression_Kind::COMPOUND || EXPR_IS_CONST(decl->variable.value);
+                bool value_is_global_const = false;
+
+                // Check if the value is pointing to a global (constant).
+                if (decl->variable.value->kind == AST_Expression_Kind::IDENTIFIER) {
+                    auto ident_sym = scope_get_symbol(scope, decl->variable.value->identifier.name);
+                    auto ident_decl = ident_sym->decl;
+
+                    if (ident_decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE) {
+                        value_is_global_const = true;
+                    }
+                }
+
+                bool needs_local_array_alloc = (decl->variable.value->kind == AST_Expression_Kind::COMPOUND || EXPR_IS_CONST(decl->variable.value)) && !value_is_global_const;
 
                 AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_ARRAY,
                                                       decl->variable.value,
                                                       .slice = {
                                                           .type = decl->variable.resolved_type,
-                                                          .needs_array_alloc = needs_array_alloc,
+                                                          .needs_local_array_alloc = needs_local_array_alloc,
+                                                          .needs_global_array_alloc = value_is_global_const,
                                                           .needs_slice_alloc = false,
                                                       }
                                                     };
@@ -1796,13 +1809,26 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                 if (lvalue_expr->resolved_type->kind == Type_Kind::SLICE &&
                     value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
 
-                    bool needs_array_alloc = value_expr->kind == AST_Expression_Kind::COMPOUND || EXPR_IS_CONST(value_expr);
+                    bool value_is_global_const = false;
+
+                    // Check if the value is pointing to a global (constant).
+                    if (value_expr->kind == AST_Expression_Kind::IDENTIFIER) {
+                        auto ident_sym = scope_get_symbol(scope, value_expr->identifier.name);
+                        auto ident_decl = ident_sym->decl;
+
+                        if (ident_decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE) {
+                            value_is_global_const = true;
+                        }
+                    }
+
+                    bool needs_array_alloc = (value_expr->kind == AST_Expression_Kind::COMPOUND || EXPR_IS_CONST(value_expr)) && ! value_is_global_const;
 
                     auto current_function = enclosing_function(scope);
                     AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_ARRAY,
                                                           value_expr,
                                                           .slice = { .type = lvalue_expr->resolved_type,
-                                                                     .needs_array_alloc = needs_array_alloc,
+                                                                     .needs_local_array_alloc = needs_array_alloc,
+                                                                     .needs_global_array_alloc = value_is_global_const,
                                                                      .needs_slice_alloc = false,
                                                                    }
                                                         };
@@ -2169,7 +2195,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_ARRAY,
                                                           arg_expr,
                                                           .slice = { .type = param_type,
-                                                                     .needs_array_alloc = true,
+                                                                     .needs_local_array_alloc = true,
                                                                      .needs_slice_alloc = false,
                                                                    }
                                                         };

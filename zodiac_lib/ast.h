@@ -349,7 +349,8 @@ struct AST_Implicit_LValue
 
         struct {
             Type *type;
-            bool needs_array_alloc;
+            bool needs_local_array_alloc;
+            bool needs_global_array_alloc;
             bool needs_slice_alloc;
         } slice;
     };

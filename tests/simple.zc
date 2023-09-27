@@ -1,5 +1,10 @@
 #run main();
 
+global_slice : []s64 = { 5, 4, 3 };
+
+global_arr : [4]s64 : { 4, 3, 2, 1 };
+global_slice_from_arr : []s64 = global_arr;
+
 main :: () {
 
     {
@@ -44,6 +49,12 @@ main :: () {
 
     }
 
+    {
+        local_slice_from_global_arr : []s64 = global_arr;
+        local_slice_from_global_arr = global_arr;
+
+        println(local_slice_from_global_arr);
+    }
     return 0;
 }
 
