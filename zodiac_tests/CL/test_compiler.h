@@ -103,6 +103,7 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Global_Slices) \
     X(More_Slices) \
     X(Slice_Aggregate_Index) \
+    X(Slice_Lvalues) \
 
 
 // Function declarations

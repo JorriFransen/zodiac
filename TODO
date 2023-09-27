@@ -1,12 +1,10 @@
 
-- Slices
-    - Test using indexing on a slice as lvalue:
-        'slice[3] = 12;' // This should work
-        'ptr := *slice[3];' // Not sure about this
-
 - FFI with different return types
 
 - Defer
+
+- Assert
+- Slice bounds checking
 
 - When emitting non constant compound expressions some of it's members/elements might be constant. Constant members should be emitted to a value first, which we can then use to insert the non const values into.
 
