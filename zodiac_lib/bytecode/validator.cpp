@@ -1,8 +1,5 @@
 #include "bytecode/validator.h"
 
-#include <stdarg.h>
-#include <stdio.h>
-
 #include "atom.h"
 #include "common.h"
 #include "containers/hash_table.h"
@@ -14,6 +11,8 @@
 #include "util/logger.h"
 #include "util/string_builder.h"
 #include "zodiac_context.h"
+
+#include <stdio.h>
 
 namespace Zodiac { namespace Bytecode {
 

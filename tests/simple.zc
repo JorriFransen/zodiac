@@ -3,31 +3,22 @@
 
 main :: () {
 
-    vec_arr : [3]Vec2 = { {1, 2}, {3, 4}, {5, 6} };
-    vec_slice_from_arr : []Vec2 = vec_arr;
-    println(vec_slice_from_arr);
+    i := 42;    
+    println(i);
 
-    vec_slice_from_arr[1] = { 33, 44 };
-    println(vec_slice_from_arr);
+    i += 1;
+    println(i);
 
-    vec_slice_from_arr.data = *vec_slice_from_arr[1];
-    vec_slice_from_arr.length = vec_slice_from_arr.length - 1;
-    println(vec_slice_from_arr);
+    i -= 3;
+    println(i);
 
-    arr_arr : [3][2]s64 = { {6, 5}, {4, 3}, {2, 1} };
-    arr_slice_from_arr : [][2]s64 = arr_arr;
-    println(arr_slice_from_arr);
+    i /= 2;
+    println(i);
 
-    arr_slice_from_arr[1] = { 44, 55 };
-    println(arr_slice_from_arr);
-
-    arr_slice_from_arr.data = *arr_slice_from_arr[1];
-    arr_slice_from_arr.length = arr_slice_from_arr.length - 1;
-    println(arr_slice_from_arr);
+    i *= 4;
+    println(i);
 
     return 0;
 }
 
-Vec2 :: struct {
-    x, y: s64;
-}
+

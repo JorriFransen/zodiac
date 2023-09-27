@@ -7,6 +7,8 @@
 #include "error.h"
 #include "util/zstring.h"
 
+#include <stdarg.h>
+
 namespace Zodiac {
 
 struct Allocator;

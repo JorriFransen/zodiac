@@ -227,6 +227,14 @@ AST_Expression *parse_expr_unary(Parser *parser)
     } else if (match_token(parser, '<')) {
         AST_Expression *operand = parse_expr_unary(parser);
         return ast_unary_expr_new(parser->context, {start_pos, operand->range.end}, AST_Unary_Operator::DEREF, operand);
+    } else if (is_token(parser, '#')) {
+        Parsed_Directive pd = parse_directive(parser, false);
+        assert(pd.kind == Parsed_Directive_Kind::DATA);
+        assert(pd.data);
+        auto directive = pd.data;
+        assert(directive->kind == AST_Directive_Kind::RUN);
+
+        return ast_run_directive_expr_new(parser->context, directive->range, directive);
     } else {
         return parse_expr_base(parser);
     }
@@ -312,18 +320,7 @@ AST_Expression *parse_expr_cmp(Parser *parser)
 
 AST_Expression *_parse_expression(Parser *parser)
 {
-    if (is_token(parser, '#')) {
-        Parsed_Directive pd = parse_directive(parser, false);
-        assert(pd.kind == Parsed_Directive_Kind::DATA);
-        assert(pd.data);
-        auto directive = pd.data;
-        assert(directive->kind == AST_Directive_Kind::RUN);
-
-        return ast_run_directive_expr_new(parser->context, directive->range, directive);
-
-    } else {
-        return parse_expr_cmp(parser);
-    }
+    return parse_expr_cmp(parser);
 }
 
 AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=false*/)
@@ -475,8 +472,9 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
 
     AST_Statement *result = nullptr;
 
-    // All remaining options start with an expression
-    AST_Expression *expr = parse_expression(parser);
+    // All remaining options start with a unary expression
+    AST_Expression *expr = parse_expr_unary(parser);
+    return_if_null(expr);
 
     if (expr->kind == AST_Expression_Kind::CALL) {
         result = ast_call_stmt_new(parser->context, expr->range, expr);
