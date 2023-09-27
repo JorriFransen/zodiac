@@ -1606,7 +1606,6 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                                                           .type = decl->variable.resolved_type,
                                                           .needs_local_array_alloc = needs_local_array_alloc,
                                                           .needs_global_array_alloc = value_is_global_const,
-                                                          .needs_slice_alloc = false,
                                                       }
                                                     };
 
@@ -1829,7 +1828,6 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                                                           .slice = { .type = lvalue_expr->resolved_type,
                                                                      .needs_local_array_alloc = needs_array_alloc,
                                                                      .needs_global_array_alloc = value_is_global_const,
-                                                                     .needs_slice_alloc = false,
                                                                    }
                                                         };
 
@@ -2196,7 +2194,6 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                                                           arg_expr,
                                                           .slice = { .type = param_type,
                                                                      .needs_local_array_alloc = true,
-                                                                     .needs_slice_alloc = false,
                                                                    }
                                                         };
 
