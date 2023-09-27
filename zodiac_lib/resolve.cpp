@@ -1588,7 +1588,7 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
 
                 bool needs_array_alloc = decl->variable.value->kind == AST_Expression_Kind::COMPOUND || EXPR_IS_CONST(decl->variable.value);
 
-                AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_COMPOUND,
+                AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_ARRAY,
                                                       decl->variable.value,
                                                       .slice = {
                                                           .type = decl->variable.resolved_type,
@@ -1799,7 +1799,7 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                     bool needs_array_alloc = value_expr->kind == AST_Expression_Kind::COMPOUND || EXPR_IS_CONST(value_expr);
 
                     auto current_function = enclosing_function(scope);
-                    AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_COMPOUND,
+                    AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_ARRAY,
                                                           value_expr,
                                                           .slice = { .type = lvalue_expr->resolved_type,
                                                                      .needs_array_alloc = needs_array_alloc,
@@ -2166,7 +2166,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                     auto current_fn = enclosing_function(scope);
 
-                    AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_COMPOUND,
+                    AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_ARRAY,
                                                           arg_expr,
                                                           .slice = { .type = param_type,
                                                                      .needs_array_alloc = true,

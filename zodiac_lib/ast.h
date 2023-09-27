@@ -335,7 +335,7 @@ struct AST_Variable_Declaration
 enum class AST_Implicit_LValue_Kind
 {
     CONST_LVALUE,
-    SLICE_COMPOUND,
+    SLICE_ARRAY,
 };
 
 struct AST_Implicit_LValue

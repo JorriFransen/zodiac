@@ -114,7 +114,7 @@ bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
 
                     hash_table_add(&bc->implicit_lvalues, expr, global_reg);
                 } else {
-                    assert(implicit_lval.kind == AST_Implicit_LValue_Kind::SLICE_COMPOUND);
+                    assert(implicit_lval.kind == AST_Implicit_LValue_Kind::SLICE_ARRAY);
 
                     Atom array_alloc_name = atom_get(&bc->context->atoms, "scs");
                     array_alloc_name = bytecode_unique_global_name(bc->builder, array_alloc_name);
@@ -345,7 +345,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                 hash_table_add(&bc->implicit_lvalues, implicit_lval.expr, alloc_reg);
 
             } else {
-                assert(implicit_lval.kind == AST_Implicit_LValue_Kind::SLICE_COMPOUND);
+                assert(implicit_lval.kind == AST_Implicit_LValue_Kind::SLICE_ARRAY);
 
                 if (implicit_lval.slice.needs_array_alloc) {
                     Type *array_alloc_type = implicit_lval.expr->resolved_type;
@@ -394,7 +394,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                     assignment_to_bytecode(bc, const_decl->variable.value, alloc_reg);
 
                 } else {
-                    assert(implicit_lvalue.kind == AST_Implicit_LValue_Kind::SLICE_COMPOUND);
+                    assert(implicit_lvalue.kind == AST_Implicit_LValue_Kind::SLICE_ARRAY);
 
                     auto slice_type = implicit_lvalue.slice.type;
 
