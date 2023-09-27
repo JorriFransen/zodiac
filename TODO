@@ -1,11 +1,8 @@
 
 - Slices
-    - Printing a slice of vectors gives invalid results in the llvm backend (see failing test!)
-
     - Test using indexing on a slice as lvalue:
         'slice[3] = 12;' // This should work
         'ptr := *slice[3];' // Not sure about this
-
 
 - FFI with different return types
 

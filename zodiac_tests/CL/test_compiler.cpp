@@ -2426,6 +2426,63 @@ R"OUT_STR({ 1, 2, 3, 4 }
 
     return MUNIT_OK;
 }
+
+MunitResult Slice_Aggregate_Index(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () {
+            vec_arr : [3]Vec2 = { {1, 2}, {3, 4}, {5, 6} };
+            vec_slice_from_arr : []Vec2 = vec_arr;
+            print_vec_slice(vec_slice_from_arr);
+            print_vec_slice2(vec_slice_from_arr);
+
+            arr_arr : [3][2]s64 = { {6, 5}, {4, 3}, {2, 1} };
+            arr_slice_from_arr : [][2]s64 = arr_arr;
+            print_arr_slice(arr_slice_from_arr);
+            print_arr_slice2(arr_slice_from_arr);
+
+            return 0;
+        }
+
+        Vec2 :: struct {
+            x, y: s64;
+        }
+
+        print_vec_slice :: (s: []Vec2) {
+            println(s);
+        }
+
+        print_vec_slice2 :: (s: []Vec2) {
+            for (i := 0; i < s.length; i = i + 1) {
+                print(s[i]);
+            }
+            print("\n");
+        }
+
+        print_arr_slice :: (s: [][2]s64) {
+            println(s);
+        }
+
+        print_arr_slice2 :: (s: [][2]s64) {
+            for (i := 0; i < s.length; i = i + 1) {
+                print(s[i]);
+            }
+            print("\n");
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR({ { 1, 2 }, { 3, 4 }, { 5, 6 } }
+{ 1, 2 }{ 3, 4 }{ 5, 6 }
+{ { 6, 5 }, { 4, 3 }, { 2, 1 } }
+{ 6, 5 }{ 4, 3 }{ 2, 1 })OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef RESOLVE_ERR
 
 }}

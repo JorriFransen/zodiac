@@ -801,11 +801,11 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             llvm::Value *llvm_ptr = llvm_builder_emit_register(builder, bc_inst.a);
             llvm::Value *index = llvm_builder_emit_register(builder, bc_inst.b);
 
-            llvm::Type *llvm_ptr_type = llvm_type_from_ast_type(builder, bc_inst.a.type);
+            llvm::Type *llvm_gep_base_type = llvm_type_from_ast_type(builder, bc_inst.a.type->pointer.base);
 
             llvm::Value *indexes[] = { index };
 
-            llvm::Value *result = irb->CreateGEP(llvm_ptr_type, llvm_ptr, indexes);
+            llvm::Value *result = irb->CreateGEP(llvm_gep_base_type, llvm_ptr, indexes);
             llvm_builder_store_result(builder, bc_inst.dest, result);
             break;
         }
@@ -1072,7 +1072,7 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Array_Ref<LLVM_B
 
                 irb->SetInsertPoint(slice_print_block);
 
-                llvm::Value *elem_ptr_val = irb->CreateGEP(data_val->getType(), data_val, { index_val });
+                llvm::Value *elem_ptr_val = irb->CreateGEP(llvm_element_type, data_val, { index_val });
                 llvm::Value *elem_val = irb->CreateLoad(llvm_element_type, elem_ptr_val);
 
                 llvm_builder_emit_print_instruction(builder, blocks, element_type, elem_val, quote_strings);
