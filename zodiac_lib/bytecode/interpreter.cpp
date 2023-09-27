@@ -1598,7 +1598,8 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
         Bytecode_Register bc_mem_reg = source.value.compound[cmi];
         Interpreter_Register mem_reg;
 
-        if (bc_mem_reg.kind == Bytecode_Register_Kind::GLOBAL) {
+        if (bc_mem_reg.kind == Bytecode_Register_Kind::GLOBAL ||
+            bc_mem_reg.kind == Bytecode_Register_Kind::ALLOC) {
 
             assert(member_type->kind == Type_Kind::POINTER);
             mem_reg = interpreter_load_register(interp, bc_mem_reg);

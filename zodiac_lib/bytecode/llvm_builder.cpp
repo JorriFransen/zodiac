@@ -1149,7 +1149,9 @@ llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Re
     }
 
     // Literals should always be constant?
-    assert(!(bc_reg.flags & BC_REGISTER_FLAG_LITERAL));
+    assert(!(bc_reg.flags & BC_REGISTER_FLAG_LITERAL) ||
+           (bc_reg.type->kind == Type_Kind::STRUCTURE && bc_reg.type->flags & TYPE_FLAG_SLICE_STRUCT));
+
 
     switch (bc_reg.kind) {
         case Bytecode_Register_Kind::INVALID: assert(false); break;
@@ -1169,17 +1171,28 @@ llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Re
 
             } else {
 
-                assert(!(bc_reg.flags & BC_REGISTER_FLAG_LITERAL));
+                if (!(bc_reg.flags & BC_REGISTER_FLAG_LITERAL)) {
 
-                llvm::Value *result = nullptr;
-                bool found = hash_table_find(&builder->stored_registers, bc_reg.index, &result);
-                assert(found);
-                assert(result);
-                if (!found) {
-                    ZFATAL("[llvm_builder] Unable to find temporary register with index '%lli'\n",
-                            bc_reg.index);
+                    llvm::Value *result = nullptr;
+                    bool found = hash_table_find(&builder->stored_registers, bc_reg.index, &result);
+                    assert(found);
+                    assert(result);
+                    if (!found) {
+                        ZFATAL("[llvm_builder] Unable to find temporary register with index '%lli'\n",
+                                bc_reg.index);
+                    }
+                    return result;
+                } else {
+
+                    auto llvm_type = llvm_type_from_ast_type(builder, bc_reg.type);
+                    llvm::Value *result = llvm::UndefValue::get(llvm_type);
+
+                    for (s64 i = 0; i < bc_reg.value.compound.count; i++) {
+                        auto value = llvm_builder_emit_register(builder, bc_reg.value.compound[i]);
+                        result = builder->ir_builder->CreateInsertValue(result, value, (unsigned)i);
+                    }
+                    return result;
                 }
-                return result;
             }
             break;
         }

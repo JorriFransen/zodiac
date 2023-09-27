@@ -481,7 +481,9 @@ Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Dynamic_Array
 
     for (s64 i = 0; i < members.count; i++) {
 
-        if (!(members[i].flags & BC_REGISTER_FLAG_LITERAL) && members[i].kind != Bytecode_Register_Kind::GLOBAL) {
+        if (!(members[i].flags & BC_REGISTER_FLAG_LITERAL) &&
+            members[i].kind != Bytecode_Register_Kind::GLOBAL &&
+            members[i].kind != Bytecode_Register_Kind::ALLOC) {
             all_literal = false;
         }
 

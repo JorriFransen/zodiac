@@ -50,11 +50,17 @@ main :: () {
     }
 
     {
+        println(global_slice);
+        println(global_slice_from_arr);
+    }
+
+    {
         local_slice_from_global_arr : []s64 = global_arr;
         local_slice_from_global_arr = global_arr;
 
         println(local_slice_from_global_arr);
     }
+
     return 0;
 }
 

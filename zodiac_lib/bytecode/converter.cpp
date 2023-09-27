@@ -1013,6 +1013,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     bool found = hash_table_find(&bc->implicit_lvalues, arg_expr, &array_alloc);
                     assert(found);
 
+                    // We can't use a compound literal here, since the called function won't be able to access the array alloc/global.
+
                     Bytecode_Register ptr_reg = bytecode_emit_array_offset_pointer(bc->builder, array_alloc, 0);
                     Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, array_alloc.type->static_array.count);
 
@@ -1396,37 +1398,19 @@ void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, 
     if (value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && lvalue_type->flags & TYPE_FLAG_SLICE_STRUCT) {
         assert(lvalue_type->kind == Type_Kind::STRUCTURE);
 
+        Bytecode_Register array_reg;
+
         if (EXPR_IS_LVALUE(value_expr)) {
-
-            Bytecode_Register arr_reg = ast_lvalue_to_bytecode(bc, value_expr);
-            assert(arr_reg.type->kind == Type_Kind::STATIC_ARRAY);
-
-            Bytecode_Register ptr_reg = bytecode_emit_array_offset_pointer(bc->builder, arr_reg, 0);
-            Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, value_expr->resolved_type->static_array.count);
-
-            value_reg = bytecode_emit_insert_value(bc->builder, {}, ptr_reg, lvalue_type, 0);
-            value_reg = bytecode_emit_insert_value(bc->builder, value_reg, length_reg, lvalue_type, 1);
-
+            array_reg = ast_lvalue_to_bytecode(bc, value_expr);
         } else {
-
-            Bytecode_Register array_alloc_reg;
-            bool found = hash_table_find(&bc->implicit_lvalues, value_expr, &array_alloc_reg);
+            bool found = hash_table_find(&bc->implicit_lvalues, value_expr, &array_reg);
             assert(found);
-
-            auto length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, array_alloc_reg.type->static_array.count);
-
-            if (array_alloc_reg.kind == Bytecode_Register_Kind::GLOBAL) {
-                Bytecode_Register members[2] = { array_alloc_reg, length_reg };
-                value_reg = bytecode_aggregate_literal(bc->builder, members, lvalue_type);
-            } else {
-                assert(array_alloc_reg.kind == Bytecode_Register_Kind::ALLOC);
-
-                auto ptr_reg = bytecode_emit_array_offset_pointer(bc->builder, array_alloc_reg, 0);
-
-                value_reg = bytecode_emit_insert_value(bc->builder, {}, ptr_reg, lvalue_type, 0);
-                value_reg = bytecode_emit_insert_value(bc->builder, value_reg, length_reg, lvalue_type, 1);
-            }
         }
+
+        Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, array_reg.type->static_array.count);
+
+        Bytecode_Register members[2] = { array_reg, length_reg };
+        value_reg = bytecode_aggregate_literal(bc->builder, members, lvalue_type);
 
     } else {
         value_reg = ast_expr_to_bytecode(bc, value_expr);
