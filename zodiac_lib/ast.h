@@ -165,11 +165,12 @@ enum class AST_Expression_Kind
 typedef u32 AST_Expression_Flags;
 enum AST_Expression_Flag : AST_Expression_Flags
 {
-    AST_EXPR_FLAG_NONE     = 0x00,
-    AST_EXPR_FLAG_TYPED    = 0x01,
-    AST_EXPR_FLAG_CONST    = 0x02,
-    AST_EXPR_FLAG_LITERAL  = 0x04,
-    AST_EXPR_FLAG_LVALUE   = 0x08,
+    AST_EXPR_FLAG_NONE           = 0x000,
+    AST_EXPR_FLAG_TYPED          = 0x001,
+    AST_EXPR_FLAG_CONST          = 0x002,
+    AST_EXPR_FLAG_LITERAL        = 0x004,
+    AST_EXPR_FLAG_LVALUE         = 0x008,
+    AST_EXPR_FLAG_SLICE_COMPOUND = 0x010,
 };
 
 
@@ -268,6 +269,7 @@ struct AST_Return_Statement
 struct AST_Print_Expression
 {
     Dynamic_Array<AST_Expression *> expressions;
+    bool newline;
 };
 
 enum class AST_Statement_Kind
@@ -330,17 +332,34 @@ struct AST_Variable_Declaration
     Type *resolved_type;
 };
 
-struct AST_Const_LValue
+enum class AST_Implicit_LValue_Kind
 {
-    AST_Expression *expr; // The expression that 'identifies' the declaration
-    AST_Declaration *decl;
+    CONST_LVALUE,
+    SLICE_ARRAY,
+};
+
+struct AST_Implicit_LValue
+{
+    AST_Implicit_LValue_Kind kind;
+
+    AST_Expression *expr;
+
+    union {
+        AST_Declaration *decl;
+
+        struct {
+            Type *type;
+            bool needs_local_array_alloc;
+            bool needs_global_array_alloc;
+        } slice;
+    };
 };
 
 struct AST_Function_Declaration
 {
     Dynamic_Array<AST_Declaration *> params;
     Dynamic_Array<AST_Declaration *> variables;
-    Dynamic_Array<AST_Const_LValue> const_lvalues;
+    Dynamic_Array<AST_Implicit_LValue> implicit_lvalues;
 
     AST_Type_Spec *return_ts;
 
@@ -416,6 +435,7 @@ enum class AST_Type_Spec_Kind
     NAME,
     POINTER,
     STATIC_ARRAY,
+    SLICE,
 };
 
 struct AST_Type_Spec
@@ -435,6 +455,10 @@ struct AST_Type_Spec
             AST_Expression *length_expr;
             AST_Type_Spec *element_ts;
         } static_array;
+
+        struct {
+            AST_Type_Spec *element_ts;
+        } slice;
     };
 };
 
@@ -511,7 +535,7 @@ ZAPI void ast_if_stmt_create(Dynamic_Array<AST_If_Block> blocks, AST_Statement *
 ZAPI void ast_while_stmt_create(AST_Expression *cond, AST_Statement *body_stmt, AST_Statement *out_stmt);
 ZAPI void ast_for_stmt_create(AST_Statement *init_stmt, AST_Expression *cond_expr, AST_Statement *inc_stmt, AST_Statement *body_stmt, AST_Statement *out_stmt);
 ZAPI void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt);
-ZAPI void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, AST_Statement *out_stmt);
+ZAPI void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, bool newline, AST_Statement *out_stmt);
 ZAPI void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt);
 
 ZAPI void ast_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
@@ -528,6 +552,7 @@ ZAPI void ast_type_ts_create(Type *type, AST_Type_Spec *out_ts);
 ZAPI void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts);
 ZAPI void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts);
 ZAPI void ast_static_array_ts_create(AST_Expression *length_expr, AST_Type_Spec *element_ts, AST_Type_Spec *out_ts);
+ZAPI void ast_slice_ts_create(AST_Type_Spec *element_ts, AST_Type_Spec *out_ts);
 ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
 
 ZAPI void ast_run_directive_create(AST_Expression *expr, AST_Directive *out_dir);
@@ -563,7 +588,7 @@ ZAPI AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, Source_Range range, Dyn
 ZAPI AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *cond, AST_Statement *body_stmt);
 ZAPI AST_Statement *ast_for_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Declaration *init_decl, AST_Expression *cond_expr, AST_Statement *inc_stmt, AST_Statement *body_stmt);
 ZAPI AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *value);
-ZAPI AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> exprs);
+ZAPI AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> exprs, bool newline);
 ZAPI AST_Statement *ast_statement_new(Zodiac_Context *ctx, Source_Range range);
 
 ZAPI AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value);
@@ -580,6 +605,7 @@ ZAPI AST_Type_Spec *ast_type_ts_new(Zodiac_Context *ctx, Source_Range range, Typ
 ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident);
 ZAPI AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *base);
 ZAPI AST_Type_Spec *ast_static_array_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *length_expr, AST_Type_Spec *element_ts);
+ZAPI AST_Type_Spec *ast_slice_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *element_ts);
 ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range range);
 
 ZAPI AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *expr);

@@ -99,6 +99,11 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Strings) \
     X(While) \
     X(For) \
+    X(Local_Slices) \
+    X(Global_Slices) \
+    X(More_Slices) \
+    X(Slice_Aggregate_Index) \
+    X(Slice_Lvalues) \
 
 
 // Function declarations

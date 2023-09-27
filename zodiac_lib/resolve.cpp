@@ -415,20 +415,29 @@ Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error
         }
 
         case Infer_Target::COMPOUND: {
-            assert((inferred_type->flags & TYPE_FLAG_AGGREGATE) ||
-                   inferred_type->kind == Type_Kind::STATIC_ARRAY);
+            if (!((inferred_type->flags & TYPE_FLAG_AGGREGATE) ||
+                   inferred_type->kind == Type_Kind::STATIC_ARRAY ||
+                   inferred_type->kind == Type_Kind::SLICE)) {
+
+                fatal_resolve_error(ctx, error_loc, "Invalid type for compound literal: '%s'", temp_type_string(inferred_type));
+                return nullptr;
+            }
 
             auto index = infer_node->target.index;
 
             if (inferred_type->kind == Type_Kind::STRUCTURE) {
+
                 assert(inferred_type->structure.member_types.count > infer_node->target.index);
-
                 inferred_type = inferred_type->structure.member_types[index];
-            } else {
-                assert(inferred_type->kind == Type_Kind::STATIC_ARRAY);
-                assert(index >= 0 && index < inferred_type->static_array.count);
 
+            } else if (inferred_type->kind == Type_Kind::STATIC_ARRAY) {
+
+                assert(index >= 0 && index < inferred_type->static_array.count);
                 inferred_type = inferred_type->static_array.element_type;
+
+            } else {
+                assert(inferred_type->kind == Type_Kind::SLICE);
+                inferred_type = inferred_type->slice.element_type;
             }
 
             assert(inferred_type);
@@ -831,12 +840,11 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
         }
 
         case AST_Expression_Kind::UNARY: {
-            flatten_expression(resolver, expr->unary.operand, scope, dest);
+            flatten_expression(resolver, expr->unary.operand, scope, dest, infer_node);
             break;
         }
 
         case AST_Expression_Kind::BINARY: {
-            // assert(infer_type_from);
 
             Infer_Node *infer_from = infer_node;
             if (expr->binary.lhs->kind == AST_Expression_Kind::INTEGER_LITERAL) {
@@ -871,7 +879,10 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
 
         case AST_Expression_Kind::COMPOUND: {
 
-            assert(infer_node);
+            if (!infer_node) {
+                fatal_resolve_error(resolver->ctx, expr, "Could not infer type for compound literal");
+                return;
+            }
 
             for (s64 i = 0; i < expr->compound.expressions.count; i++) {
                 Infer_Node *infer_from = compound_infer_node_new(resolver->ctx, infer_node, i);
@@ -918,6 +929,11 @@ void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dyna
 
             flatten_expression(resolver, length_expr, scope, dest, length_infer_node);
             flatten_type_spec(resolver, ts->static_array.element_ts, scope, dest);
+            break;
+        }
+
+        case AST_Type_Spec_Kind::SLICE: {
+            flatten_type_spec(resolver, ts->slice.element_ts, scope, dest);
             break;
         }
     }
@@ -1036,7 +1052,7 @@ bool name_resolve_node(Resolver *resolver, Flat_Node *node)
             return true;
         }
 
-        case Flat_Node_Kind::GLOBAL_CONST_LVALUE: assert(false); break;
+        case Flat_Node_Kind::IMPLICIT_LVALUE: assert(false); break;
 
         case Flat_Node_Kind::RUN: assert(false); break;
 
@@ -1293,10 +1309,21 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             }
 
             auto aggregate_type = base_expr->resolved_type;
+
             if (aggregate_type->kind == Type_Kind::POINTER) {
-            assert(aggregate_type->pointer.base->flags & TYPE_FLAG_AGGREGATE);
+                assert(aggregate_type->pointer.base->flags & TYPE_FLAG_AGGREGATE);
                 aggregate_type = aggregate_type->pointer.base;
+            } else if (aggregate_type->kind == Type_Kind::SLICE) {
+                aggregate_type = aggregate_type->slice.struct_type;
+            } else if (aggregate_type->kind == Type_Kind::STATIC_ARRAY) {
+                if (expr->member.member_name != atom_get(&ctx->atoms, "length")) {
+                    fatal_resolve_error(ctx, expr, "Static array does not have member: '%s'", expr->member.member_name.data);
+                    result = false;
+                }
+                break;
+
             }
+
             assert(aggregate_type->flags & TYPE_FLAG_AGGREGATE);
 
             assert(aggregate_type->structure.name.length);
@@ -1310,10 +1337,20 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             s64 member_index;
             auto sym = scope_get_symbol_direct(type_sym->aggregate.scope, expr->member.member_name, &member_index);
             if (!sym) {
-                assert(type_sym->decl);
-                fatal_resolve_error(ctx, expr, "'%s' is not a member of aggregate type '%s'", expr->member.member_name.data, aggregate_type->structure.name.data);
-                fatal_resolve_error(ctx, type_sym->decl, "'%s' was declared here", aggregate_type->structure.name);
-                result = false;
+                if (type_sym->decl) {
+                    fatal_resolve_error(ctx, expr, "'%s' is not a member of aggregate type '%s'", expr->member.member_name.data, aggregate_type->structure.name.data);
+                    fatal_resolve_error(ctx, type_sym->decl, "'%s' was declared here", aggregate_type->structure.name);
+                    result = false;
+                } else {
+                    assert(type_sym->flags & SYM_FLAG_BUILTIN);
+                    assert(type_sym->builtin_type);
+                    if (type_sym->builtin_type->flags & TYPE_FLAG_SLICE_STRUCT) {
+                        fatal_resolve_error(ctx, expr, "'%s' is not a member of type 'slice'", expr->member.member_name.data);
+                        result = false;
+                    } else {
+                        assert(false);
+                    }
+                }
                 break;
             }
             assert(sym);
@@ -1397,7 +1434,8 @@ bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
         }
 
         case AST_Type_Spec_Kind::POINTER:
-        case AST_Type_Spec_Kind::STATIC_ARRAY: {
+        case AST_Type_Spec_Kind::STATIC_ARRAY:
+        case AST_Type_Spec_Kind::SLICE: {
             // Leaf
             break;
         }
@@ -1488,7 +1526,7 @@ bool type_resolve_node(Resolver *resolver, Flat_Node *node)
             return true;
         }
 
-        case Flat_Node_Kind::GLOBAL_CONST_LVALUE: assert(false); break;
+        case Flat_Node_Kind::IMPLICIT_LVALUE: assert(false); break;
 
         case Flat_Node_Kind::RUN: assert(false); break;
     }
@@ -1542,6 +1580,44 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
 
             if (decl->variable.value && scope->kind == Scope_Kind::GLOBAL) {
                 assert(EXPR_IS_CONST(decl->variable.value) || decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE);
+            }
+
+            if (decl->variable.value &&
+                decl->variable.resolved_type->kind == Type_Kind::SLICE &&
+                decl->variable.value->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
+
+                bool value_is_global_const = false;
+
+                // Check if the value is pointing to a global (constant).
+                if (decl->variable.value->kind == AST_Expression_Kind::IDENTIFIER) {
+                    auto ident_sym = scope_get_symbol(scope, decl->variable.value->identifier.name);
+                    auto ident_decl = ident_sym->decl;
+
+                    if (ident_decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE) {
+                        value_is_global_const = true;
+                    }
+                }
+
+                bool needs_local_array_alloc = (decl->variable.value->kind == AST_Expression_Kind::COMPOUND || EXPR_IS_CONST(decl->variable.value)) && !value_is_global_const;
+
+                AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_ARRAY,
+                                                      decl->variable.value,
+                                                      .slice = {
+                                                          .type = decl->variable.resolved_type,
+                                                          .needs_local_array_alloc = needs_local_array_alloc,
+                                                          .needs_global_array_alloc = value_is_global_const,
+                                                      }
+                                                    };
+
+                if (scope->kind != Scope_Kind::GLOBAL) {
+                    auto current_function = enclosing_function(scope);
+                    dynamic_array_append(&current_function->function.implicit_lvalues, implicit_lval);
+                } else {
+                    auto flat_node = alloc<Flat_Root_Node>(ctx->resolver->node_allocator);
+                    flat_node->root.kind = Flat_Node_Kind::IMPLICIT_LVALUE;
+                    flat_node->root.implicit_lvalue = implicit_lval;
+                    dynamic_array_insert(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
+                }
             }
 
             auto sym = scope_get_symbol(scope, decl->identifier.name);
@@ -1722,9 +1798,41 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
             assert(lvalue_expr->resolved_type);
             assert(value_expr->resolved_type);
 
-            if (value_expr->resolved_type != lvalue_expr->resolved_type &&
-                valid_static_type_conversion(value_expr->resolved_type, lvalue_expr->resolved_type)) {
-                value_expr->resolved_type = lvalue_expr->resolved_type;
+            if (value_expr->resolved_type != lvalue_expr->resolved_type) {
+                if (valid_static_type_conversion(value_expr->resolved_type, lvalue_expr->resolved_type)) {
+                    // ok
+                } else {
+                    assert(false); // report error
+                }
+
+                if (lvalue_expr->resolved_type->kind == Type_Kind::SLICE &&
+                    value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
+
+                    bool value_is_global_const = false;
+
+                    // Check if the value is pointing to a global (constant).
+                    if (value_expr->kind == AST_Expression_Kind::IDENTIFIER) {
+                        auto ident_sym = scope_get_symbol(scope, value_expr->identifier.name);
+                        auto ident_decl = ident_sym->decl;
+
+                        if (ident_decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE) {
+                            value_is_global_const = true;
+                        }
+                    }
+
+                    bool needs_array_alloc = (value_expr->kind == AST_Expression_Kind::COMPOUND || EXPR_IS_CONST(value_expr)) && ! value_is_global_const;
+
+                    auto current_function = enclosing_function(scope);
+                    AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_ARRAY,
+                                                          value_expr,
+                                                          .slice = { .type = lvalue_expr->resolved_type,
+                                                                     .needs_local_array_alloc = needs_array_alloc,
+                                                                     .needs_global_array_alloc = value_is_global_const,
+                                                                   }
+                                                        };
+
+                    dynamic_array_append(&current_function->function.implicit_lvalues, implicit_lval);
+                }
             }
 
             break;
@@ -1950,8 +2058,13 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             if (aggregate_type->kind == Type_Kind::POINTER) {
                 via_pointer = true;
                 aggregate_type = aggregate_type->pointer.base;
+            } else if (aggregate_type->kind == Type_Kind::SLICE) {
+                aggregate_type = aggregate_type->slice.struct_type;
+            } else if (aggregate_type->kind == Type_Kind::STATIC_ARRAY) {
+                expr->resolved_type = &builtin_type_s64;
+                break;
             }
-            assert((aggregate_type->flags & TYPE_FLAG_AGGREGATE) == TYPE_FLAG_AGGREGATE);
+            assert(aggregate_type->flags & TYPE_FLAG_AGGREGATE);
 
             auto type_sym = scope_get_symbol(scope, aggregate_type->structure.name);
             assert(type_sym);
@@ -1962,19 +2075,25 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             assert(sym && sym->kind == Symbol_Kind::MEMBER);
             assert(sym->state == Symbol_State::TYPED);
 
-            auto mem_decl = sym->decl;
-            assert(mem_decl && mem_decl->kind == AST_Declaration_Kind::FIELD);
-            assert(mem_decl->field.resolved_type);
+            if (sym->flags & SYM_FLAG_BUILTIN) {
+                assert(sym->builtin_type);
+                expr->resolved_type = sym->builtin_type;
+                expr->flags |= AST_EXPR_FLAG_LVALUE;
+            } else {
+                auto mem_decl = sym->decl;
+                assert(mem_decl && mem_decl->kind == AST_Declaration_Kind::FIELD);
+                assert(mem_decl->field.resolved_type);
 
-            expr->resolved_type = mem_decl->field.resolved_type;
+                expr->resolved_type = mem_decl->field.resolved_type;
 
-            if (via_pointer) {
-                if (EXPR_IS_LVALUE(base_expr)) {
+                if (via_pointer) {
+                    if (EXPR_IS_LVALUE(base_expr)) {
+                        expr->flags |= AST_EXPR_FLAG_LVALUE;
+                    }
+                } else {
+                    assert(EXPR_IS_LVALUE(base_expr));
                     expr->flags |= AST_EXPR_FLAG_LVALUE;
                 }
-            } else {
-                assert(EXPR_IS_LVALUE(base_expr));
-                expr->flags |= AST_EXPR_FLAG_LVALUE;
             }
             break;
         }
@@ -1987,9 +2106,10 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             auto base_type = base_expr->resolved_type;
 
             bool base_is_array = base_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY;
+            bool base_is_slice = base_expr->resolved_type->kind == Type_Kind::SLICE;
 
-            if (!base_is_array && base_expr->resolved_type != get_string_type(ctx)) {
-                fatal_resolve_error(ctx, expr, "Base of index expression is not an array or String");
+            if (!base_is_array && !base_is_slice && base_expr->resolved_type != get_string_type(ctx)) {
+                fatal_resolve_error(ctx, expr, "Base of index expression is not an array, slice or String");
                 return false;
             }
 
@@ -2005,6 +2125,11 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 }
 
                 expr->resolved_type = base_type->static_array.element_type;
+
+            } else if (base_is_slice) {
+
+                expr->resolved_type = base_type->slice.element_type;
+
             } else {
                 expr->resolved_type = &builtin_type_u8;
             }
@@ -2046,7 +2171,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                 if (arg_type != param_type) {
                     if (valid_static_type_conversion(arg_type, param_type)) {
-                        arg_expr->resolved_type = param_type;
+                        // ok
                     } else {
                         match = false;
                     }
@@ -2057,6 +2182,22 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     resolve_error(ctx, arg_expr, "    Expected: %s", temp_type_string(param_type));
                     resolve_error(ctx, arg_expr, "    Got: %s", temp_type_string(arg_type));
                     return false;
+                }
+
+                if (param_type->kind == Type_Kind::SLICE && arg_expr->kind == AST_Expression_Kind::COMPOUND) {
+                    assert(arg_type->kind == Type_Kind::STATIC_ARRAY);
+                    assert(arg_expr->flags & AST_EXPR_FLAG_SLICE_COMPOUND);
+
+                    auto current_fn = enclosing_function(scope);
+
+                    AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_ARRAY,
+                                                          arg_expr,
+                                                          .slice = { .type = param_type,
+                                                                     .needs_local_array_alloc = true,
+                                                                   }
+                                                        };
+
+                    dynamic_array_append(&current_fn->function.implicit_lvalues, implicit_lval);
                 }
             }
 
@@ -2108,20 +2249,22 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                         assert(sym->decl);
                         assert(sym->decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
 
+                        AST_Implicit_LValue implicit_lvalue = { AST_Implicit_LValue_Kind::CONST_LVALUE, operand, .decl = sym->decl };
+
                         if (scope->kind != Scope_Kind::FUNCTION_LOCAL && scope->kind != Scope_Kind::FUNCTION_PARAMETER) {
                             assert(scope->kind == Scope_Kind::GLOBAL);
-                            auto flat_node = alloc<Flat_Root_Node>(ctx->resolver->node_allocator);
-                            flat_node->root.kind = Flat_Node_Kind::GLOBAL_CONST_LVALUE;
-                            flat_node->root.const_lvalue = { operand, sym->decl };
+                            auto flat_node = alloc<Flat_Root_Node>(resolver->node_allocator);
+                            flat_node->root.kind = Flat_Node_Kind::IMPLICIT_LVALUE;
+                            flat_node->root.implicit_lvalue = implicit_lvalue;
                             dynamic_array_insert(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
                         } else {
                             auto current_function = enclosing_function(scope);
-                            dynamic_array_append(&current_function->function.const_lvalues, { operand, sym->decl });
+                            dynamic_array_append(&current_function->function.implicit_lvalues, implicit_lvalue);
                         }
 
                     } else if (!EXPR_IS_LVALUE(operand)) {
 
-                        fatal_resolve_error(ctx, expr, "The operand to dereference ('*') is not an lvalue");
+                        fatal_resolve_error(ctx, expr, "The operand to pointer-to ('*') is not an lvalue");
                         fatal_resolve_error(ctx, operand, "Operand: '%s'", ast_print_expression(operand, &ctx->error_allocator).data);
                         return false;
                     }
@@ -2363,6 +2506,34 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     }
                 }
 
+            } else if (inferred_type->kind == Type_Kind::SLICE) {
+                expr->flags |= AST_EXPR_FLAG_SLICE_COMPOUND;
+                auto slice_type = inferred_type;
+
+                auto slice_element_type = slice_type->slice.element_type;
+
+                for (s64 i = 0; i < compound_member_count; i++) {
+                    auto compound_member_expr = expr->compound.expressions[i];
+                    Type *compound_member_type = compound_member_expr->resolved_type;
+
+                    if (slice_element_type != compound_member_type) {
+                        fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
+                        fatal_resolve_error(ctx, compound_member_expr, "    Expected: %s", temp_type_string(slice_element_type));
+                        fatal_resolve_error(ctx, compound_member_expr, "    Got: %s", temp_type_string(compound_member_type));
+                        return false;
+                    }
+
+                    if (!(compound_member_expr->flags & AST_EXPR_FLAG_LITERAL)) {
+                        all_literal = false;
+                    }
+                    if (!(compound_member_expr->flags & AST_EXPR_FLAG_CONST)) {
+                        all_const = false;
+                    }
+                }
+
+                inferred_type = get_static_array_type(inferred_type->slice.element_type, compound_member_count, &ctx->ast_allocator);
+                expr->resolved_type = inferred_type;
+
             } else {
                 assert_msg(false, "Invalid inferred type for compound expression");
             }
@@ -2454,6 +2625,15 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
             auto elem_type = elem_ts->resolved_type;
 
             ts->resolved_type = get_static_array_type(elem_type, length_val.s64, &ctx->ast_allocator);
+            return true;
+        }
+
+        case AST_Type_Spec_Kind::SLICE: {
+            auto elem_ts = ts->slice.element_ts;
+            assert(elem_ts->resolved_type);
+            auto elem_type = elem_ts->resolved_type;
+
+            ts->resolved_type = get_slice_type(ctx,elem_type, &ctx->ast_allocator);
             return true;
         }
     }

@@ -299,13 +299,14 @@ void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
     out_stmt->return_stmt.scope = nullptr;
 }
 
-void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, AST_Statement *out_stmt)
+void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, bool newline, AST_Statement *out_stmt)
 {
     debug_assert(out_stmt);
 
     ast_statement_create(AST_Statement_Kind::PRINT, out_stmt);
 
     out_stmt->print_expr.expressions = exprs;
+    out_stmt->print_expr.newline = newline;
 }
 
 void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
@@ -374,7 +375,7 @@ void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynami
     out_decl->function.params = args;
 
     dynamic_array_create(allocator, &out_decl->function.variables, 0);
-    dynamic_array_create(allocator, &out_decl->function.const_lvalues, 0);
+    dynamic_array_create(allocator, &out_decl->function.implicit_lvalues, 0);
 
     out_decl->function.return_ts = return_ts;
     out_decl->function.body = body;
@@ -456,6 +457,13 @@ void ast_static_array_ts_create(AST_Expression *length_expr, AST_Type_Spec *elem
 
     out_ts->static_array.length_expr = length_expr;
     out_ts->static_array.element_ts = element_ts;
+}
+
+void ast_slice_ts_create(AST_Type_Spec *element_ts, AST_Type_Spec *out_ts)
+{
+    ast_type_spec_create(AST_Type_Spec_Kind::SLICE, out_ts);
+
+    out_ts->slice.element_ts = element_ts;
 }
 
 void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts)
@@ -739,12 +747,12 @@ AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_
     return stmt;
 }
 
-AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> exprs)
+AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> exprs, bool newline)
 {
     debug_assert(ctx);
 
     auto stmt = ast_statement_new(ctx, range);
-    ast_print_stmt_create(exprs, stmt);
+    ast_print_stmt_create(exprs, newline, stmt);
     return stmt;
 }
 
@@ -888,6 +896,13 @@ AST_Type_Spec *ast_static_array_ts_new(Zodiac_Context *ctx, Source_Range range, 
 
     auto ts = ast_type_spec_new(ctx, range);
     ast_static_array_ts_create(length_expr, element_ts, ts);
+    return ts;
+}
+
+AST_Type_Spec *ast_slice_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *element_ts)
+{
+    auto ts = ast_type_spec_new(ctx, range);
+    ast_slice_ts_create(element_ts, ts);
     return ts;
 }
 
@@ -1378,6 +1393,12 @@ file_local void ast__print_type_spec_internal(String_Builder *sb, AST_Type_Spec 
             string_builder_append(sb, "[");
             ast_print_expression(sb, ts->static_array.length_expr);
             string_builder_append(sb, "]");
+            ast__print_type_spec_internal(sb, ts->static_array.element_ts, indent);
+            break;
+        }
+
+        case AST_Type_Spec_Kind::SLICE: {
+            string_builder_append(sb, "[]");
             ast__print_type_spec_internal(sb, ts->static_array.element_ts, indent);
             break;
         }

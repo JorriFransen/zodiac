@@ -44,6 +44,7 @@ ZAPI u64 resolve_error_count(Zodiac_Context *ctx);
 ZAPI Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind, Source_Range sr, const char *fmt, ...);
 ZAPI Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind, Source_Range sr, const char *fmt, va_list args);
 ZAPI Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind, Source_Range sr, String message);
+ZAPI Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind, Source_Pos pos, const char *fmt, va_list args);
 
 ZAPI Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind, Source_Pos pos, const char *fmt, ...);
 ZAPI Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind, AST_Expression *expr, const char *fmt, ...);

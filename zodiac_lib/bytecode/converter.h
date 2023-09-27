@@ -33,7 +33,7 @@ struct Bytecode_Converter
     Hash_Table<AST_Declaration *, Bytecode_Register> allocations;
 
     // TODO: should these be separated per function?
-    Hash_Table<AST_Expression *, Bytecode_Register> const_lvalues;
+    Hash_Table<AST_Expression *, Bytecode_Register> implicit_lvalues;
 
     // TODO: should these be separated per file?
     Hash_Table<AST_Declaration *, Bytecode_Global_Handle> globals;
@@ -63,8 +63,11 @@ ZAPI Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expres
 ZAPI Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr);
 ZAPI Bytecode_Register ast_compound_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *compound_expr);
 
+ZAPI Bytecode_Register ast_const_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr);
 ZAPI Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr);
 ZAPI Bytecode_Register ast_const_compound_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *compound_expr);
+
+ZAPI void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, Bytecode_Register lvalue_reg);
 
 ZAPI Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directive *run_directive);
 

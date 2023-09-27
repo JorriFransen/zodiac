@@ -58,6 +58,8 @@ struct Symbol
     AST_Declaration *decl;
     Source_Range range;
 
+    Type* builtin_type;
+
     union
     {
         struct
@@ -70,8 +72,6 @@ struct Symbol
         {
             Scope *scope;
         } aggregate;
-
-        Type* builtin_type;
     };
 };
 

@@ -114,6 +114,7 @@ void ffi_call(FFI_Context *ffi, void *fn_ptr, void *return_val_ptr,
         case Type_Kind::BOOLEAN: assert(false); break;
         case Type_Kind::STRUCTURE: assert(false); break;
         case Type_Kind::STATIC_ARRAY: assert(false); break;
+        case Type_Kind::SLICE: assert(false); break;
 
         case Type_Kind::VOID: {
             assert(!return_val_ptr);
@@ -334,6 +335,7 @@ char ffi_dcb_type_sig_char(Type *type, bool is_arg/*= false*/)
         }
 
         case Type_Kind::STATIC_ARRAY: assert(false); break;
+        case Type_Kind::SLICE: assert(false); break;
     }
 
     return result;
@@ -435,6 +437,7 @@ char dcb_callback_handler(DCCallback *cb, DCArgs *args, DCValue *result, void *u
             case Type_Kind::BOOLEAN: assert(false); break;
             case Type_Kind::STRUCTURE: assert(false); break;
             case Type_Kind::STATIC_ARRAY: assert(false); break;
+            case Type_Kind::SLICE: assert(false); break;
         }
 
         assert(arg_reg.type);
@@ -494,6 +497,7 @@ char dcb_callback_handler(DCCallback *cb, DCArgs *args, DCValue *result, void *u
             case Type_Kind::BOOLEAN: assert(false); break;
             case Type_Kind::STRUCTURE: assert(false); break;
             case Type_Kind::STATIC_ARRAY: assert(false); break;
+            case Type_Kind::SLICE: assert(false); break;
         }
     }
 

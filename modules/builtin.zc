@@ -7,9 +7,3 @@ String :: struct {
     data: *u8;
     length: s64;
 }
-
-string_copy :: (s: String) -> String {
-    result : String = { malloc(s.length), s.length };
-    memcpy(result.data, s.data, s.length);
-    return result;
-}
