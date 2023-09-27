@@ -1,11 +1,30 @@
-#run main();
+
+glob_const_arr : [4]s64 : { 1, 2, 3, 4 };
+glob_const_slice_from_arr : []s64 : glob_const_arr;
+
+glob_const_slice : []s64 : { 11, 22, 33 };
 
 global_slice : []s64 = { 5, 4, 3 };
 
 global_arr : [4]s64 : { 4, 3, 2, 1 };
 global_slice_from_arr : []s64 = global_arr;
 
+
+#run main();
+
 main :: () {
+
+    {
+        println(glob_const_slice_from_arr);
+        println(glob_const_slice);
+
+        const_slice : []s64 : { 3, 2, 1 };
+        println(const_slice);
+
+        const_arr : [4]s64 : { 4, 3, 2, 1 };
+        const_slice_from_arr : []s64 : const_arr;
+        println(const_slice_from_arr);
+    }
 
     {
         slice: []s64 = { 1, 2 };

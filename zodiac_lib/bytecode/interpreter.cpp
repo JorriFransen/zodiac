@@ -1697,6 +1697,7 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type, boo
     auto string_type = get_string_type(interp->context);
 
     switch (type->kind) {
+        default: assert_msg(false, "Unreachable");
         case Type_Kind::INVALID: assert(false); break;
         case Type_Kind::VOID: assert(false); break;
         case Type_Kind::UNSIZED_INTEGER: assert(false); break;
@@ -1916,8 +1917,30 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
             }
 
             if (reg.type->flags & TYPE_FLAG_SLICE_STRUCT) {
-                assert(!(reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL));
-                interpreter_print_from_memory(interp, reg.value.pointer, reg.type, quote_strings);
+                if (reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
+                    assert(reg.value.compound.count == 2);
+
+                    auto ptr_reg = interpreter_load_register(interp, reg.value.compound[0]);
+                    auto length_reg = interpreter_load_register(interp, reg.value.compound[1]);
+
+                    auto element_type = ptr_reg.type->pointer.base;
+
+                    fprintf(out_handle, "{ ");
+
+                    auto cur = ptr_reg.pointer;
+                    for (s64 i = 0; i < length_reg.value.integer.s64; i++) {
+                        if (i > 0) fprintf(out_handle, ", ");
+                        interpreter_print_from_memory(interp, cur, element_type, true);
+
+                        // TODO: FIXME: Alignment
+                        cur += element_type->bit_size / 8;
+                    }
+
+                    fprintf(out_handle, " }");
+
+                } else {
+                    interpreter_print_from_memory(interp, reg.value.pointer, reg.type, quote_strings);
+                }
                 break;
             }
 

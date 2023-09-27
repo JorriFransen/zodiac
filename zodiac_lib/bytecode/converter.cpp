@@ -183,6 +183,7 @@ bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                 }
                 assert(global_type);
                 auto global_name = decl->identifier.name;
+                global_name = bytecode_unique_global_name(bc->builder, global_name);
 
                 Bytecode_Register initial_value_reg = {};
                 auto value_expr = decl->variable.value;
@@ -217,16 +218,46 @@ bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
         case AST_Declaration_Kind::CONSTANT_VARIABLE: {
 
-            auto name = decl->identifier.name;
+            auto name = bytecode_unique_global_name(bc->builder, decl->identifier.name);
             auto type = decl->variable.resolved_type;
+            auto value = decl->variable.value;
 
-            Bytecode_Register initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
-            assert(initial_value_reg.type == type ||
-                   initial_value_reg.type->kind == Type_Kind::INTEGER && type->kind == Type_Kind::UNSIZED_INTEGER)
-            auto global_handle = bytecode_create_global(bc->builder, name, initial_value_reg.type, true, initial_value_reg);
+            Bytecode_Register initial_value_reg;
+            if (type->kind == Type_Kind::SLICE && value->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
 
-            hash_table_add(&bc->globals, decl, global_handle);
+                Bytecode_Register pointer_reg;
+                if (value->kind == AST_Expression_Kind::COMPOUND) {
 
+                    Atom array_name = bytecode_unique_global_name(bc->builder, atom_get(&bc->context->atoms, "const_slice_array"));
+                    Bytecode_Register array_reg = ast_const_expr_to_bytecode(bc, value);
+                    bytecode_create_global(bc->builder, array_name, value->resolved_type, true, array_reg);
+
+                    bool reg_found = hash_table_find(&bc->builder->global_registers, array_name, &pointer_reg);
+                    assert(reg_found);
+
+                } else {
+
+                    pointer_reg = ast_const_lvalue_to_bytecode(bc, value);
+                    assert(pointer_reg.kind == Bytecode_Register_Kind::ALLOC || pointer_reg.kind == Bytecode_Register_Kind::GLOBAL);
+                }
+
+                Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, value->resolved_type->static_array.count);
+
+                Bytecode_Register members[2] = { pointer_reg, length_reg };
+                Bytecode_Register slice_reg = bytecode_aggregate_literal(bc->builder, members, type->slice.struct_type);
+
+                Bytecode_Global_Handle global_handle = bytecode_create_global(bc->builder, name, slice_reg.type, true, slice_reg);
+
+                hash_table_add(&bc->globals, decl, global_handle);
+            } else {
+                initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
+
+                assert(initial_value_reg.type == type ||
+                       initial_value_reg.type->kind == Type_Kind::INTEGER && type->kind == Type_Kind::UNSIZED_INTEGER)
+                auto global_handle = bytecode_create_global(bc->builder, name, initial_value_reg.type, true, initial_value_reg);
+
+                hash_table_add(&bc->globals, decl, global_handle);
+            }
             break;
         }
 
@@ -1189,6 +1220,76 @@ Bytecode_Register ast_compound_expr_to_bytecode(Bytecode_Converter *bc, AST_Expr
     return result;
 }
 
+Bytecode_Register ast_const_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr)
+{
+    assert(EXPR_IS_CONST(expr));
+
+    switch (expr->kind) {
+        case AST_Expression_Kind::INVALID: assert(false); break;
+        case AST_Expression_Kind::INTEGER_LITERAL: assert(false); break;
+        case AST_Expression_Kind::REAL_LITERAL: assert(false); break;
+        case AST_Expression_Kind::STRING_LITERAL: assert(false); break;
+        case AST_Expression_Kind::CHAR_LITERAL: assert(false); break;
+        case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
+        case AST_Expression_Kind::BOOL_LITERAL: assert(false); break;
+
+        case AST_Expression_Kind::IDENTIFIER: {
+            assert(expr->identifier.scope);
+            Symbol *ident_sym = scope_get_symbol(expr->identifier.scope, expr->identifier);
+            assert(ident_sym);
+            assert(ident_sym->decl);
+
+            switch (ident_sym->decl->kind) {
+
+                case AST_Declaration_Kind::INVALID: assert(false); break;
+                case AST_Declaration_Kind::VARIABLE: assert(false); break;
+
+                case AST_Declaration_Kind::CONSTANT_VARIABLE: {
+                    Bytecode_Global_Handle glob_handle;
+                    bool found = hash_table_find(&bc->globals, ident_sym->decl, &glob_handle);
+                    assert(found);
+
+                    debug_assert(glob_handle < bc->builder->globals.count);
+                    auto global = bc->builder->globals[glob_handle];
+                    assert(global.constant);
+
+                    Bytecode_Register global_reg;
+                    bool reg_found = hash_table_find(&bc->builder->global_registers, global.atom, &global_reg);
+                    assert(reg_found);
+
+                    debug_assert(global_reg.kind == Bytecode_Register_Kind::GLOBAL);
+                    return global_reg;
+                }
+
+                case AST_Declaration_Kind::PARAMETER: {
+                    Bytecode_Register alloc_reg;
+                    bool found = hash_table_find(&bc->allocations, ident_sym->decl, &alloc_reg);
+                    assert(found);
+
+                    return alloc_reg;
+                }
+
+                case AST_Declaration_Kind::FIELD: assert(false); break;
+                case AST_Declaration_Kind::FUNCTION: assert(false); break;
+                case AST_Declaration_Kind::STRUCT: assert(false); break;
+                case AST_Declaration_Kind::UNION: assert(false); break;
+                case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
+                case AST_Declaration_Kind::IMPORT_DIRECTIVE: assert(false); break;
+            }
+
+        }
+
+        case AST_Expression_Kind::MEMBER: assert(false); break;
+        case AST_Expression_Kind::INDEX: assert(false); break;
+        case AST_Expression_Kind::CALL: assert(false); break;
+        case AST_Expression_Kind::UNARY: assert(false); break;
+        case AST_Expression_Kind::BINARY: assert(false); break;
+        case AST_Expression_Kind::CAST: assert(false); break;
+        case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
+        case AST_Expression_Kind::COMPOUND: assert(false); break;
+    }
+}
+
 Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr)
 {
     debug_assert(bc);
@@ -1264,10 +1365,23 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
                     assert(init_expr->kind == AST_Expression_Kind::COMPOUND);
 
                     return ast_const_compound_expr_to_bytecode(bc, init_expr);
-                    break;
                 }
 
-                case Type_Kind::SLICE: assert(false);
+                case Type_Kind::SLICE: {
+                    auto sym = scope_get_symbol(expr->identifier.scope, expr->identifier);
+                    assert(sym && sym->decl);
+                    auto decl = sym->decl;
+                    assert(decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
+                    assert(decl->variable.resolved_type == type);
+
+                    Bytecode_Global_Handle glob_handle;
+                    bool found = hash_table_find(&bc->globals, sym->decl, &glob_handle);
+                    assert(found);
+
+                    auto glob = bc->builder->globals[glob_handle];
+                    return glob.initial_value;
+                }
+
                 case Type_Kind::FUNCTION: assert(false);
             }
 

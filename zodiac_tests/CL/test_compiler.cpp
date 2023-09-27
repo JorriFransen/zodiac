@@ -2331,6 +2331,101 @@ global_slice_from_global_const_arr: { 5, 4, 3, 2, 1 })OUT_STR" };
     return MUNIT_OK;
 }
 
+MunitResult More_Slices(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        glob_const_arr : [4]s64 : { 1, 2, 3, 4 };
+        glob_const_slice_from_arr : []s64 : glob_const_arr;
+        glob_const_slice : []s64 : { 11, 22, 33 };
+        global_slice : []s64 = { 5, 4, 3 };
+        global_arr : [4]s64 : { 4, 3, 2, 1 };
+        global_slice_from_arr : []s64 = global_arr;
+
+
+        main :: () {
+            {
+                println(glob_const_slice_from_arr);
+                println(glob_const_slice);
+                const_slice : []s64 : { 3, 2, 1 };
+                println(const_slice);
+                const_arr : [4]s64 : { 4, 3, 2, 1 };
+                const_slice_from_arr : []s64 : const_arr;
+                println(const_slice_from_arr);
+            }
+            {
+                slice: []s64 = { 1, 2 };
+                println(slice);
+                print_slice(slice);
+                print_slice({1, 2, 3});
+                arr : [4]s64 = { 1, 2, 3, 4 };
+                slice_from_arr : []s64 = arr;
+                println(slice_from_arr);
+            }
+            {
+                slice: []s64;
+                slice = { 11, 22 };
+                println(slice);
+                arr : [4]s64 = { 11, 22, 33, 44 };
+                slice_from_arr : []s64;
+                slice_from_arr = arr;
+                println(slice_from_arr);
+            }
+            {
+                vec_arr : [3]Vec2 = { {1, 2}, {3, 4}, {5, 6} };
+                vec_slice_from_arr : []Vec2 = vec_arr;
+                println(vec_slice_from_arr);
+                vec_slice : []Vec2 = { {11, 22}, {33, 44} };
+                println(vec_slice);
+            }
+            {
+                const_arr : [5]s64 : { 5, 4, 3, 2, 1 };
+                slice_from_const : []s64 = const_arr;
+                println(slice_from_const);
+                slice_from_const2 : []s64;
+                slice_from_const2 = const_arr;
+                println(slice_from_const2);
+            }
+            {
+                println(global_slice);
+                println(global_slice_from_arr);
+            }
+            {
+                local_slice_from_global_arr : []s64 = global_arr;
+                local_slice_from_global_arr = global_arr;
+                println(local_slice_from_global_arr);
+            }
+            return 0;
+        }
+        Vec2 :: struct { x, y: s64; }
+        print_slice :: (s: []s64) {
+            println(s);
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR({ 1, 2, 3, 4 }
+{ 11, 22, 33 }
+{ 3, 2, 1 }
+{ 4, 3, 2, 1 }
+{ 1, 2 }
+{ 1, 2 }
+{ 1, 2, 3 }
+{ 1, 2, 3, 4 }
+{ 11, 22 }
+{ 11, 22, 33, 44 }
+{ { 1, 2 }, { 3, 4 }, { 5, 6 } }
+{ { 11, 22 }, { 33, 44 } }
+{ 5, 4, 3, 2, 1 }
+{ 5, 4, 3, 2, 1 }
+{ 5, 4, 3 }
+{ 4, 3, 2, 1 }
+{ 4, 3, 2, 1 })OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
 #undef RESOLVE_ERR
 
 }}
