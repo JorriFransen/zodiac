@@ -406,7 +406,14 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         return ast_return_stmt_new(parser->context, { start_pos, end_pos }, value);
 
-    } else if (match_keyword(parser, keyword_print)) {
+    } else if (is_keyword(parser, keyword_print) || is_keyword(parser, keyword_println)) {
+
+        bool newline = false;
+        if (match_keyword(parser, keyword_println)) {
+            newline = true;
+        } else {
+            expect_keyword(parser, keyword_print);
+        }
 
         auto temp_print_exprs = temp_array_create<AST_Expression *>(temp_allocator_allocator());
 
@@ -433,7 +440,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         auto print_exprs = temp_array_finalize(&parser->context->ast_allocator, &temp_print_exprs);
 
-        return ast_print_statement_new(parser->context, { start_pos, end_pos }, print_exprs);
+        return ast_print_statement_new(parser->context, { start_pos, end_pos }, print_exprs, newline);
     }
 
     Token t = cur_tok(parser);
@@ -749,15 +756,18 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
                 length_expr = parse_expression(parser);
             }
 
-            auto end_pos = cur_tok(parser).range.end;
             if (!match_token(parser, ']')) return nullptr;
 
             AST_Type_Spec *base_ts = parse_type_spec(parser);
 
             assert(base_ts);
-            assert(length_expr);
 
-            return ast_static_array_ts_new(parser->context, { t.range.start, end_pos }, length_expr, base_ts);
+            Source_Range range = { t.range.start, base_ts->range.end };
+            if (length_expr) {
+                return ast_static_array_ts_new(parser->context, range, length_expr, base_ts);
+            } else {
+                return ast_slice_ts_new(parser->context, range, base_ts);
+            }
         }
 
         case TOK_NAME: {
@@ -798,7 +808,7 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
 
         result.kind = Parsed_Directive_Kind::DATA;
 
-        if (is_token(parser, '{') || is_keyword(parser, keyword_print)) {
+        if (is_token(parser, '{') || is_keyword(parser, keyword_print) || is_keyword(parser, keyword_println)) {
 
             AST_Statement *stmt = parse_statement(parser, true);
 

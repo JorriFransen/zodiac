@@ -92,7 +92,7 @@ ZAPI void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 a
 ZAPI Interpreter_Register *interpreter_handle_ffi_callback(Interpreter *interp, Bytecode_Function_Handle fn_handle);
 
 ZAPI Interpreter_Register interpreter_load_register(Interpreter *interp, Bytecode_Register bc_reg);
-ZAPI Interpreter_Register interpreter_load_pointer(Interpreter *interp, u8 *source, Type *type);
+ZAPI void interpreter_load_pointer(Interpreter *interp, u8 *source, Interpreter_Register *dest, Type *type);
 ZAPI void interpreter_store_register(Interpreter *interp, Interpreter_Register source, Bytecode_Register dest);
 ZAPI void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source, u8 *dest);
 

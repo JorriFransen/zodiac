@@ -49,6 +49,7 @@ ZAPI void bytecode_validator_free(Bytecode_Validator *validator);
 ZAPI void bytecode_validator_print_errors(Bytecode_Validator *validator);
 
 ZAPI void bytecode_validator_report_error(Bytecode_Validator *validator, const char *fmt, ...);
+ZAPI void bytecode_validator_report_error(Bytecode_Validator *validator, Bytecode_Instruction_Handle location, const char *fmt, va_list args);
 ZAPI void bytecode_validator_report_error(Bytecode_Validator *validator, Bytecode_Instruction_Handle location, const char *fmt, ...);
 
 ZAPI bool validate_bytecode(Bytecode_Validator *validator);
