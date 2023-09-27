@@ -70,11 +70,8 @@ void bytecode_validator_report_error(Bytecode_Validator *validator, const char *
     va_end(args);
 }
 
-void bytecode_validator_report_error(Bytecode_Validator *validator, Bytecode_Instruction_Handle location, const char *fmt, ...)
+void bytecode_validator_report_error(Bytecode_Validator *validator, Bytecode_Instruction_Handle location, const char *fmt, va_list args)
 {
-    va_list args;
-    va_start(args, fmt);
-
     Source_Pos pos;
     if (validator->visitor.instruction_locations) {
         bool found = hash_table_find(validator->visitor.instruction_locations, location, &pos);
@@ -97,6 +94,14 @@ void bytecode_validator_report_error(Bytecode_Validator *validator, Bytecode_Ins
     };
 
     dynamic_array_append(&validator->errors, ve);
+}
+
+void bytecode_validator_report_error(Bytecode_Validator *validator, Bytecode_Instruction_Handle location, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+
+    bytecode_validator_report_error(validator, location, fmt, args);
 
     va_end(args);
 }
@@ -721,7 +726,9 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             for (s64 i = 0; i < fn_arg_count; i++) {
                 auto arg_reg = stack_peek_ptr(&visitor->arg_stack, (fn_arg_count - 1) - i);
                 if (arg_reg->type != fn->param_types[i]) {
-                    bytecode_validator_report_error(validator, "Mismatching type for argument %d", i);
+                    bytecode_validator_report_error(validator, "Mismatching type for argument %lli", i);
+                    bytecode_validator_report_error(validator, "Expected: '%s'", temp_type_string(fn->param_types[i]));
+                    bytecode_validator_report_error(validator, "Got: '%s'", temp_type_string(arg_reg->type));
                     arg_match = false;
                 }
 

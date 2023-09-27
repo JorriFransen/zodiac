@@ -56,6 +56,11 @@ Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind
     return (Error_Handle)index;
 }
 
+Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind, Source_Pos pos, const char *fmt, va_list args)
+{
+    return zodiac_report_error(context, kind, {pos, pos}, fmt, args);
+}
+
 Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind, Source_Pos pos, const char *fmt, ...)
 {
     va_list args;

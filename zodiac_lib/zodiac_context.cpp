@@ -203,7 +203,7 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
 
         assert(ctx->errors.count == 0);
         emit_bytecode(ctx->resolver, ctx->bytecode_converter);
-        assert(ctx->errors.count == 0);
+        if (ctx->errors.count) return false;
 
         for (s64 i = 0; i < ctx->resolver->nodes_to_run_bytecode.count; i++) {
             Flat_Root_Node *root_node = ctx->resolver->nodes_to_run_bytecode[i];

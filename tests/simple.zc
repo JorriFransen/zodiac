@@ -1,18 +1,54 @@
-
 #run main();
 
 main :: () {
 
-    slice: []s64 = { 1, 2 };
-    println(slice);
-    print_slice(slice);
-    print_slice({1, 2, 3});
+    {
+        slice: []s64 = { 1, 2 };
+        println(slice);
+        print_slice(slice);
+        print_slice({1, 2, 3});
 
-    arr : [4]s64 = { 1, 2, 3, 4 };
-    slice_from_arr : []s64 = arr;
-    println(slice_from_arr);
+        arr : [4]s64 = { 1, 2, 3, 4 };
+        slice_from_arr : []s64 = arr;
+        println(slice_from_arr);
+    }
+
+    {
+        slice: []s64;
+        slice = { 11, 22 };
+        println(slice);
+
+        arr : [4]s64 = { 11, 22, 33, 44 };
+        slice_from_arr : []s64;
+        slice_from_arr = arr;
+        println(slice_from_arr);
+    }
+
+    {
+        vec_arr : [3]Vec2 = { {1, 2}, {3, 4}, {5, 6} };
+        vec_slice_from_arr : []Vec2 = vec_arr;
+        println(vec_slice_from_arr);
+
+        vec_slice : []Vec2 = { {11, 22}, {33, 44} };
+        println(vec_slice);
+    }
+
+    {
+        const_arr : [5]s64 : { 5, 4, 3, 2, 1 };
+        slice_from_const : []s64 = const_arr;
+        println(slice_from_const);
+
+        slice_from_const2 : []s64;
+        slice_from_const2 = const_arr;
+        println(slice_from_const2);
+
+    }
 
     return 0;
+}
+
+Vec2 :: struct {
+    x, y: s64;
 }
 
 print_slice :: (s: []s64) {

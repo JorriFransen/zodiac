@@ -124,11 +124,10 @@ bool visit_block(Bytecode_Visitor *visitor, Bytecode_Block *block)
 
             bool result = visitor->visit_instruction(visitor, inst);
 
-            if (!result)
-                return false;
-
             visit_instruction_post(visitor, inst);
 
+            if (!result)
+                return false;
         }
 
     }

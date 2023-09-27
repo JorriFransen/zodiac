@@ -1586,7 +1586,17 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                 decl->variable.resolved_type->kind == Type_Kind::SLICE &&
                 decl->variable.value->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
 
-                AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_COMPOUND, decl->variable.value, .slice_type = decl->variable.resolved_type };
+                bool needs_array_alloc = decl->variable.value->kind == AST_Expression_Kind::COMPOUND || EXPR_IS_CONST(decl->variable.value);
+
+                AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_COMPOUND,
+                                                      decl->variable.value,
+                                                      .slice = {
+                                                          .type = decl->variable.resolved_type,
+                                                          .needs_array_alloc = needs_array_alloc,
+                                                          .needs_slice_alloc = false,
+                                                      }
+                                                    };
+
                 if (scope->kind != Scope_Kind::GLOBAL) {
                     auto current_function = enclosing_function(scope);
                     dynamic_array_append(&current_function->function.implicit_lvalues, implicit_lval);
@@ -1786,8 +1796,17 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                 if (lvalue_expr->resolved_type->kind == Type_Kind::SLICE &&
                     value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
 
+                    bool needs_array_alloc = value_expr->kind == AST_Expression_Kind::COMPOUND || EXPR_IS_CONST(value_expr);
+
                     auto current_function = enclosing_function(scope);
-                    AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_COMPOUND, value_expr, .slice_type = lvalue_expr->resolved_type };
+                    AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_COMPOUND,
+                                                          value_expr,
+                                                          .slice = { .type = lvalue_expr->resolved_type,
+                                                                     .needs_array_alloc = needs_array_alloc,
+                                                                     .needs_slice_alloc = false,
+                                                                   }
+                                                        };
+
                     dynamic_array_append(&current_function->function.implicit_lvalues, implicit_lval);
                 }
             }
@@ -2147,7 +2166,14 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                     auto current_fn = enclosing_function(scope);
 
-                    AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_COMPOUND, arg_expr, .slice_type = param_type };
+                    AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_COMPOUND,
+                                                          arg_expr,
+                                                          .slice = { .type = param_type,
+                                                                     .needs_array_alloc = true,
+                                                                     .needs_slice_alloc = false,
+                                                                   }
+                                                        };
+
                     dynamic_array_append(&current_fn->function.implicit_lvalues, implicit_lval);
                 }
             }

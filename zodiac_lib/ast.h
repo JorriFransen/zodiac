@@ -346,7 +346,12 @@ struct AST_Implicit_LValue
 
     union {
         AST_Declaration *decl;
-        Type *slice_type;
+
+        struct {
+            Type *type;
+            bool needs_array_alloc;
+            bool needs_slice_alloc;
+        } slice;
     };
 };
 

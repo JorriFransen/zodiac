@@ -12,3 +12,4 @@ console.log
 *.obj
 a.out
 *.o
+.project.gf
