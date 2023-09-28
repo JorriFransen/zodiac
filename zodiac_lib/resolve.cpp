@@ -1728,17 +1728,17 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                 assert(decl->aggregate.resolved_type == get_string_type(ctx));
             } else {
 
-                auto temp_member_types = temp_array_create<Type *>(temp_allocator_allocator(), decl->aggregate.fields.count);
+                // auto temp_member_types = temp_array_create<Type *>(temp_allocator_allocator(), decl->aggregate.fields.count);
+                Dynamic_Array<Type *> member_types;
+                dynamic_array_create(&ctx->ast_allocator, &member_types, decl->aggregate.fields.count);
 
                 for (s64 i = 0; i < decl->aggregate.fields.count; i++) {
                     auto field = decl->aggregate.fields[i];
                     assert(field->kind == AST_Declaration_Kind::FIELD);
                     assert(field->field.resolved_type);
 
-                    dynamic_array_append(&temp_member_types.array, field->field.resolved_type);
+                    dynamic_array_append(&member_types, field->field.resolved_type);
                 }
-
-                auto member_types = temp_array_finalize(&ctx->ast_allocator, &temp_member_types);
 
                 auto sym = scope_get_symbol(scope, decl->identifier.name);
 

@@ -1,8 +1,30 @@
 
 #run main();
 
+A :: struct {
+    val: s64;
+    b: B;
+}
+
+B :: struct {
+    a: *A;
+    b: *B;
+}
+
 main :: () {
 
+    a : A;
+    a.val = 42;
+
+    b : B;
+    b.a = *a;
+    b.b = *b;
+
+    a.b = b;
+
+    println(a.val);
+    println(b.a.val);
+    println(b.b.a.val);
 
     return 0;
 }

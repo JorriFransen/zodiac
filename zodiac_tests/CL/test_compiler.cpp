@@ -2705,6 +2705,93 @@ R"OUT_STR(123456)OUT_STR" };
     return MUNIT_OK;
 }
 
+MunitResult Spiderman_Struct(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        A :: struct {
+            value: s64;
+            ptr: *B;
+        }
+
+        B :: struct {
+            value: r64;
+            ptr: *A;
+        }
+
+        main :: () {
+
+            a: A;
+            a.value = 42;
+
+            b: B;
+            b.value = 4.2;
+
+            a.ptr = *b;
+            b.ptr = *a;
+
+            println(a.value);
+            println(b.value);
+            println(a.ptr.value);
+            println(b.ptr.value);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(42
+4.200000
+4.200000
+42)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult More_Struct_Member_Pointers(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        A :: struct {
+            val: s64;
+            b: B;
+        }
+
+        B :: struct {
+            a: *A;
+            b: *B;
+        }
+
+        main :: () {
+
+            a : A;
+            a.val = 42;
+
+            b : B;
+            b.a = *a;
+            b.b = *b;
+
+            a.b = b;
+
+            println(a.val);
+            println(b.a.val);
+            println(b.b.a.val);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(42
+42
+42)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
 #undef RESOLVE_ERR
 
 }}

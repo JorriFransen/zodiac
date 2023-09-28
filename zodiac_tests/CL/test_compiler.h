@@ -107,6 +107,8 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Compound_Assignment) \
     X(Pointer_Equality) \
     X(Struct_Pointer_To_Self) \
+    X(Spiderman_Struct) \
+    X(More_Struct_Member_Pointers) \
 
 
 // Function declarations
