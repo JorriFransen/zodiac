@@ -220,6 +220,9 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
         BINOP_CASE_(F_GT_EQ)
         BINOP_CASE_(F_LT_EQ)
 
+        BINOP_CASE_(PTR_EQ)
+        BINOP_CASE_(PTR_NEQ)
+
         UNOP_CASE_(SQRT)
 
         UNOP_CASE_(TRUNC)

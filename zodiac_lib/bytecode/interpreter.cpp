@@ -317,6 +317,25 @@ break; \
 
 #undef FLOAT_BINOP_CMP_CASE
 
+#define PTR_BINOP_CMP_CASE(op) \
+        { \
+            Interpreter_Register lhs = interpreter_load_register(interp, instruction.a); \
+            Interpreter_Register rhs = interpreter_load_register(interp, instruction.b); \
+            assert(lhs.type == rhs.type); \
+            assert(lhs.type->kind == Type_Kind::POINTER); \
+            Interpreter_Register result_register = { \
+                .type = &builtin_type_bool, \
+            }; \
+            result_register.value.boolean = lhs.pointer op rhs.pointer; \
+            interpreter_store_register(interp, result_register, instruction.dest); \
+            break; \
+        }
+
+        case Bytecode_Opcode::PTR_EQ: PTR_BINOP_CMP_CASE(==)
+        case Bytecode_Opcode::PTR_NEQ: PTR_BINOP_CMP_CASE(!=)
+
+#undef PTR_BINOP_CMP_CASE
+
         case Bytecode_Opcode::SQRT: {
             Interpreter_Register operand = interpreter_load_register(interp, instruction.a);
 

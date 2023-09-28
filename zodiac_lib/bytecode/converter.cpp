@@ -905,6 +905,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
         expr->kind != AST_Expression_Kind::REAL_LITERAL &&
         expr->kind != AST_Expression_Kind::STRING_LITERAL &&
         expr->kind != AST_Expression_Kind::CHAR_LITERAL &&
+        expr->kind != AST_Expression_Kind::NULL_LITERAL &&
         expr->kind != AST_Expression_Kind::RUN_DIRECTIVE &&
         !(expr->kind == AST_Expression_Kind::UNARY && expr->unary.op == AST_Unary_Operator::ADDRESS_OF) &&
         EXPR_IS_CONST(expr)) {
@@ -946,7 +947,10 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             return bytecode_integer_literal(bc->builder, &builtin_type_u8, expr->character_literal);
         }
 
-        case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
+        case AST_Expression_Kind::NULL_LITERAL: {
+            return bytecode_pointer_literal(bc->builder, expr->resolved_type, nullptr);
+        }
+
         case AST_Expression_Kind::BOOL_LITERAL: assert(false); break;
 
         case AST_Expression_Kind::IDENTIFIER: {
@@ -1140,6 +1144,11 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             auto rhs = expr->binary.rhs;
 
             assert(lhs->resolved_type == rhs->resolved_type);
+
+            if (lhs->resolved_type->kind == Type_Kind::POINTER) {
+                assert(expr->binary.op == AST_Binary_Operator::EQ ||
+                       expr->binary.op == AST_Binary_Operator::NEQ)
+            }
 
             Bytecode_Register lhs_reg = ast_expr_to_bytecode(bc, lhs);
             Bytecode_Register rhs_reg = ast_expr_to_bytecode(bc, rhs);
