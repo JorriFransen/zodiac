@@ -39,6 +39,8 @@ struct Bytecode_Register;
     ZODIAC_BC_OP(F_LT) \
     ZODIAC_BC_OP(F_GT_EQ) \
     ZODIAC_BC_OP(F_LT_EQ) \
+    ZODIAC_BC_OP(PTR_EQ) \
+    ZODIAC_BC_OP(PTR_NEQ) \
     ZODIAC_BC_OP(SQRT) \
     ZODIAC_BC_OP(TRUNC) \
     ZODIAC_BC_OP(SEXT) \

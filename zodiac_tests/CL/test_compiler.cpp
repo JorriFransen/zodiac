@@ -2576,6 +2576,80 @@ R"OUT_STR(42
     return MUNIT_OK;
 }
 
+MunitResult Pointer_Equality(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () {
+            ptr : *s64 = null;
+            ptr = null;
+
+            if (ptr == null) {
+                println("ptr == null");
+            } else {
+                println("ptr != null");
+            }
+
+            if (null == ptr) {
+                println("ptr == null");
+            } else {
+                println("ptr != null");
+            }
+
+            i := 3;
+            ptr = *i;
+
+            if (ptr != null) {
+                println("ptr != null");
+            } else {
+                println("ptr == null");
+            }
+
+            j := 3;
+            ptr2 := *j;
+
+            if (ptr == ptr2) {
+                println("ptr == ptr2");
+            } else {
+                println("ptr != ptr2");
+            }
+
+            if (ptr != ptr2) {
+                println("ptr != ptr2");
+            } else {
+                println("ptr == ptr2");
+            }
+
+            ptr2 = ptr;
+
+            if (ptr == ptr2) {
+                println("ptr == ptr2");
+            } else {
+                println("ptr != ptr2");
+            }
+
+            if (ptr != ptr2) {
+                println("ptr != ptr2");
+            } else {
+                println("ptr == ptr2");
+            }
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(ptr == null
+ptr == null
+ptr != null
+ptr != ptr2
+ptr != ptr2
+ptr == ptr2
+ptr == ptr2)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
 #undef RESOLVE_ERR
 
 }}

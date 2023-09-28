@@ -682,12 +682,33 @@ Bytecode_Register bytecode_emit_div(Bytecode_Builder *builder, Bytecode_Register
 
 Bytecode_Register bytecode_emit_eq(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b)
 {
-    EMIT_CMP_BINOP_(EQ);
+    if (a.type->kind == Type_Kind::POINTER) {
+
+        assert(a.kind == Bytecode_Register_Kind::TEMPORARY);
+        assert(b.kind == Bytecode_Register_Kind::TEMPORARY);
+        assert(a.type == b.type); 
+
+        auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, &builtin_type_bool);
+        bytecode_emit_instruction(builder, Bytecode_Opcode::PTR_EQ, a, b, result);
+        return result;
+    } else {
+        EMIT_CMP_BINOP_(EQ);
+    }
 }
 
 Bytecode_Register bytecode_emit_neq(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b)
 {
-    EMIT_CMP_BINOP_(NEQ);
+    if (a.type->kind == Type_Kind::POINTER) {
+        assert(a.kind == Bytecode_Register_Kind::TEMPORARY);
+        assert(b.kind == Bytecode_Register_Kind::TEMPORARY);
+        assert(a.type == b.type); 
+
+        auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, &builtin_type_bool);
+        bytecode_emit_instruction(builder, Bytecode_Opcode::PTR_NEQ, a, b, result);
+        return result;
+    } else {
+        EMIT_CMP_BINOP_(NEQ);
+    }
 }
 
 Bytecode_Register bytecode_emit_gt(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b)

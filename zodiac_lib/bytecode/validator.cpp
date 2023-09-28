@@ -517,6 +517,44 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
 
 #undef VALIDATE_FLOAT_CMP_BINOP
 
+#define VALIDATE_PTR_CMP_BINOP(op) \
+        case Bytecode_Opcode::op: { \
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) { \
+                 bytecode_validator_report_error(validator, "The 'a' register for '" #op "' must be a temporary"); \
+                 return false; \
+            } \
+            if (instruction->a.type->kind != Type_Kind::POINTER) { \
+                 bytecode_validator_report_error(validator, "The 'a' register for '" #op "' must be of pointer type"); \
+                 return false; \
+            } \
+            if (instruction->b.kind != Bytecode_Register_Kind::TEMPORARY) { \
+                 bytecode_validator_report_error(validator, "The 'b' register for '" #op "' must be a temporary"); \
+                 return false; \
+            } \
+            if (instruction->b.type->kind != Type_Kind::POINTER) { \
+                 bytecode_validator_report_error(validator, "The 'b' register for '" #op "' must be of pointer type"); \
+                 return false; \
+            } \
+            if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) { \
+                bytecode_validator_report_error(validator, "The 'dest' resister for '" #op "' must be a temporary"); \
+                return false; \
+            } \
+            if (instruction->dest.type->kind != Type_Kind::BOOLEAN) { \
+                bytecode_validator_report_error(validator, "The 'dest' resister for '" #op "' must be of boolean type"); \
+                return false; \
+            } \
+            if (instruction->a.type != instruction->b.type) { \
+                bytecode_validator_report_error(validator, "The 'a' and 'b' register for '" #op "' must have the same pointer type"); \
+                return false; \
+            } \
+            return true; \
+        }
+
+        VALIDATE_PTR_CMP_BINOP(PTR_EQ)
+        VALIDATE_PTR_CMP_BINOP(PTR_NEQ)
+
+#undef VALIDATE_PTR_CMP_BINOP
+
         case Bytecode_Opcode::SQRT: {
             if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
                 bytecode_validator_report_error(validator, "The 'a' register for 'SQRT' must be a temporary");

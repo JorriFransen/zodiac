@@ -389,6 +389,33 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
         case Bytecode_Opcode::F_GT_EQ: EMIT_FLOAT_CMP_BINOP(GE)
         case Bytecode_Opcode::F_LT_EQ: EMIT_FLOAT_CMP_BINOP(LE)
 
+        case Bytecode_Opcode::PTR_EQ: {
+            auto int_type = llvm::Type::getIntNTy(*builder->llvm_context, bc_inst.a.type->bit_size);
+
+            llvm::Value *lhs = llvm_builder_emit_register(builder, bc_inst.a);
+            lhs = irb->CreatePtrToInt(lhs, int_type);
+            llvm::Value *rhs = llvm_builder_emit_register(builder, bc_inst.b);
+            rhs = irb->CreatePtrToInt(rhs, int_type);
+
+            llvm::Value *result = irb->CreateICmpEQ(lhs, rhs);
+
+            llvm_builder_store_result(builder, bc_inst.dest, result);
+            break;
+        }
+
+        case Bytecode_Opcode::PTR_NEQ: {
+            auto int_type = llvm::Type::getIntNTy(*builder->llvm_context, bc_inst.a.type->bit_size);
+
+            llvm::Value *lhs = llvm_builder_emit_register(builder, bc_inst.a);
+            lhs = irb->CreatePtrToInt(lhs, int_type);
+            llvm::Value *rhs = llvm_builder_emit_register(builder, bc_inst.b);
+            rhs = irb->CreatePtrToInt(rhs, int_type);
+
+            llvm::Value *result = irb->CreateICmpNE(lhs, rhs);
+
+            llvm_builder_store_result(builder, bc_inst.dest, result);
+            break;
+        }
 
         case Bytecode_Opcode::SQRT: {
             llvm::Value *operand = llvm_builder_emit_register(builder, bc_inst.a);

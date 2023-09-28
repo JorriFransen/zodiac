@@ -847,20 +847,20 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
         }
 
         case AST_Expression_Kind::BINARY: {
+            if (expr->binary.lhs->kind == AST_Expression_Kind::NULL_LITERAL) {
 
-            Infer_Node *infer_from = infer_node;
-            if (expr->binary.lhs->kind == AST_Expression_Kind::INTEGER_LITERAL) {
-                infer_from = nullptr;
+                flatten_expression(resolver, expr->binary.rhs, scope, dest, infer_node);
+                flatten_expression(resolver, expr->binary.lhs, scope, dest, infer_node_new(resolver->ctx, expr->binary.rhs));
+
+            } else if (expr->binary.rhs->kind == AST_Expression_Kind::NULL_LITERAL) {
+
+                flatten_expression(resolver, expr->binary.lhs, scope, dest, infer_node);
+                flatten_expression(resolver, expr->binary.rhs, scope, dest, infer_node_new(resolver->ctx, expr->binary.lhs));
+
+            } else {
+                flatten_expression(resolver, expr->binary.lhs, scope, dest, infer_node);
+                flatten_expression(resolver, expr->binary.rhs, scope, dest, infer_node);
             }
-
-            flatten_expression(resolver, expr->binary.lhs, scope, dest, infer_from);
-
-            infer_from = infer_node;
-            if (expr->binary.rhs->kind == AST_Expression_Kind::INTEGER_LITERAL) {
-                infer_from = nullptr;
-            }
-
-            flatten_expression(resolver, expr->binary.rhs, scope, dest, infer_from);
             break;
         }
 
@@ -2041,7 +2041,9 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
         case AST_Expression_Kind::NULL_LITERAL: {
             assert(inferred_type);
-            assert(false);
+            assert(inferred_type->kind == Type_Kind::POINTER);
+            expr->resolved_type = inferred_type;
+            break;
         }
 
         case AST_Expression_Kind::BOOL_LITERAL: {
