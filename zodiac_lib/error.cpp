@@ -35,7 +35,7 @@ Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind
 
 Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind, Source_Range sr, const char *fmt, va_list args)
 {
-    String message = string_format(&context->error_allocator, fmt, args);
+    String message = string_format_va_list(&context->error_allocator, fmt, args);
     auto result = zodiac_report_error(context, kind, sr, message);
 
     return result;

@@ -233,7 +233,6 @@ bool string_ends_with(const String_Ref &string, const String_Ref &end)
 }
 
 bool string_equal(const String_Ref &a, const String_Ref &b)
-
 {
     if (a.length != b.length) return false;
     if (a.length == 0) return true;
@@ -246,20 +245,20 @@ const String string_format(Allocator* allocator, const String_Ref fmt, ...)
     va_list args;
     va_start(args, fmt);
 
-    auto result = string_format(allocator, fmt, args);
+    auto result = string_format_va_list(allocator, fmt, args);
 
     va_end(args);
 
     return result;
 }
 
-const String string_format(Allocator *allocator, const String_Ref fmt, va_list args)
+const String string_format_va_list(Allocator *allocator, const String_Ref fmt, va_list args)
 {
     va_list args_copy;
     va_copy(args_copy, args);
 
     assert_msg(fmt.data[fmt.length] == '\0', "Null terminated string expected");
-    auto size = vsnprintf(nullptr, 0, fmt.data, args_copy);
+    auto size = vsnprintf(nullptr, 0, (const char *)fmt.data, args_copy);
 
     va_end(args_copy);
 

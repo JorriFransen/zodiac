@@ -286,7 +286,7 @@ Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocat
                         &builtin_type_s64 };
 
     auto mark = temporary_allocator_get_mark(temp_allocator());
-    auto name_ = string_format(temp_allocator_allocator(), "slice.%s", temp_type_string(element_type));
+    auto name_ = string_format(temp_allocator_allocator(), "slice.%s", temp_type_string(element_type).data);
     auto name = atom_get(&ctx->atoms, name_);
     temporary_allocator_reset(temp_allocator(), mark);
 

@@ -42,7 +42,8 @@
         "type_traits": "cpp",
         "xtr1common": "cpp",
         "future": "cpp",
-        "xlocale": "cpp"
+        "xlocale": "cpp",
+        "xmemory": "cpp"
     },
     "cmake.configureOnOpen": false,
 }

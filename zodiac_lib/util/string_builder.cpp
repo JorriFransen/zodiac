@@ -104,7 +104,7 @@ void string_builder_append(String_Builder *sb, String_Ref fmt, va_list args)
     auto ta = (Temporary_Allocator *)sb->temp_allocator.user_data;
     auto temp_mark = temporary_allocator_get_mark(ta);
 
-    String temp_result = string_format(&sb->temp_allocator, fmt, args);
+    String temp_result = string_format_va_list(&sb->temp_allocator, fmt, args);
 
     if (temp_result.length > sb->current_block->size - sb->current_block->used) {
 
