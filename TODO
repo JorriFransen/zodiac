@@ -1,7 +1,10 @@
+- Struct recursion via pointers
 
 - FFI with different return types
 
 - Defer
+ 
+- Lazy && and ||
 
 - Assert
 - Slice bounds checking

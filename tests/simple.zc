@@ -1,28 +1,26 @@
 
 #run main();
 
+List_Node :: struct {
+    value: s64;
+    next: *List_Node;
+}
+
 main :: () {
 
-    i := 42;
-    println(i);
+    // a : List_Node;
+    // b : List_Node;
+    // c : List_Node;
+    // d : List_Node;
+    // e : List_Node;
 
-    i += 1;
-    println(i);
+    // a.value = 1;
+    // b.value = 2;
+    // c.value = 3;
+    // d.value = 4;
+    // e.value = 5;
 
-    i -= 3;
-    println(i);
-
-    i /= 2;
-    println(i);
-
-    i *= 4;
-    println(i);
-
-    ints : []s64 = { 1, 2, 3};
-    println(ints);
-    ints[1] *= 11;
-    println(ints);
-
+    // a.next = b;
     return 0;
 }
 
