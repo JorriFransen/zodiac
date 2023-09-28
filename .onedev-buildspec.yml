@@ -37,7 +37,7 @@ jobs:
     interpreter: !ShellInterpreter
       shell: bash
       commands:
-      - bin/zodiac tests/simple.zc -v
+      - bin/zodiac tests/main.zc -v
       - ./a.out || EXIT_CODE=$?
       - '[[ $EXIT_CODE -eq 0 ]] && exit 0 || echo Invalid exit code $EXIT_CODE; exit
         1'
