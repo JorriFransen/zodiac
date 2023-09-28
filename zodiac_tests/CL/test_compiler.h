@@ -112,6 +112,7 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Defer_1) \
     X(Defer_2) \
     X(Defer_3) \
+    X(Defer_4) \
 
 
 // Function declarations
