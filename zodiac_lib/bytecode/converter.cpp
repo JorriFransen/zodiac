@@ -492,10 +492,6 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     auto local_scope = decl->function.local_scope;
     assert(local_scope->kind == Scope_Kind::FUNCTION_LOCAL);
 
-    for (s64 i = 0; i < local_scope->func.defer_stmts.count; i++) {
-        stack_push(&bc->defer_stack, local_scope->func.defer_stmts[i]);
-    }
-
     // Means we have returned from the body block directly, NOT from one of it's children
     bool body_returned_directly = false;
 
@@ -579,10 +575,6 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
             // Means we have returned from the block directly, NOT from one of it's children
             bool block_returned_directly = false;
-
-            for (s64 i = 0; i < scope->func.defer_stmts.count; i++) {
-                stack_push(&bc->defer_stack, scope->func.defer_stmts[i]);
-            }
 
             for (s64 i = 0; i < stmt->block.statements.count; i++) {
 
@@ -780,6 +772,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
         }
 
         case AST_Statement_Kind::DEFER: {
+            stack_push(&bc->defer_stack, stmt);
             break;
         }
 

@@ -2797,21 +2797,22 @@ MunitResult Defer_1(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
         main :: () {
-            defer println(7);
-            defer print(6);
+            defer println(8);
+            defer print(7);
             print(1);
             {
                 defer print(4);
                 defer print(3);
                 print(2);
             }
+            defer print(6);
             print(5);
             return 0;
         }
     )CODE_STR";
 
     Expected_Results expected = { .std_out =
-R"OUT_STR(1234567)OUT_STR" };
+R"OUT_STR(12345678)OUT_STR" };
 
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };
@@ -2824,14 +2825,15 @@ MunitResult Defer_2(const MunitParameter params[], void* user_data_or_fixture) {
     String_Ref code_string = R"CODE_STR(
         // Wrap this in a function because we are expected to return an integer from main
         defer_test :: () {
-            defer println(7);
-            defer print(6);
+            defer println(8);
+            defer print(7);
             print(1);
             {
                 defer print(4);
                 defer print(3);
                 print(2);
             }
+            defer print(6);
             print(5);
         }
         main :: () {
@@ -2841,7 +2843,7 @@ MunitResult Defer_2(const MunitParameter params[], void* user_data_or_fixture) {
     )CODE_STR";
 
     Expected_Results expected = { .std_out =
-R"OUT_STR(1234567)OUT_STR" };
+R"OUT_STR(12345678)OUT_STR" };
 
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };
@@ -2883,6 +2885,73 @@ R"OUT_STR(123456)OUT_STR" };
     return MUNIT_OK;
 }
 
+MunitResult Defer_4(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        work :: (i: s64) { println(i); }
+
+        main :: () {
+
+            defer println(24);
+            println(0);
+
+            for (i := 0; i < 3; i+=1) {
+                j := 1 + (i * 7);
+
+                defer println(j + 6);
+                println(j);
+
+                {
+                    defer println(j + 3);
+                    println(j + 1);
+
+                    work(j + 2);
+                }
+                
+                defer println(j + 5);
+                println(j + 4);
+
+            }
+
+            defer println(23);
+            println(22);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
 #undef RESOLVE_ERR
 
 }}
