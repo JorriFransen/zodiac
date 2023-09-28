@@ -6,7 +6,7 @@
             "configuration": {
                 "request": "launch",
                 "program": "bin/zodiac",
-                "args": [ "tests/simple.zc", "-v" ],
+                "args": [ "tests/main.zc", "-v" ],
                 "cwd": "${workspaceRoot}",
                 "environment": [],
                 "externalConsole": false,

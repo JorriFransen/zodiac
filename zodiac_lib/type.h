@@ -144,8 +144,11 @@ ZAPI void create_slice_type(Type *type, Type *element_type, Type *struct_type);
 ZAPI void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types, bool vararg = false);
 
 ZAPI Type *get_pointer_type(Type *base, Allocator *allocator);
+
 ZAPI Type *get_struct_type(Zodiac_Context *zc, Array_Ref<Type *> member_types, const char *cstr_name, Allocator *allocator);
 ZAPI Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allocator);
+ZAPI Type *finalize_struct_type(Type *unfinished, Array_Ref<Type *> member_types, Allocator *allocator);
+
 ZAPI Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator);
 ZAPI Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocator);
 ZAPI Type *get_function_type(Type *return_type, Array_Ref<Type *> param_types, Allocator *allocator, bool vararg = false);

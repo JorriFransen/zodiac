@@ -150,8 +150,6 @@ void create_struct_type(Type *type, Dynamic_Array<Type *> member_types, Atom nam
 
     type->structure.name = name;
     type->structure.member_types = member_types;
-
-    dynamic_array_append(&struct_types, type);
 }
 
 void create_static_array_type(Type *type, Type *element_type, u64 count)
@@ -230,6 +228,7 @@ Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allo
         auto ex_type = struct_types[si];
 
         if (ex_type->structure.member_types.count != member_types.count) continue;
+        if (ex_type->structure.name != name)  continue;
 
         bool member_match = true;
         for (s64 mi = 0; mi < ex_type->structure.member_types.count; mi++) {
@@ -242,14 +241,31 @@ Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allo
         if (member_match && ex_type->structure.name == name) {
             return ex_type;
         }
-
     }
 
     auto result = alloc<Type>(allocator);
     auto members_copy = dynamic_array_copy(member_types, allocator);
 
     create_struct_type(result, members_copy, name);
+
+    dynamic_array_append(&struct_types, result);
+
     return result;
+}
+
+Type *finalize_struct_type(Type *unfinished, Array_Ref<Type *> member_types, Allocator *allocator)
+{
+    assert(unfinished->kind == Type_Kind::STRUCTURE);
+
+    auto members_copy = dynamic_array_copy(member_types, allocator);
+
+    auto pointer_to = unfinished->pointer_to;
+    create_struct_type(unfinished, members_copy, unfinished->structure.name);
+    unfinished->pointer_to = pointer_to;
+
+    dynamic_array_append(&struct_types, unfinished);
+
+    return unfinished;
 }
 
 Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator)

@@ -1519,12 +1519,10 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
 
         case Type_Kind::VOID: {
             return llvm::Type::getVoidTy(*builder->llvm_context);
-            break;
         }
 
         case Type_Kind::INTEGER: {
             return llvm::Type::getIntNTy(*builder->llvm_context, (unsigned)ast_type->bit_size);
-            break;
         }
 
         case Type_Kind::FLOAT: {
@@ -1542,7 +1540,6 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
         case Type_Kind::POINTER: {
             llvm::Type *base_type = llvm_type_from_ast_type(builder, ast_type->pointer.base);
             return base_type->getPointerTo();
-            break;
         }
 
         case Type_Kind::FUNCTION: {
@@ -1566,22 +1563,23 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
             }
 
             return result;
-            break;
         }
 
         case Type_Kind::BOOLEAN: {
             assert(ast_type->bit_size == 8);
             // return llvm::Type::getIntNTy(*builder->llvm_context, ast_type->bit_size);
             return llvm::Type::getIntNTy(*builder->llvm_context, 1);
-            break;
         }
 
         case Type_Kind::STRUCTURE: {
             llvm::StructType *result = nullptr;
+
             if (!hash_table_find(&builder->struct_types, ast_type, &result)) {
                 auto struct_name = ast_type->structure.name;
                 llvm::StringRef struct_name_ref(struct_name.data, struct_name.length);
                 result = llvm::StructType::create(*builder->llvm_context, struct_name_ref);
+
+                hash_table_add(&builder->struct_types, ast_type, result);
 
                 Dynamic_Array<llvm::Type *> mem_types;
                 dynamic_array_create(temp_allocator_allocator(), &mem_types, ast_type->structure.member_types.count);
@@ -1591,18 +1589,15 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
                     dynamic_array_append(&mem_types, llvm_mem_type);
                 }
                 result->setBody( { mem_types.data, (size_t)mem_types.count }, false);
-
-                hash_table_add(&builder->struct_types, ast_type, result);
             }
+
             assert(result);
             return result;
-            break;
         }
 
         case Type_Kind::STATIC_ARRAY: {
             llvm::Type *elem_type = llvm_type_from_ast_type(builder, ast_type->static_array.element_type);
             return llvm::ArrayType::get(elem_type, ast_type->static_array.count);
-            break;
         }
 
         case Type_Kind::SLICE: {

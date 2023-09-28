@@ -71,7 +71,11 @@ struct Flat_Node
             Infer_Node *infer_type_from;
         } expr;
         AST_Implicit_LValue implicit_lvalue;
-        AST_Type_Spec *ts;
+
+        struct {
+            AST_Type_Spec *ts;
+            bool via_pointer;
+        } type_spec;
 
         struct {
             AST_Expression *expr;
@@ -132,13 +136,13 @@ ZAPI Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range 
 ZAPI void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 ZAPI void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 ZAPI void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest, Infer_Node *infer_node = nullptr);
-ZAPI void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node> *dest);
+ZAPI void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node> *dest, bool via_pointer = false);
 ZAPI void flatten_directive(Resolver *resolver, AST_Directive *directive, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 
 ZAPI Flat_Node to_flat_node(AST_Declaration *decl, Scope *scope);
 ZAPI Flat_Node to_flat_node(AST_Statement *stmt, Scope *scope);
 ZAPI Flat_Node to_flat_node(AST_Expression *expr, Scope *scope, Infer_Node *infer_type_from = nullptr);
-ZAPI Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope);
+ZAPI Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope, bool via_pointer = false);
 
 ZAPI Flat_Node to_flat_proto(AST_Declaration *decl, Scope *scope);
 
@@ -146,13 +150,13 @@ ZAPI bool name_resolve_node(Resolver *resolver, Flat_Node *node);
 ZAPI bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope);
 ZAPI bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope);
 ZAPI bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope);
-ZAPI bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope);
+ZAPI bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool via_pointer);
 
 ZAPI bool type_resolve_node(Resolver *resolver, Flat_Node *node);
 ZAPI bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope);
 ZAPI bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope);
 ZAPI bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, Infer_Node *infer_type_from);
-ZAPI bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope);
+ZAPI bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool via_pointer);
 
 ZAPI bool run_directive_is_const(Zodiac_Context *ctx, AST_Directive *dir);
 ZAPI bool run_directive_expr_is_const(Zodiac_Context *ctx, AST_Expression *expr);

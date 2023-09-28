@@ -71,6 +71,7 @@ struct Symbol
         struct
         {
             Scope *scope;
+            Type *unfinished_struct_type;
         } aggregate;
     };
 };

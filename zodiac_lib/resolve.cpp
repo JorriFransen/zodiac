@@ -898,7 +898,7 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
     dynamic_array_append(dest, flat_expr);
 }
 
-void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node> *dest)
+void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node> *dest, bool via_pointer/*=false*/)
 {
     debug_assert(resolver && ts && scope && dest);
 
@@ -914,7 +914,7 @@ void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dyna
         }
 
         case AST_Type_Spec_Kind::POINTER: {
-            flatten_type_spec(resolver, ts->pointer_base, scope, dest);
+            flatten_type_spec(resolver, ts->pointer_base, scope, dest, true);
             break;
         }
 
@@ -940,7 +940,7 @@ void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dyna
         }
     }
 
-    Flat_Node flat_ts = to_flat_node(ts, scope);
+    Flat_Node flat_ts = to_flat_node(ts, scope, via_pointer);
     dynamic_array_append(dest, flat_ts);
 }
 
@@ -999,14 +999,15 @@ Flat_Node to_flat_node(AST_Expression *expr, Scope *scope, Infer_Node *infer_typ
     return result;
 }
 
-Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope)
+Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope, bool via_pointer/*=false*/)
 {
     debug_assert(ts && scope);
 
     Flat_Node result = {};
     result.kind = Flat_Node_Kind::TYPE_SPEC;
     result.scope = scope;
-    result.ts = ts;
+    result.type_spec.ts = ts;
+    result.type_spec.via_pointer = via_pointer;
     return result;
 }
 
@@ -1042,7 +1043,7 @@ bool name_resolve_node(Resolver *resolver, Flat_Node *node)
         }
 
         case Flat_Node_Kind::TYPE_SPEC: {
-            return name_resolve_ts(resolver->ctx, node->ts, node->scope);
+            return name_resolve_ts(resolver->ctx, node->type_spec.ts, node->scope, node->type_spec.via_pointer);
         }
 
         case Flat_Node_Kind::FUNCTION_PROTO: {
@@ -1387,7 +1388,7 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
     return result;
 }
 
-bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
+bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool via_pointer)
 {
     debug_assert(ts && scope);
 
@@ -1424,8 +1425,10 @@ bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
 
             } else if (sym->state == Symbol_State::UNRESOLVED) {
 
-                resolve_error(ctx, ts, "Unresolved symbol: '%s'", ts->identifier.name.data);
-                result = false;
+                if (!via_pointer) {
+                    resolve_error(ctx, ts, "Unresolved symbol: '%s'", ts->identifier.name.data);
+                    result = false;
+                }
                 break;
 
             } else {
@@ -1468,7 +1471,7 @@ bool type_resolve_node(Resolver *resolver, Flat_Node *node)
         }
 
         case Flat_Node_Kind::TYPE_SPEC: {
-            return type_resolve_ts(resolver->ctx, node->ts, node->scope);
+            return type_resolve_ts(resolver->ctx, node->type_spec.ts, node->scope, node->type_spec.via_pointer);
         }
 
         case Flat_Node_Kind::FUNCTION_PROTO: {
@@ -1732,7 +1735,16 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
 
                 auto member_types = temp_array_finalize(&ctx->ast_allocator, &temp_member_types);
 
-                decl->aggregate.resolved_type = get_struct_type(ctx, member_types, decl->identifier.name.data, &ctx->ast_allocator);
+                auto sym = scope_get_symbol(scope, decl->identifier.name);
+
+                auto unfinished_type = sym->aggregate.unfinished_struct_type;
+                if (unfinished_type) {
+                    assert(unfinished_type->structure.name == decl->identifier.name);
+                    decl->aggregate.resolved_type = finalize_struct_type(unfinished_type, member_types, &ctx->ast_allocator);
+                } else {
+                    decl->aggregate.resolved_type = get_struct_type(member_types, decl->identifier.name, &ctx->ast_allocator);
+                }
+
             }
 
             auto sym = scope_get_symbol(scope, decl->identifier.name);
@@ -1804,7 +1816,10 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                 if (valid_static_type_conversion(value_expr->resolved_type, lvalue_expr->resolved_type)) {
                     // ok
                 } else {
-                    assert(false); // report error
+                    resolve_error(resolver->ctx, value_expr, "Mismatching type in assignment");
+                    resolve_error(resolver->ctx, lvalue_expr, "    Expected: %s", temp_type_string(lvalue_expr->resolved_type));
+                    resolve_error(resolver->ctx, value_expr, "    Got: %s", temp_type_string(value_expr->resolved_type));
+                    return false;
                 }
 
                 if (lvalue_expr->resolved_type->kind == Type_Kind::SLICE &&
@@ -2024,7 +2039,10 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             break;
         }
 
-        case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
+        case AST_Expression_Kind::NULL_LITERAL: {
+            assert(inferred_type);
+            assert(false);
+        }
 
         case AST_Expression_Kind::BOOL_LITERAL: {
             if (inferred_type) assert(inferred_type->kind == Type_Kind::BOOLEAN);
@@ -2559,7 +2577,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
     return result;
 }
 
-bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
+bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool via_pointer)
 {
     debug_assert(ctx && ts && scope);
 
@@ -2578,10 +2596,28 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope)
         case AST_Type_Spec_Kind::NAME: {
             auto sym = scope_get_symbol(scope, ts->identifier.name);
 
-            if (sym->state != Symbol_State::TYPED)
-            {
-                resolve_error(ctx, sym->decl, "Waiting for symbol to be typed");
-                return false;
+            if (sym->state != Symbol_State::TYPED) {
+
+                if (via_pointer && sym->kind == Symbol_Kind::TYPE && sym->decl->kind == AST_Declaration_Kind::STRUCT) {
+
+                    // Create the struct type so we can create a pointer to it...
+                    // The members are filled in later.
+                    Type *struct_type;
+                    if (sym->aggregate.unfinished_struct_type) {
+                        struct_type = sym->aggregate.unfinished_struct_type;
+                    } else {
+                        struct_type = alloc<Type>(&ctx->ast_allocator);
+                        create_struct_type(struct_type, {}, sym->name);
+                        sym->aggregate.unfinished_struct_type = struct_type;
+                    }
+
+                    ts->resolved_type = struct_type;
+                    return true;
+
+                } else {
+                    resolve_error(ctx, sym->decl, "Waiting for symbol to be typed");
+                    return false;
+                }
             }
 
             if (sym->decl) {
