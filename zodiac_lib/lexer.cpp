@@ -178,7 +178,7 @@ case (first_char): {                                                \
             lex->stream += 1;
             if (*lex->stream == '/') {
                 // Single line comment
-                while (lex->stream && *lex->stream != '\n') {
+                while (*lex->stream && *lex->stream != '\n') {
                     lex->stream += 1;
                 }
                 goto next_token__start_lexing_token;
