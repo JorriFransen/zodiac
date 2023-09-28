@@ -1329,6 +1329,11 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 
             assert(aggregate_type->flags & TYPE_FLAG_AGGREGATE);
 
+            if (aggregate_type->flags & TYPE_FLAG_UNFINISHED_STRUCT_TYPE) {
+                resolve_error(ctx, expr, "Waiting for struct type to be resolved");
+                return false;
+            }
+
             assert(aggregate_type->structure.name.length);
 
             auto type_sym = scope_get_symbol(scope, aggregate_type->structure.name);
@@ -2610,6 +2615,7 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
                     } else {
                         struct_type = alloc<Type>(&ctx->ast_allocator);
                         create_struct_type(struct_type, {}, sym->name);
+                        struct_type->flags |= TYPE_FLAG_UNFINISHED_STRUCT_TYPE;
                         sym->aggregate.unfinished_struct_type = struct_type;
                     }
 

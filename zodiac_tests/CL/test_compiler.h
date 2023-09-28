@@ -106,6 +106,7 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Slice_Lvalues) \
     X(Compound_Assignment) \
     X(Pointer_Equality) \
+    X(Struct_Pointer_To_Self) \
 
 
 // Function declarations

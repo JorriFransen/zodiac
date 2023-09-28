@@ -2650,6 +2650,61 @@ ptr == ptr2)OUT_STR" };
 
     return MUNIT_OK;
 }
+
+MunitResult Struct_Pointer_To_Self(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        List_Node :: struct {
+            value: s64;
+            next: *List_Node;
+        }
+
+        main :: () {
+
+            a : List_Node;
+            b : List_Node;
+            c : List_Node;
+            d : List_Node;
+            e : List_Node;
+            f : List_Node;
+
+            a.value = 1;
+            b.value = 2;
+            c.value = 3;
+            d.value = 4;
+            e.value = 5;
+            f.value = 6;
+
+            a.next = *b;
+            b.next = *c;
+            c.next = *d;
+            d.next = *e;
+            e.next = *f;
+            f.next = null;
+
+            print_list(*a);
+
+            return 0;
+        }
+
+        print_list :: (node: *List_Node) {
+            while (node != null) {
+                print(node.value);
+                node = node.next;
+            }
+            print("\n");
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(123456)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef RESOLVE_ERR
 
 }}

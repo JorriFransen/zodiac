@@ -256,12 +256,15 @@ Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allo
 Type *finalize_struct_type(Type *unfinished, Array_Ref<Type *> member_types, Allocator *allocator)
 {
     assert(unfinished->kind == Type_Kind::STRUCTURE);
+    assert(unfinished->flags & TYPE_FLAG_UNFINISHED_STRUCT_TYPE);
 
     auto members_copy = dynamic_array_copy(member_types, allocator);
 
     auto pointer_to = unfinished->pointer_to;
     create_struct_type(unfinished, members_copy, unfinished->structure.name);
     unfinished->pointer_to = pointer_to;
+
+    unfinished->flags &= ~TYPE_FLAG_UNFINISHED_STRUCT_TYPE;
 
     dynamic_array_append(&struct_types, unfinished);
 

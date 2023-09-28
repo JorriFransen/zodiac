@@ -1,5 +1,7 @@
 - Struct recursion via pointers
 
+- Make sure all variables are zero initialized
+
 - FFI with different return types
 
 - Defer
