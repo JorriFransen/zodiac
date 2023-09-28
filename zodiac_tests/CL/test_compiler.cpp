@@ -2531,6 +2531,51 @@ R"OUT_STR({ { 1, 2 }, { 3, 4 }, { 5, 6 } }
 
     return MUNIT_OK;
 }
+
+MunitResult Compound_Assignment(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () {
+
+            i := 42;
+            println(i);
+
+            i += 1;
+            println(i);
+
+            i -= 3;
+            println(i);
+
+            i /= 2;
+            println(i);
+
+            i *= 4;
+            println(i);
+
+            ints : []s64 = { 1, 2, 3};
+            println(ints);
+            ints[1] *= 11;
+            println(ints);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(42
+43
+40
+20
+80
+{ 1, 2, 3 }
+{ 1, 22, 3 })OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef RESOLVE_ERR
 
 }}

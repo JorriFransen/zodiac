@@ -565,7 +565,39 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
         case AST_Statement_Kind::ASSIGN: {
             Bytecode_Register lvalue_reg = ast_lvalue_to_bytecode(bc, stmt->assign.dest);
 
-            assignment_to_bytecode(bc, stmt->assign.value, lvalue_reg);
+            if (stmt->flags & AST_STMT_FLAG_COMPOUND_ASSIGNMENT) {
+                Bytecode_Register lhs_reg = bytecode_emit_load(bc->builder, lvalue_reg);
+                auto binary = stmt->assign.value;
+                assert(binary->kind == AST_Expression_Kind::BINARY);
+                Bytecode_Register rhs_reg = ast_expr_to_bytecode(bc, binary->binary.rhs);
+
+                Bytecode_Register new_value;
+                switch (binary->binary.op) {
+
+                    case AST_Binary_Operator::ADD: {
+                        new_value = bytecode_emit_add(bc->builder, lhs_reg, rhs_reg);
+                        break;
+                    }
+                    case AST_Binary_Operator::SUB: {
+                        new_value = bytecode_emit_sub(bc->builder, lhs_reg, rhs_reg);
+                        break;
+                    }
+                    case AST_Binary_Operator::MUL: {
+                        new_value = bytecode_emit_mul(bc->builder, lhs_reg, rhs_reg);
+                        break;
+                    }
+                    case AST_Binary_Operator::DIV: {
+                        new_value = bytecode_emit_div(bc->builder, lhs_reg, rhs_reg);
+                        break;
+                    }
+                    default: assert(false);
+                }
+
+                bytecode_emit_store(bc->builder, new_value, lvalue_reg);
+
+            } else {
+                assignment_to_bytecode(bc, stmt->assign.value, lvalue_reg);
+            }
             break;
         }
 

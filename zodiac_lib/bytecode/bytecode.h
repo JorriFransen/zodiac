@@ -353,6 +353,9 @@ ZAPI Bytecode_Register bytecode_emit_ptr_offset_pointer(Bytecode_Builder *builde
 ZAPI void bytecode_emit_jmp(Bytecode_Builder *builder, Bytecode_Block_Handle block);
 ZAPI void bytecode_emit_jmp_if(Bytecode_Builder *builder, Bytecode_Register cond, Bytecode_Block_Handle then_block, Bytecode_Block_Handle else_block);
 
+ZAPI Bytecode_Register bytecode_emit_load(Bytecode_Builder *builder, Bytecode_Register reg);
+ZAPI void bytecode_emit_store(Bytecode_Builder *builder, Bytecode_Register value, Bytecode_Register dest);
+
 ZAPI Bytecode_Instruction_Handle bytecode_emit_instruction(Bytecode_Builder *builder, Bytecode_Opcode op, Bytecode_Register a, Bytecode_Register b, Bytecode_Register result);
 ZAPI Bytecode_Instruction *bytecode_get_instruction(Bytecode_Builder *bb, const Bytecode_Instruction_Handle &handle);
 

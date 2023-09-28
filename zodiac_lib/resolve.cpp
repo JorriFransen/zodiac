@@ -798,7 +798,9 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
         }
 
         case AST_Expression_Kind::IDENTIFIER: {
-            assert(expr->identifier.scope == nullptr);
+            if (expr->identifier.scope != nullptr) {
+                assert(expr->identifier.scope == scope);
+            }
             expr->identifier.scope = scope;
             break;
         }

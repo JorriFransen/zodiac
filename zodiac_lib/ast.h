@@ -296,8 +296,9 @@ typedef u32 AST_Statement_Flags;
 
 enum AST_Statement_Flag : AST_Statement_Flags
 {
-    AST_STMT_FLAG_NONE  = 0x00,
-    AST_STMT_FLAG_TYPED = 0x01,
+    AST_STMT_FLAG_NONE                = 0x00,
+    AST_STMT_FLAG_TYPED               = 0x01,
+    AST_STMT_FLAG_COMPOUND_ASSIGNMENT = 0x02,
 };
 
 #define STMT_IS_TYPED(s) ((s)->flags & AST_STMT_FLAG_TYPED)

@@ -1253,6 +1253,44 @@ void bytecode_emit_jmp_if(Bytecode_Builder *builder, Bytecode_Register cond, Byt
     bytecode_emit_instruction(builder, Bytecode_Opcode::JMP_IF, cond, then_block_value, else_block_value);
 }
 
+Bytecode_Register bytecode_emit_load(Bytecode_Builder *builder, Bytecode_Register reg)
+{
+    switch (reg.kind) {
+
+        case Bytecode_Register_Kind::TEMPORARY: {
+            assert(reg.type->kind == Type_Kind::POINTER);
+            return bytecode_emit_load_pointer(builder, reg);
+        }
+
+        case Bytecode_Register_Kind::ALLOC: {
+            return bytecode_emit_load_alloc(builder, reg);
+        }
+
+        case Bytecode_Register_Kind::GLOBAL: assert(false);
+        default: assert(false); break;
+    }
+}
+
+void bytecode_emit_store(Bytecode_Builder *builder, Bytecode_Register value, Bytecode_Register dest)
+{
+    switch (dest.kind) {
+
+        case Bytecode_Register_Kind::TEMPORARY: {
+            assert(dest.type->kind == Type_Kind::POINTER);
+            bytecode_emit_store_pointer(builder, value, dest);
+            break;
+        }
+
+        case Bytecode_Register_Kind::ALLOC: {
+            bytecode_emit_store_alloc(builder, value, dest);
+            break;
+        }
+
+        case Bytecode_Register_Kind::GLOBAL: assert(false); break;
+        default: assert(false); break;
+    }
+}
+
 Bytecode_Instruction_Handle bytecode_emit_instruction(Bytecode_Builder *builder, Bytecode_Opcode op, Bytecode_Register a, Bytecode_Register b, Bytecode_Register result)
 {
     debug_assert(builder);

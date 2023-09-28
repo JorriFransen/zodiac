@@ -3,7 +3,7 @@
 
 main :: () {
 
-    i := 42;    
+    i := 42;
     println(i);
 
     i += 1;
@@ -17,6 +17,11 @@ main :: () {
 
     i *= 4;
     println(i);
+
+    ints : []s64 = { 1, 2, 3};
+    println(ints);
+    ints[1] *= 11;
+    println(ints);
 
     return 0;
 }

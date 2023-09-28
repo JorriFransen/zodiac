@@ -516,6 +516,18 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
     } else if (expr->kind == AST_Expression_Kind::RUN_DIRECTIVE) {
         report_parse_error(parser, expr->range, "Result value of #run in local scope is not used");
         return nullptr;
+    } else if (is_token(parser, '+') || is_token(parser, '-') || is_token(parser, '*') || is_token(parser, '/')) {
+
+        auto op_token = cur_tok(parser);
+        next_token(parser);
+        expect_token(parser, '=');
+
+        auto rhs = parse_expression(parser);
+        auto op = token_kind_to_ast_binop[op_token.kind];
+        auto new_value = ast_binary_expr_new(parser->context, {start_pos, rhs->range.end}, op, expr, rhs);
+
+        result = ast_assign_stmt_new(parser->context, {start_pos, new_value->range.end}, expr, new_value);
+        result->flags |= AST_STMT_FLAG_COMPOUND_ASSIGNMENT;
     } else {
         expect_token(parser, '=');
         AST_Expression *value = parse_expression(parser);
