@@ -289,6 +289,13 @@ void ast_for_stmt_create(AST_Declaration *init_decl, AST_Expression *cond_expr, 
     out_stmt->for_stmt.scope = nullptr;
 }
 
+void ast_defer_stmt_create(AST_Statement *stmt_to_defer, AST_Statement *out_stmt)
+{
+    ast_statement_create(AST_Statement_Kind::DEFER, out_stmt);
+
+    out_stmt->defer_stmt.stmt = stmt_to_defer;
+}
+
 void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
 {
     debug_assert(out_stmt);
@@ -735,6 +742,13 @@ AST_Statement *ast_for_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Dec
 {
     auto stmt = ast_statement_new(ctx, range);
     ast_for_stmt_create(init_decl, cond_expr, inc_stmt, body_stmt, stmt);
+    return stmt;
+}
+
+AST_Statement *ast_defer_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Statement *stmt_to_defer)
+{
+    auto stmt = ast_statement_new(ctx, range);
+    ast_defer_stmt_create(stmt_to_defer, stmt);
     return stmt;
 }
 
@@ -1218,6 +1232,12 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
             string_builder_append(sb, "; ");
             ast_print_statement(sb, stmt->for_stmt.inc_stmt);
             ast__print_statement_internal(sb, stmt->for_stmt.body_stmt, indent, false);
+            break;
+        }
+
+        case AST_Statement_Kind::DEFER: {
+            string_builder_append(sb, "defer ");
+            ast_print_statement(sb, stmt->defer_stmt.stmt);
             break;
         }
 

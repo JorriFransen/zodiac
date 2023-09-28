@@ -437,7 +437,12 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         auto print_exprs = temp_array_finalize(&parser->context->ast_allocator, &temp_print_exprs);
 
-        return ast_print_statement_new(parser->context, { start_pos, end_pos }, print_exprs, newline);
+        return ast_print_statement_new(parser->context, {start_pos, end_pos}, print_exprs, newline);
+
+    } else if (match_keyword(parser, keyword_defer)) {
+
+        AST_Statement *stmt = parse_statement(parser);
+        return ast_defer_stmt_new(parser->context, {start_pos, stmt->range.end}, stmt);
     }
 
     Token t = cur_tok(parser);

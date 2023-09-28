@@ -1,3 +1,20 @@
+- This code quits the compiler with a non zero exit code, not reporting any errors, or printing any bytecode
+```
+main :: () {
+
+
+    println(1);
+
+    {
+        println(2);
+        return 0;
+    }
+
+    println(3);
+    return 0;
+}
+```
+
 - Make sure all variables are zero initialized
 
 - FFI with different return types

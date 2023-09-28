@@ -2792,6 +2792,97 @@ R"OUT_STR(42
 
     return MUNIT_OK;
 }
+
+MunitResult Defer_1(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () {
+            defer println(7);
+            defer print(6);
+            print(1);
+            {
+                defer print(4);
+                defer print(3);
+                print(2);
+            }
+            print(5);
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(1234567)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Defer_2(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        // Wrap this in a function because we are expected to return an integer from main
+        defer_test :: () {
+            defer println(7);
+            defer print(6);
+            print(1);
+            {
+                defer print(4);
+                defer print(3);
+                print(2);
+            }
+            print(5);
+        }
+        main :: () {
+            defer_test();
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(1234567)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Defer_3(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () {
+
+            defer println(6);
+            defer print(5);
+
+            print(1);
+
+            if (true)
+            {
+                defer print(4);
+                defer print(3);
+                print(2);
+                return 0;
+            }
+
+            defer print("x");
+            print("y");
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(123456)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef RESOLVE_ERR
 
 }}

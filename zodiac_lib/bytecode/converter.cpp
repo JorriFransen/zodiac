@@ -38,6 +38,7 @@ void bytecode_converter_init(Allocator *allocator, Zodiac_Context *context, Byte
     out_bc->builder = bb;
 
     hash_table_create(allocator, &out_bc->functions);
+    stack_init(allocator, &out_bc->defer_stack);
     hash_table_create(allocator, &out_bc->allocations);
     hash_table_create(allocator, &out_bc->implicit_lvalues);
     hash_table_create(allocator, &out_bc->globals);
@@ -486,6 +487,18 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
     temporary_allocator_reset(ta, mark);
 
+    assert(stack_count(&bc->defer_stack) == 0);
+
+    auto local_scope = decl->function.local_scope;
+    assert(local_scope->kind == Scope_Kind::FUNCTION_LOCAL);
+
+    for (s64 i = 0; i < local_scope->func.defer_stmts.count; i++) {
+        stack_push(&bc->defer_stack, local_scope->func.defer_stmts[i]);
+    }
+
+    // Means we have returned from the body block directly, NOT from one of it's children
+    bool body_returned_directly = false;
+
     for (s64 i = 0; i < decl->function.body.count; i++) {
 
         AST_Statement *stmt = decl->function.body[i];
@@ -497,7 +510,22 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
         }
 
         ast_stmt_to_bytecode(bc, stmt);
+
+        if (stmt->kind == AST_Statement_Kind::RETURN) {
+            body_returned_directly = true;
+        }
     }
+
+    if (!body_returned_directly) {
+        for (s64 i = local_scope->func.defer_stmts.count - 1; i >= 0; i -= 1) {
+            auto defer_stmt = local_scope->func.defer_stmts[i];
+            assert(defer_stmt->kind == AST_Statement_Kind::DEFER);
+            ast_stmt_to_bytecode(bc, defer_stmt->defer_stmt.stmt);
+        }
+    }
+
+    assert(stack_count(&bc->defer_stack) == local_scope->func.defer_stmts.count);
+    bc->defer_stack.sp = 0;
 
     auto fn = &bc->builder->functions[fn_handle];
     auto block = &fn->blocks[bc->builder->insert_block_index];
@@ -544,6 +572,18 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
         case AST_Statement_Kind::INVALID: assert(false); break;
 
         case AST_Statement_Kind::BLOCK: {
+            auto scope = stmt->block.scope;
+            assert(scope->kind == Scope_Kind::FUNCTION_LOCAL);
+
+            auto old_defer_sp = bc->defer_stack.sp;
+
+            // Means we have returned from the block directly, NOT from one of it's children
+            bool block_returned_directly = false;
+
+            for (s64 i = 0; i < scope->func.defer_stmts.count; i++) {
+                stack_push(&bc->defer_stack, scope->func.defer_stmts[i]);
+            }
+
             for (s64 i = 0; i < stmt->block.statements.count; i++) {
 
                 Bytecode_Block *current_block = bytecode_get_insert_block(bc->builder);
@@ -553,6 +593,21 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                 }
 
                 ast_stmt_to_bytecode(bc, stmt->block.statements[i]);
+
+                if (stmt->block.statements[i]->kind == AST_Statement_Kind::RETURN) {
+                    block_returned_directly = true;
+                }
+            }
+
+            assert(stack_count(&bc->defer_stack) == old_defer_sp + scope->func.defer_stmts.count);
+            bc->defer_stack.sp = old_defer_sp;
+
+            if (!block_returned_directly) {
+                for (s64 i = scope->func.defer_stmts.count - 1; i >= 0; i -= 1) {
+                    auto defer_stmt = scope->func.defer_stmts[i];
+                    assert(defer_stmt->kind == AST_Statement_Kind::DEFER);
+                    ast_stmt_to_bytecode(bc, defer_stmt->defer_stmt.stmt);
+                }
             }
             break;
         }
@@ -724,7 +779,24 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             break;
         }
 
+        case AST_Statement_Kind::DEFER: {
+            break;
+        }
+
         case AST_Statement_Kind::RETURN: {
+
+            auto defer_count = stack_count(&bc->defer_stack);
+
+            if (defer_count > 0) {
+                Array_Ref<AST_Statement *> defers(bc->defer_stack.buffer, defer_count);
+
+                for (s64 i = defers.count - 1; i >= 0; i -= 1) {
+                    auto defer_stmt = defers[i];
+                    assert(defer_stmt->kind == AST_Statement_Kind::DEFER);
+                    ast_stmt_to_bytecode(bc, defer_stmt->defer_stmt.stmt);
+                }
+            }
+
             if (stmt->return_stmt.value) {
                 Bytecode_Register return_value_register = ast_expr_to_bytecode(bc, stmt->return_stmt.value);
                 bytecode_emit_return(bc->builder, return_value_register);

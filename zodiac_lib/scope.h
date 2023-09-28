@@ -8,10 +8,11 @@
 namespace Zodiac
 {
 
+struct Allocator;
 struct AST_Declaration;
 struct AST_File;
 struct AST_Identifier;
-struct Allocator;
+struct AST_Statement;
 struct Scope;
 struct Type;
 struct Zodiac_Context;
@@ -91,8 +92,17 @@ struct Scope
     Dynamic_Array<Symbol> symbols;
 
     union {
-        AST_Declaration *func_decl; // Only set in FUNCTION_PARAMETER scopes
-        AST_File *file;
+        struct {
+            AST_Declaration *func_decl;
+        } func_param;
+
+        struct {
+            Dynamic_Array<AST_Statement *> defer_stmts;
+        } func;
+
+        struct {
+            AST_File *file;
+        } global;
     };
 };
 

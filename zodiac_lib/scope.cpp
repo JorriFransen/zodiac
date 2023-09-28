@@ -29,8 +29,11 @@ Scope *scope_new(Allocator *allocator, Scope_Kind kind, Scope *parent)
 
     result->kind = kind;
     result->parent = parent;
-    result->func_decl = nullptr;
     dynamic_array_create(allocator, &result->symbols);
+
+    if (kind == Scope_Kind::FUNCTION_LOCAL) {
+        dynamic_array_create(allocator, &result->func.defer_stmts, 0);
+    }
 
     return result;
 }
@@ -169,7 +172,7 @@ bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declarati
                 }
             }
 
-            parameter_scope->func_decl = decl;
+            parameter_scope->func_param.func_decl = decl;
             break;
         }
 
@@ -249,7 +252,7 @@ AST_Declaration *enclosing_function(Scope *scope)
     Scope *current = scope;
     while (true) {
         if (current->kind == Scope_Kind::FUNCTION_PARAMETER) {
-            auto decl = current->func_decl;
+            auto decl = current->func_param.func_decl;
             assert(decl);
             assert(decl->kind == AST_Declaration_Kind::FUNCTION);
             return decl;
@@ -269,7 +272,7 @@ AST_File *enclosing_file(Scope *scope)
     Scope *current = scope;
     while (true) {
         if (current->kind == Scope_Kind::GLOBAL) {
-            auto file = current->file;
+            auto file = current->global.file;
             assert(file);
             return file;
         }

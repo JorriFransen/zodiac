@@ -1,30 +1,24 @@
 
 #run main();
 
-A :: struct {
-    val: s64;
-    b: B;
-}
-
-B :: struct {
-    a: *A;
-    b: *B;
-}
 
 main :: () {
 
-    a : A;
-    a.val = 42;
+    defer println(6);
+    defer println(5);
 
-    b : B;
-    b.a = *a;
-    b.b = *b;
+    println(1);
 
-    a.b = b;
+    if (true)
+    {
+        defer println(4);
+        defer println(3);
+        println(2);
+        return 0;
+    }
 
-    println(a.val);
-    println(b.a.val);
-    println(b.b.a.val);
+    defer println(9999999);
+    println(9999999);
 
     return 0;
 }

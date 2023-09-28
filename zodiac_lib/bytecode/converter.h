@@ -3,6 +3,7 @@
 #include "bytecode/bytecode.h"
 #include "bytecode/interpreter.h"
 #include "containers/hash_table.h"
+#include "containers/stack.h"
 #include "defines.h"
 
 namespace Zodiac {
@@ -28,6 +29,7 @@ struct Bytecode_Converter
     Bytecode_Builder *builder;
 
     Hash_Table<AST_Declaration *, Bytecode_Function_Handle> functions;
+    Stack<AST_Statement *> defer_stack;
 
     // TODO: should these be separated per function?
     Hash_Table<AST_Declaration *, Bytecode_Register> allocations;

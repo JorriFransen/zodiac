@@ -45,7 +45,7 @@ void resolver_create(Resolver *resolver, Zodiac_Context *ctx)
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_run_bytecode);
 
     assert(resolver->global_scope);
-    assert(resolver->global_scope->file == nullptr);
+    assert(resolver->global_scope->global.file == nullptr);
 
     add_builtin_type_symbol(u64);
     add_builtin_type_symbol(s64);
@@ -78,8 +78,8 @@ void resolver_add_file(Resolver *resolver, AST_File *file)
     dynamic_array_append(&resolver->ctx->parsed_files, file);
 
     // TODO: Cleanup:
-    if (!resolver->global_scope->file) {
-        resolver->global_scope->file = file;
+    if (!resolver->global_scope->global.file) {
+        resolver->global_scope->global.file = file;
     }
 
     // Register all top level symbols first
@@ -727,7 +727,6 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
             flatten_expression(resolver, stmt->while_stmt.cond, while_scope, dest);
 
             flatten_statement(resolver, stmt->while_stmt.body_stmt, while_scope, dest);
-
             break;
         }
 
@@ -743,7 +742,15 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
             flatten_statement(resolver, stmt->for_stmt.inc_stmt, for_scope, dest);
 
             flatten_statement(resolver, stmt->for_stmt.body_stmt, for_scope, dest);
+            break;
+        }
 
+        case AST_Statement_Kind::DEFER: {
+            assert(scope->kind == Scope_Kind::FUNCTION_LOCAL);
+
+            flatten_statement(resolver, stmt->defer_stmt.stmt, scope, dest);
+
+            dynamic_array_append(&scope->func.defer_stmts, stmt);
             break;
         }
 
@@ -1209,6 +1216,11 @@ bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
                 result = false;
                 break;
             }
+            break;
+        }
+
+        case AST_Statement_Kind::DEFER: {
+            // Leaf
             break;
         }
 
@@ -1894,6 +1906,11 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                 fatal_resolve_error(resolver->ctx, cond_expr, "Expected boolean type in 'for' conditional, got: '%'", temp_type_string(cond_expr->resolved_type));
                 return false;
             }
+            break;
+        }
+
+        case AST_Statement_Kind::DEFER: {
+            // Leaf
             break;
         }
 
