@@ -6,7 +6,6 @@
 #include "common.h"
 #include "constant_resolver.h"
 #include "containers/dynamic_array.h"
-#include "error.h"
 #include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
@@ -495,24 +494,26 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     // Means we have returned from the body block directly, NOT from one of it's children
     bool body_returned_directly = false;
 
+    bool block_terminated = false;
+
     for (s64 i = 0; i < decl->function.body.count; i++) {
 
         AST_Statement *stmt = decl->function.body[i];
-
-        Bytecode_Block *current_block = bytecode_get_insert_block(bc->builder);
-        if (bytecode_block_is_terminated(current_block)) {
-            zodiac_report_error(bc->context, Zodiac_Error_Kind::ZODIAC_BC_CONVERSION_ERROR, stmt, "Unreachable code detected");
-            return;
-        }
 
         ast_stmt_to_bytecode(bc, stmt);
 
         if (stmt->kind == AST_Statement_Kind::RETURN) {
             body_returned_directly = true;
+            break;
+        }
+
+        if (bytecode_block_is_terminated(bytecode_get_insert_block(bc->builder))) {
+            block_terminated = true;
+            break;
         }
     }
 
-    if (!body_returned_directly) {
+    if (!body_returned_directly && !block_terminated) {
         for (s64 i = local_scope->func.defer_stmts.count - 1; i >= 0; i -= 1) {
             auto defer_stmt = local_scope->func.defer_stmts[i];
             assert(defer_stmt->kind == AST_Statement_Kind::DEFER);
@@ -576,25 +577,26 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             // Means we have returned from the block directly, NOT from one of it's children
             bool block_returned_directly = false;
 
-            for (s64 i = 0; i < stmt->block.statements.count; i++) {
+            bool block_terminated = false;
 
-                Bytecode_Block *current_block = bytecode_get_insert_block(bc->builder);
-                if (bytecode_block_is_terminated(current_block)) {
-                    zodiac_report_error(bc->context, Zodiac_Error_Kind::ZODIAC_BC_CONVERSION_ERROR, stmt, "Unreachable code detected");
-                    return false;
-                }
+            for (s64 i = 0; i < stmt->block.statements.count; i++) {
 
                 ast_stmt_to_bytecode(bc, stmt->block.statements[i]);
 
                 if (stmt->block.statements[i]->kind == AST_Statement_Kind::RETURN) {
                     block_returned_directly = true;
+                    break;
+                }
+
+                if (bytecode_block_is_terminated(bytecode_get_insert_block(bc->builder))) {
+                    block_terminated = true;
+                    break;
                 }
             }
 
-            assert(stack_count(&bc->defer_stack) == old_defer_sp + scope->func.defer_stmts.count);
             bc->defer_stack.sp = old_defer_sp;
 
-            if (!block_returned_directly) {
+            if (!block_returned_directly && !block_terminated) {
                 for (s64 i = scope->func.defer_stmts.count - 1; i >= 0; i -= 1) {
                     auto defer_stmt = scope->func.defer_stmts[i];
                     assert(defer_stmt->kind == AST_Statement_Kind::DEFER);
@@ -694,9 +696,8 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                 bytecode_append_block(bc->builder, cfn, then_block);
                 bytecode_set_insert_point(bc->builder, cfn, then_block);
                 ast_stmt_to_bytecode(bc, if_block->then);
-                bytecode_set_insert_point(bc->builder, cfn, then_block);
 
-                if (!bytecode_block_is_terminated(bc->builder, cfn, then_block)) {
+                if (!bytecode_block_is_terminated(bytecode_get_insert_block(bc->builder))) {
                     bytecode_emit_jmp(bc->builder, post_if_block_handle);
                 }
 
@@ -712,7 +713,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                 ast_stmt_to_bytecode(bc, stmt->if_stmt.else_stmt);
                 bytecode_set_insert_point(bc->builder, cfn, else_block);
 
-                if (!bytecode_block_is_terminated(bc->builder, cfn, else_block)) {
+                if (!bytecode_block_is_terminated(bytecode_get_insert_block(bc->builder))) {
                     bytecode_emit_jmp(bc->builder, post_if_block_handle);
                 }
             }
@@ -740,7 +741,10 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             while_body_block = bytecode_append_block(bc->builder, cfn, while_body_block);
             bytecode_set_insert_point(bc->builder, cfn, while_body_block);
             ast_stmt_to_bytecode(bc, stmt->while_stmt.body_stmt);
-            bytecode_emit_jmp(bc->builder, while_cond_block);
+
+            if (!bytecode_block_is_terminated(bytecode_get_insert_block(bc->builder))) {
+                bytecode_emit_jmp(bc->builder, while_cond_block);
+            }
 
             post_while_block = bytecode_append_block(bc->builder, cfn, post_while_block);
             bytecode_set_insert_point(bc->builder, cfn, post_while_block);
@@ -763,8 +767,12 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             for_body_block = bytecode_append_block(bc->builder, cfn, for_body_block);
             bytecode_set_insert_point(bc->builder, cfn, for_body_block);
             ast_stmt_to_bytecode(bc, stmt->for_stmt.body_stmt);
-            ast_stmt_to_bytecode(bc, stmt->for_stmt.inc_stmt);
-            bytecode_emit_jmp(bc->builder, for_cond_block);
+
+            if (!bytecode_block_is_terminated(bytecode_get_insert_block(bc->builder))) {
+                ast_stmt_to_bytecode(bc, stmt->for_stmt.inc_stmt);
+                bytecode_emit_jmp(bc->builder, for_cond_block);
+            }
+
 
             post_for_block = bytecode_append_block(bc->builder, cfn, post_for_block);
             bytecode_set_insert_point(bc->builder, cfn, post_for_block);
@@ -1527,14 +1535,24 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
         }
 
         case AST_Expression_Kind::CAST: {
-            assert(type->kind == Type_Kind::POINTER);
 
             auto value_expr = expr->cast.value;
-            assert(value_expr->resolved_type == &builtin_type_u64);
 
-            Integer_Value int_val = resolve_constant_integer_expr(value_expr, value_expr->resolved_type);
-            void *ptr = (void *)int_val.u64;
-            return bytecode_pointer_literal(bc->builder, expr->resolved_type, ptr);
+            if (type->kind == Type_Kind::INTEGER) {
+
+                assert(value_expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER);
+
+                Integer_Value int_val = resolve_constant_integer_expr(value_expr, type);
+                return bytecode_integer_literal(bc->builder, type, int_val);
+
+            } else if (type->kind == Type_Kind::POINTER) {
+
+                assert(value_expr->resolved_type == &builtin_type_u64);
+
+                Integer_Value int_val = resolve_constant_integer_expr(value_expr, value_expr->resolved_type);
+                void *ptr = (void *)int_val.u64;
+                return bytecode_pointer_literal(bc->builder, expr->resolved_type, ptr);
+            }
         }
 
         case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
