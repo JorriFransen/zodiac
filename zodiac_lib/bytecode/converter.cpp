@@ -763,8 +763,12 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             for_body_block = bytecode_append_block(bc->builder, cfn, for_body_block);
             bytecode_set_insert_point(bc->builder, cfn, for_body_block);
             ast_stmt_to_bytecode(bc, stmt->for_stmt.body_stmt);
-            ast_stmt_to_bytecode(bc, stmt->for_stmt.inc_stmt);
-            bytecode_emit_jmp(bc->builder, for_cond_block);
+
+            if (!bytecode_block_is_terminated(bytecode_get_insert_block(bc->builder))) {
+                ast_stmt_to_bytecode(bc, stmt->for_stmt.inc_stmt);
+                bytecode_emit_jmp(bc->builder, for_cond_block);
+            }
+
 
             post_for_block = bytecode_append_block(bc->builder, cfn, post_for_block);
             bytecode_set_insert_point(bc->builder, cfn, post_for_block);
