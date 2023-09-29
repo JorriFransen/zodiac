@@ -3005,6 +3005,97 @@ R"OUT_STR(0
 
     return MUNIT_OK;
 }
+
+MunitResult Defer_6(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        work :: (i: s64) { print(i); }
+
+        main :: () {
+
+            defer println(6);
+            print(0);
+
+            for (i := 0; i < 3; i+=1) {
+
+                defer print(5);
+                print(1);
+
+                {
+                    defer print(4);
+                    print(2);
+
+                    work(3);
+                }
+
+                return 0;
+
+                defer print("x");
+                print("y");
+            }
+
+            defer print("z");
+            print("w");
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(0123456)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Defer_7(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        work :: (i: s64) { print(i); }
+
+        main :: () {
+
+            defer println(5);
+            print(0);
+
+            for (i := 0; i < 3; i+=1) {
+
+                defer print(4);
+                print(1);
+
+                {
+                    defer print(3);
+                    print(2);
+
+                    return 0;
+
+                    work(999);
+
+                }
+
+                defer print("x");
+                print("y");
+            }
+
+            defer print("z");
+            print("w");
+
+            return 0;
+        }
+
+
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(012345)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
 #undef RESOLVE_ERR
 
 }}
