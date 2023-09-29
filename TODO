@@ -1,18 +1,6 @@
 
-- Implicit cast from array (non literal) to slice in function calls
-    ```
-    main :: () {
-        arr1 : [2]s64 = { 1, 2 };
-        print_slice(arr1);
-        return 0;
-    }
-
-    print_slice :: (s: []s64) {
-        println(s);
-    }
-    ```
-
 - Make sure all variables are zero initialized
+:qa
 
 - FFI with different return types
 

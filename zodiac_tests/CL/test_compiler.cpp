@@ -2532,6 +2532,40 @@ R"OUT_STR({ { 1, 2 }, { 3, 4 }, { 5, 6 } }
     return MUNIT_OK;
 }
 
+MunitResult Slice_Arguments(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        global_arr : [3]s64 = { 1, 2, 3 };
+        c_global_arr : [3]s64 = { 11, 22, 33 };
+
+        main :: () {
+            arr1 : [2]s64 = { 1, 2 };
+            carr : [2]s64 : { 11, 22 };
+            print_slice(arr1);
+            print_slice(carr);
+            print_slice(global_arr);
+            print_slice(c_global_arr);
+            print_slice({ 2, 1 });
+            return 0;
+        }
+
+        print_slice :: (s: []s64) {
+            println(s);
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR({ 1, 2 }
+{ 11, 22 }
+{ 1, 2, 3 }
+{ 11, 22, 33 }
+{ 2, 1 })OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
 MunitResult Compound_Assignment(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(

@@ -1130,16 +1130,23 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                 auto arg_expr = expr->call.args[i];
                 Bytecode_Register arg_reg;
 
-                if (arg_expr->flags & AST_EXPR_FLAG_SLICE_COMPOUND) {
+                if (arg_expr->flags & AST_EXPR_FLAG_SLICE_ARRAY) {
+
+                    Type *array_type = arg_expr->resolved_type;
+                    assert(array_type->kind == Type_Kind::STATIC_ARRAY);
 
                     Bytecode_Register array_alloc;
-                    bool found = hash_table_find(&bc->implicit_lvalues, arg_expr, &array_alloc);
-                    assert(found);
-
-                    // We can't use a compound literal here, since the called function won't be able to access the array alloc/global.
+                    if (arg_expr->kind == AST_Expression_Kind::COMPOUND || EXPR_IS_CONST(arg_expr)) {
+                        bool found = hash_table_find(&bc->implicit_lvalues, arg_expr, &array_alloc);
+                        assert(found);
+                    } else if (EXPR_IS_LVALUE(arg_expr)){
+                        array_alloc = ast_lvalue_to_bytecode(bc, arg_expr);
+                    } else {
+                        assert(false);
+                    }
 
                     Bytecode_Register ptr_reg = bytecode_emit_array_offset_pointer(bc->builder, array_alloc, 0);
-                    Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, array_alloc.type->static_array.count);
+                    Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, array_type->static_array.count);
 
                     auto slice_type = sym->decl->function.type->function.parameter_types[i];
                     assert(slice_type->kind == Type_Kind::SLICE);

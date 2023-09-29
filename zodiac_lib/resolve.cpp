@@ -2228,16 +2228,30 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     return false;
                 }
 
-                if (param_type->kind == Type_Kind::SLICE && arg_expr->kind == AST_Expression_Kind::COMPOUND) {
-                    assert(arg_type->kind == Type_Kind::STATIC_ARRAY);
-                    assert(arg_expr->flags & AST_EXPR_FLAG_SLICE_COMPOUND);
+                if (param_type->kind == Type_Kind::SLICE && arg_type->kind == Type_Kind::STATIC_ARRAY) {
 
+                    arg_expr->flags |= AST_EXPR_FLAG_SLICE_ARRAY;
                     auto current_fn = enclosing_function(scope);
+
+                    bool value_is_global_const = false;
+
+                    // Check if the value is pointing to a global (constant).
+                    if (arg_expr->kind == AST_Expression_Kind::IDENTIFIER) {
+                        auto ident_sym = scope_get_symbol(scope, arg_expr->identifier.name);
+                        auto ident_decl = ident_sym->decl;
+
+                        if (ident_decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE) {
+                            value_is_global_const = true;
+                        }
+                    }
+
+                    bool needs_local_array_alloc = (arg_expr->kind == AST_Expression_Kind::COMPOUND || EXPR_IS_CONST(arg_expr)) && !value_is_global_const;
 
                     AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::SLICE_ARRAY,
                                                           arg_expr,
                                                           .slice = { .type = param_type,
-                                                                     .needs_local_array_alloc = true,
+                                                                     .needs_local_array_alloc = needs_local_array_alloc,
+                                                                     .needs_global_array_alloc = value_is_global_const,
                                                                    }
                                                         };
 
@@ -2551,7 +2565,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 }
 
             } else if (inferred_type->kind == Type_Kind::SLICE) {
-                expr->flags |= AST_EXPR_FLAG_SLICE_COMPOUND;
+                expr->flags |= AST_EXPR_FLAG_SLICE_ARRAY;
                 auto slice_type = inferred_type;
 
                 auto slice_element_type = slice_type->slice.element_type;

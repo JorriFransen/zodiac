@@ -104,6 +104,7 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(More_Slices) \
     X(Slice_Aggregate_Index) \
     X(Slice_Lvalues) \
+    X(Slice_Arguments) \
     X(Compound_Assignment) \
     X(Pointer_Equality) \
     X(Struct_Pointer_To_Self) \

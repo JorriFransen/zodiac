@@ -165,12 +165,12 @@ enum class AST_Expression_Kind
 typedef u32 AST_Expression_Flags;
 enum AST_Expression_Flag : AST_Expression_Flags
 {
-    AST_EXPR_FLAG_NONE           = 0x000,
-    AST_EXPR_FLAG_TYPED          = 0x001,
-    AST_EXPR_FLAG_CONST          = 0x002,
-    AST_EXPR_FLAG_LITERAL        = 0x004,
-    AST_EXPR_FLAG_LVALUE         = 0x008,
-    AST_EXPR_FLAG_SLICE_COMPOUND = 0x010,
+    AST_EXPR_FLAG_NONE        = 0x000,
+    AST_EXPR_FLAG_TYPED       = 0x001,
+    AST_EXPR_FLAG_CONST       = 0x002,
+    AST_EXPR_FLAG_LITERAL     = 0x004,
+    AST_EXPR_FLAG_LVALUE      = 0x008,
+    AST_EXPR_FLAG_SLICE_ARRAY = 0x010,
 };
 
 
