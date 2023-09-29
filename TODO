@@ -1,6 +1,5 @@
 
 - Make sure all variables are zero initialized
-:qa
 
 - FFI with different return types
 
