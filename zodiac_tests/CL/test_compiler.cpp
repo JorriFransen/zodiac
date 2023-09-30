@@ -3131,6 +3131,101 @@ R"OUT_STR(012345)OUT_STR" };
 
     return MUNIT_OK;
 }
+
+MunitResult Zero_Init_Locals(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        Test :: struct {
+            m1 : s64;
+            m2 : u64;
+            m3 : s32;
+            m4 : u32;
+            m5 : s16;
+            m6 : u16;
+            m7 : s8;
+            m8 : u8;
+            m9  : r32;
+            m10 : r64;
+            m11 : bool;
+            m12 : *u8;
+            m13 : String;
+            m14 : [16]s32;
+            m15 : Vec2;
+            m16 : []Vec2;
+        }
+
+        Vec2 :: struct {
+            x, y: s64;
+        }
+
+        main :: () {
+
+            v1 : s64;
+            v2 : u64;
+            v3 : s32;
+            v4 : u32;
+            v5 : s16;
+            v6 : u16;
+            v7 : s8;
+            v8 : u8;
+            v9  : r32;
+            v10 : r64;
+            v11 : bool;
+            v12 : *u8;
+            v13 : String;
+            v14 : [16]s32;
+            v15 : Vec2;
+            v16 : []Vec2;
+
+            println(v1);
+            println(v2);
+            println(v3);
+            println(v4);
+            println(v5);
+            println(v6);
+            println(v7);
+            println(v8);
+            println(v9);
+            println(v10);
+            println(v11);
+            println(v12);
+            println(v13);
+            println(v14);
+            println(v15);
+            println(v16);
+
+            v17 : Test;
+            println(v17);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(0
+0
+0
+0
+0
+0
+0
+0
+0.000000
+0.000000
+false
+(nil)
+
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+{ 0, 0 }
+{  }
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0.000000, 0.000000, false, (nil), "", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0 }, {  } })OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef RESOLVE_ERR
 
 }}
