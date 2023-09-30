@@ -8,12 +8,6 @@ namespace Zodiac
 
 u64 hash_string(const char *cstr, u64 length)
 {
-    // 64 bit FNV hash
-    if (length == 0)
-    {
-        return 0;
-    }
-
     u64 hash = 14695981039346656037u;
 
     for (u64 i = 0; i < length; i++)
@@ -23,7 +17,6 @@ u64 hash_string(const char *cstr, u64 length)
     }
 
     return hash;
-
 }
 
 u64 hash_string(const char *cstr)

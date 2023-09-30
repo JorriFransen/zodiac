@@ -394,6 +394,69 @@ Bytecode_Block *bytecode_get_insert_block(Bytecode_Builder *builder)
     return &func.blocks[builder->insert_block_index];
 }
 
+Bytecode_Register bytecode_zero_value(Bytecode_Builder *builder, Type *type)
+{
+    switch (type->kind) {
+        case Type_Kind::INVALID: assert(false); break;
+        case Type_Kind::VOID: assert(false); break;
+        case Type_Kind::UNSIZED_INTEGER: assert(false); break;
+
+        case Type_Kind::INTEGER: {
+            return bytecode_integer_literal(builder, type, 0);
+        }
+
+        case Type_Kind::FLOAT: {
+            return bytecode_real_literal(builder, type, { .r32 = 0, .r64 = 0 });
+        }
+
+        case Type_Kind::BOOLEAN: {
+            return bytecode_boolean_literal(builder, type, false);
+        }
+
+        case Type_Kind::POINTER: {
+            return bytecode_pointer_literal(builder, type, nullptr);
+        }
+
+        case Type_Kind::STRUCTURE: {
+
+            auto members = temp_array_create<Bytecode_Register>(temp_allocator_allocator(), type->structure.member_types.count);
+
+            for (s64 i = 0; i < type->structure.member_types.count; i++) {
+                auto mem_type = type->structure.member_types[i];
+                dynamic_array_append(&members, bytecode_zero_value(builder, mem_type));
+            }
+
+            Bytecode_Register result = bytecode_aggregate_literal(builder, members, type);
+
+            temp_array_destroy(&members);
+
+            return result;
+        }
+
+        case Type_Kind::STATIC_ARRAY: {
+
+            Bytecode_Register zero_val = bytecode_zero_value(builder, type->static_array.element_type);
+            auto values = temp_array_create<Bytecode_Register>(temp_allocator_allocator(), type->static_array.count);
+
+            for (s64 i = 0; i < type->static_array.count; i++) {
+                dynamic_array_append(&values, zero_val);
+            }
+
+            Bytecode_Register result = bytecode_array_literal(builder, values, type);
+
+            temp_array_destroy(&values);
+
+            return result;
+        }
+
+        case Type_Kind::SLICE: {
+            return bytecode_zero_value(builder, type->slice.struct_type);
+        }
+
+        case Type_Kind::FUNCTION: assert(false); break;
+    }
+}
+
 Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type, s64 value)
 {
     return bytecode_integer_literal(builder, type, { .s64 = value });
@@ -686,7 +749,7 @@ Bytecode_Register bytecode_emit_eq(Bytecode_Builder *builder, Bytecode_Register 
 
         assert(a.kind == Bytecode_Register_Kind::TEMPORARY);
         assert(b.kind == Bytecode_Register_Kind::TEMPORARY);
-        assert(a.type == b.type); 
+        assert(a.type == b.type);
 
         auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, &builtin_type_bool);
         bytecode_emit_instruction(builder, Bytecode_Opcode::PTR_EQ, a, b, result);
@@ -701,7 +764,7 @@ Bytecode_Register bytecode_emit_neq(Bytecode_Builder *builder, Bytecode_Register
     if (a.type->kind == Type_Kind::POINTER) {
         assert(a.kind == Bytecode_Register_Kind::TEMPORARY);
         assert(b.kind == Bytecode_Register_Kind::TEMPORARY);
-        assert(a.type == b.type); 
+        assert(a.type == b.type);
 
         auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, &builtin_type_bool);
         bytecode_emit_instruction(builder, Bytecode_Opcode::PTR_NEQ, a, b, result);

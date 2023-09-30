@@ -279,6 +279,8 @@ ZAPI Bytecode_Block_Handle bytecode_append_block(Bytecode_Builder *builder, Byte
 ZAPI void bytecode_set_insert_point(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Bytecode_Block_Handle block_handle);
 ZAPI Bytecode_Block *bytecode_get_insert_block(Bytecode_Builder *builder);
 
+ZAPI Bytecode_Register bytecode_zero_value(Bytecode_Builder *builder, Type *type);
+
 ZAPI Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type, s64 value);
 ZAPI Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type, Integer_Value iv);
 ZAPI Bytecode_Register bytecode_pointer_literal(Bytecode_Builder *builder, Type *type, void *ptr);

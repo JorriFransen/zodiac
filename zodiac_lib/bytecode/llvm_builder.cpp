@@ -1014,9 +1014,15 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Array_Ref<LLVM_B
         }
 
         case Type_Kind::POINTER: {
-            auto fmt_str = "0x%llx";
-            llvm::Value *fmt_str_lit = llvm_builder_emit_cstring_literal(builder, fmt_str);
-            dynamic_array_append(llvm_print_args, fmt_str_lit);
+            llvm::Value *fmt_str_lit = llvm_builder_emit_cstring_literal(builder, "0x%p");
+            llvm::Value *null_fmt_str_lit = llvm_builder_emit_cstring_literal(builder, "%p");
+
+
+            llvm::Type *int_type = llvm::Type::getIntNTy(*builder->llvm_context, pointer_size);
+            llvm::Value *as_int = irb->CreatePtrToInt(llvm_val, int_type);
+            llvm::Value *as_bool = irb->CreateICmpNE(as_int, llvm::Constant::getNullValue(int_type));
+            llvm::Value *fmt = irb->CreateSelect(as_bool, fmt_str_lit, null_fmt_str_lit);
+            dynamic_array_append(llvm_print_args, fmt);
             dynamic_array_append(llvm_print_args, llvm_val);
             break;
         }
@@ -1444,7 +1450,13 @@ llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_R
     auto members = temp_array_create<llvm::Constant *>(temp_allocator_allocator(), 2);
 
     llvm::Constant *length_val = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { .s64 = str.length });
-    llvm::Constant *cstr_val = llvm_builder_emit_cstring_literal(builder, str);
+    llvm::Constant *cstr_val;
+    if (str.length == 0) {
+        auto cstr_type = llvm::IntegerType::get(*builder->llvm_context, 8)->getPointerTo();
+        cstr_val = llvm::Constant::getNullValue(cstr_type);
+    } else {
+        cstr_val = llvm_builder_emit_cstring_literal(builder, str);
+    }
 
     dynamic_array_append(&members, cstr_val);
     dynamic_array_append(&members, length_val);
@@ -1458,6 +1470,8 @@ llvm::Constant *llvm_builder_emit_string_literal(LLVM_Builder *builder, String_R
 
 llvm::Constant *llvm_builder_emit_cstring_literal(LLVM_Builder *builder, String_Ref str)
 {
+    auto dest_type = llvm::IntegerType::get(*builder->llvm_context, 8)->getPointerTo();
+
     auto length = str.length;
     Atom atom = atom_get(&builder->zodiac_context->atoms, str.data, length);
 
@@ -1472,8 +1486,6 @@ llvm::Constant *llvm_builder_emit_cstring_literal(LLVM_Builder *builder, String_
     variable->setUnnamedAddr(llvm::GlobalVariable::UnnamedAddr::Global);
     auto alignment = llvm::MaybeAlign(1);
     static_cast<llvm::GlobalObject*>(variable)->setAlignment(alignment);
-
-    auto dest_type = llvm::IntegerType::get(*builder->llvm_context, 8)->getPointerTo();
 
     result = llvm::ConstantExpr::getPointerCast(variable, dest_type);
     hash_table_add(&builder->string_literals, atom, result);

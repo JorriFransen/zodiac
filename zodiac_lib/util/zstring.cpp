@@ -403,38 +403,42 @@ file_local s64 is_escape_character(char c) {
 
 String convert_special_characters_to_escape_characters(Allocator *allocator, const String_Ref str)
 {
-    s64 special_count = 0;
+    if (str.length > 0) {
+        s64 special_count = 0;
 
-    for (s64 i = 0; i < str.length; i++) {
-        auto c = str[i];
+        for (s64 i = 0; i < str.length; i++) {
+            auto c = str[i];
 
-        if (is_special_character(c) != -1) {
-            special_count += 1;
-            break;
+            if (is_special_character(c) != -1) {
+                special_count += 1;
+                break;
+            }
         }
-    }
 
-    if (!special_count) {
-        return string_copy(allocator, str);
-    }
-
-    auto new_length = str.length + special_count;
-
-    auto data = alloc_array<char>(allocator, new_length + 1);
-
-    s64 ni = 0;
-    for (s64 i = 0; i < str.length; i++) {
-        auto special_index = is_special_character(str[i]);
-        if (special_index != -1) {
-            data[ni++] = '\\';
-            data[ni++] = escape_characters[special_index];
-        } else {
-            data[ni++] = str[i];
+        if (!special_count) {
+            return string_copy(allocator, str);
         }
-    }
 
-    data[new_length] = '\0';
-    return string_create(data, new_length);
+        auto new_length = str.length + special_count;
+
+        auto data = alloc_array<char>(allocator, new_length + 1);
+
+        s64 ni = 0;
+        for (s64 i = 0; i < str.length; i++) {
+            auto special_index = is_special_character(str[i]);
+            if (special_index != -1) {
+                data[ni++] = '\\';
+                data[ni++] = escape_characters[special_index];
+            } else {
+                data[ni++] = str[i];
+            }
+        }
+
+        data[new_length] = '\0';
+        return string_create(data, new_length);
+    } else {
+        return { nullptr, 0 };
+    }
 }
 
 String convert_escape_characters_to_special_characters(Allocator *allocator, const String_Ref str, const char **err_char/*=nullptr*/)

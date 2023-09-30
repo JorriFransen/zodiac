@@ -359,6 +359,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             hash_table_add(&bc->allocations, var_decl, alloc_reg);
 
             if (var_decl->variable.value && EXPR_IS_CONST(var_decl->variable.value)) has_inits = true;
+            if (!var_decl->variable.value) has_inits = true; // For zero init
         }
 
         auto slice_compound_arrays = temp_array_create<Bytecode_Register>(temp_allocator_allocator(), 0);
@@ -461,6 +462,14 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                     assert(found)
 
                     assignment_to_bytecode(bc, var_decl->variable.value, alloc_reg);
+                } else if (!var_decl->variable.value) {
+
+                    Bytecode_Register alloc_reg;
+                    bool found = hash_table_find(&bc->allocations, var_decl, &alloc_reg);
+                    assert(found)
+
+                    Bytecode_Register zero_value = bytecode_zero_value(bc->builder, var_decl->variable.resolved_type);
+                    bytecode_emit_store_alloc(bc->builder, zero_value, alloc_reg);
                 }
             }
         }

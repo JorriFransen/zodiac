@@ -28,6 +28,9 @@ struct Dynamic_Array
     }
 };
 
+template <typename T>
+struct Temp_Array;
+
 template <typename Element_Type>
 struct Array_Ref
 {
@@ -37,6 +40,7 @@ struct Array_Ref
     Array_Ref() = default;
 
     Array_Ref(const Dynamic_Array<Element_Type> &dyn_arr) : data(dyn_arr.data), count(dyn_arr.count) { }
+    Array_Ref(const Temp_Array<Element_Type> &temp_arr) : data(temp_arr.array.data), count(temp_arr.array.count) { }
     Array_Ref(Element_Type *data, s64 count) : data(data), count(count) { }
 
     template <size_t N>

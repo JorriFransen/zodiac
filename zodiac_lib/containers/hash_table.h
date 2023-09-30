@@ -146,6 +146,7 @@ template <typename Key_Type, typename Value_Type>
 bool hash_table_find(Hash_Table<Key_Type, Value_Type> *ht, Key_Type key, Value_Type *vptr = nullptr)
 {
     u64 hash = hash_key(key);
+    assert(hash);
     u64 hash_index = hash % ht->capacity;
     s64 iteration_count = 0;
 
