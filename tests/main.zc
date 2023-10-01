@@ -1,12 +1,24 @@
 
 #run main();
 
+Z :: 3;
+
+Vec2 :: struct { x, y: s64; }
+// Vec2f :: struct { x, y: r64; }
+
 main :: () {
 
-    x : r32 = 1;
-    y : r64 = 2;
+    p : Vec2 = { Z, 1 };
+    println(p);
 
-    println(x, ", ", y);
+    points : [2]s64 = { 1, Z };
+    println(points);
+
+    slice : []s64 = { Z, 1, Z };
+    println(slice);
+
+    // p2 : Vec2f = { 2, 1 };
+    // println(p);
 
     return 0;
 }

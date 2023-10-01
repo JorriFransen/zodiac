@@ -2521,7 +2521,10 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     Type *compound_member_type = compound_member_expr->resolved_type;
                     assert(compound_member_type);
 
-                    if (aggregate_member_type != compound_member_type) {
+                    bool match = aggregate_member_type == compound_member_type;
+                    match = match || (aggregate_member_type->kind == Type_Kind::INTEGER && compound_member_type->kind == Type_Kind::UNSIZED_INTEGER);
+
+                    if (!match) {
                         fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
                         fatal_resolve_error(ctx, compound_member_expr, "    Expected: %s", temp_type_string(aggregate_member_type));
                         fatal_resolve_error(ctx, compound_member_expr, "    Got: %s", temp_type_string(compound_member_type));
@@ -2551,7 +2554,10 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     auto compound_member_expr = expr->compound.expressions[i];
                     Type *compound_member_type = compound_member_expr->resolved_type;
 
-                    if (array_element_type != compound_member_type) {
+                    bool match = array_element_type == compound_member_type;
+                    match = match || (array_element_type->kind == Type_Kind::INTEGER && compound_member_type->kind == Type_Kind::UNSIZED_INTEGER);
+
+                    if (!match) {
                         fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
                         fatal_resolve_error(ctx, compound_member_expr, "    Expected: %s", temp_type_string(array_element_type));
                         fatal_resolve_error(ctx, compound_member_expr, "    Got: %s", temp_type_string(compound_member_type));
@@ -2576,7 +2582,10 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     auto compound_member_expr = expr->compound.expressions[i];
                     Type *compound_member_type = compound_member_expr->resolved_type;
 
-                    if (slice_element_type != compound_member_type) {
+                    bool match = slice_element_type == compound_member_type;
+                    match = match || (slice_element_type->kind == Type_Kind::INTEGER && compound_member_type->kind == Type_Kind::UNSIZED_INTEGER);
+
+                    if (!match) {
                         fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
                         fatal_resolve_error(ctx, compound_member_expr, "    Expected: %s", temp_type_string(slice_element_type));
                         fatal_resolve_error(ctx, compound_member_expr, "    Got: %s", temp_type_string(compound_member_type));

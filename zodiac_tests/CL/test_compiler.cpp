@@ -3318,6 +3318,57 @@ false
 
     return MUNIT_OK;
 }
+
+MunitResult Unsized_Int_To_Real(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        Z :: 3;
+
+        Vec2 :: struct { x, y: s64; }
+
+        main :: () {
+
+            x : r32 = 1;
+            y : r64 = 2;
+
+            z : s64 = 3;
+
+            println(x, ", ", y);
+
+            // When we try to assign non constant 'z' an error should be reported
+            x = Z;
+            y = Z;
+
+            println(x);
+            println(y);
+
+            p : Vec2 = { Z, 1 };
+            println(p);
+
+            points : [2]s64 = { 1, Z };
+            println(points);
+
+            slice : []s64 = { Z, 1, Z };
+            println(slice);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(1.000000, 2.000000
+3.000000
+3.000000
+{ 3, 1 }
+{ 1, 3 }
+{ 3, 1, 3 })OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef RESOLVE_ERR
 
 }}

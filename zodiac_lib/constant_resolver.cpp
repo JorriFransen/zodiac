@@ -234,6 +234,13 @@ Real_Value resolve_constant_real_expr(AST_Expression *expr)
 
     assert(EXPR_IS_CONST(expr));
     assert(EXPR_IS_TYPED(expr));
+
+    if (expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER) {
+        Integer_Value iv = resolve_constant_integer_expr(expr, &builtin_type_s64);
+        return { .r32 = (float)iv.s64, .r64 = (double)iv.s64 };
+    }
+
+
     assert(expr->resolved_type->kind == Type_Kind::FLOAT);
 
     switch (expr->kind) {
