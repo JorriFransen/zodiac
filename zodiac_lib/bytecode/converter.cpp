@@ -195,6 +195,8 @@ bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                     } else {
                         initial_value_reg = ast_expr_to_bytecode(bc, decl->variable.value);
                     }
+                } else {
+                    initial_value_reg = bytecode_zero_value(bc->builder, decl->variable.resolved_type);
                 }
 
                 auto global_handle = bytecode_create_global(bc->builder, global_name, global_type, false, initial_value_reg);
@@ -1448,7 +1450,9 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
             assert(false);
         }
 
-        case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
+        case AST_Expression_Kind::NULL_LITERAL: {
+            return bytecode_pointer_literal(bc->builder, expr->resolved_type, nullptr);
+        }
 
         case AST_Expression_Kind::BOOL_LITERAL: {
             return bytecode_boolean_literal(bc->builder, type, expr->bool_literal);

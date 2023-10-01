@@ -3226,6 +3226,98 @@ false
     return MUNIT_OK;
 }
 
+MunitResult Zero_Init_Globals(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        Test :: struct {
+            m1 : s64;
+            m2 : u64;
+            m3 : s32;
+            m4 : u32;
+            m5 : s16;
+            m6 : u16;
+            m7 : s8;
+            m8 : u8;
+            m9  : r32;
+            m10 : r64;
+            m11 : bool;
+            m12 : *u8;
+            m13 : String;
+            m14 : [16]s32;
+            m15 : Vec2;
+            m16 : []Vec2;
+        }
+
+        Vec2 :: struct {
+            x, y: s64;
+        }
+
+        g1 : s64;
+        g2 : u64;
+        g3 : s32;
+        g4 : u32;
+        g5 : s16;
+        g6 : u16;
+        g7 : s8;
+        g8 : u8;
+        g9  : r32;
+        g10 : r64;
+        g11 : bool;
+        g12 : *u8;
+        g13 : String;
+        g14 : [16]s32;
+        g15 : Vec2;
+        g16 : []Vec2;
+        g17 : Test;
+
+        main :: () {
+
+            println(g1);
+            println(g2);
+            println(g3);
+            println(g4);
+            println(g5);
+            println(g6);
+            println(g7);
+            println(g8);
+            println(g9);
+            println(g10);
+            println(g11);
+            println(g12);
+            println(g13);
+            println(g14);
+            println(g15);
+            println(g16);
+            println(g17);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(0
+0
+0
+0
+0
+0
+0
+0
+0.000000
+0.000000
+false
+(nil)
+
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+{ 0, 0 }
+{  }
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0.000000, 0.000000, false, (nil), "", { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0 }, {  } })OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
 #undef RESOLVE_ERR
 
 }}
