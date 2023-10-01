@@ -13,3 +13,4 @@ console.log
 a.out
 *.o
 .project.gf
+.nvim.lua
