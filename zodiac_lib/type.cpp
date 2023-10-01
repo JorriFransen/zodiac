@@ -406,11 +406,6 @@ Type *sym_decl_type(Symbol *sym)
         case AST_Declaration_Kind::PARAMETER:
         case AST_Declaration_Kind::FIELD: {
             assert(decl->variable.resolved_type);
-
-            if (decl->variable.resolved_type->kind == Type_Kind::UNSIZED_INTEGER) {
-                return &builtin_type_s64;
-            }
-
             return decl->variable.resolved_type;
         }
 
@@ -451,6 +446,7 @@ bool valid_static_type_conversion(Type *from, Type *to)
         case Type_Kind::UNSIZED_INTEGER: {
             // TODO: Pass in the size of the literal, and take it into account
             if (to->kind == Type_Kind::INTEGER) return true;
+            if (to->kind == Type_Kind::FLOAT) return true;
             assert(false);
             break;
         }
@@ -471,6 +467,8 @@ bool valid_static_type_conversion(Type *from, Type *to)
                 assert(!from->integer.sign);
                 assert(from->bit_size <= to->bit_size);
                 return true;
+            } else if (to->kind == Type_Kind::FLOAT) {
+                return false;
             } else {
                 assert_msg(false, "Not implemented!");
             }

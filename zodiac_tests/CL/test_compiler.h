@@ -119,6 +119,7 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Defer_7) \
     X(Zero_Init_Locals) \
     X(Zero_Init_Globals) \
+    X(Unsized_Int_To_Real) \
 
 
 // Function declarations

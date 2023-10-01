@@ -62,11 +62,11 @@ ZAPI void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl
 ZAPI bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt);
 
 ZAPI Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr);
-ZAPI Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr);
+ZAPI Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr, Type * enforce_type = nullptr);
 ZAPI Bytecode_Register ast_compound_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *compound_expr);
 
 ZAPI Bytecode_Register ast_const_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr);
-ZAPI Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr);
+ZAPI Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr, Type *enforce_type = nullptr);
 ZAPI Bytecode_Register ast_const_compound_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *compound_expr);
 
 ZAPI void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, Bytecode_Register lvalue_reg);
