@@ -1,6 +1,4 @@
 
-- Implicit cast from integer literal to real types
-
 - Implicit cast from pointer to bool?
 
 - FFI with different return types

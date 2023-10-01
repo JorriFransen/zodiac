@@ -1013,6 +1013,12 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             if (literal_type->kind == Type_Kind::UNSIZED_INTEGER) {
                 literal_type = &builtin_type_s64;
             }
+
+            if (literal_type->kind == Type_Kind::FLOAT) {
+                s64 value = expr->integer_literal.value.s64;
+                return bytecode_real_literal(bc->builder, literal_type, { .r32 = (float)value, .r64 = (double)value });
+            }
+
             assert(literal_type->kind == Type_Kind::INTEGER);
             return bytecode_integer_literal(bc->builder, literal_type, expr->integer_literal.value);
         }
