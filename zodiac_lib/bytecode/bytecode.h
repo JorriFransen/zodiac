@@ -96,6 +96,7 @@ enum class Bytecode_Register_Kind
     GLOBAL,
     PHI_ARGS,
     UNDEF,
+    ZEROINITIALIZER,
 };
 
 typedef u64 Bytecode_Register_Flags;
@@ -280,6 +281,7 @@ ZAPI void bytecode_set_insert_point(Bytecode_Builder *builder, Bytecode_Function
 ZAPI Bytecode_Block *bytecode_get_insert_block(Bytecode_Builder *builder);
 
 ZAPI Bytecode_Register bytecode_zero_value(Bytecode_Builder *builder, Type *type);
+ZAPI Bytecode_Register bytecode_zeroinitializer(Bytecode_Builder *builder, Type *type);
 
 ZAPI Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type, s64 value);
 ZAPI Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type, Integer_Value iv);

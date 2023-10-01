@@ -158,7 +158,8 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
 
     bool print_a = (instruction->a.index >= 0 ||
                     instruction->a.flags & BC_REGISTER_FLAG_LITERAL ||
-                    instruction->a.kind == Bytecode_Register_Kind::TYPE);
+                    instruction->a.kind == Bytecode_Register_Kind::TYPE ||
+                    instruction->a.kind == Bytecode_Register_Kind::ZEROINITIALIZER);
 
     bool print_b = instruction->b.index >= 0 ||
                    instruction->b.flags & BC_REGISTER_FLAG_LITERAL;
@@ -549,6 +550,12 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
             string_builder_append(sb, "<undef>");
             break;
         }
+
+        case Bytecode_Register_Kind::ZEROINITIALIZER: {
+            string_builder_append(sb, "<ZERO_INIT>");
+            break;
+        }
+
     }
 }
 

@@ -1011,7 +1011,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             }
 
             if (instruction->a.type != instruction->dest.type) {
-                bytecode_validator_report_error(validator, "The 'dest' register for 'STORE_A' does not match the source type ('a' register)");
+                bytecode_validator_report_error(validator, "The 'dest' register for 'LOAD_G' does not match the source type ('a' register)");
                 return false;
             }
 
@@ -1020,7 +1020,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
         }
 
         case Bytecode_Opcode::STORE_A: {
-            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY && instruction->a.kind != Bytecode_Register_Kind::ZEROINITIALIZER) {
                 bytecode_validator_report_error(validator, "The 'a' register of 'STORE_A' must be a temporary");
                 return false;
             }

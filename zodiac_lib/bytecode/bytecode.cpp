@@ -255,7 +255,8 @@ Bytecode_Global_Handle bytecode_create_global(Bytecode_Builder *builder, Atom na
 {
     if (initial_value.kind != Bytecode_Register_Kind::INVALID) {
         assert((initial_value.flags & BC_REGISTER_FLAG_CONSTANT) ||
-               (initial_value.flags & BC_REGISTER_FLAG_LITERAL));
+               (initial_value.flags & BC_REGISTER_FLAG_LITERAL) ||
+               initial_value.kind == Bytecode_Register_Kind::ZEROINITIALIZER);
     }
 
     Bytecode_Global global_var = {
@@ -417,36 +418,9 @@ Bytecode_Register bytecode_zero_value(Bytecode_Builder *builder, Type *type)
             return bytecode_pointer_literal(builder, type, nullptr);
         }
 
-        case Type_Kind::STRUCTURE: {
-
-            auto members = temp_array_create<Bytecode_Register>(temp_allocator_allocator(), type->structure.member_types.count);
-
-            for (s64 i = 0; i < type->structure.member_types.count; i++) {
-                auto mem_type = type->structure.member_types[i];
-                dynamic_array_append(&members, bytecode_zero_value(builder, mem_type));
-            }
-
-            Bytecode_Register result = bytecode_aggregate_literal(builder, members, type);
-
-            temp_array_destroy(&members);
-
-            return result;
-        }
-
+        case Type_Kind::STRUCTURE:
         case Type_Kind::STATIC_ARRAY: {
-
-            Bytecode_Register zero_val = bytecode_zero_value(builder, type->static_array.element_type);
-            auto values = temp_array_create<Bytecode_Register>(temp_allocator_allocator(), type->static_array.count);
-
-            for (s64 i = 0; i < type->static_array.count; i++) {
-                dynamic_array_append(&values, zero_val);
-            }
-
-            Bytecode_Register result = bytecode_array_literal(builder, values, type);
-
-            temp_array_destroy(&values);
-
-            return result;
+            return bytecode_zeroinitializer(builder, type);
         }
 
         case Type_Kind::SLICE: {
@@ -455,6 +429,13 @@ Bytecode_Register bytecode_zero_value(Bytecode_Builder *builder, Type *type)
 
         case Type_Kind::FUNCTION: assert(false); break;
     }
+}
+
+Bytecode_Register bytecode_zeroinitializer(Bytecode_Builder *builder, Type *type)
+{
+    assert((type->flags & TYPE_FLAG_AGGREGATE) || type->kind == Type_Kind::STATIC_ARRAY);
+
+    return bytecode_register_create(builder, Bytecode_Register_Kind::ZEROINITIALIZER, type);
 }
 
 Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type, s64 value)
@@ -627,6 +608,10 @@ Bytecode_Register bytecode_register_create(Bytecode_Builder *builder, Bytecode_R
         .index = -1,
         .type = type,
     };
+
+    if (kind == Bytecode_Register_Kind::ZEROINITIALIZER) {
+        return result;
+    }
 
     if (alloc_name) {
         assert(kind == Bytecode_Register_Kind::ALLOC);
@@ -1101,7 +1086,7 @@ Bytecode_Register bytecode_emit_load_global(Bytecode_Builder *builder, Bytecode_
 
 void bytecode_emit_store_alloc(Bytecode_Builder *builder, Bytecode_Register source, Bytecode_Register dest)
 {
-    assert(source.kind == Bytecode_Register_Kind::TEMPORARY);
+    assert(source.kind == Bytecode_Register_Kind::TEMPORARY || source.kind == Bytecode_Register_Kind::ZEROINITIALIZER);
     assert(dest.kind == Bytecode_Register_Kind::ALLOC);
     assert(source.type == dest.type);
 

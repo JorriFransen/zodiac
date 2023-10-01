@@ -20,6 +20,7 @@ enum Interpreter_Register_Flags_ : Interpreter_Register_Flags
 {
     INTERP_REG_FLAG_NONE              = 0x00,
     INTERP_REG_FLAG_AGGREGATE_LITERAL = 0x01,
+    INTERP_REG_FLAG_ZEROINITIALIZER   = 0x02,
 };
 
 struct Interpreter_Register

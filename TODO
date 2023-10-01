@@ -1,6 +1,4 @@
 
-- Make sure all variables are zero initialized
-
 - Implicit cast from integer literal to real types
 
 - Implicit cast from pointer to bool?
@@ -9,12 +7,13 @@
 
 - Lazy && and ||
 
+- Default values
+    - Uninitialized
+
 - Assert
 - Slice bounds checking
 
 - When emitting non constant compound expressions some of it's members/elements might be constant. Constant members should be emitted to a value first, which we can then use to insert the non const values into.
-
-- Some way to get static array length
 
 - Try to report (fatal) errors before executing run directives
 
@@ -24,12 +23,6 @@
 
 - Maybe only allow run statements inside of blocks? (add print expression to allow that)??
 - Look into weird behaviour with bool_to_string from the support lib
-
-test
-- Containers
-  - Hash table
-    - Remove
-  - Bucket array
 
 - Cleanup builtin types/symbols/atoms
     - Remove builtin type stuff from parser (probably move to type.h and include this)

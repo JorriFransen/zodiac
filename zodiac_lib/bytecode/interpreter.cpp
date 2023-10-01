@@ -105,19 +105,22 @@ Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytecode_F
 #endif
 
         for (s64 i = 0; i < globals.count; i++) {
+
+            auto global = globals[i];
+
             Interpreter_Register glob_reg = {
-                .type = globals[i].type,
+                .type = global.type,
                 .pointer = glob_cur,
             };
 
             // @Cleanup: @TODO: @FIXME: alignment
-            assert(globals[i].type->bit_size % 8 == 0);
-            auto size = globals[i].type->bit_size / 8;
+            assert(global.type->bit_size % 8 == 0);
+            auto size = global.type->bit_size / 8;
             glob_cur += size;
 
             if (globals[i].initial_value.kind != Bytecode_Register_Kind::INVALID) {
 
-                assert(globals[i].initial_value.kind == Bytecode_Register_Kind::TEMPORARY);
+                assert(global.initial_value.kind == Bytecode_Register_Kind::TEMPORARY || global.initial_value.kind == Bytecode_Register_Kind::ZEROINITIALIZER);
                 Interpreter_Register initial_value = interpreter_load_register(interp, globals[i].initial_value);
                 interpreter_store_pointer(interp, initial_value, glob_reg.pointer);
 
@@ -1251,8 +1254,7 @@ Interpreter_Register *interpreter_handle_ffi_callback(Interpreter *interp, Bytec
    return return_value_reg;
 }
 
-Interpreter_Register interpreter_load_register(Interpreter *interp,
-                                               Bytecode_Register bc_reg)
+Interpreter_Register interpreter_load_register(Interpreter *interp, Bytecode_Register bc_reg)
 {
     if (bc_reg.kind == Bytecode_Register_Kind::TEMPORARY ||
         bc_reg.kind == Bytecode_Register_Kind::ALLOC) {
@@ -1286,6 +1288,10 @@ Interpreter_Register interpreter_load_register(Interpreter *interp,
         assert(interp_reg_ptr->type == bc_reg.type);
         return *interp_reg_ptr;
 
+    } else if (bc_reg.kind == Bytecode_Register_Kind::ZEROINITIALIZER) {
+        Interpreter_Register result { .flags = INTERP_REG_FLAG_ZEROINITIALIZER,
+                                      .type = bc_reg.type };
+        return result;
     } else {
         assert(false);
     }
@@ -1417,6 +1423,11 @@ void interpreter_store_register(Interpreter *interp, Interpreter_Register source
 void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source, u8 *dest)
 {
     assert(interp);
+
+    if (source.flags & INTERP_REG_FLAG_ZEROINITIALIZER) {
+        zmemset(dest, 0, source.type->bit_size / 8);
+        return;
+    }
 
     auto t = source.type;
     switch (t->kind) {

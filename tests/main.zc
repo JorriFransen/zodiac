@@ -6,10 +6,12 @@ List_Node :: struct {
     next : *List_Node;
 }
 
+global_list_node : List_Node;
+
 main :: () {
 
-    a : List_Node; 
-    b : List_Node; 
+    a : List_Node;
+    b : List_Node;
     c : List_Node;
 
     c = { 33, null };

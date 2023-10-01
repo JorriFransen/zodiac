@@ -178,11 +178,15 @@ void llvm_builder_emit_global(LLVM_Builder *builder, Bytecode_Global_Handle glob
     llvm_glob_var->setLinkage(llvm::GlobalValue::PrivateLinkage);
 
     if (glob->initial_value.kind != Bytecode_Register_Kind::INVALID) {
-        assert(glob->initial_value.kind == Bytecode_Register_Kind::TEMPORARY);
 
-        // This assumes these non const literals point to already initialized globals...
-        assert((glob->initial_value.flags & BC_REGISTER_FLAG_CONSTANT) ||
-               (glob->initial_value.flags & BC_REGISTER_FLAG_LITERAL));
+        if (glob->initial_value.kind == Bytecode_Register_Kind::TEMPORARY) {
+            // This assumes these non const literals point to already initialized globals...
+            assert(glob->initial_value.kind == Bytecode_Register_Kind::TEMPORARY);
+            assert((glob->initial_value.flags & BC_REGISTER_FLAG_CONSTANT) ||
+                   (glob->initial_value.flags & BC_REGISTER_FLAG_LITERAL));
+        } else {
+            assert(glob->initial_value.kind == Bytecode_Register_Kind::ZEROINITIALIZER);
+        }
 
         llvm::Constant *init_val = llvm_builder_emit_constant(builder, glob->initial_value);
         llvm_glob_var->setInitializer(init_val);
@@ -1195,10 +1199,10 @@ llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Re
 
                 assert(!builder->current_function->isVarArg());
 
-#ifndef NDEBUG
-                auto arg_count = builder->current_function->arg_size();
-                assert(bc_reg.index >= 0 && bc_reg.index < (s64)arg_count);
-#endif
+                #ifndef NDEBUG
+                    auto arg_count = builder->current_function->arg_size();
+                    assert(bc_reg.index >= 0 && bc_reg.index < (s64)arg_count);
+                #endif
 
                 return builder->current_function->getArg((unsigned)bc_reg.index);
 
@@ -1287,6 +1291,11 @@ llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Re
         case Bytecode_Register_Kind::PHI_ARGS: {
             assert(false);
         }
+
+        case Bytecode_Register_Kind::ZEROINITIALIZER: {
+            auto llvm_type = llvm_type_from_ast_type(builder, bc_reg.type);
+            return llvm::Constant::getNullValue(llvm_type);
+        }
     }
 
     assert(false);
@@ -1299,7 +1308,8 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
     // This assumes these non const literals point to already initialized globals...
     assert((bc_reg.flags & BC_REGISTER_FLAG_CONSTANT) ||
            (bc_reg.flags & BC_REGISTER_FLAG_LITERAL) ||
-           bc_reg.kind == Bytecode_Register_Kind::GLOBAL);
+           bc_reg.kind == Bytecode_Register_Kind::GLOBAL ||
+           bc_reg.kind == Bytecode_Register_Kind::ZEROINITIALIZER);
 
     switch (bc_reg.kind) {
         case Bytecode_Register_Kind::INVALID: {
@@ -1394,6 +1404,11 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
 
         case Bytecode_Register_Kind::UNDEF: {
             assert(false);
+            break;
+        }
+        case Bytecode_Register_Kind::ZEROINITIALIZER: {
+            auto llvm_type = llvm_type_from_ast_type(builder, bc_reg.type);
+            return llvm::Constant::getNullValue(llvm_type);
             break;
         }
     }
