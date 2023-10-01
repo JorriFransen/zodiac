@@ -1,33 +1,14 @@
 
 #run main();
 
-List_Node :: struct {
-    value: s64;
-    next : *List_Node;
-}
-
-global_list_node : List_Node;
-
 main :: () {
 
-    a : List_Node;
-    b : List_Node;
-    c : List_Node;
+    x : r32 = 1;
+    y : r64 = 2;
 
-    c = { 33, null };
-    b = { 22, *c };
-    a = { 11, *b };
-
-    print_list(*a);
+    println(x, ", ", y);
 
     return 0;
 }
 
-print_list :: (l: *List_Node) {
-    node := l;
 
-    while node != null {
-        println(<node);
-        node = node.next;
-    }
-}

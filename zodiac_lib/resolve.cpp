@@ -2022,6 +2022,8 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                     if (inferred_type->kind == Type_Kind::UNSIZED_INTEGER) {
                         inferred_type = &builtin_type_s64;
+                    } if (inferred_type->kind == Type_Kind::FLOAT) {
+                        // Ok
                     } else if (inferred_type->kind != Type_Kind::INTEGER) {
                         fatal_resolve_error(ctx, expr, "Could not convert integer literal to inferred type '%s'",
                                                        temp_type_string(inferred_type).data);
