@@ -3325,6 +3325,7 @@ MunitResult Unsized_Int_To_Real(const MunitParameter params[], void* user_data_o
         Z :: 3;
 
         Vec2 :: struct { x, y: s64; }
+        Vec2f :: struct { x, y: r64; }
 
         main :: () {
 
@@ -3351,6 +3352,15 @@ MunitResult Unsized_Int_To_Real(const MunitParameter params[], void* user_data_o
             slice : []s64 = { Z, 1, Z };
             println(slice);
 
+            p2 : Vec2f = { 2, Z };
+            println(p2);
+
+            pointsf :[2]r64 = { Z, 2 };
+            println(pointsf);
+
+            slicef :[]r64 = { 1, Z, 2};
+            println(slicef);
+
             return 0;
         }
     )CODE_STR";
@@ -3361,7 +3371,10 @@ R"OUT_STR(1.000000, 2.000000
 3.000000
 { 3, 1 }
 { 1, 3 }
-{ 3, 1, 3 })OUT_STR" };
+{ 3, 1, 3 }
+{ 2.000000, 3.000000 }
+{ 3.000000, 2.000000 }
+{ 1.000000, 3.000000, 2.000000 })OUT_STR" };
 
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };

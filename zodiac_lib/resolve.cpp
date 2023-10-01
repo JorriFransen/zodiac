@@ -2523,6 +2523,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                     bool match = aggregate_member_type == compound_member_type;
                     match = match || (aggregate_member_type->kind == Type_Kind::INTEGER && compound_member_type->kind == Type_Kind::UNSIZED_INTEGER);
+                    match = match || (aggregate_member_type->kind == Type_Kind::FLOAT && compound_member_type->kind == Type_Kind::UNSIZED_INTEGER);
 
                     if (!match) {
                         fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
@@ -2556,6 +2557,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                     bool match = array_element_type == compound_member_type;
                     match = match || (array_element_type->kind == Type_Kind::INTEGER && compound_member_type->kind == Type_Kind::UNSIZED_INTEGER);
+                    match = match || (array_element_type->kind == Type_Kind::FLOAT && compound_member_type->kind == Type_Kind::UNSIZED_INTEGER);
 
                     if (!match) {
                         fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
@@ -2584,6 +2586,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                     bool match = slice_element_type == compound_member_type;
                     match = match || (slice_element_type->kind == Type_Kind::INTEGER && compound_member_type->kind == Type_Kind::UNSIZED_INTEGER);
+                    match = match || (slice_element_type->kind == Type_Kind::FLOAT && compound_member_type->kind == Type_Kind::UNSIZED_INTEGER);
 
                     if (!match) {
                         fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);

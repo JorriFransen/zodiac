@@ -1460,6 +1460,12 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
         case AST_Expression_Kind::INVALID: assert(false); break;
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
+            if (enforce_type && enforce_type->kind == Type_Kind::FLOAT) {
+                auto iv = expr->integer_literal.value;
+                return bytecode_real_literal(bc->builder, enforce_type, { .r32 = (float)iv.s64, .r64 = (double)iv.s64});
+            } else {
+                assert(!enforce_type || enforce_type->kind == Type_Kind::INTEGER);
+            }
             return bytecode_integer_literal(bc->builder, type, expr->integer_literal.value);
         }
 

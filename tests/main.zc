@@ -4,7 +4,7 @@
 Z :: 3;
 
 Vec2 :: struct { x, y: s64; }
-// Vec2f :: struct { x, y: r64; }
+Vec2f :: struct { x, y: r64; }
 
 main :: () {
 
@@ -17,9 +17,14 @@ main :: () {
     slice : []s64 = { Z, 1, Z };
     println(slice);
 
-    // p2 : Vec2f = { 2, 1 };
-    // println(p);
+    p2 : Vec2f = { 2, Z };
+    println(p2);
 
+    pointsf :[2]r64 = { Z, 2 };
+    println(pointsf);
+
+    slicef :[]r64 = { 1, Z, 2};
+    println(slicef);
     return 0;
 }
 
