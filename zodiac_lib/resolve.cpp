@@ -1883,9 +1883,9 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                 auto &if_block = stmt->if_stmt.blocks[i];
                 assert(if_block.cond->resolved_type);
 
-                if (if_block.cond->resolved_type->kind == Type_Kind::BOOLEAN || 
-                    valid_static_type_conversion(if_block.cond->resolved_type, &builtin_type_bool)) {
-
+                if (if_block.cond->resolved_type->kind == Type_Kind::BOOLEAN) {
+                    // ok
+                } else if (valid_static_type_conversion(if_block.cond->resolved_type, &builtin_type_bool)) {
                     AST_Expression *cast_expr = ast_cast_expr_new(resolver->ctx, if_block.cond->range, &builtin_type_bool, if_block.cond);
                     if_block.cond = cast_expr;
 
