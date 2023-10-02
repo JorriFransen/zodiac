@@ -41,10 +41,12 @@ struct Bytecode_Register;
     ZODIAC_BC_OP(F_LT_EQ) \
     ZODIAC_BC_OP(PTR_EQ) \
     ZODIAC_BC_OP(PTR_NEQ) \
+    ZODIAC_BC_OP(XOR) \
     ZODIAC_BC_OP(SQRT) \
     ZODIAC_BC_OP(TRUNC) \
     ZODIAC_BC_OP(SEXT) \
     ZODIAC_BC_OP(ZEXT) \
+    ZODIAC_BC_OP(BITCAST) \
     ZODIAC_BC_OP(PRINT) \
     ZODIAC_BC_OP(PUSH_ARG) \
     ZODIAC_BC_OP(CALL) \
@@ -313,10 +315,13 @@ ZAPI Bytecode_Register bytecode_emit_lt(Bytecode_Builder *builder, Bytecode_Regi
 ZAPI Bytecode_Register bytecode_emit_gteq(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b);
 ZAPI Bytecode_Register bytecode_emit_lteq(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b);
 
+ZAPI Bytecode_Register bytecode_emit_xor(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b);
+
 ZAPI Bytecode_Register bytecode_emit_sqrt(Bytecode_Builder *builder, Bytecode_Register a);
 
 ZAPI Bytecode_Register bytecode_emit_cast(Bytecode_Builder *builder, Type *target_type, Bytecode_Register operand_register);
 ZAPI Bytecode_Register bytecode_emit_integer_cast(Bytecode_Builder *builder, Type *target_type, Bytecode_Register operand_register);
+ZAPI Bytecode_Register bytecode_emit_bitcast(Bytecode_Builder *builder, Type *target_type, Bytecode_Register operand_register);
 
 ZAPI void bytecode_emit_print(Bytecode_Builder *builder, Bytecode_Register a);
 

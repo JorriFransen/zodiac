@@ -224,11 +224,14 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
         BINOP_CASE_(PTR_EQ)
         BINOP_CASE_(PTR_NEQ)
 
+        BINOP_CASE_(XOR)
+
         UNOP_CASE_(SQRT)
 
         UNOP_CASE_(TRUNC)
         UNOP_CASE_(SEXT)
         UNOP_CASE_(ZEXT)
+        UNOP_CASE_(BITCAST)
         UNOP_CASE_(PRINT)
 
         UNOP_CASE_(PUSH_ARG)

@@ -1882,7 +1882,24 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
             for (s64 i = 0; i < stmt->if_stmt.blocks.count; i++) {
                 auto &if_block = stmt->if_stmt.blocks[i];
                 assert(if_block.cond->resolved_type);
-                assert(if_block.cond->resolved_type->kind == Type_Kind::BOOLEAN);
+
+                if (if_block.cond->resolved_type->kind == Type_Kind::BOOLEAN || 
+                    valid_static_type_conversion(if_block.cond->resolved_type, &builtin_type_bool)) {
+
+                    AST_Expression *cast_expr = ast_cast_expr_new(resolver->ctx, if_block.cond->range, &builtin_type_bool, if_block.cond);
+                    if_block.cond = cast_expr;
+
+                    bool name_result = name_resolve_expr(resolver->ctx, cast_expr, scope);
+                    assert(name_result);
+
+                    bool type_result = type_resolve_expression(resolver, cast_expr, scope, nullptr);
+                    assert(type_result);
+
+
+                } else {
+                    fatal_resolve_error(resolver->ctx, if_block.cond, "Expected boolean type, got: '%s'", temp_type_string(if_block.cond->resolved_type).data);
+                    return false;
+                }
             }
 
             break;
@@ -1903,7 +1920,7 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
 
             auto cond_expr = stmt->for_stmt.cond_expr;
             if (cond_expr->resolved_type->kind != Type_Kind::BOOLEAN) {
-                fatal_resolve_error(resolver->ctx, cond_expr, "Expected boolean type in 'for' conditional, got: '%'", temp_type_string(cond_expr->resolved_type));
+                fatal_resolve_error(resolver->ctx, cond_expr, "Expected boolean type in 'for' conditional, got: '%s'", temp_type_string(cond_expr->resolved_type).data);
                 return false;
             }
             break;
@@ -2343,6 +2360,19 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     if (EXPR_IS_LVALUE(operand)) {
                         expr->flags |= AST_EXPR_FLAG_LVALUE;
                     }
+                    break;
+                }
+
+                case AST_Unary_Operator::NOT: {
+                    auto operand = expr->unary.operand;
+
+                    if (operand->resolved_type->kind == Type_Kind::BOOLEAN || operand->resolved_type->kind == Type_Kind::POINTER) {
+                        // ok
+                    } else {
+                        assert(false);
+                    }
+
+                    expr->resolved_type = &builtin_type_bool;
                     break;
                 }
             }

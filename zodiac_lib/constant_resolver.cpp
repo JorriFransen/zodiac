@@ -85,6 +85,7 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
 
                 case AST_Unary_Operator::ADDRESS_OF: assert(false); break;
                 case AST_Unary_Operator::DEREF: assert(false); break;
+                case AST_Unary_Operator::NOT: assert(false); break;
             }
         }
 

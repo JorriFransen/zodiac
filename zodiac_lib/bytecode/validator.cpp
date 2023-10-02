@@ -555,6 +555,40 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
 
 #undef VALIDATE_PTR_CMP_BINOP
 
+        case Bytecode_Opcode::XOR: {
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'a' register for 'XOR' must be a temporary");
+                return false;
+            }
+
+            if (instruction->b.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'b' register for 'XOR' must be a temporary");
+                return false;
+            }
+
+            if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'XOR' must be a temporary");
+                return false;
+            }
+
+            if (instruction->a.type->kind != Type_Kind::BOOLEAN) {
+                bytecode_validator_report_error(validator, "The 'a' register for 'XOR' must be a boolean");
+                return false;
+            }
+
+            if (instruction->b.type->kind != Type_Kind::BOOLEAN) {
+                bytecode_validator_report_error(validator, "The 'b' register for 'XOR' must be a boolean");
+                return false;
+            }
+
+            if (instruction->dest.type->kind != Type_Kind::BOOLEAN) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'XOR' must be a boolean");
+                return false;
+            }
+
+            return true;
+        }
+
         case Bytecode_Opcode::SQRT: {
             if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
                 bytecode_validator_report_error(validator, "The 'a' register for 'SQRT' must be a temporary");
@@ -693,6 +727,28 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
 
             if (!(target_type->bit_size > op_type->bit_size)) {
                 bytecode_validator_report_error(validator, "The 'dest' register for 'ZEXT' must have a smaller bit_size than the 'a' register");
+                return false;
+            }
+
+            return true;
+        }
+
+        case Bytecode_Opcode::BITCAST: {
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'a' register for 'BITCAST' must be a temporary");
+                return false;
+            }
+
+            if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'BITCAST' must be a temporary");
+                return false;
+            }
+
+            auto target_type = instruction->dest.type;
+            auto op_type = instruction->a.type;
+
+            if (target_type->bit_size != op_type->bit_size) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'BITCAST' must be of the same size as the 'a' register");
                 return false;
             }
 

@@ -1247,6 +1247,26 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     return bytecode_emit_load_pointer(bc->builder, ptr_reg);
                     break;
                 }
+
+                case AST_Unary_Operator::NOT: {
+                    auto operand = expr->unary.operand;
+
+                    auto op_reg = ast_expr_to_bytecode(bc, operand);
+
+                    if (operand->resolved_type->kind == Type_Kind::BOOLEAN) {
+                        return bytecode_emit_xor(bc->builder, op_reg, bytecode_boolean_literal(bc->builder, &builtin_type_bool, true));
+
+                    } else if (operand->resolved_type->kind == Type_Kind::POINTER) {
+
+                        assert(builtin_type_s64.bit_size == pointer_size);
+                        Bytecode_Register as_int = bytecode_emit_bitcast(bc->builder, &builtin_type_s64, op_reg);
+                        return bytecode_emit_eq(bc->builder, as_int, bytecode_zero_value(bc->builder, &builtin_type_s64));
+
+                    } else {
+                        assert(false);
+                    }
+                    break;
+                }
             }
 
             assert(false); // should have returned
@@ -1580,6 +1600,7 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
                 case AST_Unary_Operator::ADDRESS_OF: assert(false); break;
                 case AST_Unary_Operator::DEREF: assert(false); break;
+                case AST_Unary_Operator::NOT: assert(false); break;
             }
 
 

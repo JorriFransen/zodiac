@@ -1,31 +1,45 @@
 
 #run main();
 
-Z :: 3;
-
-Vec2 :: struct { x, y: s64; }
-Vec2f :: struct { x, y: r64; }
 
 main :: () {
 
-    p : Vec2 = { Z, 1 };
-    println(p);
+    ptr : *s64;
+    println(ptr);
 
-    points : [2]s64 = { 1, Z };
-    println(points);
+    if ptr println("ptr != null");
+    else println("ptr == null");
 
-    slice : []s64 = { Z, 1, Z };
-    println(slice);
+    if !ptr println("ptr == null");
+    else println("ptr != null");
 
-    p2 : Vec2f = { 2, Z };
-    println(p2);
 
-    pointsf :[2]r64 = { Z, 2 };
-    println(pointsf);
 
-    slicef :[]r64 = { 1, Z, 2};
-    println(slicef);
+    i : s64 = 42;
+    ptr = *i;
+
+    if ptr println("ptr != null");
+    else println("ptr == null");
+
+    if !ptr println("ptr == null");
+    else println("ptr != null");
+
+    b := false;
+    println(b);
+
+    if b println("b == true");
+    else println("b == false");
+
+    if !b println("b == false");
+    else println("b == true");
+
+    b = true;
+
+    if b println("b == true");
+    else println("b == false");
+
+    if !b println("b == false");
+    else println("b == true");
+
     return 0;
 }
-
-

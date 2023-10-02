@@ -421,6 +421,15 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             break;
         }
 
+        case Bytecode_Opcode::XOR: {
+            llvm::Value *lhs = llvm_builder_emit_register(builder, bc_inst.a);
+            llvm::Value *rhs = llvm_builder_emit_register(builder, bc_inst.b);
+            llvm::Value *result = irb->CreateXor(lhs, rhs);
+
+            llvm_builder_store_result(builder, bc_inst.dest, result);
+            break;
+        }
+
         case Bytecode_Opcode::SQRT: {
             llvm::Value *operand = llvm_builder_emit_register(builder, bc_inst.a);
 
@@ -515,6 +524,14 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             llvm::Type *llvm_target_type = llvm_type_from_ast_type(builder, bc_inst.dest.type);
             llvm::Value *llvm_val = llvm_builder_emit_register(builder, bc_inst.a);
             llvm::Value *result = irb->CreateZExt(llvm_val, llvm_target_type);
+            llvm_builder_store_result(builder, bc_inst.dest, result);
+            break;
+        }
+
+        case Bytecode_Opcode::BITCAST: {
+            llvm::Value *operand = llvm_builder_emit_register(builder, bc_inst.a);
+            llvm::Type *dest_type = llvm_type_from_ast_type(builder, bc_inst.dest.type);
+            llvm::Value *result = irb->CreateBitOrPointerCast(operand, dest_type);
             llvm_builder_store_result(builder, bc_inst.dest, result);
             break;
         }

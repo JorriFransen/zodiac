@@ -339,6 +339,25 @@ break; \
 
 #undef PTR_BINOP_CMP_CASE
 
+        case Bytecode_Opcode::XOR: {
+            Interpreter_Register lhs = interpreter_load_register(interp, instruction.a);
+            Interpreter_Register rhs = interpreter_load_register(interp, instruction.b);
+
+            assert(lhs.type == rhs.type);
+            assert(lhs.type == &builtin_type_bool);
+
+            Bytecode_Register_Value rv = { .boolean = (bool)(lhs.value.boolean ^ rhs.value.boolean) };
+
+            Interpreter_Register result_register = {
+                .type = lhs.type,
+                .value = rv,
+            };
+
+            interpreter_store_register(interp, result_register, instruction.dest);
+
+            break;
+        }
+
         case Bytecode_Opcode::SQRT: {
             Interpreter_Register operand = interpreter_load_register(interp, instruction.a);
 
@@ -470,14 +489,14 @@ switch (operand.type->bit_size) { \
 
             Bytecode_Register_Value rv = {};
 
-#define ZEXT_CASE_(size) case size: { \
-switch (operand.type->bit_size) { \
-    default: assert(false); break; \
-    case 8: rv.integer.u##size = (u##size)operand.value.integer.u8; break; \
-    case 16: rv.integer.u##size = (u##size)operand.value.integer.u16; break; \
-    case 32: rv.integer.u##size = (u##size)operand.value.integer.u32; break; \
-    case 64: rv.integer.u##size = (u##size)operand.value.integer.u64; break; \
-} break; }
+            #define ZEXT_CASE_(size) case size: { \
+                switch (operand.type->bit_size) { \
+                    default: assert(false); break; \
+                    case 8: rv.integer.u##size = (u##size)operand.value.integer.u8; break; \
+                    case 16: rv.integer.u##size = (u##size)operand.value.integer.u16; break; \
+                    case 32: rv.integer.u##size = (u##size)operand.value.integer.u32; break; \
+                    case 64: rv.integer.u##size = (u##size)operand.value.integer.u64; break; \
+            } break; }
 
             switch (instruction.dest.type->bit_size) {
                 default: assert(false); break;
@@ -487,12 +506,30 @@ switch (operand.type->bit_size) { \
                 ZEXT_CASE_(64)
             }
 
-#undef ZEXT_CASE_
+            #undef ZEXT_CASE_
 
             result.value = rv;
 
             interpreter_store_register(interp, result, instruction.dest);
 
+            break;
+        }
+
+        case Bytecode_Opcode::BITCAST: {
+            Interpreter_Register operand = interpreter_load_register(interp, instruction.a);
+            Interpreter_Register result = {
+                .type = instruction.dest.type,
+            };
+
+            assert(operand.type->bit_size == result.type->bit_size);
+            assert(operand.type->bit_size / 8 <= sizeof(result.value));
+
+            auto source_ptr = &operand.value;
+            auto dest_ptr = &result.value;
+
+            zmemcpy(dest_ptr, source_ptr, operand.type->bit_size / 8);
+
+            interpreter_store_register(interp, result, instruction.dest);
             break;
         }
 

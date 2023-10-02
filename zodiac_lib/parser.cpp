@@ -227,6 +227,9 @@ AST_Expression *parse_expr_unary(Parser *parser)
     } else if (match_token(parser, '<')) {
         AST_Expression *operand = parse_expr_unary(parser);
         return ast_unary_expr_new(parser->context, {start_pos, operand->range.end}, AST_Unary_Operator::DEREF, operand);
+    } else if (match_token(parser, '!')) {
+        AST_Expression *operand = parse_expr_unary(parser);
+        return ast_unary_expr_new(parser->context, {start_pos, operand->range.end}, AST_Unary_Operator::NOT, operand);
     } else if (is_token(parser, '#')) {
         Parsed_Directive pd = parse_directive(parser, false);
         assert(pd.kind == Parsed_Directive_Kind::DATA);

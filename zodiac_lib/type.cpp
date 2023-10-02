@@ -480,6 +480,7 @@ bool valid_static_type_conversion(Type *from, Type *to)
         case Type_Kind::BOOLEAN: assert(false);
 
         case Type_Kind::POINTER: {
+            if (to->kind == Type_Kind::BOOLEAN) return true;
             return false;
             break;
         }

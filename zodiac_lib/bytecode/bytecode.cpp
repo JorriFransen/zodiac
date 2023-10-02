@@ -779,6 +779,13 @@ Bytecode_Register bytecode_emit_lteq(Bytecode_Builder *builder, Bytecode_Registe
     EMIT_CMP_BINOP_(LT_EQ);
 }
 
+Bytecode_Register bytecode_emit_xor(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b)
+{
+    auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, a.type);
+    bytecode_emit_instruction(builder, Bytecode_Opcode::XOR, a, b, result);
+    return result;
+}
+
 Bytecode_Register bytecode_emit_sqrt(Bytecode_Builder *builder, Bytecode_Register operand)
 {
     assert(operand.kind == Bytecode_Register_Kind::TEMPORARY);
@@ -812,7 +819,17 @@ Bytecode_Register bytecode_emit_cast(Bytecode_Builder *builder, Type *target_typ
         case Type_Kind::FLOAT: assert(false); break;
         case Type_Kind::POINTER: assert(false); break;
         case Type_Kind::FUNCTION: assert(false); break;
-        case Type_Kind::BOOLEAN: assert(false); break;
+
+        case Type_Kind::BOOLEAN: {
+            if (operand_register.type->kind == Type_Kind::POINTER) {
+                assert(builtin_type_s64.bit_size == pointer_size);
+                Bytecode_Register as_int = bytecode_emit_bitcast(builder, &builtin_type_s64, operand_register);
+                return  bytecode_emit_neq(builder, as_int, bytecode_zero_value(builder, &builtin_type_s64));
+            } else {
+                assert(false);
+            }
+        }
+
         case Type_Kind::STRUCTURE: assert(false); break;
         case Type_Kind::STATIC_ARRAY: assert(false); break;
         case Type_Kind::SLICE: assert(false); break;
@@ -864,6 +881,43 @@ Bytecode_Register bytecode_emit_integer_cast(Bytecode_Builder *builder, Type *ta
 
     assert(false);
     return { .kind = Bytecode_Register_Kind::INVALID };
+}
+
+Bytecode_Register bytecode_emit_bitcast(Bytecode_Builder *builder, Type *target_type, Bytecode_Register operand_register)
+{
+    auto from_type = operand_register.type;
+    assert(target_type->bit_size == from_type->bit_size);
+
+    bool valid = true;
+
+    switch (target_type->kind) {
+
+        case Type_Kind::INVALID: assert(false); break;
+        case Type_Kind::VOID: assert(false); break;
+        case Type_Kind::UNSIZED_INTEGER: assert(false); break;
+
+        case Type_Kind::INTEGER: {
+            if (from_type->kind == Type_Kind::POINTER) break;
+            else assert(false);
+            break;
+        }
+
+        case Type_Kind::FLOAT: assert(false); break;
+        case Type_Kind::BOOLEAN: assert(false); break;
+        case Type_Kind::POINTER: assert(false); break;
+        case Type_Kind::STRUCTURE: assert(false); break;
+        case Type_Kind::STATIC_ARRAY: assert(false); break;
+        case Type_Kind::SLICE: assert(false); break;
+        case Type_Kind::FUNCTION: assert(false); break;
+    }
+
+    if (valid) {
+        auto dest_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, target_type);
+        bytecode_emit_instruction(builder, Bytecode_Opcode::BITCAST, operand_register, {}, dest_register);
+        return dest_register;
+    } else {
+        assert(false);
+    }
 }
 
 void bytecode_emit_print(Bytecode_Builder *builder, Bytecode_Register a)
