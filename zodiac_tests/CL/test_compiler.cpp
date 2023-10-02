@@ -3382,6 +3382,70 @@ R"OUT_STR(1.000000, 2.000000
     return MUNIT_OK;
 }
 
+MunitResult Implicit_Cast_To_Bool(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        main :: () {
+
+            ptr : *s64;
+            println(ptr);
+
+            if ptr println("ptr != null");
+            else println("ptr == null");
+
+            if !ptr println("ptr == null");
+            else println("ptr != null");
+
+
+
+            i : s64 = 42;
+            ptr = *i;
+
+            if ptr println("ptr != null");
+            else println("ptr == null");
+
+            if !ptr println("ptr == null");
+            else println("ptr != null");
+
+            b := false;
+            println(b);
+
+            if b println("b == true");
+            else println("b == false");
+
+            if !b println("b == false");
+            else println("b == true");
+
+            b = true;
+
+            if b println("b == true");
+            else println("b == false");
+
+            if !b println("b == false");
+            else println("b == true");
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR((nil)
+ptr == null
+ptr == null
+ptr != null
+ptr != null
+false
+b == false
+b == false
+b == true
+b == true)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef RESOLVE_ERR
 
 }}

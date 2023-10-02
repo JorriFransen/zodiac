@@ -1587,7 +1587,6 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
         case AST_Expression_Kind::UNARY: {
 
-
             switch (expr->unary.op) {
 
                 case AST_Unary_Operator::INVALID: assert(false); break;
@@ -1631,6 +1630,9 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
                 Integer_Value int_val = resolve_constant_integer_expr(value_expr, value_expr->resolved_type);
                 void *ptr = (void *)int_val.u64;
                 return bytecode_pointer_literal(bc->builder, expr->resolved_type, ptr);
+
+            } else {
+                assert(false);
             }
         }
 
