@@ -388,6 +388,18 @@ struct AST_Aggregate_Declaration
     Type *resolved_type;
 };
 
+struct AST_Enum_Member_Declaration
+{
+    AST_Expression *value_expr;
+};
+
+struct AST_Enum_Declaration
+{
+    Dynamic_Array<AST_Declaration *> members;
+
+    Type *integer_type;
+};
+
 enum class AST_Declaration_Kind
 {
     INVALID,
@@ -401,6 +413,9 @@ enum class AST_Declaration_Kind
 
     STRUCT,
     UNION,
+
+    ENUM_MEMBER,
+    ENUM,
 
     RUN_DIRECTIVE,
     IMPORT_DIRECTIVE,
@@ -416,8 +431,8 @@ enum AST_Declaration_Flag : AST_Declaration_Flags
     AST_DECL_FLAG_FOREIGN = 0x04,
 };
 
-#define DECL_IS_GLOBAL(d) (((d)->flags & AST_DECL_FLAG_GLOBAL) == AST_DECL_FLAG_GLOBAL)
-#define DECL_IS_TYPED(d) (((d)->flags & AST_DECL_FLAG_TYPED) == AST_DECL_FLAG_TYPED)
+#define DECL_IS_GLOBAL(d) ((d)->flags & AST_DECL_FLAG_GLOBAL)
+#define DECL_IS_TYPED(d) ((d)->flags & AST_DECL_FLAG_TYPED)
 
 struct AST_Declaration
 {
@@ -434,6 +449,9 @@ struct AST_Declaration
         AST_Function_Declaration function;
         AST_Aggregate_Declaration aggregate;
         AST_Directive *directive;
+
+        AST_Enum_Member_Declaration enum_member;
+        AST_Enum_Declaration enumeration;
     };
 };
 
@@ -555,6 +573,8 @@ ZAPI void ast_parameter_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Sou
 ZAPI void ast_field_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range range, AST_Declaration *out_decl);
 ZAPI void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynamic_Array<AST_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl, AST_Declaration_Flags flags);
 ZAPI void ast_aggregate_decl_create(AST_Identifier *ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Declaration *> fields, AST_Declaration *out_decl);
+ZAPI void ast_enum_member_decl_create(AST_Identifier ident, AST_Expression *value, AST_Declaration *out_decl);
+ZAPI void ast_enum_decl_create(AST_Identifier ident, Dynamic_Array<AST_Declaration *> members, AST_Declaration *out_decl);
 ZAPI void ast_run_directive_decl_create(AST_Directive *run_directive, AST_Declaration *out_decl);
 ZAPI void ast_import_directive_decl_create(AST_Directive *import_directive, AST_Declaration *out_decl);
 ZAPI void ast_declaration_create(AST_Declaration_Kind kind, AST_Declaration_Flags flags, AST_Declaration *out_decl);
@@ -609,6 +629,8 @@ ZAPI AST_Declaration *ast_parameter_decl_new(Zodiac_Context *ctx, Source_Range r
 ZAPI AST_Declaration *ast_field_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts);
 ZAPI AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, Dynamic_Array<AST_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration_Flags flags);
 ZAPI AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Declaration *> fields);
+ZAPI AST_Declaration *ast_enum_member_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Expression *value);
+ZAPI AST_Declaration *ast_enum_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, Dynamic_Array<AST_Declaration *> members);
 ZAPI AST_Declaration *ast_run_directive_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Directive *run_directive);
 ZAPI AST_Declaration *ast_import_directive_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Directive *import_directive);
 ZAPI AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Range range);

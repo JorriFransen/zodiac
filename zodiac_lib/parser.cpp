@@ -686,6 +686,48 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
     return ast_aggregate_decl_new(parser->context, ident.range, ident, kind, fields);
 }
 
+AST_Declaration *parse_enum_declaration(Parser *parser, AST_Identifier ident)
+{
+    if (!expect_keyword(parser, keyword_enum)) {
+        return nullptr;
+    }
+
+    expect_token(parser, '{');
+
+    Dynamic_Array<AST_Declaration *> members;
+    dynamic_array_create(&parser->context->ast_allocator, &members);
+
+    while (!is_token(parser, '}')) {
+
+        AST_Identifier member_ident = parse_identifier(parser);
+        AST_Expression *member_value = nullptr;
+
+        if (match_token(parser, ':')) {
+            expect_token(parser, ':');
+
+            member_value = parse_expression(parser);
+        }
+
+        if (!(is_token(parser, ',') || is_token(parser, ';'))) {
+            auto pos = member_ident.range;
+            if (member_value) pos = member_value->range;
+            report_parse_error(parser, pos, "Expected enum member to be terminated with ';' or ','");
+            return nullptr;
+        }
+
+        auto member_end = cur_tok(parser).range.end;
+        next_token(parser);
+
+        AST_Declaration *member_decl = ast_enum_member_decl_new(parser->context, {ident.range.start, member_end}, member_ident, member_value);
+        dynamic_array_append(&members, member_decl);
+    }
+
+    auto end_pos = cur_tok(parser).range.end;
+    expect_token(parser, '}');
+
+    return ast_enum_decl_new(parser->context, {ident.range.start, end_pos}, ident, members);
+}
+
 AST_Declaration *parse_declaration(Parser *parser, Parsed_Directive  pd)
 {
     AST_Identifier ident = parse_identifier(parser);
@@ -709,6 +751,10 @@ AST_Declaration *parse_declaration(Parser *parser, Parsed_Directive  pd)
 
         if (is_keyword(parser, keyword_struct) || is_keyword(parser, keyword_union)) {
             return parse_aggregate_declaration(parser, ident);
+        }
+
+        if (is_keyword(parser, keyword_enum)) {
+            return parse_enum_declaration(parser, ident);
         }
 
         // Constant

@@ -69,7 +69,8 @@ ZAPI AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi =
 ZAPI AST_Statement *_parse_statement(Parser *parser, bool optional_semi = false);
 
 ZAPI AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident, Parsed_Directive pd);
-ZAPI AST_Declaration *parse_aggregate_decl(Parser *parser, AST_Identifier ident);
+ZAPI AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier ident);
+ZAPI AST_Declaration *parse_enum_declaration(Parser *parser, AST_Identifier ident);
 ZAPI AST_Declaration *parse_declaration(Parser *parser, Parsed_Directive pd);
 
 ZAPI AST_Type_Spec *_parse_type_spec(Parser *parser);

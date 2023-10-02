@@ -1,45 +1,39 @@
 
 #run main();
 
+Day :: enum {
+
+    MONDAY;
+    TUESDAY;
+    WEDNESDAY,
+    THURSDAY,
+    FRIDAY;
+    SATURDAY;
+    SUNDAY;
+
+}
+
+Mode :: enum {
+    READ  :: 11,
+    WRITE :: 22;
+    DRY_RUN;
+}
+
+Token_Kind :: enum {
+
+    FIRST_NON_ASCII :: 256;
+    TOK_NAME :: FIRST_NON_ASCII;
+    TOK_INT;
+
+}
 
 main :: () {
 
-    ptr : *s64;
-    println(ptr);
-
-    if ptr println("ptr != null");
-    else println("ptr == null");
-
-    if !ptr println("ptr == null");
-    else println("ptr != null");
-
-
-
-    i : s64 = 42;
-    ptr = *i;
-
-    if ptr println("ptr != null");
-    else println("ptr == null");
-
-    if !ptr println("ptr == null");
-    else println("ptr != null");
-
-    b := false;
-    println(b);
-
-    if b println("b == true");
-    else println("b == false");
-
-    if !b println("b == false");
-    else println("b == true");
-
-    b = true;
-
-    if b println("b == true");
-    else println("b == false");
-
-    if !b println("b == false");
-    else println("b == true");
+    day : Day;
+    println(day);
+    day = Day.FRIDAY;
+    println(day);
+    println(Day.WEDNESDAY);
 
     return 0;
 }

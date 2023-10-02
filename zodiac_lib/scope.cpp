@@ -192,6 +192,16 @@ bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declarati
             break;
         }
 
+        case AST_Declaration_Kind::ENUM_MEMBER: {
+            assert(false);
+            break;
+        }
+
+        case AST_Declaration_Kind::ENUM: {
+            assert(false);
+            break;
+        }
+
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
             return true;
         }

@@ -421,6 +421,8 @@ Type *sym_decl_type(Symbol *sym)
             break;
         }
 
+        case AST_Declaration_Kind::ENUM_MEMBER: assert(false); break;
+        case AST_Declaration_Kind::ENUM: assert(false); break;
         case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
         case AST_Declaration_Kind::IMPORT_DIRECTIVE: assert(false); break;
     }

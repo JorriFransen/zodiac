@@ -579,6 +579,16 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
             break;
         }
 
+        case AST_Declaration_Kind::ENUM_MEMBER: {
+            assert(false);
+            break;
+        }
+
+        case AST_Declaration_Kind::ENUM: {
+            assert(false);
+            break;
+        }
+
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
             flatten_directive(resolver, decl->directive, scope, dest);
             break;
@@ -1151,6 +1161,16 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
         case AST_Declaration_Kind::STRUCT:
         case AST_Declaration_Kind::UNION: {
             // Leaf
+            break;
+        }
+
+        case AST_Declaration_Kind::ENUM_MEMBER: {
+            assert(false);
+            break;
+        }
+
+        case AST_Declaration_Kind::ENUM: {
+            assert(false);
             break;
         }
 
@@ -1774,6 +1794,8 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
         }
 
         case AST_Declaration_Kind::UNION: assert(false);
+        case AST_Declaration_Kind::ENUM_MEMBER: assert(false);
+        case AST_Declaration_Kind::ENUM: assert(false);
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
             if (!run_directive_is_const(ctx, decl->directive)) { // This reports errors internally

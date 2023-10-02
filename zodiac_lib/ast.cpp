@@ -404,6 +404,23 @@ void ast_aggregate_decl_create(AST_Identifier ident, AST_Declaration_Kind kind, 
     out_decl->aggregate.resolved_type = nullptr;
 }
 
+void ast_enum_member_decl_create(AST_Identifier ident, AST_Expression *value, AST_Declaration *out_decl)
+{
+    ast_declaration_create(AST_Declaration_Kind::ENUM_MEMBER, AST_DECL_FLAG_NONE, out_decl);
+
+    out_decl->identifier = ident;
+    out_decl->enum_member.value_expr = value;
+}
+
+void ast_enum_decl_create(AST_Identifier ident, Dynamic_Array<AST_Declaration *> members, AST_Declaration *out_decl)
+{
+    ast_declaration_create(AST_Declaration_Kind::ENUM, AST_DECL_FLAG_NONE, out_decl);
+
+    out_decl->identifier = ident;
+    out_decl->enumeration.members = members;
+    out_decl->enumeration.integer_type = &builtin_type_s64;
+}
+
 void ast_run_directive_decl_create(AST_Directive *run_directive, AST_Declaration *out_decl)
 {
     debug_assert(run_directive && out_decl);
@@ -833,6 +850,20 @@ AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Range range,
 
     auto decl = ast_declaration_new(ctx, range);
     ast_aggregate_decl_create(ident, kind, fields, decl);
+    return decl;
+}
+
+AST_Declaration *ast_enum_member_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Expression *value)
+{
+    auto decl = ast_declaration_new(ctx, range);
+    ast_enum_member_decl_create(ident, value, decl);
+    return decl;
+}
+
+AST_Declaration *ast_enum_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, Dynamic_Array<AST_Declaration *> members)
+{
+    auto decl = ast_declaration_new(ctx, range);
+    ast_enum_decl_create(ident, members, decl);
     return decl;
 }
 
@@ -1351,6 +1382,16 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
                 string_builder_append(sb, ";\n");
             }
             string_builder_append(sb, "}");
+            break;
+        }
+
+        case AST_Declaration_Kind::ENUM_MEMBER: {
+            assert(false);
+            break;
+        }
+
+        case AST_Declaration_Kind::ENUM: {
+            assert(false);
             break;
         }
 
