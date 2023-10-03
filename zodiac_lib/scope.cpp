@@ -147,6 +147,7 @@ bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declarati
     Scope *parameter_scope = nullptr;
     Scope *local_scope = nullptr;
     Scope *aggregate_scope = nullptr;
+    Scope *enum_scope = nullptr;
 
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
@@ -163,7 +164,7 @@ bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declarati
             parameter_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_PARAMETER, scope);
             local_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, parameter_scope);
 
-            for (u64 i = 0; i < decl->function.params.count; i++) {
+            for (s64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
 
                 auto param_sym = add_unresolved_symbol(ctx, parameter_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param->identifier.name, param, param->identifier.range);
@@ -182,7 +183,7 @@ bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declarati
 
             aggregate_scope = scope_new(&dynamic_allocator, Scope_Kind::AGGREGATE, scope);
 
-            for (u64 i = 0; i < decl->aggregate.fields.count; i++) {
+            for (s64 i = 0; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
                 auto mem_sym = add_unresolved_symbol(ctx, aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field->identifier.name, field, field->identifier.range);
                 if (!mem_sym) {
@@ -192,13 +193,17 @@ bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declarati
             break;
         }
 
-        case AST_Declaration_Kind::ENUM_MEMBER: {
-            assert(false);
-            break;
-        }
+        case AST_Declaration_Kind::ENUM_MEMBER: kind = Symbol_Kind::ENUM_MEMBER; break;
 
         case AST_Declaration_Kind::ENUM: {
-            assert(false);
+            kind = Symbol_Kind::ENUM;
+            enum_scope = scope_new(&dynamic_allocator, Scope_Kind::ENUM, scope);
+
+            for (s64 i = 0; i < decl->enumeration.members.count; i++) {
+                auto member = decl->enumeration.members[i];
+                auto res = add_unresolved_decl_symbol(ctx, enum_scope, member, false);
+                assert(res);
+            }
             break;
         }
 
@@ -226,8 +231,9 @@ bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declarati
         case Symbol_Kind::VAR:
         case Symbol_Kind::CONST:
         case Symbol_Kind::PARAM:
-        case Symbol_Kind::MEMBER: {
-            assert(!parameter_scope&& !local_scope && !aggregate_scope);
+        case Symbol_Kind::MEMBER:
+        case Symbol_Kind::ENUM_MEMBER: {
+            assert(!parameter_scope&& !local_scope && !aggregate_scope && !enum_scope);
             break;
         }
 
@@ -249,6 +255,11 @@ bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declarati
             break;
         }
 
+        case Symbol_Kind::ENUM: {
+            assert(enum_scope);
+            new_sym->enumeration.scope = enum_scope;
+            break;
+        }
     }
 
     return true;

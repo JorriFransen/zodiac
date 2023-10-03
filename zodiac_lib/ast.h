@@ -396,7 +396,6 @@ struct AST_Enum_Member_Declaration
 struct AST_Enum_Declaration
 {
     Dynamic_Array<AST_Declaration *> members;
-
     Type *integer_type;
 };
 

@@ -29,11 +29,11 @@ Token_Kind :: enum {
 
 main :: () {
 
-    day : Day;
-    println(day);
-    day = Day.FRIDAY;
-    println(day);
-    println(Day.WEDNESDAY);
+    // day : Day;
+    // println(day);
+    // day = Day.FRIDAY;
+    // println(day);
+    // println(Day.WEDNESDAY);
 
     return 0;
 }

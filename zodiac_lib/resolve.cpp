@@ -510,8 +510,7 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
 
     switch (decl->kind) {
 
-        case AST_Declaration_Kind::INVALID:
-            assert(false);
+        case AST_Declaration_Kind::INVALID: assert(false); break;
 
         case AST_Declaration_Kind::VARIABLE:
         case AST_Declaration_Kind::CONSTANT_VARIABLE:
@@ -580,12 +579,16 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
         }
 
         case AST_Declaration_Kind::ENUM_MEMBER: {
-            assert(false);
+            if (decl->enum_member.value_expr) {
+                flatten_expression(resolver, decl->enum_member.value_expr, scope, dest);
+            }
+            decl->identifier.scope = scope;
             break;
         }
 
         case AST_Declaration_Kind::ENUM: {
-            assert(false);
+            flatten_enum_declaration(resolver, decl, scope);
+            decl->identifier.scope = scope;
             break;
         }
 
@@ -668,6 +671,43 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
 
     Flat_Node flat_decl = to_flat_node(decl, scope);
     dynamic_array_append(dest, flat_decl);
+}
+
+void flatten_enum_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope)
+{
+    assert(decl->kind == AST_Declaration_Kind::ENUM);
+
+    auto sym = scope_get_symbol(scope, decl->identifier);
+    assert(sym->kind == Symbol_Kind::ENUM);
+
+    auto enum_scope = sym->enumeration.scope;
+
+    for (s64 i = 0; i < decl->enumeration.members.count; i++) {
+        auto mem_decl = decl->enumeration.members[i];
+
+        auto node = alloc<Flat_Root_Node>(resolver->node_allocator);
+        node->root.kind = Flat_Node_Kind::DECL;
+        node->root.decl = mem_decl;
+        node->name_index = 0;
+        node->type_index = 0;
+
+        dynamic_array_create(resolver->node_allocator, &node->nodes);
+
+        flatten_declaration(resolver, mem_decl, enum_scope, &node->nodes);
+
+        dynamic_array_append(&resolver->nodes_to_name_resolve, node);
+        dynamic_array_append(&resolver->nodes_to_type_resolve, node);
+    }
+
+    auto node = alloc<Flat_Root_Node>(resolver->node_allocator);
+    node->root.kind = Flat_Node_Kind::DECL;
+    node->root.decl = decl;
+    node->name_index = 0;
+    node->type_index = 0;
+
+    dynamic_array_create(resolver->node_allocator, &node->nodes, 1);
+    auto flat_node = to_flat_node(decl, scope);
+    dynamic_array_append(&node->nodes, flat_node);
 }
 
 void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest)
@@ -1159,18 +1199,22 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
         case AST_Declaration_Kind::FIELD:
         case AST_Declaration_Kind::FUNCTION:
         case AST_Declaration_Kind::STRUCT:
-        case AST_Declaration_Kind::UNION: {
+        case AST_Declaration_Kind::UNION:
+        case AST_Declaration_Kind::ENUM_MEMBER: {
             // Leaf
             break;
         }
 
-        case AST_Declaration_Kind::ENUM_MEMBER: {
-            assert(false);
-            break;
-        }
-
         case AST_Declaration_Kind::ENUM: {
-            assert(false);
+            for (s64 i = 0; i < decl->enumeration.members.count; i++) {
+                auto mem_decl = decl->enumeration.members[i];
+                auto mem_sym = scope_get_symbol(mem_decl->identifier.scope, mem_decl->identifier);
+
+                if (mem_sym->state != Symbol_State::RESOLVED && mem_sym->state != Symbol_State::TYPED) {
+                    resolve_error(resolver->ctx, mem_decl, "Waiting for member to be resolved");
+                    return false;
+                }
+            }
             break;
         }
 
