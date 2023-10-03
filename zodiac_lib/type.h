@@ -49,6 +49,7 @@ enum class Type_Kind
     POINTER,
 
     STRUCTURE,
+    ENUM,
     STATIC_ARRAY,
     SLICE,
     FUNCTION,
@@ -87,6 +88,11 @@ struct Type
             Atom name;
             Dynamic_Array<Type *> member_types;
         } structure;
+
+        struct {
+            Atom name;
+            Type *integer_type;
+        } enumeration;
 
         struct {
             Type *element_type;
@@ -149,6 +155,7 @@ ZAPI Type *get_pointer_type(Type *base, Allocator *allocator);
 ZAPI Type *get_struct_type(Zodiac_Context *zc, Array_Ref<Type *> member_types, const char *cstr_name, Allocator *allocator);
 ZAPI Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allocator);
 ZAPI Type *finalize_struct_type(Type *unfinished, Array_Ref<Type *> member_types, Allocator *allocator);
+ZAPI Type *get_enum_type(Type *integer_type, Atom name, Allocator *allocator);
 
 ZAPI Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator);
 ZAPI Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocator);

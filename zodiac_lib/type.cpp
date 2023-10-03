@@ -277,6 +277,20 @@ Type *finalize_struct_type(Type *unfinished, Array_Ref<Type *> member_types, All
     return unfinished;
 }
 
+Type *get_enum_type(Type *integer_type, Atom name, Allocator *allocator)
+{
+    assert(integer_type->kind == Type_Kind::INTEGER);
+
+    auto result = alloc<Type>(allocator);
+
+    create_type(result, Type_Kind::ENUM, integer_type->bit_size, TYPE_FLAG_NONE);
+
+    result->enumeration.name = name;
+    result->enumeration.integer_type = integer_type;
+
+    return result;
+}
+
 Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator)
 {
     assert(element_type);
@@ -421,8 +435,18 @@ Type *sym_decl_type(Symbol *sym)
             break;
         }
 
-        case AST_Declaration_Kind::ENUM_MEMBER: assert(false); break;
-        case AST_Declaration_Kind::ENUM: assert(false); break;
+        case AST_Declaration_Kind::ENUM_MEMBER: {
+            assert(decl->identifier.scope->kind == Scope_Kind::ENUM);
+            auto enum_scope = decl->identifier.scope;
+            assert(enum_scope->enumeration.enum_decl);
+            return enum_scope->enumeration.enum_decl->enumeration.integer_type;
+        }
+
+        case AST_Declaration_Kind::ENUM: {
+            assert(decl->enumeration.enum_type);
+            return decl->enumeration.enum_type;
+        }
+
         case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
         case AST_Declaration_Kind::IMPORT_DIRECTIVE: assert(false); break;
     }
@@ -488,6 +512,7 @@ bool valid_static_type_conversion(Type *from, Type *to)
         }
 
         case Type_Kind::STRUCTURE: return false;
+        case Type_Kind::ENUM: assert(false); break;
 
         case Type_Kind::STATIC_ARRAY: {
             if (to->kind == Type_Kind::SLICE && from->static_array.element_type == to->static_array.element_type) return true;
@@ -541,6 +566,11 @@ void type_to_string(Type *type, String_Builder *sb)
 
         case Type_Kind::STRUCTURE: {
             string_builder_append(sb, "%.*s", (int)type->structure.name.length, type->structure.name.data);
+            break;
+        }
+
+        case Type_Kind::ENUM: {
+            string_builder_append(sb, "%.*s", (int)type->enumeration.name.length, type->enumeration.name.data);
             break;
         }
 

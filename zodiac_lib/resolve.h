@@ -153,6 +153,8 @@ ZAPI bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
 ZAPI bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope);
 ZAPI bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool via_pointer);
 
+ZAPI void resolve_missing_enum_values(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope);
+
 ZAPI bool type_resolve_node(Resolver *resolver, Flat_Node *node);
 ZAPI bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope);
 ZAPI bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope);

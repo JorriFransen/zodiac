@@ -419,6 +419,7 @@ void ast_enum_decl_create(AST_Identifier ident, Dynamic_Array<AST_Declaration *>
     out_decl->identifier = ident;
     out_decl->enumeration.members = members;
     out_decl->enumeration.integer_type = &builtin_type_s64;
+    out_decl->enumeration.enum_type = nullptr;
 }
 
 void ast_run_directive_decl_create(AST_Directive *run_directive, AST_Declaration *out_decl)

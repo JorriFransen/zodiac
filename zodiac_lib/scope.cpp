@@ -196,14 +196,17 @@ bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declarati
         case AST_Declaration_Kind::ENUM_MEMBER: kind = Symbol_Kind::ENUM_MEMBER; break;
 
         case AST_Declaration_Kind::ENUM: {
-            kind = Symbol_Kind::ENUM;
+            kind = Symbol_Kind::TYPE;
             enum_scope = scope_new(&dynamic_allocator, Scope_Kind::ENUM, scope);
+            aggregate_scope = enum_scope;
 
             for (s64 i = 0; i < decl->enumeration.members.count; i++) {
                 auto member = decl->enumeration.members[i];
                 auto res = add_unresolved_decl_symbol(ctx, enum_scope, member, false);
                 assert(res);
             }
+
+            enum_scope->enumeration.enum_decl = decl;
             break;
         }
 
@@ -252,12 +255,6 @@ bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declarati
             assert(aggregate_scope->parent == scope);
 
             new_sym->aggregate.scope = aggregate_scope;
-            break;
-        }
-
-        case Symbol_Kind::ENUM: {
-            assert(enum_scope);
-            new_sym->enumeration.scope = enum_scope;
             break;
         }
     }

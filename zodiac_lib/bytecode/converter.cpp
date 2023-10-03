@@ -272,13 +272,13 @@ bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
         }
 
         case AST_Declaration_Kind::STRUCT:
-        case AST_Declaration_Kind::UNION: {
+        case AST_Declaration_Kind::UNION:
+        case AST_Declaration_Kind::ENUM: {
             // leaf
             break;
         }
 
         case AST_Declaration_Kind::ENUM_MEMBER: assert(false); break;
-        case AST_Declaration_Kind::ENUM: assert(false); break;
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
 
@@ -1584,6 +1584,9 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
                     return glob.initial_value;
                 }
 
+                case Type_Kind::ENUM: assert(false); break;
+
+
                 case Type_Kind::FUNCTION: assert(false);
             }
 
@@ -1917,6 +1920,7 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
         }
 
         case Type_Kind::SLICE: assert(false); break;
+        case Type_Kind::ENUM: assert(false); break;
         case Type_Kind::FUNCTION: assert(false); break;
     }
 
@@ -2021,6 +2025,8 @@ AST_Expression *interpreter_memory_to_ast_expression(Bytecode_Converter *bc, u8*
             result = ast_compound_expr_new(bc->context, range, member_exprs);
             break;
         }
+
+        case Type_Kind::ENUM: assert(false); break;
 
         case Type_Kind::STATIC_ARRAY: {
             u8 *cursor = mem;

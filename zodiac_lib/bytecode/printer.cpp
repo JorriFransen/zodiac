@@ -467,6 +467,8 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
                         break;
                     }
 
+                    case Type_Kind::ENUM: assert(false); break;
+
                     case Type_Kind::STATIC_ARRAY: {
                         string_builder_append(sb, "{ ");
                         for (s64 i = 0; i < reg.value.compound.count; i++) {

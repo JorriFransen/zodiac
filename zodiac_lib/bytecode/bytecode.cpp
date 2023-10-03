@@ -423,6 +423,10 @@ Bytecode_Register bytecode_zero_value(Bytecode_Builder *builder, Type *type)
             return bytecode_zeroinitializer(builder, type);
         }
 
+        case Type_Kind::ENUM: {
+            return bytecode_integer_literal(builder, type->enumeration.integer_type, 0);
+        }
+
         case Type_Kind::SLICE: {
             return bytecode_zero_value(builder, type->slice.struct_type);
         }
@@ -831,6 +835,7 @@ Bytecode_Register bytecode_emit_cast(Bytecode_Builder *builder, Type *target_typ
         }
 
         case Type_Kind::STRUCTURE: assert(false); break;
+        case Type_Kind::ENUM: assert(false); break;
         case Type_Kind::STATIC_ARRAY: assert(false); break;
         case Type_Kind::SLICE: assert(false); break;
     }
@@ -906,6 +911,7 @@ Bytecode_Register bytecode_emit_bitcast(Bytecode_Builder *builder, Type *target_
         case Type_Kind::BOOLEAN: assert(false); break;
         case Type_Kind::POINTER: assert(false); break;
         case Type_Kind::STRUCTURE: assert(false); break;
+        case Type_Kind::ENUM: assert(false); break;
         case Type_Kind::STATIC_ARRAY: assert(false); break;
         case Type_Kind::SLICE: assert(false); break;
         case Type_Kind::FUNCTION: assert(false); break;

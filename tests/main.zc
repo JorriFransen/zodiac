@@ -13,27 +13,39 @@ Day :: enum {
 
 }
 
-Mode :: enum {
-    READ  :: 11,
-    WRITE :: 22;
-    DRY_RUN;
-}
+// Mode :: enum {
+//     INVALID;
+//     READ  :: 11,
+//     WRITE :: 22;
+//     DRY_RUN;
+// }
+//
+// Token_Kind :: enum {
+//
+//     FIRST_NON_ASCII :: 256;
+//     TOK_NAME :: FIRST_NON_ASCII;
+//     TOK_INT;
+//
+// }
 
-Token_Kind :: enum {
-
-    FIRST_NON_ASCII :: 256;
-    TOK_NAME :: FIRST_NON_ASCII;
-    TOK_INT;
-
-}
+// Token_Kind2 :: enum {
+//
+//     TOK_STAR,
+//     TOK_PLUS,
+//
+//     FIRST_NON_ASCII :: TOK_NAME;
+//     TOK_NAME;
+//     TOK_INT;
+//
+// }
 
 main :: () {
 
-    // day : Day;
-    // println(day);
-    // day = Day.FRIDAY;
-    // println(day);
-    // println(Day.WEDNESDAY);
+    day : Day;
+    println(day);
+    day = Day.FRIDAY;
+    println(day);
+    println(Day.WEDNESDAY);
 
     return 0;
 }

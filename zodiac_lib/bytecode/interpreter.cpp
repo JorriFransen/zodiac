@@ -1206,6 +1206,7 @@ void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_co
             case Type_Kind::FUNCTION: assert(false); break;
             case Type_Kind::BOOLEAN: assert(false); break;
             case Type_Kind::STRUCTURE: assert(false); break;
+            case Type_Kind::ENUM: assert(false); break;
             case Type_Kind::STATIC_ARRAY: assert(false); break;
             case Type_Kind::SLICE: assert(false); break;
         }
@@ -1238,6 +1239,7 @@ void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_co
             case Type_Kind::FUNCTION: assert(false); break;
             case Type_Kind::BOOLEAN: assert(false); break;
             case Type_Kind::STRUCTURE: assert(false); break;
+            case Type_Kind::ENUM: assert(false); break;
             case Type_Kind::STATIC_ARRAY: assert(false); break;
             case Type_Kind::SLICE: assert(false); break;
         }
@@ -1405,6 +1407,7 @@ void interpreter_load_pointer(Interpreter *interp, u8 *source, Interpreter_Regis
             break;
         }
 
+        case Type_Kind::ENUM: assert(false); break;
         case Type_Kind::SLICE: assert(false); break;
     }
 }
@@ -1525,6 +1528,7 @@ void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source,
             break;
         }
 
+        case Type_Kind::ENUM: assert(false); break;
         case Type_Kind::SLICE: assert(false); break;
     }
 }
@@ -1745,8 +1749,8 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
                 break;
             }
 
+            case Type_Kind::ENUM: assert(false); break;
             case Type_Kind::SLICE: assert(false); break;
-
             case Type_Kind::FUNCTION: assert(false); break;
         }
 
