@@ -4,42 +4,15 @@
 
 main :: () {
 
-    ptr : *s64;
-    println(ptr);
+    x : s64 = 42;
 
-    if ptr println("ptr != null");
-    else println("ptr == null");
+    // Illegal
+    // y : s32 = x;
 
-    if !ptr println("ptr == null");
-    else println("ptr != null");
+    y : s32 = cast(s32, x);
 
-
-
-    i : s64 = 42;
-    ptr = *i;
-
-    if ptr println("ptr != null");
-    else println("ptr == null");
-
-    if !ptr println("ptr == null");
-    else println("ptr != null");
-
-    b := false;
-    println(b);
-
-    if b println("b == true");
-    else println("b == false");
-
-    if !b println("b == false");
-    else println("b == true");
-
-    b = true;
-
-    if b println("b == true");
-    else println("b == false");
-
-    if !b println("b == false");
-    else println("b == true");
+    println("x: ", x);
+    println("y: ", y);
 
     return 0;
 }

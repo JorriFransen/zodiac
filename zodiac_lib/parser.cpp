@@ -130,6 +130,17 @@ AST_Expression *parse_expr_operand(Parser *parser)
             return ast_bool_literal_expr_new(parser->context, range, true);
         } else if (match_keyword(parser, keyword_false)) {
             return ast_bool_literal_expr_new(parser->context, range, false);
+        } else if (match_keyword(parser, keyword_cast)) {
+
+            expect_token(parser, '(');
+            AST_Type_Spec *ts = parse_type_spec(parser);
+            expect_token(parser, ',');
+            AST_Expression *expr = parse_expression(parser);
+
+            auto end = cur_tok(parser).range.end;
+            expect_token(parser, ')');
+
+            return ast_cast_expr_new(parser->context, {range.start, end}, ts, expr);
         }
 
     } else if (is_token(parser, '{')) {

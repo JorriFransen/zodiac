@@ -1573,8 +1573,13 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             if (decl->variable.type_spec && decl->variable.value) {
 
                 // Type and value
-                assert(valid_static_type_conversion(decl->variable.value->resolved_type,
-                                                    decl->variable.type_spec->resolved_type));
+                if (!(valid_static_type_conversion(decl->variable.value->resolved_type,
+                                                   decl->variable.type_spec->resolved_type))) {
+                    resolve_error(ctx, decl, "Mismatching type in assignment");
+                    resolve_error(ctx, decl->variable.type_spec, "    Expected: %s", temp_type_string(decl->variable.type_spec->resolved_type).data);
+                    resolve_error(ctx, decl->variable.value, "    Got: %s", temp_type_string(decl->variable.value->resolved_type).data);
+                    return false;
+                }
                 decl->variable.resolved_type = decl->variable.type_spec->resolved_type;
 
             } else if ((!decl->variable.type_spec) && decl->variable.value) {
@@ -2452,19 +2457,20 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             assert(EXPR_IS_TYPED(expr->cast.value));
 
             Type *target_type = nullptr;
+            Type *operand_type = expr->cast.value->resolved_type;
             if (expr->cast.type) {
                 target_type = expr->cast.type;
             } else {
-                assert(expr->cast.type_spec->resolved_type);
+                assert(operand_type);
                 target_type = expr->cast.type_spec->resolved_type;
             }
             assert(target_type);
 
             bool valid_conversion = false;
-            if (target_type == expr->cast.value->resolved_type) {
+            if (target_type == operand_type) {
                 valid_conversion = true;
-            } else {
-                valid_conversion = valid_static_type_conversion(expr->cast.value->resolved_type, target_type);
+            } else if (target_type->kind == Type_Kind::INTEGER && operand_type->kind == Type_Kind::INTEGER) {
+                valid_conversion = true;
             }
             assert(valid_conversion);
 
