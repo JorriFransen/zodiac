@@ -82,6 +82,7 @@ struct Lexer
     ZODIAC_KEYWORD(true)    \
     ZODIAC_KEYWORD(false)   \
     ZODIAC_KEYWORD(defer)   \
+    ZODIAC_KEYWORD(cast)    \
     ZODIAC_KEYWORD(null)
 
 // Emit atom declarations for all keywords

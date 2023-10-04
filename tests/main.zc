@@ -1,68 +1,18 @@
 
 #run main();
 
-Day :: enum {
-
-    MONDAY;
-    TUESDAY;
-    WEDNESDAY,
-    THURSDAY,
-    FRIDAY;
-    SATURDAY;
-    SUNDAY;
-
-}
-
-// Mode :: enum {
-//     INVALID;
-//     READ  :: 11,
-//     WRITE :: 22;
-//     DRY_RUN;
-// }
-//
-// Token_Kind :: enum {
-//
-//     FIRST_NON_ASCII :: 256;
-//     TOK_NAME :: FIRST_NON_ASCII;
-//     TOK_INT;
-//
-// }
-
-// Token_Kind2 :: enum {
-//
-//     TOK_STAR,
-//     TOK_PLUS,
-//
-//     FIRST_NON_ASCII :: TOK_NAME;
-//     TOK_NAME;
-//     TOK_INT;
-//
-// }
-
 main :: () {
 
-    print_days();
-    compare_days();
+    x : s64 = 42;
 
     // Illegal
-    // println(Day.TUESDAY + Day.WEDNESDAY);
+    // y : s32 = x;
+
+    y : s32 = cast(s32, x);
+
+    println("x: ", x);
+    println("y: ", y);
 
     return 0;
 }
 
-print_days :: () {
-    println("Day.MONDAY: ", Day.MONDAY);
-    println("Day.TUESDAY: ", Day.TUESDAY);
-    println("Day.WEDNESDAY: ", Day.WEDNESDAY);
-    println("Day.THURSDAY: ", Day.THURSDAY);
-    println("Day.FRIDAY: ", Day.FRIDAY);
-    println("Day.SATURDAY: ", Day.SATURDAY);
-    println("Day.SUNDAY: ", Day.SUNDAY);
-    println();
-}
-
-compare_days :: () {
-    println(Day.MONDAY == Day.MONDAY);
-    println(Day.MONDAY == Day.TUESDAY);
-    println();
-}
