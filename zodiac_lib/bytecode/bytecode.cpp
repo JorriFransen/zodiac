@@ -424,7 +424,9 @@ Bytecode_Register bytecode_zero_value(Bytecode_Builder *builder, Type *type)
         }
 
         case Type_Kind::ENUM: {
-            return bytecode_integer_literal(builder, type->enumeration.integer_type, 0);
+            auto result = bytecode_integer_literal(builder, type->enumeration.integer_type, 0);
+            result.type = type;
+            return result;
         }
 
         case Type_Kind::SLICE: {
@@ -720,7 +722,7 @@ Bytecode_Register bytecode_emit_div(Bytecode_Builder *builder, Bytecode_Register
     assert(b.kind == Bytecode_Register_Kind::TEMPORARY);\
     assert(a.type == b.type); \
     auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, &builtin_type_bool); \
-    if (a.type->kind == Zodiac::Type_Kind::INTEGER) { \
+    if (a.type->kind == Type_Kind::INTEGER || a.type->kind == Type_Kind::ENUM) { \
         bytecode_emit_instruction(builder, Bytecode_Opcode::I_##op, a, b, result); \
     } else if (a.type->kind == Type_Kind::FLOAT) { \
         bytecode_emit_instruction(builder, Bytecode_Opcode::F_##op, a, b, result); \

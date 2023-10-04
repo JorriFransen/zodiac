@@ -224,7 +224,7 @@ break; \
 Interpreter_Register lhs = interpreter_load_register(interp, instruction.a); \
 Interpreter_Register rhs = interpreter_load_register(interp, instruction.b); \
 assert(lhs.type == rhs.type); \
-assert(lhs.type->kind == Type_Kind::INTEGER || lhs.type->kind == Type_Kind ::BOOLEAN); \
+assert(lhs.type->kind == Type_Kind::INTEGER || lhs.type->kind == Type_Kind ::BOOLEAN || lhs.type->kind == Type_Kind::ENUM); \
 Bytecode_Register_Value rv = {}; \
 auto lhsi = lhs.value.integer; \
 auto rhsi = rhs.value.integer; \
@@ -1348,6 +1348,11 @@ void interpreter_load_pointer(Interpreter *interp, u8 *source, Interpreter_Regis
         case Type_Kind::VOID: assert(false); break;
         case Type_Kind::UNSIZED_INTEGER: assert(false); break;
 
+        case Type_Kind::ENUM: {
+            type = type->enumeration.integer_type;
+            // Falltrough
+        }
+
         case Type_Kind::INTEGER: {
             switch (type->bit_size) {
                 // @Cleanup: @TODO: @FIXME: alignment?
@@ -1407,7 +1412,6 @@ void interpreter_load_pointer(Interpreter *interp, u8 *source, Interpreter_Regis
             break;
         }
 
-        case Type_Kind::ENUM: assert(false); break;
         case Type_Kind::SLICE: assert(false); break;
     }
 }
@@ -1475,6 +1479,12 @@ void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source,
         case Type_Kind::VOID: assert(false); break;
         case Type_Kind::UNSIZED_INTEGER: assert(false); break;
 
+
+        case Type_Kind::ENUM: {
+            t = t->enumeration.integer_type;
+            // Falltrough
+        }
+
         case Type_Kind::INTEGER: {
 
             // @Cleanup: @TODO: @FIXME: alignment?
@@ -1528,7 +1538,6 @@ void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source,
             break;
         }
 
-        case Type_Kind::ENUM: assert(false); break;
         case Type_Kind::SLICE: assert(false); break;
     }
 }
@@ -1751,6 +1760,7 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
 
             case Type_Kind::ENUM: assert(false); break;
             case Type_Kind::SLICE: assert(false); break;
+
             case Type_Kind::FUNCTION: assert(false); break;
         }
 
@@ -1921,12 +1931,19 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
 
     auto string_type = get_string_type(interp->context);
 
-    switch (reg.type->kind) {
+    auto type = reg.type;
+
+    switch (type->kind) {
         default: assert(false); break;
 
+        case Type_Kind::ENUM: {
+            type = type->enumeration.integer_type;
+            // Falltrough
+        }
+
         case Type_Kind::INTEGER: {
-            if (reg.type->integer.sign) {
-                switch (reg.type->bit_size) {
+            if (type->integer.sign) {
+                switch (type->bit_size) {
                     default: assert(false); break;
                     case 8: fprintf(out_handle, "%d", reg.value.integer.s8); break;
                     case 16: fprintf(out_handle, "%d", reg.value.integer.s16); break;
@@ -1934,7 +1951,7 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
                     case 64: fprintf(out_handle, "%lld", reg.value.integer.s64); break;
                 }
             } else {
-                switch (reg.type->bit_size) {
+                switch (type->bit_size) {
                     default: assert(false); break;
                     case 8: fprintf(out_handle, "%u", reg.value.integer.u8); break;
                     case 16: fprintf(out_handle, "%u", reg.value.integer.u16); break;
@@ -1946,7 +1963,7 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
         }
 
         case Type_Kind::FLOAT: {
-            switch (reg.type->bit_size) {
+            switch (type->bit_size) {
                 default: assert(false && !"Unhandled float bit size for print instruction"); break;
                 case 32: fprintf(out_handle, "%f", reg.value.real.r32); break;
                 case 64: fprintf(out_handle, "%f", reg.value.real.r64); break;
@@ -1970,7 +1987,7 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
 
         case Type_Kind::STRUCTURE: {
 
-            if (reg.type == string_type) {
+            if (type == string_type) {
                 if (reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
                     assert(reg.value.compound.count == 2);
 
@@ -1985,13 +2002,13 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
                     }
                     fprintf(out_handle, fmt, (int)length_reg.value.integer.s64, str_reg.value.string.data);
                 } else {
-                    interpreter_print_from_memory(interp, reg.value.pointer, reg.type, quote_strings);
+                    interpreter_print_from_memory(interp, reg.value.pointer, type, quote_strings);
                 }
 
                 break;
             }
 
-            if (reg.type->flags & TYPE_FLAG_SLICE_STRUCT) {
+            if (type->flags & TYPE_FLAG_SLICE_STRUCT) {
                 if (reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
                     assert(reg.value.compound.count == 2);
 
@@ -2014,7 +2031,7 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
                     fprintf(out_handle, " }");
 
                 } else {
-                    interpreter_print_from_memory(interp, reg.value.pointer, reg.type, quote_strings);
+                    interpreter_print_from_memory(interp, reg.value.pointer, type, quote_strings);
                 }
                 break;
             }
@@ -2033,10 +2050,10 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
 
                 auto cursor = reg.value.pointer;
 
-                for (s64 i = 0; i < reg.type->structure.member_types.count; i++) {
+                for (s64 i = 0; i < type->structure.member_types.count; i++) {
                     if (i != 0) fprintf(out_handle, ", ");
 
-                    auto member_type = reg.type->structure.member_types[i];
+                    auto member_type = type->structure.member_types[i];
                     auto member_size = member_type->bit_size / 8;
 
                     interpreter_print_from_memory(interp, cursor, member_type, true);
@@ -2065,9 +2082,9 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
             } else {
 
                 u8 *cursor = reg.value.pointer;
-                auto elem_type = reg.type->static_array.element_type;
+                auto elem_type = type->static_array.element_type;
                 auto elem_size = elem_type->bit_size / 8;
-                for (s64 i = 0; i < reg.type->static_array.count; i++) {
+                for (s64 i = 0; i < type->static_array.count; i++) {
                     if (i != 0) fprintf(out_handle, ", ");
                     interpreter_print_from_memory(interp, cursor, elem_type, true);
                     cursor += elem_size;

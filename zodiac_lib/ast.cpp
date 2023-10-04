@@ -894,7 +894,7 @@ AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Range range)
     return result;
 }
 
-file_local const char *ast_binop_to_string[(int)AST_Binary_Operator::LAST_BINOP + 1] = {
+const char *ast_binop_to_string[(int)AST_Binary_Operator::LAST_BINOP + 1] = {
 
     [(int)AST_Binary_Operator::ADD] = "+",
     [(int)AST_Binary_Operator::SUB] = "-",

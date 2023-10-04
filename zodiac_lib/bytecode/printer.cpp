@@ -388,16 +388,23 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
             if (reg.flags & BC_REGISTER_FLAG_LITERAL) {
                 assert(reg.kind == Bytecode_Register_Kind::TEMPORARY);
 
-                switch (reg.type->kind) {
+                auto type = reg.type;
+
+                switch (type->kind) {
                     case Zodiac::Type_Kind::INVALID: assert(false); break;
                     case Zodiac::Type_Kind::VOID: assert(false); break;
                     case Zodiac::Type_Kind::UNSIZED_INTEGER: assert(false); break;
                     case Zodiac::Type_Kind::FUNCTION: assert(false); break;
 
+                    case Type_Kind::ENUM: {
+                        type = type->enumeration.integer_type;
+                        // Falltrough
+                    }
+
                     case Type_Kind::INTEGER: {
                         auto ri = reg.value.integer;
-                        if (reg.type->integer.sign) {
-                            switch (reg.type->bit_size) {
+                        if (type->integer.sign) {
+                            switch (type->bit_size) {
                                 default: assert(false); break;
                                 case 8: string_builder_append(sb, "%d", ri.s8); break;
                                 case 16: string_builder_append(sb, "%d", ri.s16); break;
@@ -405,7 +412,7 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
                                 case 64: string_builder_append(sb, "%d", ri.s64); break;
                             }
                         } else {
-                            switch (reg.type->bit_size) {
+                            switch (type->bit_size) {
                                 default: assert(false); break;
                                 case 8: string_builder_append(sb, "%u", ri.u8); break;
                                 case 16: string_builder_append(sb, "%u", ri.u16); break;
@@ -418,9 +425,9 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
 
                     case Type_Kind::FLOAT: {
                         auto rr = reg.value.real;
-                        if (reg.type->bit_size == 32) {
+                        if (type->bit_size == 32) {
                             string_builder_append(sb, "%f", rr.r32);
-                        } else if (reg.type->bit_size == 64) {
+                        } else if (type->bit_size == 64) {
                             string_builder_append(sb, "%f", rr.r64);
                         } else {
                             assert(false && !"Unsupported literal float size register for printing");
@@ -443,7 +450,7 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
                     }
 
                     case Type_Kind::STRUCTURE: {
-                        if (reg.type == get_string_type(builder->zodiac_context)) {
+                        if (type == get_string_type(builder->zodiac_context)) {
                             auto string_length_reg = reg.value.compound[1];
                             debug_assert(string_length_reg.type == &builtin_type_s64);
 
@@ -466,8 +473,6 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
                         }
                         break;
                     }
-
-                    case Type_Kind::ENUM: assert(false); break;
 
                     case Type_Kind::STATIC_ARRAY: {
                         string_builder_append(sb, "{ ");

@@ -41,11 +41,28 @@ Day :: enum {
 
 main :: () {
 
-    day : Day;
-    println(day);
-    day = Day.FRIDAY;
-    println(day);
-    println(Day.WEDNESDAY);
+    print_days();
+    compare_days();
+
+    // Illegal
+    // println(Day.TUESDAY + Day.WEDNESDAY);
 
     return 0;
+}
+
+print_days :: () {
+    println("Day.MONDAY: ", Day.MONDAY);
+    println("Day.TUESDAY: ", Day.TUESDAY);
+    println("Day.WEDNESDAY: ", Day.WEDNESDAY);
+    println("Day.THURSDAY: ", Day.THURSDAY);
+    println("Day.FRIDAY: ", Day.FRIDAY);
+    println("Day.SATURDAY: ", Day.SATURDAY);
+    println("Day.SUNDAY: ", Day.SUNDAY);
+    println();
+}
+
+compare_days :: () {
+    println(Day.MONDAY == Day.MONDAY);
+    println(Day.MONDAY == Day.TUESDAY);
+    println();
 }

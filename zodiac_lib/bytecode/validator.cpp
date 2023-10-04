@@ -309,14 +309,16 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
     } \
  \
     if (instruction->a.type->kind != Type_Kind::INTEGER && \
-        instruction->a.type->kind != Type_Kind::BOOLEAN) { \
-        bytecode_validator_report_error(validator, "The 'a' register for '" #op "' must be of integer or boolean type"); \
+        instruction->a.type->kind != Type_Kind::BOOLEAN && \
+        instruction->a.type->kind != Type_Kind::ENUM) { \
+        bytecode_validator_report_error(validator, "The 'a' register for '" #op "' must be of integer, enum or boolean type"); \
         return false; \
     } \
  \
     if (instruction->b.type->kind != Type_Kind::INTEGER && \
-        instruction->b.type->kind != Type_Kind::BOOLEAN ) { \
-        bytecode_validator_report_error(validator, "The 'b' register for '" #op "' must be of integer or boolean type"); \
+        instruction->b.type->kind != Type_Kind::BOOLEAN && \
+        instruction->b.type->kind != Type_Kind::ENUM) { \
+        bytecode_validator_report_error(validator, "The 'b' register for '" #op "' must be of integer, enum or boolean type"); \
         return false; \
     } \
  \

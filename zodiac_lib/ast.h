@@ -535,6 +535,8 @@ struct AST_File
     Dynamic_Array<AST_Declaration *> declarations;
 };
 
+ZAPI extern const char *ast_binop_to_string[(int)AST_Binary_Operator::LAST_BINOP + 1];
+
 ZAPI void ast_identifier_create(Atom name, Source_Range range, AST_Identifier *out_ident);
 
 ZAPI void ast_integer_literal_expr_create(Integer_Value value, AST_Expression *out_expr);

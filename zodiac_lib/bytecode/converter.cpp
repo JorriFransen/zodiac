@@ -1128,15 +1128,24 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
         }
 
         case AST_Expression_Kind::MEMBER: {
-            if (expr->member.base->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
-                auto array_type = expr->member.base->resolved_type;
+            auto base_type = expr->member.base->resolved_type;
+
+            if (base_type->kind == Type_Kind::STATIC_ARRAY) {
+                auto array_type = base_type;
                 assert(expr->resolved_type == &builtin_type_s64);
                 return bytecode_integer_literal(bc->builder, expr->resolved_type, array_type->static_array.count);
+            } else if (base_type->kind == Type_Kind::ENUM) {
+
+                s64 value_index = expr->member.index_in_parent;
+                assert(value_index >= 0 && value_index < base_type->enumeration.members.count);
+                auto result = bytecode_integer_literal(bc->builder, base_type->enumeration.integer_type, base_type->enumeration.members[value_index].value);
+                result.type = base_type;
+                return result;
             }
 
             assert(expr->member.index_in_parent >= 0);
             Bytecode_Register base_reg;
-            if (expr->member.base->resolved_type->kind == Type_Kind::POINTER) {
+            if (base_type->kind == Type_Kind::POINTER) {
                 base_reg = ast_expr_to_bytecode(bc, expr->member.base);
             } else {
                 base_reg = ast_lvalue_to_bytecode(bc, expr->member.base);

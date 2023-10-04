@@ -134,7 +134,7 @@ void create_pointer_type(Type *type, Type *base_type)
     base_type->pointer_to = type;
 }
 
-void create_struct_type(Type *type, Dynamic_Array<Type *> member_types, Atom name)
+void create_struct_type(Type *type, Atom name, Dynamic_Array<Type *> member_types)
 {
     assert(type);
 
@@ -214,17 +214,17 @@ Type *get_pointer_type(Type *base, Allocator *allocator)
     return result;
 }
 
-Type *get_struct_type(Zodiac_Context *zc, Array_Ref<Type *> member_types, const char *cstr_name, Allocator *allocator)
+Type *get_struct_type(Zodiac_Context *zc, const char *cstr_name, Array_Ref<Type *> member_types, Allocator *allocator)
 {
     assert(zc);
     assert(cstr_name);
     assert(allocator);
 
     Atom name_atom = atom_get(&zc->atoms, cstr_name);
-    return get_struct_type(member_types, name_atom, allocator);
+    return get_struct_type(name_atom, member_types, allocator);
 }
 
-Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allocator)
+Type *get_struct_type(Atom name, Array_Ref<Type *> member_types, Allocator *allocator)
 {
     assert(member_types.count);
     assert(allocator);
@@ -252,7 +252,7 @@ Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allo
     auto result = alloc<Type>(allocator);
     auto members_copy = dynamic_array_copy(member_types, allocator);
 
-    create_struct_type(result, members_copy, name);
+    create_struct_type(result, name, members_copy);
 
     dynamic_array_append(&struct_types, result);
 
@@ -267,7 +267,7 @@ Type *finalize_struct_type(Type *unfinished, Array_Ref<Type *> member_types, All
     auto members_copy = dynamic_array_copy(member_types, allocator);
 
     auto pointer_to = unfinished->pointer_to;
-    create_struct_type(unfinished, members_copy, unfinished->structure.name);
+    create_struct_type(unfinished, unfinished->structure.name, members_copy);
     unfinished->pointer_to = pointer_to;
 
     unfinished->flags &= ~TYPE_FLAG_UNFINISHED_STRUCT_TYPE;
@@ -277,7 +277,7 @@ Type *finalize_struct_type(Type *unfinished, Array_Ref<Type *> member_types, All
     return unfinished;
 }
 
-Type *get_enum_type(Type *integer_type, Atom name, Allocator *allocator)
+Type *get_enum_type(Atom name, Dynamic_Array<Type_Enum_Member> members, Type *integer_type, Allocator *allocator)
 {
     assert(integer_type->kind == Type_Kind::INTEGER);
 
@@ -286,6 +286,7 @@ Type *get_enum_type(Type *integer_type, Atom name, Allocator *allocator)
     create_type(result, Type_Kind::ENUM, integer_type->bit_size, TYPE_FLAG_NONE);
 
     result->enumeration.name = name;
+    result->enumeration.members = members;
     result->enumeration.integer_type = integer_type;
 
     return result;
@@ -329,7 +330,7 @@ Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocat
     auto name = atom_get(&ctx->atoms, name_);
     temporary_allocator_reset(temp_allocator(), mark);
 
-    Type *struct_type = get_struct_type(members, name, allocator);
+    Type *struct_type = get_struct_type(name, members, allocator);
     struct_type->flags |= TYPE_FLAG_SLICE_STRUCT;
 
     auto global_scope = ctx->resolver->global_scope;

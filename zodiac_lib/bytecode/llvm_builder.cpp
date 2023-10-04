@@ -324,7 +324,7 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
     llvm::Value *lhs = llvm_builder_emit_register(builder, bc_inst.a); \
     llvm::Value *rhs = llvm_builder_emit_register(builder, bc_inst.b); \
     assert(bc_inst.a.type == bc_inst.b.type); \
-    assert(bc_inst.a.type->kind == Type_Kind::INTEGER || bc_inst.a.type->kind == Type_Kind::BOOLEAN); \
+    assert(bc_inst.a.type->kind == Type_Kind::INTEGER || bc_inst.a.type->kind == Type_Kind::BOOLEAN || bc_inst.a.type->kind == Type_Kind::ENUM); \
     assert(bc_inst.dest.type->kind == Type_Kind::BOOLEAN); \
     llvm::Value *result = irb->CreateICmp##op(lhs, rhs); \
     assert(result); \
@@ -1164,6 +1164,12 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Array_Ref<LLVM_B
             break;
         }
 
+        case Type_Kind::ENUM: {
+            use_printf = false;
+            llvm_builder_emit_print_instruction(builder, blocks, type->enumeration.integer_type, llvm_val);
+            break;
+        }
+
         case Type_Kind::STATIC_ARRAY: {
             use_printf = false;
 
@@ -1373,7 +1379,9 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
                     return llvm_builder_emit_struct_literal(builder, bc_reg.type, bc_reg.value.compound);
                 }
 
-                case Type_Kind::ENUM: assert(false); break;
+                case Type_Kind::ENUM: {
+                    return llvm_builder_emit_integer_literal(builder, bc_reg.type->enumeration.integer_type, bc_reg.value.integer);
+                }
 
                 case Type_Kind::STATIC_ARRAY: {
                     return llvm_builder_emit_array_literal(builder, bc_reg.type, bc_reg.value.compound);
@@ -1673,7 +1681,9 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
             return llvm::ArrayType::get(elem_type, ast_type->static_array.count);
         }
 
-        case Type_Kind::ENUM: assert(false); break;
+        case Type_Kind::ENUM: {
+            return llvm_type_from_ast_type(builder, ast_type->enumeration.integer_type);
+        }
 
         case Type_Kind::SLICE: {
             return llvm_type_from_ast_type(builder, ast_type->slice.struct_type);
