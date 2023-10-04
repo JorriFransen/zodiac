@@ -487,7 +487,7 @@ bool valid_static_type_conversion(Type *from, Type *to)
                     return true;
 
                 } else {
-                    assert_msg(false, "Not implemented!");
+                    return false;
                 }
 
             } else if (to->kind == Type_Kind::POINTER) {
