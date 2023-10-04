@@ -2471,6 +2471,12 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 valid_conversion = true;
             } else if (target_type->kind == Type_Kind::INTEGER && operand_type->kind == Type_Kind::INTEGER) {
                 valid_conversion = true;
+            } else if (target_type->kind == Type_Kind::INTEGER && operand_type->kind == Type_Kind::UNSIZED_INTEGER) {
+                valid_conversion = valid_static_type_conversion(operand_type, target_type);
+            } else if (target_type->kind == Type_Kind::POINTER && operand_type->kind == Type_Kind::INTEGER) {
+                valid_conversion = valid_static_type_conversion(operand_type, target_type);
+            } else if (target_type->kind == Type_Kind::BOOLEAN && operand_type->kind == Type_Kind::POINTER) {
+                valid_conversion = true;
             }
             assert(valid_conversion);
 
