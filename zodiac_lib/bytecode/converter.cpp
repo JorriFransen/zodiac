@@ -1543,18 +1543,26 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
                 case Type_Kind::UNSIZED_INTEGER: assert(false); break;
 
                 case Type_Kind::INTEGER: {
-                    Integer_Value result_value = resolve_constant_integer_expr(expr, type);
+                    auto result = resolve_constant_integer_expr(expr, type);
+                    assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                    assert(result.type == type);
+                    auto result_value = result.integer;
                     return bytecode_integer_literal(bc->builder, type, result_value);
                 }
 
                 case Type_Kind::FLOAT: {
-                    Real_Value result_value = resolve_constant_real_expr(expr);
+                    auto result = resolve_constant_real_expr(expr);
+                    assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                    assert(result.type == type || result.type->kind == Type_Kind::UNSIZED_INTEGER);
+                    auto result_value = result.real;
                     return bytecode_real_literal(bc->builder, type, result_value);
                 }
 
                 case Type_Kind::BOOLEAN: {
-                    bool result_value = resolve_constant_bool_expr(expr);
-                    return bytecode_boolean_literal(bc->builder, type, result_value);
+                    auto result = resolve_constant_bool_expr(expr);
+                    assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                    assert(result.type == type);
+                    return bytecode_boolean_literal(bc->builder, type, result.boolean);
                 }
 
                 case Type_Kind::POINTER: assert(false);
@@ -1615,8 +1623,10 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
                 case AST_Unary_Operator::PLUS:
                 case AST_Unary_Operator::MINUS: {
-                    Integer_Value result = resolve_constant_integer_expr(expr, type);
-                    return bytecode_integer_literal(bc->builder, type, result);
+                    auto result = resolve_constant_integer_expr(expr, type);
+                    assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                    assert(result.type == type);
+                    return bytecode_integer_literal(bc->builder, type, result.integer);
                 }
 
                 case AST_Unary_Operator::ADDRESS_OF: assert(false); break;
@@ -1629,8 +1639,10 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
         case AST_Expression_Kind::BINARY: {
             assert(type->kind == Type_Kind::INTEGER);
-            Integer_Value result = resolve_constant_integer_binary_expr(expr, type);
-            return bytecode_integer_literal(bc->builder, type, result);
+            auto result = resolve_constant_integer_binary_expr(expr, type);
+            assert(result.kind == Constant_Resolve_Result_Kind::OK);
+            assert(result.type == type);
+            return bytecode_integer_literal(bc->builder, type, result.integer);
             break;
         }
 
@@ -1642,16 +1654,19 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
                 assert(value_expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER);
 
-                Integer_Value int_val = resolve_constant_integer_expr(value_expr, type);
-                return bytecode_integer_literal(bc->builder, type, int_val);
+                auto result = resolve_constant_integer_expr(value_expr, type);
+                assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                assert(result.type == type);
+                return bytecode_integer_literal(bc->builder, type, result.integer);
 
             } else if (type->kind == Type_Kind::POINTER) {
 
                 assert(value_expr->resolved_type == &builtin_type_u64);
 
-                Integer_Value int_val = resolve_constant_integer_expr(value_expr, value_expr->resolved_type);
-                void *ptr = (void *)int_val.u64;
-                return bytecode_pointer_literal(bc->builder, expr->resolved_type, ptr);
+                auto result = resolve_constant_integer_expr(value_expr, value_expr->resolved_type);
+                assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                assert(result.type == value_expr->resolved_type);
+                return bytecode_pointer_literal(bc->builder, expr->resolved_type, result.pointer);
 
             } else {
                 assert(false);
@@ -1670,8 +1685,10 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
                 assert(length_expr->kind == AST_Expression_Kind::INTEGER_LITERAL);
 
-                auto ptr = constant_resolve_pointer_expr(ptr_expr);
-                return bytecode_string_literal(bc->builder, String_Ref((char *)ptr, length_expr->integer_literal.value.s64));
+                auto result = resolve_constant_pointer_expression(ptr_expr);
+                assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                assert(result.type == ptr_expr->resolved_type);
+                return bytecode_string_literal(bc->builder, String_Ref((char *)result.pointer, length_expr->integer_literal.value.s64));
             }
             return ast_const_compound_expr_to_bytecode(bc, expr);
         }

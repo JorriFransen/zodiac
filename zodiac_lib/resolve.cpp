@@ -454,7 +454,7 @@ Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error
     return inferred_type;
 }
 
-void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest)
+void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest, Infer_Node *infer_node/*nullptr*/)
 {
     debug_assert(resolver && decl && scope && dest);
 
@@ -583,8 +583,10 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
         }
 
         case AST_Declaration_Kind::ENUM_MEMBER: {
+            assert(infer_node);
+
             if (decl->enum_member.value_expr) {
-                flatten_expression(resolver, decl->enum_member.value_expr, scope, dest);
+                flatten_expression(resolver, decl->enum_member.value_expr, scope, dest, infer_node);
             }
             decl->identifier.scope = scope;
             break;
@@ -686,6 +688,8 @@ void flatten_enum_declaration(Resolver *resolver, AST_Declaration *decl, Scope *
 
     auto enum_scope = sym->aggregate.scope;
 
+    Infer_Node *infer_node = infer_node_new(resolver->ctx, &builtin_type_s64);
+
     for (s64 i = 0; i < decl->enumeration.members.count; i++) {
         auto mem_decl = decl->enumeration.members[i];
 
@@ -697,7 +701,7 @@ void flatten_enum_declaration(Resolver *resolver, AST_Declaration *decl, Scope *
 
         dynamic_array_create(resolver->node_allocator, &node->nodes);
 
-        flatten_declaration(resolver, mem_decl, enum_scope, &node->nodes);
+        flatten_declaration(resolver, mem_decl, enum_scope, &node->nodes, infer_node);
 
         dynamic_array_append(&resolver->nodes_to_name_resolve, node);
         dynamic_array_append(&resolver->nodes_to_type_resolve, node);
@@ -1365,7 +1369,7 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 
             if (sym->state == Symbol_State::RESOLVING) {
 
-                fatal_resolve_error(ctx, expr, "Circular dependency detected");
+                resolve_error(ctx, expr, "Circular dependency detected");
                 result = false;
                 break;
             } else if (sym->state == Symbol_State::UNRESOLVED) {
@@ -1436,7 +1440,9 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             auto sym = scope_get_symbol_direct(type_sym->aggregate.scope, expr->member.member_name, &member_index);
             if (!sym) {
                 if (type_sym->decl) {
-                    fatal_resolve_error(ctx, expr, "'%s' is not a member of aggregate type '%s'", expr->member.member_name.data, name.data);
+                    const char *decl_type_name = "aggregate";
+                    if (type_sym->decl->kind == AST_Declaration_Kind::ENUM) decl_type_name = "enum";
+                    fatal_resolve_error(ctx, expr, "'%s' is not a member of %s type '%s'", expr->member.member_name.data, decl_type_name, name.data);
                     fatal_resolve_error(ctx, type_sym->decl, "'%s' was declared here", name.data);
                     result = false;
                 } else {
@@ -1551,7 +1557,7 @@ bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
     return result;
 }
 
-Dynamic_Array<Type_Enum_Member> resolve_missing_enum_values(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope)
+Dynamic_Array<Type_Enum_Member> resolve_enum_member_values(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope)
 {
     assert(decl->kind == AST_Declaration_Kind::ENUM);
 
@@ -1560,33 +1566,61 @@ Dynamic_Array<Type_Enum_Member> resolve_missing_enum_values(Zodiac_Context *ctx,
 
     auto mem_infer_node = infer_node_new(ctx, &builtin_type_s64);
 
-    Dynamic_Array<Type_Enum_Member> members;
-    dynamic_array_create(&ctx->ast_allocator, &members, decl->enumeration.members.count);
+    // Should be zero/false initialized
+    auto status = temp_array_create<bool>(temp_allocator_allocator(), decl->enumeration.members.count);
+    status.array.count = decl->enumeration.members.count;
+    s64 resolved_count = 0;
 
-    for (s64 i = 0; i < decl->enumeration.members.count; i++) {
+    Dynamic_Array<Type_Enum_Member> result;
+    dynamic_array_create(&ctx->ast_allocator, &result, decl->enumeration.members.count);
+    result.count = decl->enumeration.members.count;
 
-        auto mem_decl = decl->enumeration.members[i];
+    while (resolved_count < decl->enumeration.members.count) {
 
-        if (!mem_decl->enum_member.value_expr) {
+        for (s64 i = 0; i < decl->enumeration.members.count; i++) {
 
-            mem_decl->enum_member.value_expr = ast_integer_literal_expr_new(ctx, mem_decl->range, { .s64 = current_value });
+            if (status[i]) {
+                current_value = result[i].value + 1;
+                continue;
+            }
 
-            bool name_result = name_resolve_expr(ctx, mem_decl->enum_member.value_expr, scope);
-            assert(name_result);
-            bool type_result = type_resolve_expression(ctx->resolver, mem_decl->enum_member.value_expr, scope, mem_infer_node);
-            assert(type_result);
+            auto mem_decl = decl->enumeration.members[i];
+
+            bool member_resolved = true;
+            if (!mem_decl->enum_member.value_expr) {
+
+                mem_decl->enum_member.value_expr = ast_integer_literal_expr_new(ctx, mem_decl->range, { .s64 = current_value });
+
+                bool name_result = name_resolve_expr(ctx, mem_decl->enum_member.value_expr, scope);
+                assert(name_result);
+                bool type_result = type_resolve_expression(ctx->resolver, mem_decl->enum_member.value_expr, scope, mem_infer_node);
+                assert(type_result);
 
 
-        } else {
-            assert(false);
+            } else {
+                auto cr_result = resolve_constant_integer_expr(mem_decl->enum_member.value_expr);
+                if (cr_result.kind == Constant_Resolve_Result_Kind::OK) {
+
+                    assert(cr_result.type == &builtin_type_s64);
+                    auto resolved_value = cr_result.integer;
+                    current_value = resolved_value.s64;
+                } else {
+                    member_resolved = false;
+                }
+            }
+
+            if (member_resolved) {
+                result[i] = { mem_decl->identifier.name, current_value };
+                current_value += 1;
+                resolved_count += 1;
+                status[i] = true;
+            }
         }
-
-        dynamic_array_append(&members, { mem_decl->identifier.name, current_value });
-
-        current_value += 1;
     }
 
-    return members;
+    temp_array_destroy(&status);
+
+    return result;
 }
 
 bool type_resolve_node(Resolver *resolver, Flat_Node *node)
@@ -1926,7 +1960,7 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                 }
             }
 
-            auto members = resolve_missing_enum_values(ctx, decl, enum_scope);
+            auto members = resolve_enum_member_values(ctx, decl, enum_scope);
 
             assert(decl->enumeration.integer_type);
             auto int_type = decl->enumeration.integer_type;
@@ -2374,7 +2408,9 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             if (base_is_array) {
 
                 if (EXPR_IS_CONST(index_expr)) {
-                    Integer_Value index_val = resolve_constant_integer_expr(index_expr);
+                    auto index_res = resolve_constant_integer_expr(index_expr);
+                    assert(index_res.kind == Constant_Resolve_Result_Kind::OK);
+                    auto index_val = index_res.integer;
                     assert(index_val.s64 >= 0 && index_val.s64 < base_type->static_array.count);
                 }
 
@@ -2982,7 +3018,9 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
             assert(length_expr->resolved_type->kind == Type_Kind::INTEGER);
             assert(length_expr->resolved_type == &builtin_type_s64); // This might not be the case when using a identifier (pointing to constant)
 
-            Integer_Value length_val = resolve_constant_integer_expr(length_expr);
+            auto length_res = resolve_constant_integer_expr(length_expr);
+            assert(length_res.kind == Constant_Resolve_Result_Kind::OK);
+            auto length_val = length_res.integer;
             assert(length_val.s64 >= 1);
 
             auto elem_ts = ts->static_array.element_ts;

@@ -13,31 +13,29 @@ Day :: enum {
 
 }
 
-// Mode :: enum {
-//     INVALID;
-//     READ  :: 11,
-//     WRITE :: 22;
-//     DRY_RUN;
-// }
-//
-// Token_Kind :: enum {
-//
-//     FIRST_NON_ASCII :: 256;
-//     TOK_NAME :: FIRST_NON_ASCII;
-//     TOK_INT;
-//
-// }
+Mode :: enum {
+    INVALID;
+    READ  :: 11,
+    WRITE :: 22;
+    DRY_RUN;
+}
 
-// Token_Kind2 :: enum {
-//
-//     TOK_STAR,
-//     TOK_PLUS,
-//
-//     FIRST_NON_ASCII :: TOK_NAME;
-//     TOK_NAME;
-//     TOK_INT;
-//
-// }
+Token_Kind :: enum {
+
+    FIRST_NON_ASCII :: 256;
+    NAME :: FIRST_NON_ASCII;
+    INT;
+}
+
+Token_Kind2 :: enum {
+
+    STAR,
+    PLUS,
+
+    FIRST_NON_ASCII :: NAME;
+    NAME;
+    INT;
+}
 
 main :: () {
 
@@ -53,9 +51,15 @@ main :: () {
     println(result_as_day);
     println(result_as_day == Day.SATURDAY);
     println(result_as_day == Day.THURSDAY);
+    println();
 
-    another_int : s32 = 42;
-    another_day := cast(Day, another_int);
+    // Illegal
+    // another_int : s32 = 42;
+    // another_day := cast(Day, another_int);
+
+    print_modes();
+    print_token_kinds();
+    print_token_kind2s();
 
     return 0;
 }
@@ -74,5 +78,29 @@ print_days :: () {
 compare_days :: () {
     println(Day.MONDAY == Day.MONDAY);
     println(Day.MONDAY == Day.TUESDAY);
+    println();
+}
+
+print_modes :: () {
+    println("Mode.INVALID: ", Mode.INVALID);
+    println("Mode.READ: ", Mode.READ);
+    println("Mode.WRITE: ", Mode.WRITE);
+    println("Mode.DRY_RUN: ", Mode.DRY_RUN);
+    println();
+}
+
+print_token_kinds :: () {
+    println("Token.FIRST_NON_ASCII: ", Token_Kind.FIRST_NON_ASCII);
+    println("Token.NAME: ", Token_Kind.NAME);
+    println("Token.INT: ", Token_Kind.INT);
+    println();
+}
+
+print_token_kind2s :: () {
+    println("Token_Kind2.STAR: ", Token_Kind2.STAR);
+    println("Token_Kind2.PLUS: ", Token_Kind2.PLUS);
+    println("Token_Kind2.FIRST_NON_ASCII: ", Token_Kind2.FIRST_NON_ASCII);
+    println("Token_Kind2.NAME: ", Token_Kind2.NAME);
+    println("Token_Kind2.INT: ", Token_Kind2.INT);
     println();
 }

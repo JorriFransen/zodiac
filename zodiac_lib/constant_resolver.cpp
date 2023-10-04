@@ -7,7 +7,7 @@
 
 namespace Zodiac {
 
-Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=nullptr*/)
+Constant_Resolve_Result resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=nullptr*/)
 {
     assert(expr);
     assert(EXPR_IS_CONST(expr));
@@ -28,7 +28,8 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
 
         case AST_Expression_Kind::INTEGER_LITERAL:
         case AST_Expression_Kind::CHAR_LITERAL: {
-            return expr->integer_literal.value;
+
+            return { Constant_Resolve_Result_Kind::OK, type, { expr->integer_literal.value } };
         }
 
         case AST_Expression_Kind::REAL_LITERAL: assert(false); break;
@@ -43,18 +44,38 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
             assert(sym);
             auto decl = sym->decl;
             assert(decl);
-            assert(decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
-            assert(decl->variable.resolved_type);
 
-            Type *init_type = decl->variable.resolved_type;
-            if (init_type->kind == Type_Kind::UNSIZED_INTEGER) {
-                init_type = &builtin_type_s64;
+            Type *init_type = nullptr;
+            AST_Expression *init_expr = nullptr;
+
+            if (decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE) {
+                assert(decl->variable.resolved_type);
+
+                init_type = decl->variable.resolved_type;
+                if (init_type->kind == Type_Kind::UNSIZED_INTEGER) {
+                    init_type = &builtin_type_s64;
+                }
+                assert(init_type->kind == Type_Kind::INTEGER);
+
+                init_expr = decl->variable.value;
+
+            } else if (decl->kind == AST_Declaration_Kind::ENUM_MEMBER) {
+                if (!decl->enum_member.value_expr)
+                {
+                    return { Constant_Resolve_Result_Kind::UNDEFINED };
+                }
+                assert(decl->enum_member.value_expr->resolved_type);
+                init_type = decl->enum_member.value_expr->resolved_type;
+                assert(init_type->kind == Type_Kind::INTEGER);
+
+                init_expr = decl->enum_member.value_expr;
+
+            } else {
+                assert(false);
             }
-            assert(init_type->kind == Type_Kind::INTEGER);
 
-            AST_Expression *init_expr = decl->variable.value;
+            assert(init_type);
             assert(init_expr);
-            assert(init_expr->resolved_type);
             return resolve_constant_integer_expr(init_expr, init_type);
         }
 
@@ -71,7 +92,9 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
                 }
 
                 case AST_Unary_Operator::MINUS: {
-                    Integer_Value operand_val = resolve_constant_integer_expr(expr->unary.operand, type);
+                    auto operand_result = resolve_constant_integer_expr(expr->unary.operand, type);
+                    assert(operand_result.kind == Constant_Resolve_Result_Kind::OK);
+                    auto operand_val = operand_result.integer;
                     switch (type->bit_size) {
                         default: assert(false);
                         case 8: operand_val.s8 = -operand_val.s8;
@@ -80,7 +103,7 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
                         case 64: operand_val.s64 = -operand_val.s64;
                     }
 
-                    return operand_val;
+                    return { Constant_Resolve_Result_Kind::OK, type, { operand_val } };
                 }
 
                 case AST_Unary_Operator::ADDRESS_OF: assert(false); break;
@@ -110,7 +133,7 @@ Integer_Value resolve_constant_integer_expr(AST_Expression *expr, Type *type/*=n
     return {};
 }
 
-Integer_Value resolve_constant_integer_binary_expr(AST_Expression *expr, Type *type/*=nullptr*/)
+Constant_Resolve_Result resolve_constant_integer_binary_expr(AST_Expression *expr, Type *type/*=nullptr*/)
 {
     assert(expr);
     assert(expr->kind == AST_Expression_Kind::BINARY);
@@ -130,8 +153,13 @@ Integer_Value resolve_constant_integer_binary_expr(AST_Expression *expr, Type *t
 
     auto size = type->bit_size;
 
-    Integer_Value lhs_val = resolve_constant_integer_expr(expr->binary.lhs, type);
-    Integer_Value rhs_val = resolve_constant_integer_expr(expr->binary.rhs, type);
+    auto lhs_res = resolve_constant_integer_expr(expr->binary.lhs, type);
+    assert(lhs_res.kind == Constant_Resolve_Result_Kind::OK);
+    auto rhs_res = resolve_constant_integer_expr(expr->binary.rhs, type);
+    assert(rhs_res.kind == Constant_Resolve_Result_Kind::OK);
+
+    Integer_Value lhs_val = lhs_res.integer;
+    Integer_Value rhs_val = rhs_res.integer;
 
     Integer_Value result;
 
@@ -164,10 +192,10 @@ Integer_Value resolve_constant_integer_binary_expr(AST_Expression *expr, Type *t
 #undef EXECUTE_BINOP
 #undef EXECUTE_SIZED_BINOP
 
-    return result;
+    return { Constant_Resolve_Result_Kind::OK, type, { result } };
 }
 
-bool resolve_constant_bool_expr(AST_Expression *expr)
+Constant_Resolve_Result resolve_constant_bool_expr(AST_Expression *expr)
 {
     debug_assert(expr);
 
@@ -185,7 +213,7 @@ bool resolve_constant_bool_expr(AST_Expression *expr)
         case AST_Expression_Kind::NULL_LITERAL: assert(false); break;
 
         case AST_Expression_Kind::BOOL_LITERAL: {
-            return expr->bool_literal;
+            return { Constant_Resolve_Result_Kind::OK, expr->resolved_type, { .boolean = expr->bool_literal } };
         }
 
         case AST_Expression_Kind::IDENTIFIER: {
@@ -226,10 +254,10 @@ bool resolve_constant_bool_expr(AST_Expression *expr)
     }
 
     assert(false);
-    return false;
+    return { Constant_Resolve_Result_Kind::UNDEFINED };
 }
 
-Real_Value resolve_constant_real_expr(AST_Expression *expr)
+Constant_Resolve_Result resolve_constant_real_expr(AST_Expression *expr)
 {
     debug_assert(expr);
 
@@ -237,8 +265,10 @@ Real_Value resolve_constant_real_expr(AST_Expression *expr)
     assert(EXPR_IS_TYPED(expr));
 
     if (expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER) {
-        Integer_Value iv = resolve_constant_integer_expr(expr, &builtin_type_s64);
-        return { .r32 = (float)iv.s64, .r64 = (double)iv.s64 };
+        auto int_res = resolve_constant_integer_expr(expr, &builtin_type_s64);
+        assert(int_res.kind == Constant_Resolve_Result_Kind::OK);
+        auto iv = int_res.integer;
+        return { Constant_Resolve_Result_Kind::OK, expr->resolved_type, { .real = { .r32 = (float)iv.s64, .r64 = (double)iv.s64 } } };
     }
 
 
@@ -254,7 +284,7 @@ Real_Value resolve_constant_real_expr(AST_Expression *expr)
         case AST_Expression_Kind::BOOL_LITERAL: assert(false); break;
 
         case AST_Expression_Kind::REAL_LITERAL: {
-            return expr->real_literal.value;
+            return { Constant_Resolve_Result_Kind::OK, expr->resolved_type, { .real = expr->real_literal.value } };
         }
 
         case AST_Expression_Kind::IDENTIFIER: {
@@ -297,7 +327,7 @@ Real_Value resolve_constant_real_expr(AST_Expression *expr)
     return {};
 }
 
-void* constant_resolve_pointer_expr(AST_Expression *expr)
+Constant_Resolve_Result resolve_constant_pointer_expression(AST_Expression *expr)
 {
     assert(EXPR_IS_TYPED(expr));
     assert(expr->resolved_type->kind == Type_Kind::POINTER);
@@ -321,8 +351,10 @@ void* constant_resolve_pointer_expr(AST_Expression *expr)
             auto base_expr = expr->cast.value;
 
             assert(base_expr->resolved_type->kind == Type_Kind::INTEGER);
-            auto int_val = resolve_constant_integer_expr(base_expr);
-            return (void *)int_val.u64;
+            auto int_res = resolve_constant_integer_expr(base_expr);
+            assert(int_res.kind == Constant_Resolve_Result_Kind::OK);
+            auto int_val = int_res.integer;
+            return { Constant_Resolve_Result_Kind::OK, expr->resolved_type, { .pointer = (void *)int_val.u64 } };
         }
 
         case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
