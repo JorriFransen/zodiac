@@ -134,7 +134,7 @@ ZAPI Infer_Node *compound_infer_node_new(Zodiac_Context *ctx, Infer_Node *infer_
 
 ZAPI Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error_loc);
 
-ZAPI void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest);
+ZAPI void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest, Infer_Node *infer_node = nullptr);
 ZAPI void flatten_enum_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope);
 ZAPI void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 ZAPI void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest, Infer_Node *infer_node = nullptr);
@@ -154,7 +154,7 @@ ZAPI bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *sco
 ZAPI bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope);
 ZAPI bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool via_pointer);
 
-ZAPI Dynamic_Array<Type_Enum_Member> resolve_missing_enum_values(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope);
+ZAPI Dynamic_Array<Type_Enum_Member> resolve_enum_member_values(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope);
 
 ZAPI bool type_resolve_node(Resolver *resolver, Flat_Node *node);
 ZAPI bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope);
