@@ -496,6 +496,8 @@ bool valid_static_type_conversion(Type *from, Type *to)
                 return true;
             } else if (to->kind == Type_Kind::FLOAT) {
                 return false;
+            } else if (to->kind == Type_Kind::ENUM) {
+                return to->enumeration.integer_type == from;
             } else {
                 assert_msg(false, "Not implemented!");
             }
@@ -513,7 +515,10 @@ bool valid_static_type_conversion(Type *from, Type *to)
         }
 
         case Type_Kind::STRUCTURE: return false;
-        case Type_Kind::ENUM: assert(false); break;
+
+        case Type_Kind::ENUM: {
+            return to == from->enumeration.integer_type;
+        }
 
         case Type_Kind::STATIC_ARRAY: {
             if (to->kind == Type_Kind::SLICE && from->static_array.element_type == to->static_array.element_type) return true;
