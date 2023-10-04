@@ -2664,18 +2664,55 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             assert(target_type);
 
             bool valid_conversion = false;
+
             if (target_type == operand_type) {
                 valid_conversion = true;
-            } else if (target_type->kind == Type_Kind::INTEGER && operand_type->kind == Type_Kind::INTEGER) {
-                valid_conversion = true;
-            } else if (target_type->kind == Type_Kind::INTEGER && operand_type->kind == Type_Kind::UNSIZED_INTEGER) {
+            } else if (target_type->kind == Type_Kind::INTEGER) {
+
+                switch (operand_type->kind) {
+                    case Type_Kind::INVALID: assert(false); break;
+                    case Type_Kind::VOID: assert(false); break;
+
+                    case Type_Kind::UNSIZED_INTEGER: {
+                        valid_conversion = valid_static_type_conversion(operand_type, target_type);
+                        break;
+                    }
+
+                    case Type_Kind::INTEGER: {
+                        valid_conversion = true;
+                        break;
+                    }
+
+                    case Type_Kind::FLOAT: assert(false); break;
+                    case Type_Kind::BOOLEAN: assert(false); break;
+                    case Type_Kind::POINTER: assert(false); break;
+                    case Type_Kind::STRUCTURE: assert(false); break;
+
+                    case Type_Kind::ENUM: {
+                        if (!valid_static_type_conversion(operand_type, target_type)) {
+                            fatal_resolve_error(ctx, expr, "Invalid cast from enum to int (cast to underlying integer type first)");
+                            return false;
+                        }
+                        valid_conversion = true;
+                        break;
+                    }
+
+                    case Type_Kind::STATIC_ARRAY: assert(false); break;
+                    case Type_Kind::SLICE: assert(false); break;
+                    case Type_Kind::FUNCTION: assert(false); break;
+                }
+
+            } else if (target_type->kind == Type_Kind::ENUM) {
                 valid_conversion = valid_static_type_conversion(operand_type, target_type);
             } else if (target_type->kind == Type_Kind::POINTER && operand_type->kind == Type_Kind::INTEGER) {
                 valid_conversion = valid_static_type_conversion(operand_type, target_type);
             } else if (target_type->kind == Type_Kind::BOOLEAN && operand_type->kind == Type_Kind::POINTER) {
                 valid_conversion = true;
+            } else {
+                assert(false);
             }
-            assert(valid_conversion);
+
+            assert_msg(valid_conversion, "TODO: Report invalid cast");
 
             expr->resolved_type = target_type;
 

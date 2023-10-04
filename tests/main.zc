@@ -13,6 +13,16 @@ main :: () {
     println("x: ", x);
     println("y: ", y);
 
+    result := cast(s64, Day.TUESDAY) + cast(s64, Day.WEDNESDAY);
+    println(result);
+    result_as_day := cast(Day, result);
+    println(result_as_day);
+    println(result_as_day == Day.SATURDAY);
+    println(result_as_day == Day.THURSDAY);
+
+    another_int : s32 = 42;
+    another_day := cast(Day, another_int);
+
     return 0;
 }
 
