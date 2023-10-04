@@ -76,6 +76,7 @@ struct Lexer
     ZODIAC_KEYWORD(sizeof)  \
     ZODIAC_KEYWORD(struct)  \
     ZODIAC_KEYWORD(union)   \
+    ZODIAC_KEYWORD(enum)    \
     ZODIAC_KEYWORD(print)   \
     ZODIAC_KEYWORD(println) \
     ZODIAC_KEYWORD(true)    \

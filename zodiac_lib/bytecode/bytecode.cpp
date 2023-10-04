@@ -423,6 +423,12 @@ Bytecode_Register bytecode_zero_value(Bytecode_Builder *builder, Type *type)
             return bytecode_zeroinitializer(builder, type);
         }
 
+        case Type_Kind::ENUM: {
+            auto result = bytecode_integer_literal(builder, type->enumeration.integer_type, 0);
+            result.type = type;
+            return result;
+        }
+
         case Type_Kind::SLICE: {
             return bytecode_zero_value(builder, type->slice.struct_type);
         }
@@ -716,7 +722,7 @@ Bytecode_Register bytecode_emit_div(Bytecode_Builder *builder, Bytecode_Register
     assert(b.kind == Bytecode_Register_Kind::TEMPORARY);\
     assert(a.type == b.type); \
     auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, &builtin_type_bool); \
-    if (a.type->kind == Zodiac::Type_Kind::INTEGER) { \
+    if (a.type->kind == Type_Kind::INTEGER || a.type->kind == Type_Kind::ENUM) { \
         bytecode_emit_instruction(builder, Bytecode_Opcode::I_##op, a, b, result); \
     } else if (a.type->kind == Type_Kind::FLOAT) { \
         bytecode_emit_instruction(builder, Bytecode_Opcode::F_##op, a, b, result); \
@@ -813,7 +819,6 @@ Bytecode_Register bytecode_emit_cast(Bytecode_Builder *builder, Type *target_typ
                 return bytecode_retype_literal(target_type, operand_register);
             }
             return bytecode_emit_integer_cast(builder, target_type, operand_register);
-            break;
         }
 
         case Type_Kind::FLOAT: assert(false); break;
@@ -831,6 +836,12 @@ Bytecode_Register bytecode_emit_cast(Bytecode_Builder *builder, Type *target_typ
         }
 
         case Type_Kind::STRUCTURE: assert(false); break;
+
+        case Type_Kind::ENUM: {
+            assert(operand_register.type->kind == Type_Kind::INTEGER);
+            return bytecode_emit_integer_cast(builder, target_type, operand_register);
+        }
+
         case Type_Kind::STATIC_ARRAY: assert(false); break;
         case Type_Kind::SLICE: assert(false); break;
     }
@@ -875,6 +886,12 @@ Bytecode_Register bytecode_emit_integer_cast(Bytecode_Builder *builder, Type *ta
             }
         }
 
+    } else if (target_type->kind == Type_Kind::ENUM) {
+        assert(operand_register.type->kind == Type_Kind::INTEGER);
+        assert(operand_register.type == target_type->enumeration.integer_type);
+
+        bytecode_emit_instruction(builder, Bytecode_Opcode::BITCAST, operand_register, {}, dest_register);
+        return dest_register;
     } else {
         assert(false);
     }
@@ -906,6 +923,7 @@ Bytecode_Register bytecode_emit_bitcast(Bytecode_Builder *builder, Type *target_
         case Type_Kind::BOOLEAN: assert(false); break;
         case Type_Kind::POINTER: assert(false); break;
         case Type_Kind::STRUCTURE: assert(false); break;
+        case Type_Kind::ENUM: assert(false); break;
         case Type_Kind::STATIC_ARRAY: assert(false); break;
         case Type_Kind::SLICE: assert(false); break;
         case Type_Kind::FUNCTION: assert(false); break;
@@ -1563,7 +1581,7 @@ Bytecode_Register bytecode_retype_literal(Type *target_type, Bytecode_Register o
         default: assert(false && !"Unsupported type for bytecode_retype_literal"); break;
 
         case Type_Kind::INTEGER: {
-            assert(operand_register.type->kind == Type_Kind::INTEGER);
+            assert(operand_register.type->kind == Type_Kind::INTEGER || operand_register.type->kind == Type_Kind::ENUM);
 
             Bytecode_Register result = {
                 .kind = Bytecode_Register_Kind::TEMPORARY,

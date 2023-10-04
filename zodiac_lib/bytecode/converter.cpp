@@ -273,8 +273,12 @@ bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
         case AST_Declaration_Kind::STRUCT:
         case AST_Declaration_Kind::UNION:
+        case AST_Declaration_Kind::ENUM: {
             // leaf
             break;
+        }
+
+        case AST_Declaration_Kind::ENUM_MEMBER: assert(false); break;
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
 
@@ -920,6 +924,8 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
                 case AST_Declaration_Kind::FUNCTION: assert(false); break;
                 case AST_Declaration_Kind::STRUCT: assert(false); break;
                 case AST_Declaration_Kind::UNION: assert(false); break;
+                case AST_Declaration_Kind::ENUM_MEMBER: assert(false); break;
+                case AST_Declaration_Kind::ENUM: assert(false); break;
                 case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
                 case AST_Declaration_Kind::IMPORT_DIRECTIVE: assert(false); break;
             }
@@ -1111,6 +1117,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
                 case AST_Declaration_Kind::FUNCTION: assert(false); break;
                 case AST_Declaration_Kind::STRUCT: assert(false); break;
+                case AST_Declaration_Kind::ENUM_MEMBER: assert(false); break;
+                case AST_Declaration_Kind::ENUM: assert(false); break;
                 case AST_Declaration_Kind::UNION: assert(false); break;
                 case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
                 case AST_Declaration_Kind::IMPORT_DIRECTIVE: assert(false); break;
@@ -1120,15 +1128,24 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
         }
 
         case AST_Expression_Kind::MEMBER: {
-            if (expr->member.base->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
-                auto array_type = expr->member.base->resolved_type;
+            auto base_type = expr->member.base->resolved_type;
+
+            if (base_type->kind == Type_Kind::STATIC_ARRAY) {
+                auto array_type = base_type;
                 assert(expr->resolved_type == &builtin_type_s64);
                 return bytecode_integer_literal(bc->builder, expr->resolved_type, array_type->static_array.count);
+            } else if (base_type->kind == Type_Kind::ENUM) {
+
+                s64 value_index = expr->member.index_in_parent;
+                assert(value_index >= 0 && value_index < base_type->enumeration.members.count);
+                auto result = bytecode_integer_literal(bc->builder, base_type->enumeration.integer_type, base_type->enumeration.members[value_index].value);
+                result.type = base_type;
+                return result;
             }
 
             assert(expr->member.index_in_parent >= 0);
             Bytecode_Register base_reg;
-            if (expr->member.base->resolved_type->kind == Type_Kind::POINTER) {
+            if (base_type->kind == Type_Kind::POINTER) {
                 base_reg = ast_expr_to_bytecode(bc, expr->member.base);
             } else {
                 base_reg = ast_lvalue_to_bytecode(bc, expr->member.base);
@@ -1450,6 +1467,8 @@ Bytecode_Register ast_const_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expre
                 case AST_Declaration_Kind::FUNCTION: assert(false); break;
                 case AST_Declaration_Kind::STRUCT: assert(false); break;
                 case AST_Declaration_Kind::UNION: assert(false); break;
+                case AST_Declaration_Kind::ENUM_MEMBER: assert(false); break;
+                case AST_Declaration_Kind::ENUM: assert(false); break;
                 case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
                 case AST_Declaration_Kind::IMPORT_DIRECTIVE: assert(false); break;
             }
@@ -1524,18 +1543,26 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
                 case Type_Kind::UNSIZED_INTEGER: assert(false); break;
 
                 case Type_Kind::INTEGER: {
-                    Integer_Value result_value = resolve_constant_integer_expr(expr, type);
+                    auto result = resolve_constant_integer_expr(expr, type);
+                    assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                    assert(result.type == type);
+                    auto result_value = result.integer;
                     return bytecode_integer_literal(bc->builder, type, result_value);
                 }
 
                 case Type_Kind::FLOAT: {
-                    Real_Value result_value = resolve_constant_real_expr(expr);
+                    auto result = resolve_constant_real_expr(expr);
+                    assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                    assert(result.type == type || result.type->kind == Type_Kind::UNSIZED_INTEGER);
+                    auto result_value = result.real;
                     return bytecode_real_literal(bc->builder, type, result_value);
                 }
 
                 case Type_Kind::BOOLEAN: {
-                    bool result_value = resolve_constant_bool_expr(expr);
-                    return bytecode_boolean_literal(bc->builder, type, result_value);
+                    auto result = resolve_constant_bool_expr(expr);
+                    assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                    assert(result.type == type);
+                    return bytecode_boolean_literal(bc->builder, type, result.boolean);
                 }
 
                 case Type_Kind::POINTER: assert(false);
@@ -1574,6 +1601,9 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
                     return glob.initial_value;
                 }
 
+                case Type_Kind::ENUM: assert(false); break;
+
+
                 case Type_Kind::FUNCTION: assert(false);
             }
 
@@ -1593,8 +1623,10 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
                 case AST_Unary_Operator::PLUS:
                 case AST_Unary_Operator::MINUS: {
-                    Integer_Value result = resolve_constant_integer_expr(expr, type);
-                    return bytecode_integer_literal(bc->builder, type, result);
+                    auto result = resolve_constant_integer_expr(expr, type);
+                    assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                    assert(result.type == type);
+                    return bytecode_integer_literal(bc->builder, type, result.integer);
                 }
 
                 case AST_Unary_Operator::ADDRESS_OF: assert(false); break;
@@ -1607,8 +1639,10 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
         case AST_Expression_Kind::BINARY: {
             assert(type->kind == Type_Kind::INTEGER);
-            Integer_Value result = resolve_constant_integer_binary_expr(expr, type);
-            return bytecode_integer_literal(bc->builder, type, result);
+            auto result = resolve_constant_integer_binary_expr(expr, type);
+            assert(result.kind == Constant_Resolve_Result_Kind::OK);
+            assert(result.type == type);
+            return bytecode_integer_literal(bc->builder, type, result.integer);
             break;
         }
 
@@ -1620,16 +1654,19 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
                 assert(value_expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER);
 
-                Integer_Value int_val = resolve_constant_integer_expr(value_expr, type);
-                return bytecode_integer_literal(bc->builder, type, int_val);
+                auto result = resolve_constant_integer_expr(value_expr, type);
+                assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                assert(result.type == type);
+                return bytecode_integer_literal(bc->builder, type, result.integer);
 
             } else if (type->kind == Type_Kind::POINTER) {
 
                 assert(value_expr->resolved_type == &builtin_type_u64);
 
-                Integer_Value int_val = resolve_constant_integer_expr(value_expr, value_expr->resolved_type);
-                void *ptr = (void *)int_val.u64;
-                return bytecode_pointer_literal(bc->builder, expr->resolved_type, ptr);
+                auto result = resolve_constant_integer_expr(value_expr, value_expr->resolved_type);
+                assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                assert(result.type == value_expr->resolved_type);
+                return bytecode_pointer_literal(bc->builder, expr->resolved_type, result.pointer);
 
             } else {
                 assert(false);
@@ -1648,8 +1685,10 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
                 assert(length_expr->kind == AST_Expression_Kind::INTEGER_LITERAL);
 
-                auto ptr = constant_resolve_pointer_expr(ptr_expr);
-                return bytecode_string_literal(bc->builder, String_Ref((char *)ptr, length_expr->integer_literal.value.s64));
+                auto result = resolve_constant_pointer_expression(ptr_expr);
+                assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                assert(result.type == ptr_expr->resolved_type);
+                return bytecode_string_literal(bc->builder, String_Ref((char *)result.pointer, length_expr->integer_literal.value.s64));
             }
             return ast_const_compound_expr_to_bytecode(bc, expr);
         }
@@ -1907,6 +1946,7 @@ AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, I
         }
 
         case Type_Kind::SLICE: assert(false); break;
+        case Type_Kind::ENUM: assert(false); break;
         case Type_Kind::FUNCTION: assert(false); break;
     }
 
@@ -2011,6 +2051,8 @@ AST_Expression *interpreter_memory_to_ast_expression(Bytecode_Converter *bc, u8*
             result = ast_compound_expr_new(bc->context, range, member_exprs);
             break;
         }
+
+        case Type_Kind::ENUM: assert(false); break;
 
         case Type_Kind::STATIC_ARRAY: {
             u8 *cursor = mem;

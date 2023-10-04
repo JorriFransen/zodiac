@@ -134,7 +134,7 @@ void create_pointer_type(Type *type, Type *base_type)
     base_type->pointer_to = type;
 }
 
-void create_struct_type(Type *type, Dynamic_Array<Type *> member_types, Atom name)
+void create_struct_type(Type *type, Atom name, Dynamic_Array<Type *> member_types)
 {
     assert(type);
 
@@ -214,17 +214,17 @@ Type *get_pointer_type(Type *base, Allocator *allocator)
     return result;
 }
 
-Type *get_struct_type(Zodiac_Context *zc, Array_Ref<Type *> member_types, const char *cstr_name, Allocator *allocator)
+Type *get_struct_type(Zodiac_Context *zc, const char *cstr_name, Array_Ref<Type *> member_types, Allocator *allocator)
 {
     assert(zc);
     assert(cstr_name);
     assert(allocator);
 
     Atom name_atom = atom_get(&zc->atoms, cstr_name);
-    return get_struct_type(member_types, name_atom, allocator);
+    return get_struct_type(name_atom, member_types, allocator);
 }
 
-Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allocator)
+Type *get_struct_type(Atom name, Array_Ref<Type *> member_types, Allocator *allocator)
 {
     assert(member_types.count);
     assert(allocator);
@@ -252,7 +252,7 @@ Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allo
     auto result = alloc<Type>(allocator);
     auto members_copy = dynamic_array_copy(member_types, allocator);
 
-    create_struct_type(result, members_copy, name);
+    create_struct_type(result, name, members_copy);
 
     dynamic_array_append(&struct_types, result);
 
@@ -267,7 +267,7 @@ Type *finalize_struct_type(Type *unfinished, Array_Ref<Type *> member_types, All
     auto members_copy = dynamic_array_copy(member_types, allocator);
 
     auto pointer_to = unfinished->pointer_to;
-    create_struct_type(unfinished, members_copy, unfinished->structure.name);
+    create_struct_type(unfinished, unfinished->structure.name, members_copy);
     unfinished->pointer_to = pointer_to;
 
     unfinished->flags &= ~TYPE_FLAG_UNFINISHED_STRUCT_TYPE;
@@ -275,6 +275,21 @@ Type *finalize_struct_type(Type *unfinished, Array_Ref<Type *> member_types, All
     dynamic_array_append(&struct_types, unfinished);
 
     return unfinished;
+}
+
+Type *get_enum_type(Atom name, Dynamic_Array<Type_Enum_Member> members, Type *integer_type, Allocator *allocator)
+{
+    assert(integer_type->kind == Type_Kind::INTEGER);
+
+    auto result = alloc<Type>(allocator);
+
+    create_type(result, Type_Kind::ENUM, integer_type->bit_size, TYPE_FLAG_NONE);
+
+    result->enumeration.name = name;
+    result->enumeration.members = members;
+    result->enumeration.integer_type = integer_type;
+
+    return result;
 }
 
 Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator)
@@ -315,7 +330,7 @@ Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocat
     auto name = atom_get(&ctx->atoms, name_);
     temporary_allocator_reset(temp_allocator(), mark);
 
-    Type *struct_type = get_struct_type(members, name, allocator);
+    Type *struct_type = get_struct_type(name, members, allocator);
     struct_type->flags |= TYPE_FLAG_SLICE_STRUCT;
 
     auto global_scope = ctx->resolver->global_scope;
@@ -421,6 +436,18 @@ Type *sym_decl_type(Symbol *sym)
             break;
         }
 
+        case AST_Declaration_Kind::ENUM_MEMBER: {
+            assert(decl->identifier.scope->kind == Scope_Kind::ENUM);
+            auto enum_scope = decl->identifier.scope;
+            assert(enum_scope->enumeration.enum_decl);
+            return enum_scope->enumeration.enum_decl->enumeration.integer_type;
+        }
+
+        case AST_Declaration_Kind::ENUM: {
+            assert(decl->enumeration.enum_type);
+            return decl->enumeration.enum_type;
+        }
+
         case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
         case AST_Declaration_Kind::IMPORT_DIRECTIVE: assert(false); break;
     }
@@ -469,6 +496,8 @@ bool valid_static_type_conversion(Type *from, Type *to)
                 return true;
             } else if (to->kind == Type_Kind::FLOAT) {
                 return false;
+            } else if (to->kind == Type_Kind::ENUM) {
+                return to->enumeration.integer_type == from;
             } else {
                 assert_msg(false, "Not implemented!");
             }
@@ -486,6 +515,10 @@ bool valid_static_type_conversion(Type *from, Type *to)
         }
 
         case Type_Kind::STRUCTURE: return false;
+
+        case Type_Kind::ENUM: {
+            return to == from->enumeration.integer_type;
+        }
 
         case Type_Kind::STATIC_ARRAY: {
             if (to->kind == Type_Kind::SLICE && from->static_array.element_type == to->static_array.element_type) return true;
@@ -539,6 +572,11 @@ void type_to_string(Type *type, String_Builder *sb)
 
         case Type_Kind::STRUCTURE: {
             string_builder_append(sb, "%.*s", (int)type->structure.name.length, type->structure.name.data);
+            break;
+        }
+
+        case Type_Kind::ENUM: {
+            string_builder_append(sb, "%.*s", (int)type->enumeration.name.length, type->enumeration.name.data);
             break;
         }
 

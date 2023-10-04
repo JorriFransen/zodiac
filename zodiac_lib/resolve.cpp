@@ -281,7 +281,11 @@ Resolve_Results resolve_types(Resolver *resolver)
             dynamic_array_remove_ordered(&resolver->nodes_to_type_resolve, flat_index);
             flat_index -= 1;
 
-            dynamic_array_append(&resolver->nodes_to_emit_bytecode, node);
+            bool is_enum_member = node->root.kind == Flat_Node_Kind::DECL && node->root.decl->kind == AST_Declaration_Kind::ENUM_MEMBER;
+
+            if (!is_enum_member) {
+                dynamic_array_append(&resolver->nodes_to_emit_bytecode, node);
+            }
         }
     }
 
@@ -450,7 +454,7 @@ Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error
     return inferred_type;
 }
 
-void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest)
+void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest, Infer_Node *infer_node/*nullptr*/)
 {
     debug_assert(resolver && decl && scope && dest);
 
@@ -510,8 +514,7 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
 
     switch (decl->kind) {
 
-        case AST_Declaration_Kind::INVALID:
-            assert(false);
+        case AST_Declaration_Kind::INVALID: assert(false); break;
 
         case AST_Declaration_Kind::VARIABLE:
         case AST_Declaration_Kind::CONSTANT_VARIABLE:
@@ -576,6 +579,22 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
                 dynamic_array_append(dest, member_node);
             }
 
+            break;
+        }
+
+        case AST_Declaration_Kind::ENUM_MEMBER: {
+            assert(infer_node);
+
+            if (decl->enum_member.value_expr) {
+                flatten_expression(resolver, decl->enum_member.value_expr, scope, dest, infer_node);
+            }
+            decl->identifier.scope = scope;
+            break;
+        }
+
+        case AST_Declaration_Kind::ENUM: {
+            flatten_enum_declaration(resolver, decl, scope);
+            decl->identifier.scope = scope;
             break;
         }
 
@@ -658,6 +677,45 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
 
     Flat_Node flat_decl = to_flat_node(decl, scope);
     dynamic_array_append(dest, flat_decl);
+}
+
+void flatten_enum_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope)
+{
+    assert(decl->kind == AST_Declaration_Kind::ENUM);
+
+    auto sym = scope_get_symbol(scope, decl->identifier);
+    assert(sym->kind == Symbol_Kind::TYPE);
+
+    auto enum_scope = sym->aggregate.scope;
+
+    Infer_Node *infer_node = infer_node_new(resolver->ctx, &builtin_type_s64);
+
+    for (s64 i = 0; i < decl->enumeration.members.count; i++) {
+        auto mem_decl = decl->enumeration.members[i];
+
+        auto node = alloc<Flat_Root_Node>(resolver->node_allocator);
+        node->root.kind = Flat_Node_Kind::DECL;
+        node->root.decl = mem_decl;
+        node->name_index = 0;
+        node->type_index = 0;
+
+        dynamic_array_create(resolver->node_allocator, &node->nodes);
+
+        flatten_declaration(resolver, mem_decl, enum_scope, &node->nodes, infer_node);
+
+        dynamic_array_append(&resolver->nodes_to_name_resolve, node);
+        dynamic_array_append(&resolver->nodes_to_type_resolve, node);
+    }
+
+    auto node = alloc<Flat_Root_Node>(resolver->node_allocator);
+    node->root.kind = Flat_Node_Kind::DECL;
+    node->root.decl = decl;
+    node->name_index = 0;
+    node->type_index = 0;
+
+    dynamic_array_create(resolver->node_allocator, &node->nodes, 1);
+    auto flat_node = to_flat_node(decl, scope);
+    dynamic_array_append(&node->nodes, flat_node);
 }
 
 void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest)
@@ -1108,7 +1166,7 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
             }
 
             case Symbol_State::RESOLVING:
-                assert_msg(false, "Circular dependency");
+                break;
 
             case Symbol_State::RESOLVED:
             case Symbol_State::TYPED: {
@@ -1149,8 +1207,22 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
         case AST_Declaration_Kind::FIELD:
         case AST_Declaration_Kind::FUNCTION:
         case AST_Declaration_Kind::STRUCT:
-        case AST_Declaration_Kind::UNION: {
+        case AST_Declaration_Kind::UNION:
+        case AST_Declaration_Kind::ENUM_MEMBER: {
             // Leaf
+            break;
+        }
+
+        case AST_Declaration_Kind::ENUM: {
+            for (s64 i = 0; i < decl->enumeration.members.count; i++) {
+                auto mem_decl = decl->enumeration.members[i];
+                auto mem_sym = scope_get_symbol(mem_decl->identifier.scope, mem_decl->identifier);
+
+                if (mem_sym->state != Symbol_State::RESOLVED && mem_sym->state != Symbol_State::TYPED) {
+                    resolve_error(resolver->ctx, mem_decl, "Waiting for member to be resolved");
+                    return false;
+                }
+            }
             break;
         }
 
@@ -1297,7 +1369,7 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 
             if (sym->state == Symbol_State::RESOLVING) {
 
-                fatal_resolve_error(ctx, expr, "Circular dependency detected");
+                resolve_error(ctx, expr, "Circular dependency detected");
                 result = false;
                 break;
             } else if (sym->state == Symbol_State::UNRESOLVED) {
@@ -1323,14 +1395,15 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
                 return false;
             }
 
-            auto aggregate_type = base_expr->resolved_type;
+            auto type = base_expr->resolved_type;
 
-            if (aggregate_type->kind == Type_Kind::POINTER) {
-                assert(aggregate_type->pointer.base->flags & TYPE_FLAG_AGGREGATE);
-                aggregate_type = aggregate_type->pointer.base;
-            } else if (aggregate_type->kind == Type_Kind::SLICE) {
-                aggregate_type = aggregate_type->slice.struct_type;
-            } else if (aggregate_type->kind == Type_Kind::STATIC_ARRAY) {
+            if (type->kind == Type_Kind::POINTER) {
+                assert(type->pointer.base->flags & TYPE_FLAG_AGGREGATE);
+                type = type->pointer.base;
+            } else if (type->kind == Type_Kind::SLICE) {
+                type = type->slice.struct_type;
+
+            } else if (type->kind == Type_Kind::STATIC_ARRAY) {
                 if (expr->member.member_name != atom_get(&ctx->atoms, "length")) {
                     fatal_resolve_error(ctx, expr, "Static array does not have member: '%s'", expr->member.member_name.data);
                     result = false;
@@ -1339,27 +1412,38 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 
             }
 
-            assert(aggregate_type->flags & TYPE_FLAG_AGGREGATE);
+            bool is_aggregate = type->flags & TYPE_FLAG_AGGREGATE;
+            assert(is_aggregate || type->kind == Type_Kind::ENUM);
 
-            if (aggregate_type->flags & TYPE_FLAG_UNFINISHED_STRUCT_TYPE) {
+            if (type->flags & TYPE_FLAG_UNFINISHED_STRUCT_TYPE) {
                 resolve_error(ctx, expr, "Waiting for struct type to be resolved");
                 return false;
             }
 
-            assert(aggregate_type->structure.name.length);
+            Atom name;
+            if (is_aggregate) {
+                name = type->structure.name;
+            } else  {
+                name = type->enumeration.name;
+            }
+            assert(name.length);
 
-            auto type_sym = scope_get_symbol(scope, aggregate_type->structure.name);
+            auto type_sym = scope_get_symbol(scope, name);
             assert(type_sym);
             assert(type_sym->kind == Symbol_Kind::TYPE);
             assert(type_sym->aggregate.scope);
-            assert(type_sym->aggregate.scope->kind == Scope_Kind::AGGREGATE);
+
+            if (is_aggregate) { assert(type_sym->aggregate.scope->kind == Scope_Kind::AGGREGATE); }
+            else { assert(type_sym->aggregate.scope->kind == Scope_Kind::ENUM); }
 
             s64 member_index;
             auto sym = scope_get_symbol_direct(type_sym->aggregate.scope, expr->member.member_name, &member_index);
             if (!sym) {
                 if (type_sym->decl) {
-                    fatal_resolve_error(ctx, expr, "'%s' is not a member of aggregate type '%s'", expr->member.member_name.data, aggregate_type->structure.name.data);
-                    fatal_resolve_error(ctx, type_sym->decl, "'%s' was declared here", aggregate_type->structure.name);
+                    const char *decl_type_name = "aggregate";
+                    if (type_sym->decl->kind == AST_Declaration_Kind::ENUM) decl_type_name = "enum";
+                    fatal_resolve_error(ctx, expr, "'%s' is not a member of %s type '%s'", expr->member.member_name.data, decl_type_name, name.data);
+                    fatal_resolve_error(ctx, type_sym->decl, "'%s' was declared here", name.data);
                     result = false;
                 } else {
                     assert(type_sym->flags & SYM_FLAG_BUILTIN);
@@ -1373,10 +1457,17 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
                 }
                 break;
             }
+
             assert(sym);
-            assert(sym->kind == Symbol_Kind::MEMBER);
+            if (is_aggregate) {
+                assert(sym->kind == Symbol_Kind::MEMBER);
+                assert(member_index >= 0 && member_index < type->structure.member_types.count);
+            } else {
+                assert(sym->kind == Symbol_Kind::ENUM_MEMBER);
+                assert(member_index >= 0 && member_index < type->enumeration.members.count);
+            }
+
             assert(sym->state == Symbol_State::TYPED);
-            assert(member_index >= 0 && member_index < aggregate_type->structure.member_types.count);
 
             expr->member.index_in_parent = member_index;
             break;
@@ -1462,6 +1553,72 @@ bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
             break;
         }
     }
+
+    return result;
+}
+
+Dynamic_Array<Type_Enum_Member> resolve_enum_member_values(Zodiac_Context *ctx, AST_Declaration *decl, Scope *scope)
+{
+    assert(decl->kind == AST_Declaration_Kind::ENUM);
+
+    assert(decl->enumeration.integer_type == &builtin_type_s64);
+    s64 current_value = 0;
+
+    auto mem_infer_node = infer_node_new(ctx, &builtin_type_s64);
+
+    // Should be zero/false initialized
+    auto status = temp_array_create<bool>(temp_allocator_allocator(), decl->enumeration.members.count);
+    status.array.count = decl->enumeration.members.count;
+    s64 resolved_count = 0;
+
+    Dynamic_Array<Type_Enum_Member> result;
+    dynamic_array_create(&ctx->ast_allocator, &result, decl->enumeration.members.count);
+    result.count = decl->enumeration.members.count;
+
+    while (resolved_count < decl->enumeration.members.count) {
+
+        for (s64 i = 0; i < decl->enumeration.members.count; i++) {
+
+            if (status[i]) {
+                current_value = result[i].value + 1;
+                continue;
+            }
+
+            auto mem_decl = decl->enumeration.members[i];
+
+            bool member_resolved = true;
+            if (!mem_decl->enum_member.value_expr) {
+
+                mem_decl->enum_member.value_expr = ast_integer_literal_expr_new(ctx, mem_decl->range, { .s64 = current_value });
+
+                bool name_result = name_resolve_expr(ctx, mem_decl->enum_member.value_expr, scope);
+                assert(name_result);
+                bool type_result = type_resolve_expression(ctx->resolver, mem_decl->enum_member.value_expr, scope, mem_infer_node);
+                assert(type_result);
+
+
+            } else {
+                auto cr_result = resolve_constant_integer_expr(mem_decl->enum_member.value_expr);
+                if (cr_result.kind == Constant_Resolve_Result_Kind::OK) {
+
+                    assert(cr_result.type == &builtin_type_s64);
+                    auto resolved_value = cr_result.integer;
+                    current_value = resolved_value.s64;
+                } else {
+                    member_resolved = false;
+                }
+            }
+
+            if (member_resolved) {
+                result[i] = { mem_decl->identifier.name, current_value };
+                current_value += 1;
+                resolved_count += 1;
+                status[i] = true;
+            }
+        }
+    }
+
+    temp_array_destroy(&status);
 
     return result;
 }
@@ -1741,35 +1898,28 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
         }
 
         case AST_Declaration_Kind::STRUCT: {
-            if (decl->aggregate.resolved_type) {
-                assert(decl->aggregate.resolved_type == get_string_type(ctx));
-            } else {
+            // auto temp_member_types = temp_array_create<Type *>(temp_allocator_allocator(), decl->aggregate.fields.count);
+            Dynamic_Array<Type *> member_types;
+            dynamic_array_create(&ctx->ast_allocator, &member_types, decl->aggregate.fields.count);
 
-                // auto temp_member_types = temp_array_create<Type *>(temp_allocator_allocator(), decl->aggregate.fields.count);
-                Dynamic_Array<Type *> member_types;
-                dynamic_array_create(&ctx->ast_allocator, &member_types, decl->aggregate.fields.count);
+            for (s64 i = 0; i < decl->aggregate.fields.count; i++) {
+                auto field = decl->aggregate.fields[i];
+                assert(field->kind == AST_Declaration_Kind::FIELD);
+                assert(field->field.resolved_type);
 
-                for (s64 i = 0; i < decl->aggregate.fields.count; i++) {
-                    auto field = decl->aggregate.fields[i];
-                    assert(field->kind == AST_Declaration_Kind::FIELD);
-                    assert(field->field.resolved_type);
-
-                    dynamic_array_append(&member_types, field->field.resolved_type);
-                }
-
-                auto sym = scope_get_symbol(scope, decl->identifier.name);
-
-                auto unfinished_type = sym->aggregate.unfinished_struct_type;
-                if (unfinished_type) {
-                    assert(unfinished_type->structure.name == decl->identifier.name);
-                    decl->aggregate.resolved_type = finalize_struct_type(unfinished_type, member_types, &ctx->ast_allocator);
-                } else {
-                    decl->aggregate.resolved_type = get_struct_type(member_types, decl->identifier.name, &ctx->ast_allocator);
-                }
-
+                dynamic_array_append(&member_types, field->field.resolved_type);
             }
 
             auto sym = scope_get_symbol(scope, decl->identifier.name);
+
+            auto unfinished_type = sym->aggregate.unfinished_struct_type;
+            if (unfinished_type) {
+                assert(unfinished_type->structure.name == decl->identifier.name);
+                decl->aggregate.resolved_type = finalize_struct_type(unfinished_type, member_types, &ctx->ast_allocator);
+            } else {
+                decl->aggregate.resolved_type = get_struct_type(decl->identifier.name, member_types, &ctx->ast_allocator);
+            }
+
             assert(sym && sym->state == Symbol_State::RESOLVED);
             assert(sym->kind == Symbol_Kind::TYPE);
             sym->state = Symbol_State::TYPED;
@@ -1779,6 +1929,50 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
         }
 
         case AST_Declaration_Kind::UNION: assert(false);
+
+        case AST_Declaration_Kind::ENUM_MEMBER: {
+            if (decl->enum_member.value_expr) {
+                auto value = decl->enum_member.value_expr;
+                assert(EXPR_IS_CONST(value));
+                assert(value->resolved_type == &builtin_type_s64);
+            }
+
+            auto sym = scope_get_symbol(scope, decl->identifier.name);
+            assert(sym && sym->state == Symbol_State::RESOLVED);
+            assert(sym->kind == Symbol_Kind::ENUM_MEMBER);
+            sym->state = Symbol_State::TYPED;
+            break;
+        }
+
+        case AST_Declaration_Kind::ENUM: {
+
+            auto sym = scope_get_symbol(scope, decl->identifier.name);
+            assert(sym->kind == Symbol_Kind::TYPE);
+            auto enum_scope = sym->aggregate.scope;
+
+            for (s64 i = 0; i < decl->enumeration.members.count; i++) {
+                auto mem_decl = decl->enumeration.members[i];
+                auto mem_sym = scope_get_symbol(mem_decl->identifier.scope, mem_decl->identifier);
+                if (mem_sym->state != Symbol_State::TYPED) {
+
+                    resolve_error(ctx, mem_decl, "Waiting for member to be resolved");
+                    return false;
+                }
+            }
+
+            auto members = resolve_enum_member_values(ctx, decl, enum_scope);
+
+            assert(decl->enumeration.integer_type);
+            auto int_type = decl->enumeration.integer_type;
+            assert(int_type->kind == Type_Kind::INTEGER);
+
+            Type *enum_type = get_enum_type(decl->identifier.name, members, int_type, &ctx->ast_allocator);
+            decl->enumeration.enum_type = enum_type;
+
+            assert(sym && sym->state == Symbol_State::RESOLVED);
+            sym->state = Symbol_State::TYPED;
+            break;
+        }
 
         case AST_Declaration_Kind::RUN_DIRECTIVE: {
             if (!run_directive_is_const(ctx, decl->directive)) { // This reports errors internally
@@ -2113,6 +2307,10 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 expr->flags |= AST_EXPR_FLAG_LVALUE;
             }
 
+            if (sym->decl->kind == AST_Declaration_Kind::ENUM_MEMBER) {
+                expr->flags |= AST_EXPR_FLAG_CONST;
+            }
+
             break;
         }
 
@@ -2122,32 +2320,46 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             assert(EXPR_IS_TYPED(base_expr));
 
             bool via_pointer = false;
-            auto aggregate_type = base_expr->resolved_type;
-            if (aggregate_type->kind == Type_Kind::POINTER) {
+            auto type = base_expr->resolved_type;
+            if (type->kind == Type_Kind::POINTER) {
                 via_pointer = true;
-                aggregate_type = aggregate_type->pointer.base;
-            } else if (aggregate_type->kind == Type_Kind::SLICE) {
-                aggregate_type = aggregate_type->slice.struct_type;
-            } else if (aggregate_type->kind == Type_Kind::STATIC_ARRAY) {
+                type = type->pointer.base;
+            } else if (type->kind == Type_Kind::SLICE) {
+                type = type->slice.struct_type;
+            } else if (type->kind == Type_Kind::STATIC_ARRAY) {
                 expr->resolved_type = &builtin_type_s64;
                 break;
             }
-            assert(aggregate_type->flags & TYPE_FLAG_AGGREGATE);
 
-            auto type_sym = scope_get_symbol(scope, aggregate_type->structure.name);
+            bool is_aggregate = type->flags & TYPE_FLAG_AGGREGATE;
+            assert(is_aggregate || type->kind == Type_Kind::ENUM);
+            if (is_aggregate) { assert(type->kind == Type_Kind::STRUCTURE); }
+
+            Atom name;
+            if (is_aggregate) {
+                name = type->structure.name;
+            } else {
+                name = type->enumeration.name;
+            }
+
+            auto type_sym = scope_get_symbol(scope, name);
             assert(type_sym);
             assert(type_sym->kind == Symbol_Kind::TYPE);
 
-            assert(type_sym->aggregate.scope && type_sym->aggregate.scope->kind == Scope_Kind::AGGREGATE);
+            if (is_aggregate) { assert(type_sym->aggregate.scope->kind == Scope_Kind::AGGREGATE); }
+            else { assert(type_sym->aggregate.scope->kind == Scope_Kind::ENUM); }
+
             auto sym = scope_get_symbol(type_sym->aggregate.scope, expr->member.member_name);
-            assert(sym && sym->kind == Symbol_Kind::MEMBER);
+            assert(sym);
+            if (is_aggregate) { assert(sym->kind == Symbol_Kind::MEMBER); }
+            else { assert(sym->kind == Symbol_Kind::ENUM_MEMBER); }
             assert(sym->state == Symbol_State::TYPED);
 
             if (sym->flags & SYM_FLAG_BUILTIN) {
                 assert(sym->builtin_type);
                 expr->resolved_type = sym->builtin_type;
                 expr->flags |= AST_EXPR_FLAG_LVALUE;
-            } else {
+            } else if (is_aggregate){
                 auto mem_decl = sym->decl;
                 assert(mem_decl && mem_decl->kind == AST_Declaration_Kind::FIELD);
                 assert(mem_decl->field.resolved_type);
@@ -2162,6 +2374,14 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     assert(EXPR_IS_LVALUE(base_expr));
                     expr->flags |= AST_EXPR_FLAG_LVALUE;
                 }
+            } else {
+
+                auto mem_decl = sym->decl;
+                assert(mem_decl && mem_decl->kind == AST_Declaration_Kind::ENUM_MEMBER);
+                assert(mem_decl->enum_member.value_expr);
+
+                expr->resolved_type = type;
+
             }
             break;
         }
@@ -2188,7 +2408,9 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             if (base_is_array) {
 
                 if (EXPR_IS_CONST(index_expr)) {
-                    Integer_Value index_val = resolve_constant_integer_expr(index_expr);
+                    auto index_res = resolve_constant_integer_expr(index_expr);
+                    assert(index_res.kind == Constant_Resolve_Result_Kind::OK);
+                    auto index_val = index_res.integer;
                     assert(index_val.s64 >= 0 && index_val.s64 < base_type->static_array.count);
                 }
 
@@ -2396,8 +2618,18 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             assert(rhs->resolved_type);
 
             if (is_binary_arithmetic_op(op)) {
-                assert(lhs->resolved_type->flags & TYPE_FLAG_INT);
-                assert(rhs->resolved_type->flags & TYPE_FLAG_INT);
+                bool left_int = (lhs->resolved_type->flags & TYPE_FLAG_INT);
+                bool right_int = (rhs->resolved_type->flags & TYPE_FLAG_INT);
+
+                if (!left_int) {
+                    fatal_resolve_error(ctx, lhs, "Expected integer type on the left side of arithmetic operator '%s', got type '%s'", ast_binop_to_string[(int)op], temp_type_string(lhs->resolved_type).data);
+                    return false;
+                }
+
+                if (!right_int) {
+                    fatal_resolve_error(ctx, lhs, "Expected integer type on the right side of arithmetic operator '%s', got type '%s'", ast_binop_to_string[(int)op], temp_type_string(rhs->resolved_type).data);
+                    return false;
+                }
 
                 if (lhs->resolved_type->kind == Type_Kind::INTEGER &&
                     rhs->resolved_type->kind == Type_Kind::UNSIZED_INTEGER) {
@@ -2467,18 +2699,55 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             assert(target_type);
 
             bool valid_conversion = false;
+
             if (target_type == operand_type) {
                 valid_conversion = true;
-            } else if (target_type->kind == Type_Kind::INTEGER && operand_type->kind == Type_Kind::INTEGER) {
-                valid_conversion = true;
-            } else if (target_type->kind == Type_Kind::INTEGER && operand_type->kind == Type_Kind::UNSIZED_INTEGER) {
+            } else if (target_type->kind == Type_Kind::INTEGER) {
+
+                switch (operand_type->kind) {
+                    case Type_Kind::INVALID: assert(false); break;
+                    case Type_Kind::VOID: assert(false); break;
+
+                    case Type_Kind::UNSIZED_INTEGER: {
+                        valid_conversion = valid_static_type_conversion(operand_type, target_type);
+                        break;
+                    }
+
+                    case Type_Kind::INTEGER: {
+                        valid_conversion = true;
+                        break;
+                    }
+
+                    case Type_Kind::FLOAT: assert(false); break;
+                    case Type_Kind::BOOLEAN: assert(false); break;
+                    case Type_Kind::POINTER: assert(false); break;
+                    case Type_Kind::STRUCTURE: assert(false); break;
+
+                    case Type_Kind::ENUM: {
+                        if (!valid_static_type_conversion(operand_type, target_type)) {
+                            fatal_resolve_error(ctx, expr, "Invalid cast from enum to int (cast to underlying integer type first)");
+                            return false;
+                        }
+                        valid_conversion = true;
+                        break;
+                    }
+
+                    case Type_Kind::STATIC_ARRAY: assert(false); break;
+                    case Type_Kind::SLICE: assert(false); break;
+                    case Type_Kind::FUNCTION: assert(false); break;
+                }
+
+            } else if (target_type->kind == Type_Kind::ENUM) {
                 valid_conversion = valid_static_type_conversion(operand_type, target_type);
             } else if (target_type->kind == Type_Kind::POINTER && operand_type->kind == Type_Kind::INTEGER) {
                 valid_conversion = valid_static_type_conversion(operand_type, target_type);
             } else if (target_type->kind == Type_Kind::BOOLEAN && operand_type->kind == Type_Kind::POINTER) {
                 valid_conversion = true;
+            } else {
+                assert(false);
             }
-            assert(valid_conversion);
+
+            assert_msg(valid_conversion, "TODO: Report invalid cast");
 
             expr->resolved_type = target_type;
 
@@ -2701,7 +2970,7 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
                         struct_type = sym->aggregate.unfinished_struct_type;
                     } else {
                         struct_type = alloc<Type>(&ctx->ast_allocator);
-                        create_struct_type(struct_type, {}, sym->name);
+                        create_struct_type(struct_type, sym->name, {});
                         struct_type->flags |= TYPE_FLAG_UNFINISHED_STRUCT_TYPE;
                         sym->aggregate.unfinished_struct_type = struct_type;
                     }
@@ -2721,7 +2990,6 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
                 assert(sym->decl);
 
                 auto type = sym_decl_type(sym);
-                assert((type->flags & TYPE_FLAG_AGGREGATE) == TYPE_FLAG_AGGREGATE);
                 ts->resolved_type = type;
                 return true;
 
@@ -2750,7 +3018,9 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
             assert(length_expr->resolved_type->kind == Type_Kind::INTEGER);
             assert(length_expr->resolved_type == &builtin_type_s64); // This might not be the case when using a identifier (pointing to constant)
 
-            Integer_Value length_val = resolve_constant_integer_expr(length_expr);
+            auto length_res = resolve_constant_integer_expr(length_expr);
+            assert(length_res.kind == Constant_Resolve_Result_Kind::OK);
+            auto length_val = length_res.integer;
             assert(length_val.s64 >= 1);
 
             auto elem_ts = ts->static_array.element_ts;

@@ -49,6 +49,7 @@ enum class Type_Kind
     POINTER,
 
     STRUCTURE,
+    ENUM,
     STATIC_ARRAY,
     SLICE,
     FUNCTION,
@@ -62,6 +63,12 @@ enum Type_Flag : Type_Flags
     TYPE_FLAG_AGGREGATE              = 0x02,
     TYPE_FLAG_SLICE_STRUCT           = 0x04,
     TYPE_FLAG_UNFINISHED_STRUCT_TYPE = 0x08,
+};
+
+struct Type_Enum_Member
+{
+    Atom name;
+    s64 value;
 };
 
 struct Type
@@ -87,6 +94,12 @@ struct Type
             Atom name;
             Dynamic_Array<Type *> member_types;
         } structure;
+
+        struct {
+            Atom name;
+            Dynamic_Array<Type_Enum_Member> members;
+            Type *integer_type;
+        } enumeration;
 
         struct {
             Type *element_type;
@@ -139,16 +152,17 @@ ZAPI void create_type(Type *type, Type_Kind kind, u64 bit_size, Type_Flags flags
 ZAPI void create_integer_type(Type *type, u64 bit_size, bool sign);
 ZAPI void create_float_type(Type *type, u64 bit_size);
 ZAPI void create_pointer_type(Type *type, Type *base_type);
-ZAPI void create_struct_type(Type *type, Dynamic_Array<Type *> member_types, Atom name);
+ZAPI void create_struct_type(Type *type, Atom name, Dynamic_Array<Type *> member_types);
 ZAPI void create_static_array_type(Type *type, Type *element_type, u64 count);
 ZAPI void create_slice_type(Type *type, Type *element_type, Type *struct_type);
 ZAPI void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types, bool vararg = false);
 
 ZAPI Type *get_pointer_type(Type *base, Allocator *allocator);
 
-ZAPI Type *get_struct_type(Zodiac_Context *zc, Array_Ref<Type *> member_types, const char *cstr_name, Allocator *allocator);
-ZAPI Type *get_struct_type(Array_Ref<Type *> member_types, Atom name, Allocator *allocator);
+ZAPI Type *get_struct_type(Zodiac_Context *zc, const char *cstr_name, Array_Ref<Type *> member_types, Allocator *allocator);
+ZAPI Type *get_struct_type(Atom name, Array_Ref<Type *> member_types, Allocator *allocator);
 ZAPI Type *finalize_struct_type(Type *unfinished, Array_Ref<Type *> member_types, Allocator *allocator);
+ZAPI Type *get_enum_type(Atom name, Dynamic_Array<Type_Enum_Member> members, Type *integer_type, Allocator *allocator);
 
 ZAPI Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator);
 ZAPI Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocator);

@@ -29,6 +29,8 @@ enum class Symbol_Kind : u16
 
     TYPE,
     MEMBER,
+
+    ENUM_MEMBER,
 };
 
 enum class Symbol_State : u16
@@ -74,6 +76,7 @@ struct Symbol
             Scope *scope;
             Type *unfinished_struct_type;
         } aggregate;
+
     };
 };
 
@@ -83,6 +86,7 @@ enum class Scope_Kind
     FUNCTION_PARAMETER,
     FUNCTION_LOCAL,
     AGGREGATE,
+    ENUM,
 };
 
 struct Scope
@@ -103,6 +107,10 @@ struct Scope
         struct {
             AST_File *file;
         } global;
+
+        struct {
+            AST_Declaration *enum_decl;
+        } enumeration;
     };
 };
 
