@@ -1023,7 +1023,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                    expr->resolved_type->kind == Type_Kind::FLOAT ||
                    expr->resolved_type->kind == Type_Kind::BOOLEAN ||
                    (expr->resolved_type->kind == Type_Kind::STRUCTURE && (expr->kind == AST_Expression_Kind::COMPOUND || expr->kind == AST_Expression_Kind::IDENTIFIER)) ||
-                   (expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && expr->kind == AST_Expression_Kind::COMPOUND || expr->kind == AST_Expression_Kind::IDENTIFIER),
+                   (expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && expr->kind == AST_Expression_Kind::COMPOUND || expr->kind == AST_Expression_Kind::IDENTIFIER) ||
+                   expr->resolved_type->kind == Type_Kind::ENUM,
                    "Constant expression substition not supported for this type");
 
         return ast_const_expr_to_bytecode(bc, expr, enforce_type);
@@ -1611,7 +1612,18 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
             break;
         }
 
-        case AST_Expression_Kind::MEMBER: assert(false); break;
+        case AST_Expression_Kind::MEMBER: {
+            assert(expr->resolved_type->kind == Type_Kind::ENUM);
+            auto enum_type = expr->resolved_type;
+
+            Constant_Resolve_Result result = resolve_constant_integer_expr(expr);
+            assert(result.kind == Constant_Resolve_Result_Kind::OK);
+            assert(result.type == enum_type);
+            auto result_reg = bytecode_integer_literal(bc->builder, enum_type->enumeration.integer_type, result.integer.s64);
+            result_reg.type = enum_type;
+            return result_reg;
+        }
+
         case AST_Expression_Kind::INDEX: assert(false); break;
         case AST_Expression_Kind::CALL: assert(false); break;
 
@@ -1638,11 +1650,21 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
         }
 
         case AST_Expression_Kind::BINARY: {
-            assert(type->kind == Type_Kind::INTEGER);
+            bool is_cmp = is_binary_cmp_op(expr->binary.op);
+
+            assert(type->kind == Type_Kind::INTEGER ||
+                   (type->kind == Type_Kind::BOOLEAN && is_cmp));
+
             auto result = resolve_constant_integer_binary_expr(expr, type);
             assert(result.kind == Constant_Resolve_Result_Kind::OK);
-            assert(result.type == type);
-            return bytecode_integer_literal(bc->builder, type, result.integer);
+            if (is_cmp) {
+                assert(result.type == &builtin_type_bool);
+                return bytecode_boolean_literal(bc->builder, result.type, result.integer.u64);
+            } else {
+                assert(result.type == type);
+                return bytecode_integer_literal(bc->builder, result.type, result.integer);
+            }
+
             break;
         }
 

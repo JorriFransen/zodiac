@@ -3446,6 +3446,203 @@ b == true)OUT_STR" };
     return MUNIT_OK;
 }
 
+MunitResult Enum_Implicit_Values(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        Day :: enum {
+
+            MONDAY;
+            TUESDAY;
+            WEDNESDAY,
+            THURSDAY,
+            FRIDAY;
+            SATURDAY;
+            SUNDAY;
+
+        }
+
+        print_day :: (d: Day) {
+            println(d);
+        }
+
+        main :: () {
+            println("Day.MONDAY: ", Day.MONDAY);
+            println("Day.TUESDAY: ", Day.TUESDAY);
+            println("Day.WEDNESDAY: ", Day.WEDNESDAY);
+            println("Day.THURSDAY: ", Day.THURSDAY);
+            println("Day.FRIDAY: ", Day.FRIDAY);
+            println("Day.SATURDAY: ", Day.SATURDAY);
+            println("Day.SUNDAY: ", Day.SUNDAY);
+
+            d := Day.SATURDAY;
+            print_day(d);
+
+            return 0;
+        }
+
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(Day.MONDAY: 0
+Day.TUESDAY: 1
+Day.WEDNESDAY: 2
+Day.THURSDAY: 3
+Day.FRIDAY: 4
+Day.SATURDAY: 5
+Day.SUNDAY: 6
+5)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Enum_Operations(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        Day :: enum {
+
+            MONDAY;
+            TUESDAY;
+            WEDNESDAY,
+            THURSDAY,
+            FRIDAY;
+            SATURDAY;
+            SUNDAY;
+
+        }
+        main :: () {
+            println(Day.MONDAY == Day.MONDAY);
+            println(Day.MONDAY == Day.TUESDAY);
+
+            d := Day.FRIDAY;
+            println(d == Day.FRIDAY);
+            println(d == Day.SUNDAY);
+
+            result := cast(s64, Day.TUESDAY) + cast(s64, Day.WEDNESDAY);
+            println(result);
+            result_as_day := cast(Day, result);
+            println(result_as_day);
+            println(result_as_day == Day.SATURDAY);
+            println(result_as_day == Day.THURSDAY);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(true
+false
+true
+false
+3
+3
+false
+true)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Enum_Mixed_Values(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        Mode :: enum {
+            INVALID;
+            READ  :: 11,
+            WRITE :: 22;
+            DRY_RUN;
+
+            SECRET :: 42;
+            UNIMPORTANT;
+        }
+        main :: () {
+            println("Mode.INVALID: ", Mode.INVALID);
+            println("Mode.READ: ", Mode.READ);
+            println("Mode.WRITE: ", Mode.WRITE);
+            println("Mode.DRY_RUN: ", Mode.DRY_RUN);
+            println("Mode.SECRET: ", Mode.SECRET);
+            println("Mode.UNIMPORTANT: ", Mode.UNIMPORTANT);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(Mode.INVALID: 0
+Mode.READ: 11
+Mode.WRITE: 22
+Mode.DRY_RUN: 23
+Mode.SECRET: 42
+Mode.UNIMPORTANT: 43)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Enum_Members_As_Values(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        Token_Kind :: enum {
+
+            SECOND_NON_ASCII :: NAME + 1;
+            FIRST_NON_ASCII :: 256;
+            NAME :: FIRST_NON_ASCII;
+            INT;
+
+            PLUS :: Token_Kind2.PLUS;
+            STAR;
+        }
+
+        Token_Kind2 :: enum {
+
+            STAR :: 42,
+            PLUS :: 43,
+
+            FIRST_NON_ASCII :: NAME;
+            NAME :: 256;
+            INT;
+        }
+
+        main :: () {
+            println("Token.FIRST_NON_ASCII: ", Token_Kind.FIRST_NON_ASCII);
+            println("Token.SECOND_NON_ASCII: ", Token_Kind.SECOND_NON_ASCII);
+            println("Token.NAME: ", Token_Kind.NAME);
+            println("Token.INT: ", Token_Kind.INT);
+            println("Token.PLUS: ", Token_Kind.PLUS);
+            println("Token.STAR: ", Token_Kind.STAR);
+            println("Token_Kind2.STAR: ", Token_Kind2.STAR);
+            println("Token_Kind2.PLUS: ", Token_Kind2.PLUS);
+            println("Token_Kind2.FIRST_NON_ASCII: ", Token_Kind2.FIRST_NON_ASCII);
+            println("Token_Kind2.NAME: ", Token_Kind2.NAME);
+            println("Token_Kind2.INT: ", Token_Kind2.INT);
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(Token.FIRST_NON_ASCII: 256
+Token.SECOND_NON_ASCII: 257
+Token.NAME: 256
+Token.INT: 257
+Token.PLUS: 43
+Token.STAR: 44
+Token_Kind2.STAR: 42
+Token_Kind2.PLUS: 43
+Token_Kind2.FIRST_NON_ASCII: 256
+Token_Kind2.NAME: 256
+Token_Kind2.INT: 257)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
 #undef RESOLVE_ERR
 
 }}

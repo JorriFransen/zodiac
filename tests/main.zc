@@ -22,18 +22,22 @@ Mode :: enum {
 
 Token_Kind :: enum {
 
+    SECOND_NON_ASCII :: NAME + 1;
     FIRST_NON_ASCII :: 256;
     NAME :: FIRST_NON_ASCII;
     INT;
+
+    PLUS :: Token_Kind2.PLUS;
+    STAR;
 }
 
 Token_Kind2 :: enum {
 
-    STAR,
-    PLUS,
+    STAR :: 42,
+    PLUS :: 43,
 
     FIRST_NON_ASCII :: NAME;
-    NAME;
+    NAME :: 256;
     INT;
 }
 
@@ -88,8 +92,11 @@ print_modes :: () {
 
 print_token_kinds :: () {
     println("Token.FIRST_NON_ASCII: ", Token_Kind.FIRST_NON_ASCII);
+    println("Token.SECOND_NON_ASCII: ", Token_Kind.SECOND_NON_ASCII);
     println("Token.NAME: ", Token_Kind.NAME);
     println("Token.INT: ", Token_Kind.INT);
+    println("Token.PLUS: ", Token_Kind.PLUS);
+    println("Token.STAR: ", Token_Kind.STAR);
     println();
 }
 

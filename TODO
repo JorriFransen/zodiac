@@ -1,4 +1,6 @@
 
+- Allow character literals as enum members (maybe only with explicit cast?)
+
 - FFI with different return types
 
 - Lazy && and ||

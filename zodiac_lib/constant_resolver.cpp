@@ -16,9 +16,9 @@ Constant_Resolve_Result resolve_constant_integer_expr(AST_Expression *expr, Type
     if (type) {
         assert(expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER ||
                expr->resolved_type == type);
-        assert(type->kind == Type_Kind::INTEGER);
+        assert(type->kind == Type_Kind::INTEGER || type->kind == Type_Kind::ENUM);
     } else {
-        assert(expr->resolved_type->kind == Type_Kind::INTEGER);
+        assert(expr->resolved_type->kind == Type_Kind::INTEGER || expr->resolved_type->kind == Type_Kind::ENUM);
         type = expr->resolved_type;
     }
 
@@ -79,7 +79,16 @@ Constant_Resolve_Result resolve_constant_integer_expr(AST_Expression *expr, Type
             return resolve_constant_integer_expr(init_expr, init_type);
         }
 
-        case AST_Expression_Kind::MEMBER: assert(false); break;
+        case AST_Expression_Kind::MEMBER: {
+            assert(expr->resolved_type->kind == Type_Kind::ENUM);
+            auto enum_type = expr->resolved_type;
+            assert(enum_type->enumeration.integer_type == &builtin_type_s64);
+
+            auto value = enum_type->enumeration.members[expr->member.index_in_parent].value;
+
+            return { Constant_Resolve_Result_Kind::OK, type, { { .s64 = value } } };
+        }
+
         case AST_Expression_Kind::INDEX: assert(false); break;
         case AST_Expression_Kind::CALL: assert(false); break;
 
@@ -117,6 +126,16 @@ Constant_Resolve_Result resolve_constant_integer_expr(AST_Expression *expr, Type
         }
 
         case AST_Expression_Kind::CAST: {
+            if (expr->cast.value->resolved_type->kind == Type_Kind::ENUM) {
+                auto enum_type = expr->cast.value->resolved_type;
+                assert(expr->resolved_type->kind == Type_Kind::INTEGER);
+                auto result = resolve_constant_integer_expr(expr->cast.value, enum_type);
+                assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                assert(result.type == enum_type);
+                assert(enum_type->enumeration.integer_type == &builtin_type_s64);
+
+                return { Constant_Resolve_Result_Kind::OK, expr->resolved_type, { { .s64 = result.integer.s64 } } };
+            }
             return resolve_constant_integer_expr(expr->cast.value, expr->resolved_type);
             break;
         }
@@ -143,34 +162,61 @@ Constant_Resolve_Result resolve_constant_integer_binary_expr(AST_Expression *exp
     if (type) {
         assert(expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER ||
                expr->resolved_type == type);
-        assert(type->kind == Type_Kind::INTEGER);
+        assert(type->kind == Type_Kind::INTEGER ||
+               type->kind == Type_Kind::BOOLEAN);
     } else {
         assert(expr->resolved_type->kind == Type_Kind::INTEGER);
         type = expr->resolved_type;
     }
 
-    assert(type->kind == Type_Kind::INTEGER);
+    assert(type->kind == Type_Kind::INTEGER ||
+            type->kind == Type_Kind::BOOLEAN);
 
     auto size = type->bit_size;
 
-    auto lhs_res = resolve_constant_integer_expr(expr->binary.lhs, type);
+    auto lhs_type = type;
+    auto rhs_type = type;
+    if (is_binary_cmp_op(expr->binary.op)) {
+        lhs_type = expr->binary.lhs->resolved_type;
+        rhs_type = expr->binary.rhs->resolved_type;
+        assert(lhs_type == rhs_type);
+    }
+
+    auto lhs_res = resolve_constant_integer_expr(expr->binary.lhs, lhs_type);
     assert(lhs_res.kind == Constant_Resolve_Result_Kind::OK);
-    auto rhs_res = resolve_constant_integer_expr(expr->binary.rhs, type);
+    assert(lhs_res.type->kind == Type_Kind::INTEGER || lhs_res.type->kind == Type_Kind::ENUM);
+
+    auto rhs_res = resolve_constant_integer_expr(expr->binary.rhs, rhs_type);
     assert(rhs_res.kind == Constant_Resolve_Result_Kind::OK);
+    assert(rhs_res.type->kind == Type_Kind::INTEGER || rhs_res.type->kind == Type_Kind::ENUM);
+
+    assert(lhs_res.type == rhs_res.type);
 
     Integer_Value lhs_val = lhs_res.integer;
     Integer_Value rhs_val = rhs_res.integer;
 
     Integer_Value result;
 
-#define EXECUTE_SIZED_BINOP(size, op) { result.u##size = (lhs_val).u##size op (rhs_val).u##size; break; }
+#define EXECUTE_SIZED_BINOP(size, op) case (size): { result.u##size = lhs_val.u##size op rhs_val.u##size; break; }
 
 #define EXECUTE_BINOP(op) { switch (size) { \
-        case 8:  EXECUTE_SIZED_BINOP(8, op)  \
-        case 16: EXECUTE_SIZED_BINOP(16, op) \
-        case 32: EXECUTE_SIZED_BINOP(32, op) \
-        case 64: EXECUTE_SIZED_BINOP(64, op) \
+        default: assert(false); \
+        EXECUTE_SIZED_BINOP(8, op)  \
+        EXECUTE_SIZED_BINOP(16, op) \
+        EXECUTE_SIZED_BINOP(32, op) \
+        EXECUTE_SIZED_BINOP(64, op) \
     }   break;                              \
+}
+
+#define EXECUTE_SIZED_CMP_BINOP(size, op) case (size): { result.u64 = lhs_val.u##size op rhs_val.u##size; break; }
+
+#define EXECUTE_CMP_BINOP(op) { switch (size) { \
+        default: assert(false); \
+        EXECUTE_SIZED_CMP_BINOP(8, op) \
+        EXECUTE_SIZED_CMP_BINOP(16, op) \
+        EXECUTE_SIZED_CMP_BINOP(32, op) \
+        EXECUTE_SIZED_CMP_BINOP(64, op) \
+    }   break; \
 }
 
     switch (expr->binary.op) {
@@ -181,7 +227,7 @@ Constant_Resolve_Result resolve_constant_integer_binary_expr(AST_Expression *exp
         case AST_Binary_Operator::MUL: EXECUTE_BINOP(*)
         case AST_Binary_Operator::DIV: EXECUTE_BINOP(/)
 
-        case AST_Binary_Operator::EQ: assert(false); break;
+        case AST_Binary_Operator::EQ: EXECUTE_CMP_BINOP(==);
         case AST_Binary_Operator::NEQ: assert(false); break;
         case AST_Binary_Operator::LT: assert(false); break;
         case AST_Binary_Operator::GT: assert(false); break;

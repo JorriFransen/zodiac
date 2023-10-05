@@ -1601,7 +1601,8 @@ Dynamic_Array<Type_Enum_Member> resolve_enum_member_values(Zodiac_Context *ctx, 
                 auto cr_result = resolve_constant_integer_expr(mem_decl->enum_member.value_expr);
                 if (cr_result.kind == Constant_Resolve_Result_Kind::OK) {
 
-                    assert(cr_result.type == &builtin_type_s64);
+                    assert(cr_result.type == &builtin_type_s64 ||
+                           (cr_result.type->kind == Type_Kind::ENUM && cr_result.type->enumeration.integer_type == &builtin_type_s64));
                     auto resolved_value = cr_result.integer;
                     current_value = resolved_value.s64;
                 } else {
@@ -1934,7 +1935,8 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             if (decl->enum_member.value_expr) {
                 auto value = decl->enum_member.value_expr;
                 assert(EXPR_IS_CONST(value));
-                assert(value->resolved_type == &builtin_type_s64);
+                assert(value->resolved_type == &builtin_type_s64 ||
+                       (value->resolved_type->kind == Type_Kind::ENUM) && value->resolved_type->enumeration.integer_type == &builtin_type_s64);
             }
 
             auto sym = scope_get_symbol(scope, decl->identifier.name);
@@ -2382,6 +2384,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                 expr->resolved_type = type;
 
+                expr->flags |= AST_EXPR_FLAG_CONST;
             }
             break;
         }
@@ -2680,6 +2683,10 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
             } else {
                 assert(false);
+            }
+
+            if ((lhs->flags & rhs->flags & AST_EXPR_FLAG_CONST)) {
+                expr->flags |= AST_EXPR_FLAG_CONST;
             }
 
             break;

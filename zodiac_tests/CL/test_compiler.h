@@ -121,6 +121,10 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Zero_Init_Globals) \
     X(Unsized_Int_To_Real) \
     X(Implicit_Cast_To_Bool) \
+    X(Enum_Implicit_Values) \
+    X(Enum_Operations) \
+    X(Enum_Mixed_Values) \
+    X(Enum_Members_As_Values) \
 
 
 // Function declarations
