@@ -411,26 +411,33 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         expect_token(parser, '{');
 
+        Dynamic_Array<AST_Statement *> cases;
+        dynamic_array_create(&parser->context->ast_allocator, &cases);
+
         while (!is_token(parser, '}')) {
 
+            auto case_start = cur_tok(parser).range.start;
             if (match_keyword(parser, keyword_case)) {
 
                 AST_Expression *case_value = parse_expression(parser);
                 expect_token(parser, ':');
 
-                AST_Statement *case_stmt = parse_statement(parser);
+                AST_Statement *case_body = parse_statement(parser);
 
                 assert(case_value);
-                assert(case_stmt);
-                assert_msg(false, "TODO: Create switch case");
+                assert(case_body);
+                AST_Statement *case_stmt = ast_switch_case_stmt_new(parser->context, {case_start, case_body->range.end}, case_value, case_body);
+
+                dynamic_array_append(&cases, case_stmt);
 
             } else if (match_keyword(parser, keyword_default)) {
 
                 expect_token(parser, ':');
                 AST_Statement *default_stmt = parse_statement(parser);
 
-                assert(default_stmt);
-                assert_msg(false, "TODO: Create switch default");
+                AST_Statement *case_stmt = ast_switch_case_stmt_new(parser->context, {case_start, default_stmt->range.end}, nullptr, default_stmt);
+
+                dynamic_array_append(&cases, case_stmt);
 
             } else {
                 auto ct = cur_tok(parser);
@@ -439,10 +446,17 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
             }
         }
 
+        if (!cases.count) {
+            report_parse_error(parser,  start_pos, "Switch without cases");
+            return nullptr;
+        }
+
+        auto end_pos = cur_tok(parser).range.start;
         expect_token(parser, '}');
 
         assert(switch_value);
-        assert_msg(false, "TODO: Create switch statement");
+
+        return ast_switch_stmt_new(parser->context, {start_pos, end_pos}, switch_value, cases);
 
     } else if (match_keyword(parser, keyword_return)) {
 

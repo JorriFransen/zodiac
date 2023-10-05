@@ -13,23 +13,23 @@ Day :: enum {
 
 main :: () {
 
-    // print_day(Day.THURSDAY);
+    print_day(Day.THURSDAY);
 
     // simple_integer_switch(10);
     // complex_integer_switch(10);
+    // complex_enum_switch(10);
 
     return 0;
 }
 
-// print_day :: (d: Day) {
-//
-//     switch d {
-//         case Day.MONDAY: println("Day.MONDAY: ", d);
-//         case Day.TUESDAY: println("Day.TUESDAY: ", d);
-//         default: println("Some other day: ", d);
-//     }
-//
-// }
+print_day :: (d: Day) {
+
+    switch d {
+        case Day.MONDAY: println("Day.MONDAY: ", d);
+        case Day.TUESDAY: println("Day.TUESDAY: ", d);
+        default: println("Some other day: ", d);
+    }
+}
 
 // simple_integer_switch :: (i: s64) {
 //     return 0;

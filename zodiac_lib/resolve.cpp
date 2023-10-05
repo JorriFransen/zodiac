@@ -812,6 +812,29 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
             break;
         }
 
+        case AST_Statement_Kind::SWITCH: {
+
+            flatten_expression(resolver, stmt->switch_stmt.value, scope, dest);
+
+            for (s64 i = 0; i < stmt->switch_stmt.cases.count; i++) {
+                flatten_statement(resolver, stmt->switch_stmt.cases[i], scope, dest);
+            }
+
+            break;
+        }
+
+        case AST_Statement_Kind::SWITCH_CASE: {
+
+            auto value = stmt->switch_case_stmt.case_value;
+            if (value) {
+                flatten_expression(resolver, stmt->switch_case_stmt.case_value, scope, dest);
+            }
+
+            flatten_statement(resolver, stmt->switch_case_stmt.case_stmt, scope, dest);
+
+            break;
+        }
+
         case AST_Statement_Kind::RETURN: {
 
             if (stmt->return_stmt.value) {
@@ -1291,6 +1314,8 @@ bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
             break;
         }
 
+        case AST_Statement_Kind::SWITCH:
+        case AST_Statement_Kind::SWITCH_CASE:
         case AST_Statement_Kind::DEFER: {
             // Leaf
             break;
@@ -2114,6 +2139,45 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                 fatal_resolve_error(resolver->ctx, cond, "Expected boolean type, got: %s", temp_type_string(cond->resolved_type).data);
                 return false;
             }
+            break;
+        }
+
+        case AST_Statement_Kind::SWITCH: {
+            Type *value_type = stmt->switch_stmt.value->resolved_type;
+            assert(value_type);
+
+            assert(value_type->kind == Type_Kind::INTEGER || value_type->kind == Type_Kind::ENUM);
+
+            for (s64 i = 0; i < stmt->switch_stmt.cases.count; i++) {
+                auto case_stmt = stmt->switch_stmt.cases[i];
+
+                if (!case_stmt->switch_case_stmt.is_default) {
+                    assert(case_stmt->switch_case_stmt.case_value);
+
+                    auto case_value = case_stmt->switch_case_stmt.case_value;
+
+                    if (case_value->resolved_type != value_type) {
+                        fatal_resolve_error(resolver->ctx, case_value, "Mismatching type in switch case, expected: '%s', got: '%s'",
+                                            temp_type_string(value_type).data, temp_type_string(case_value->resolved_type).data);
+                    }
+                }
+            }
+
+            break;
+        }
+
+        case AST_Statement_Kind::SWITCH_CASE: {
+            auto value_expr = stmt->switch_case_stmt.case_value;
+            if (value_expr) {
+                assert(value_expr->resolved_type);
+                if (!(value_expr->resolved_type->kind == Type_Kind::INTEGER ||
+                      value_expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER ||
+                      value_expr->resolved_type->kind == Type_Kind::ENUM)) {
+                    fatal_resolve_error(resolver->ctx, value_expr, "Expected integer or enum type, got: '%s'", temp_type_string(value_expr->resolved_type).data);
+                    return false;
+                }
+            }
+
             break;
         }
 

@@ -244,6 +244,20 @@ struct AST_If_Statement
     Scope *else_scope;
 };
 
+struct AST_Switch_Case_Statement
+{
+    AST_Expression *case_value;
+    AST_Statement *case_stmt;
+    bool is_default;
+};
+
+struct AST_Switch_Statement
+{
+    AST_Expression *value;
+
+    Dynamic_Array<AST_Statement *> cases;
+};
+
 struct AST_While_Statement
 {
     AST_Expression *cond;
@@ -291,6 +305,8 @@ enum class AST_Statement_Kind
     IF,
     WHILE,
     FOR,
+    SWITCH,
+    SWITCH_CASE,
 
     DEFER,
 
@@ -327,6 +343,8 @@ struct AST_Statement
         AST_If_Statement if_stmt;
         AST_While_Statement while_stmt;
         AST_For_Statement for_stmt;
+        AST_Switch_Statement switch_stmt;
+        AST_Switch_Case_Statement switch_case_stmt;
         AST_Defer_Statement defer_stmt;
         AST_Return_Statement return_stmt;
         AST_Print_Expression print_expr;
@@ -564,6 +582,8 @@ ZAPI void ast_call_stmt_create(AST_Expression *call, AST_Statement *out_stmt);
 ZAPI void ast_if_stmt_create(Dynamic_Array<AST_If_Block> blocks, AST_Statement *else_stmt, AST_Statement *out_stmt);
 ZAPI void ast_while_stmt_create(AST_Expression *cond, AST_Statement *body_stmt, AST_Statement *out_stmt);
 ZAPI void ast_for_stmt_create(AST_Statement *init_stmt, AST_Expression *cond_expr, AST_Statement *inc_stmt, AST_Statement *body_stmt, AST_Statement *out_stmt);
+ZAPI void ast_switch_stmt_create(AST_Expression *value, Dynamic_Array<AST_Statement *> cases, AST_Statement *out_stmt);
+ZAPI void ast_switch_case_stmt_create(AST_Expression *case_value, AST_Statement *case_stmt, AST_Statement *out_stmt);
 ZAPI void ast_defer_stmt_create(AST_Statement *stmt_to_defer, AST_Statement *out_stmt);
 ZAPI void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt);
 ZAPI void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, bool newline, AST_Statement *out_stmt);
@@ -620,6 +640,8 @@ ZAPI AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, Source_Range range, A
 ZAPI AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_If_Block> blocks, AST_Statement *else_stmt);
 ZAPI AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *cond, AST_Statement *body_stmt);
 ZAPI AST_Statement *ast_for_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Declaration *init_decl, AST_Expression *cond_expr, AST_Statement *inc_stmt, AST_Statement *body_stmt);
+ZAPI AST_Statement *ast_switch_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *value, Dynamic_Array<AST_Statement *>cases);
+ZAPI AST_Statement *ast_switch_case_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *case_value, AST_Statement *case_stmt);
 ZAPI AST_Statement *ast_defer_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Statement *stmt_to_defer);
 ZAPI AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *value);
 ZAPI AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> exprs, bool newline);

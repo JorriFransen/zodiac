@@ -289,6 +289,32 @@ void ast_for_stmt_create(AST_Declaration *init_decl, AST_Expression *cond_expr, 
     out_stmt->for_stmt.scope = nullptr;
 }
 
+void ast_switch_stmt_create(AST_Expression *value, Dynamic_Array<AST_Statement *> cases, AST_Statement *out_stmt)
+{
+    ast_statement_create(AST_Statement_Kind::SWITCH, out_stmt);
+
+    bool found_default = false;
+    for (s64 i = 0; i < cases.count; i++) {
+        assert(cases[i]->kind == AST_Statement_Kind::SWITCH_CASE);
+        if (cases[i]->switch_case_stmt.is_default) {
+            assert_msg(!found_default, "Multiple default blocks in switch case");
+            found_default = true;
+        }
+    }
+
+    out_stmt->switch_stmt.value = value;
+    out_stmt->switch_stmt.cases = cases;
+}
+
+void ast_switch_case_stmt_create(AST_Expression *case_value, AST_Statement *case_stmt, AST_Statement *out_stmt)
+{
+    ast_statement_create(AST_Statement_Kind::SWITCH_CASE, out_stmt);
+
+    out_stmt->switch_case_stmt.case_value = case_value;
+    out_stmt->switch_case_stmt.case_stmt = case_stmt;
+    out_stmt->switch_case_stmt.is_default = case_value == nullptr;
+}
+
 void ast_defer_stmt_create(AST_Statement *stmt_to_defer, AST_Statement *out_stmt)
 {
     ast_statement_create(AST_Statement_Kind::DEFER, out_stmt);
@@ -760,6 +786,20 @@ AST_Statement *ast_for_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Dec
 {
     auto stmt = ast_statement_new(ctx, range);
     ast_for_stmt_create(init_decl, cond_expr, inc_stmt, body_stmt, stmt);
+    return stmt;
+}
+
+ZAPI AST_Statement *ast_switch_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *value, Dynamic_Array<AST_Statement *>cases)
+{
+    auto stmt = ast_statement_new(ctx, range);
+    ast_switch_stmt_create(value, cases, stmt);
+    return stmt;
+}
+
+AST_Statement *ast_switch_case_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *case_value, AST_Statement *case_stmt)
+{
+    auto stmt = ast_statement_new(ctx, range);
+    ast_switch_case_stmt_create(case_value, case_stmt, stmt);
     return stmt;
 }
 
@@ -1266,6 +1306,9 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
             ast__print_statement_internal(sb, stmt->for_stmt.body_stmt, indent, false);
             break;
         }
+
+        case AST_Statement_Kind::SWITCH: assert(false); break;
+        case AST_Statement_Kind::SWITCH_CASE: assert(false); break;
 
         case AST_Statement_Kind::DEFER: {
             string_builder_append(sb, "defer ");
