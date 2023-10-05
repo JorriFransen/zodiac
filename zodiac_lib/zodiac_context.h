@@ -81,6 +81,7 @@ struct Zodiac_Context
     File_Handle *interp_stdout_file;
 
     Dynamic_Array<Zodiac_Error> errors;
+    bool parse_error;
     bool fatal_resolve_error;
 
     String compiler_exe_path;

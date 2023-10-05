@@ -26,7 +26,7 @@ print_day :: (d: Day) {
 
     switch d {
         case Day.MONDAY: println("Day.MONDAY: ", d);
-        case Day.TUESDAY: println("Day.TUESDAY: ", d);
+        case Day.TUESDAY: print("Day.TUESDAY: ", d); println();
         default: println("Some other day: ", d);
     }
 }
