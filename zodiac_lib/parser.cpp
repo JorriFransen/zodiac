@@ -405,6 +405,60 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         return ast_for_stmt_new(parser->context, { start_pos, end_pos }, init_decl, cond_expr, inc_stmt, body_stmt);
 
+    } else if (match_keyword(parser, keyword_switch)) {
+
+        AST_Expression *switch_value = parse_expression(parser);
+
+        expect_token(parser, '{');
+
+        Dynamic_Array<AST_Statement *> cases;
+        dynamic_array_create(&parser->context->ast_allocator, &cases);
+
+        while (!is_token(parser, '}')) {
+
+            auto case_start = cur_tok(parser).range.start;
+            if (match_keyword(parser, keyword_case)) {
+
+                AST_Expression *case_value = parse_expression(parser);
+                expect_token(parser, ':');
+
+                AST_Statement *case_body = parse_switch_case_body(parser);
+                return_if_null(case_body);
+
+                assert(case_value);
+                assert(case_body);
+                AST_Statement *case_stmt = ast_switch_case_stmt_new(parser->context, {case_start, case_body->range.end}, case_value, case_body);
+
+                dynamic_array_append(&cases, case_stmt);
+
+            } else if (match_keyword(parser, keyword_default)) {
+
+                expect_token(parser, ':');
+                AST_Statement *default_stmt = parse_statement(parser);
+
+                AST_Statement *case_stmt = ast_switch_case_stmt_new(parser->context, {case_start, default_stmt->range.end}, nullptr, default_stmt);
+
+                dynamic_array_append(&cases, case_stmt);
+
+            } else {
+                auto ct = cur_tok(parser);
+                report_parse_error(parser,  ct.range.start, "Expected 'case' or 'default', got: '%s'", ct.atom.data);
+                return nullptr;
+            }
+        }
+
+        if (!cases.count) {
+            report_parse_error(parser,  start_pos, "Switch without cases");
+            return nullptr;
+        }
+
+        auto end_pos = cur_tok(parser).range.start;
+        expect_token(parser, '}');
+
+        assert(switch_value);
+
+        return ast_switch_stmt_new(parser->context, {start_pos, end_pos}, switch_value, cases);
+
     } else if (match_keyword(parser, keyword_return)) {
 
         AST_Expression *value = nullptr;
@@ -430,9 +484,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         expect_token(parser, '(');
 
-        auto end_pos = cur_tok(parser).range.end;
-
-        while (!match_token(parser, ')')) {
+        while (!is_token(parser, ')')) {
             if (temp_print_exprs.array.count != 0) {
                 expect_token(parser, ',');
             }
@@ -440,12 +492,16 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
             AST_Expression *print_expr = parse_expression(parser);
             dynamic_array_append(&temp_print_exprs.array, print_expr);
 
-            end_pos = cur_tok(parser).range.end;
         }
 
+        auto end_pos = cur_tok(parser).range.start;
+        expect_token(parser, ')');
+
         if (optional_semi) {
-            match_token(parser, ';');
+            auto ep = cur_tok(parser).range.start;
+            if (match_token(parser, ';')) end_pos = ep;
         } else {
+            end_pos = cur_tok(parser).range.start;
             expect_token(parser, ';');
         }
 
@@ -562,6 +618,36 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
     }
 
     return result;
+}
+
+AST_Statement *parse_switch_case_body(Parser *parser)
+{
+    AST_Statement *first_stmt = parse_statement(parser);
+
+#define IS_CASE_END(p) (is_keyword(p, keyword_case) || is_keyword(p, keyword_default) || is_token(p, '}'))
+
+    if (IS_CASE_END(parser)) {
+        return first_stmt;
+    }
+
+    if (first_stmt->kind == AST_Statement_Kind::BLOCK) {
+        report_parse_error(parser, first_stmt->range.end, "Expected 'case' or 'range' after case block");
+        return nullptr;
+    }
+
+    auto stmts = temp_array_create<AST_Statement *>(temp_allocator_allocator(), 4);
+    dynamic_array_append(&stmts, first_stmt);
+
+    while (!IS_CASE_END(parser)) {
+        auto stmt = parse_statement(parser);
+        dynamic_array_append(&stmts, stmt);
+    }
+
+    Source_Range range = { first_stmt->range.start, stmts[stmts.array.count-1]->range.end };
+    return ast_block_stmt_new(parser->context, range, temp_array_finalize(&parser->context->ast_allocator, &stmts));
+
+
+#undef CASE_END
 }
 
 AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident, Parsed_Directive pd)

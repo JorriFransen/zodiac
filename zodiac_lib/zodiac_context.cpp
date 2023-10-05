@@ -59,6 +59,7 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
     out_context->error_allocator = temporary_allocator_allocator(&out_context->error_allocator_state);
 
     dynamic_array_create(c_allocator(), &out_context->errors);
+    out_context->parse_error = false;
     out_context->fatal_resolve_error = false;
 
     if (!type_system_initialized) {
@@ -185,6 +186,10 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
 
     while (!parser_done || !resolver_done) {
         parser_done = do_parse_jobs(ctx);
+        if (ctx->parse_error) {
+            // do_parse_jobs() should have reported any errors
+            return false;
+        }
 
         if (ctx->options.report_errors) {
             if (resolver_report_errors(ctx->resolver)) {
@@ -371,6 +376,7 @@ bool do_parse_jobs(Zodiac_Context *ctx)
                 }
             }
 
+            ctx->parse_error = true;
             return false;
         }
 

@@ -67,6 +67,7 @@ ZAPI AST_Expression *_parse_expression(Parser *parser);
 
 ZAPI AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi = false);
 ZAPI AST_Statement *_parse_statement(Parser *parser, bool optional_semi = false);
+ZAPI AST_Statement *parse_switch_case_body(Parser *parser);
 
 ZAPI AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident, Parsed_Directive pd);
 ZAPI AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier ident);

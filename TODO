@@ -1,4 +1,5 @@
 
+- Calling function pointers
 - FFI with different return types
 
 - Lazy && and ||
