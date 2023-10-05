@@ -1,5 +1,6 @@
 
-- Allow character literals as enum members (maybe only with explicit cast?)
+- Allow casting enum members to the enum type they are a part of?
+    This will require creating the enum type before adding the members, and finalizing it when all members have been added.
 
 - FFI with different return types
 

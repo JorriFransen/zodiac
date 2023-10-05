@@ -10,7 +10,6 @@
 using namespace Zodiac;
 
 int main(int argc, const char **argv) {
-
     if (!logging_system_initialize()) return 1;
     if (!memory_system_initialize()) return 1;
 

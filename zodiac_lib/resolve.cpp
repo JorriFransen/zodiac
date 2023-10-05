@@ -1527,7 +1527,7 @@ bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
 
             if (sym->state == Symbol_State::RESOLVING) {
 
-                fatal_resolve_error(ctx, ts, "Circular dependency detected");
+                resolve_error(ctx, ts, "Circular dependency detected");
                 result = false;
                 break;
 
@@ -2276,7 +2276,11 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
         }
 
         case AST_Expression_Kind::CHAR_LITERAL: {
-            assert(!inferred_type || inferred_type == &builtin_type_u8);
+            if (inferred_type && inferred_type != &builtin_type_u8) {
+                fatal_resolve_error(ctx, expr, "Implicit cast from character literal (u8) to '%s' is not allowed", temp_type_string(inferred_type).data);
+                return false;
+            }
+
             expr->resolved_type = &builtin_type_u8;
             break;
         }

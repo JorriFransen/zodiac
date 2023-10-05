@@ -1,6 +1,7 @@
 #include "constant_resolver.h"
 
 #include "ast.h"
+#include "containers/dynamic_array.h"
 #include "scope.h"
 #include "type.h"
 #include "util/asserts.h"
@@ -126,17 +127,31 @@ Constant_Resolve_Result resolve_constant_integer_expr(AST_Expression *expr, Type
         }
 
         case AST_Expression_Kind::CAST: {
-            if (expr->cast.value->resolved_type->kind == Type_Kind::ENUM) {
-                auto enum_type = expr->cast.value->resolved_type;
-                assert(expr->resolved_type->kind == Type_Kind::INTEGER);
+
+            auto from = expr->cast.value->resolved_type;
+            auto to = expr->resolved_type;
+
+            if (from->kind == Type_Kind::ENUM) {
+
+                assert(to->kind == Type_Kind::INTEGER);
+                auto enum_type = from;
                 auto result = resolve_constant_integer_expr(expr->cast.value, enum_type);
+
                 assert(result.kind == Constant_Resolve_Result_Kind::OK);
                 assert(result.type == enum_type);
                 assert(enum_type->enumeration.integer_type == &builtin_type_s64);
 
-                return { Constant_Resolve_Result_Kind::OK, expr->resolved_type, { { .s64 = result.integer.s64 } } };
+                return { Constant_Resolve_Result_Kind::OK, to, { { .s64 = result.integer.s64 } } };
+
+            } else if (from->kind == Type_Kind::INTEGER) {
+                auto result = resolve_constant_integer_expr(expr->cast.value, from);
+                assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                assert(result.type == from);
+                result.type = to;
+                return result;
+            } else {
+                assert(false);
             }
-            return resolve_constant_integer_expr(expr->cast.value, expr->resolved_type);
             break;
         }
 
