@@ -405,6 +405,45 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         return ast_for_stmt_new(parser->context, { start_pos, end_pos }, init_decl, cond_expr, inc_stmt, body_stmt);
 
+    } else if (match_keyword(parser, keyword_switch)) {
+
+        AST_Expression *switch_value = parse_expression(parser);
+
+        expect_token(parser, '{');
+
+        while (!is_token(parser, '}')) {
+
+            if (match_keyword(parser, keyword_case)) {
+
+                AST_Expression *case_value = parse_expression(parser);
+                expect_token(parser, ':');
+
+                AST_Statement *case_stmt = parse_statement(parser);
+
+                assert(case_value);
+                assert(case_stmt);
+                assert_msg(false, "TODO: Create switch case");
+
+            } else if (match_keyword(parser, keyword_default)) {
+
+                expect_token(parser, ':');
+                AST_Statement *default_stmt = parse_statement(parser);
+
+                assert(default_stmt);
+                assert_msg(false, "TODO: Create switch default");
+
+            } else {
+                auto ct = cur_tok(parser);
+                report_parse_error(parser,  ct.range.start, "Expected 'case' or 'default', got: '%s'", ct.atom.data);
+                return nullptr;
+            }
+        }
+
+        expect_token(parser, '}');
+
+        assert(switch_value);
+        assert_msg(false, "TODO: Create switch statement");
+
     } else if (match_keyword(parser, keyword_return)) {
 
         AST_Expression *value = nullptr;

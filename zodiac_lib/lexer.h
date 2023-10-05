@@ -73,6 +73,9 @@ struct Lexer
     ZODIAC_KEYWORD(return)  \
     ZODIAC_KEYWORD(while)   \
     ZODIAC_KEYWORD(for)     \
+    ZODIAC_KEYWORD(switch)  \
+    ZODIAC_KEYWORD(case)    \
+    ZODIAC_KEYWORD(default) \
     ZODIAC_KEYWORD(sizeof)  \
     ZODIAC_KEYWORD(struct)  \
     ZODIAC_KEYWORD(union)   \

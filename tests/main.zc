@@ -2,109 +2,47 @@
 #run main();
 
 Day :: enum {
-
-    MONDAY;
-    TUESDAY;
+    MONDAY,
+    TUESDAY,
     WEDNESDAY,
     THURSDAY,
-    FRIDAY;
-    SATURDAY;
-    SUNDAY;
-
-}
-
-Mode :: enum {
-    INVALID;
-    READ  :: 11,
-    WRITE :: 22;
-    DRY_RUN;
-}
-
-Token_Kind :: enum {
-
-    SECOND_NON_ASCII :: NAME + 1;
-    FIRST_NON_ASCII :: 256;
-    NAME :: FIRST_NON_ASCII;
-    INT;
-
-    PLUS :: Token_Kind2.PLUS;
-    STAR;
-}
-
-Token_Kind2 :: enum {
-
-    STAR :: cast(s64, '*'),
-    PLUS :: cast(s64, '+'),
-
-    FIRST_NON_ASCII :: NAME;
-    NAME :: 256;
-    INT;
+    FRIDAY,
+    SATURDAY,
+    SUNDAY,
 }
 
 main :: () {
 
-    print_days();
-    compare_days();
+    // print_day(Day.THURSDAY);
 
-    result := cast(s64, Day.TUESDAY) + cast(s64, Day.WEDNESDAY);
-    println(result);
-    result_as_day := cast(Day, result);
-    println(result_as_day);
-    println(result_as_day == Day.SATURDAY);
-    println(result_as_day == Day.THURSDAY);
-    println();
-
-    // Illegal
-    // another_int : s32 = 42;
-    // another_day := cast(Day, another_int);
-
-    print_modes();
-    print_token_kinds();
-    print_token_kind2s();
+    // simple_integer_switch(10);
+    // complex_integer_switch(10);
 
     return 0;
 }
 
-print_days :: () {
-    println("Day.MONDAY: ", Day.MONDAY);
-    println("Day.TUESDAY: ", Day.TUESDAY);
-    println("Day.WEDNESDAY: ", Day.WEDNESDAY);
-    println("Day.THURSDAY: ", Day.THURSDAY);
-    println("Day.FRIDAY: ", Day.FRIDAY);
-    println("Day.SATURDAY: ", Day.SATURDAY);
-    println("Day.SUNDAY: ", Day.SUNDAY);
-    println();
-}
+// print_day :: (d: Day) {
+//
+//     switch d {
+//         case Day.MONDAY: println("Day.MONDAY: ", d);
+//         case Day.TUESDAY: println("Day.TUESDAY: ", d);
+//         default: println("Some other day: ", d);
+//     }
+//
+// }
 
-compare_days :: () {
-    println(Day.MONDAY == Day.MONDAY);
-    println(Day.MONDAY == Day.TUESDAY);
-    println();
-}
-
-print_modes :: () {
-    println("Mode.INVALID: ", Mode.INVALID);
-    println("Mode.READ: ", Mode.READ);
-    println("Mode.WRITE: ", Mode.WRITE);
-    println("Mode.DRY_RUN: ", Mode.DRY_RUN);
-    println();
-}
-
-print_token_kinds :: () {
-    println("Token.FIRST_NON_ASCII: ", Token_Kind.FIRST_NON_ASCII);
-    println("Token.SECOND_NON_ASCII: ", Token_Kind.SECOND_NON_ASCII);
-    println("Token.NAME: ", Token_Kind.NAME);
-    println("Token.INT: ", Token_Kind.INT);
-    println("Token.PLUS: ", Token_Kind.PLUS);
-    println("Token.STAR: ", Token_Kind.STAR);
-    println();
-}
-
-print_token_kind2s :: () {
-    println("Token_Kind2.STAR: ", Token_Kind2.STAR);
-    println("Token_Kind2.PLUS: ", Token_Kind2.PLUS);
-    println("Token_Kind2.FIRST_NON_ASCII: ", Token_Kind2.FIRST_NON_ASCII);
-    println("Token_Kind2.NAME: ", Token_Kind2.NAME);
-    println("Token_Kind2.INT: ", Token_Kind2.INT);
-    println();
-}
+// simple_integer_switch :: (i: s64) {
+//     return 0;
+// }
+//
+// complex_integer_switch :: (i: s64) {
+//
+//     switch i {
+//         case 0..9: println("0 <= i <= 9");
+//         case 10..19: println("10 <= i <= 19");
+//         case 42, 69: println("i is secret");
+//         case 70..79, 90..99: println("(70 <= i <= 79) || (90 <= i <= 99)");
+//         default: println("WHAT WERE YOU THINKING!?");
+//     }
+//     return 0;
+// }
