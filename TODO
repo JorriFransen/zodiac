@@ -1,7 +1,4 @@
 
-- Allow casting enum members to the enum type they are a part of?
-    This will require creating the enum type before adding the members, and finalizing it when all members have been added.
-
 - FFI with different return types
 
 - Lazy && and ||
@@ -13,6 +10,9 @@
 - Slice bounds checking
 
 - When emitting non constant compound expressions some of it's members/elements might be constant. Constant members should be emitted to a value first, which we can then use to insert the non const values into.
+
+- Allow casting enum members to the enum type they are a part of?
+    This will require creating the enum type before adding the members, and finalizing it when all members have been added.
 
 - Try to report (fatal) errors before executing run directives
 
