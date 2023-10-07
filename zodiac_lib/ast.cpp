@@ -1307,7 +1307,11 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
             break;
         }
 
-        case AST_Statement_Kind::SWITCH: assert(false); break;
+        case AST_Statement_Kind::SWITCH: {
+            string_builder_append(sb, "SWITCH");
+            break;
+        }
+
         case AST_Statement_Kind::SWITCH_CASE: assert(false); break;
 
         case AST_Statement_Kind::DEFER: {
@@ -1435,7 +1439,23 @@ void ast_print_declaration(String_Builder *sb, AST_Declaration *decl, int indent
         }
 
         case AST_Declaration_Kind::ENUM: {
-            assert(false);
+
+            string_builder_append(sb, "enum {\n");
+
+            for (s64 i = 0; i < decl->enumeration.members.count; i++) {
+                ast_print_indent(sb, indent + 1);
+                string_builder_append(sb, "%s", decl->enumeration.members[i]->identifier.name.data);
+
+                auto value_expr = decl->enumeration.members[i]->enum_member.value_expr;
+                if (value_expr) {
+                    string_builder_append(sb, " :: ");
+                    ast_print_expression(sb, value_expr);
+                }
+
+                string_builder_append(sb, ";\n");
+            }
+
+            string_builder_append(sb, "}");
             break;
         }
 
