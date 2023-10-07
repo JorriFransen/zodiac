@@ -101,7 +101,8 @@ bool bytecode_instruction_is_terminator(Bytecode_Instruction *inst)
     return op == Bytecode_Opcode::RETURN      ||
            op == Bytecode_Opcode::RETURN_VOID ||
            op == Bytecode_Opcode::JMP         ||
-           op == Bytecode_Opcode::JMP_IF;
+           op == Bytecode_Opcode::JMP_IF      ||
+           op == Bytecode_Opcode::SWITCH;
 }
 
 bool bytecode_block_is_terminated(Bytecode_Block *block)
@@ -163,12 +164,14 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
     Dynamic_Array<Bytecode_Register> registers = {};
     Dynamic_Array<Bytecode_Block> blocks = {};
     Dynamic_Array<Bytecode_Phi_Args> phi_args = {};
+    Dynamic_Array<Bytecode_Switch> switches = {};
     Dynamic_Array<Type *> param_types = {};
 
     if (!is_foreign) {
         dynamic_array_create(builder->bytecode_allocator, &registers);
         dynamic_array_create(builder->bytecode_allocator, &blocks);
-        dynamic_array_create(builder->bytecode_allocator, &phi_args);
+        dynamic_array_create(builder->bytecode_allocator, &phi_args, 0);
+        dynamic_array_create(builder->bytecode_allocator, &switches, 0);
     }
 
     dynamic_array_create(builder->bytecode_allocator, &param_types, fn_type->function.parameter_types.count);
@@ -183,6 +186,7 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
         .registers = registers,
         .blocks = blocks,
         .phi_args = phi_args,
+        .switches = switches,
         .param_types = param_types,
         .arg_count = arg_count,
         .required_stack_size = 0,
@@ -1392,6 +1396,22 @@ void bytecode_emit_jmp_if(Bytecode_Builder *builder, Bytecode_Register cond, Byt
     auto else_block_value = bytecode_block_value(builder, else_block);
 
     bytecode_emit_instruction(builder, Bytecode_Opcode::JMP_IF, cond, then_block_value, else_block_value);
+}
+
+void bytecode_emit_switch(Bytecode_Builder *builder, Bytecode_Register value, Dynamic_Array<Bytecode_Switch_Case> cases)
+{
+    assert(builder->insert_fn_index >= 0 &&
+           builder->insert_fn_index < builder->functions.count);
+    auto fn = &builder->functions[builder->insert_fn_index];
+
+    Bytecode_Switch bc_switch = { cases };
+    Bytecode_Switch_Handle handle = { fn->phi_args.count };
+    dynamic_array_append(&fn->switches, bc_switch);
+
+    Bytecode_Register cases_reg = bytecode_register_create(builder, Bytecode_Register_Kind::SWITCH_CASES, nullptr);
+    cases_reg.switch_handle = handle;
+
+    bytecode_emit_instruction(builder, Bytecode_Opcode::SWITCH, value, cases_reg, {});
 }
 
 Bytecode_Register bytecode_emit_load(Bytecode_Builder *builder, Bytecode_Register reg)

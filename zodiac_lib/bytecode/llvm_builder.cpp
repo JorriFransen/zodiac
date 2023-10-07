@@ -891,6 +891,8 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             break;
         }
 
+        case Bytecode_Opcode::SWITCH: assert(false); break;
+
         case Bytecode_Opcode::PHI: {
             auto llvm_type = llvm_type_from_ast_type(builder, bc_inst.dest.type);
             auto llvm_phi_node = irb->CreatePHI(llvm_type, 2);
@@ -1311,9 +1313,8 @@ llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Re
             break;
         }
 
-        case Bytecode_Register_Kind::PHI_ARGS: {
-            assert(false);
-        }
+        case Bytecode_Register_Kind::SWITCH_CASES: assert(false); break;
+        case Bytecode_Register_Kind::PHI_ARGS: assert(false); break;
 
         case Bytecode_Register_Kind::ZEROINITIALIZER: {
             auto llvm_type = llvm_type_from_ast_type(builder, bc_reg.type);
@@ -1425,15 +1426,12 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
             break;
         }
 
-        case Bytecode_Register_Kind::PHI_ARGS: {
-            assert(false);
-        }
+        case Bytecode_Register_Kind::SWITCH_CASES: assert(false); break;
+        case Bytecode_Register_Kind::PHI_ARGS: assert(false); break;
+        case Bytecode_Register_Kind::UNDEF: assert(false); break;
 
-        case Bytecode_Register_Kind::UNDEF: {
-            assert(false);
-            break;
-        }
         case Bytecode_Register_Kind::ZEROINITIALIZER: {
+
             auto llvm_type = llvm_type_from_ast_type(builder, bc_reg.type);
             return llvm::Constant::getNullValue(llvm_type);
             break;

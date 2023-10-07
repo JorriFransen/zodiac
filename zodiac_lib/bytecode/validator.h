@@ -28,8 +28,7 @@ struct Validation_Error
 
 struct Graph_Node
 {
-    Graph_Node *a = nullptr;
-    Graph_Node *b = nullptr;
+    Dynamic_Array<Graph_Node *> jumps_to;
 
     Bytecode_Block *block = nullptr;
 

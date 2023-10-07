@@ -1,5 +1,17 @@
 
+- Switch
+  - Bytecode instruction
+  - Ranges
+  - Falltrough
+  - #complete on enums or #incomplete on switch?
+
+- Break
+  - Loops
+  - Switch
+  - Labels (use the  loop condition / iterator / switch value  somehow)
+
 - Calling function pointers
+
 - FFI with different return types
 
 - Lazy && and ||

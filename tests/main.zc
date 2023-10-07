@@ -13,7 +13,8 @@ Day :: enum {
 
 main :: () {
 
-    print_day(Day.THURSDAY);
+    print_day(Day.MONDAY);
+    print_day(Day.TUESDAY);
 
     // simple_integer_switch(10);
     // complex_integer_switch(10);
@@ -27,7 +28,7 @@ print_day :: (d: Day) {
     switch d {
         case Day.MONDAY: println("Day.MONDAY: ", d);
         case Day.TUESDAY: print("Day.TUESDAY: ", d); println();
-        default: println("Some other day: ", d);
+        // default: println("Some other day: ", d);
     }
 }
 

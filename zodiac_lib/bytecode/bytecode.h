@@ -72,6 +72,7 @@ struct Bytecode_Register;
     ZODIAC_BC_OP(PTR_OFFSET_POINTER) \
     ZODIAC_BC_OP(JMP) \
     ZODIAC_BC_OP(JMP_IF) \
+    ZODIAC_BC_OP(SWITCH) \
     ZODIAC_BC_OP(PHI) \
 
 
@@ -97,6 +98,7 @@ enum class Bytecode_Register_Kind
     TYPE,
     GLOBAL,
     PHI_ARGS,
+    SWITCH_CASES,
     UNDEF,
     ZEROINITIALIZER,
 };
@@ -116,6 +118,11 @@ typedef s64 Bytecode_Global_Handle;
 typedef s64 Bytecode_Block_Handle;
 typedef s64 Bytecode_Phi_Args_Handle;
 typedef s64 Bytecode_Global_Handle;
+
+struct Bytecode_Switch_Handle
+{
+    s64 index;
+};
 
 union Bytecode_Register_Value
 {
@@ -140,6 +147,7 @@ struct Bytecode_Register
         Bytecode_Register_Value value = {};
         Bytecode_Block_Handle block_handle;
         Bytecode_Phi_Args_Handle phi_args_handle;
+        Bytecode_Switch_Handle switch_handle;
         const char *alloc_name;
     };
 };
@@ -177,6 +185,17 @@ ZAPI const bool operator!=(const Bytecode_Instruction_Handle &lhs, const Bytecod
 
 ZAPI u64 hash_key(Bytecode_Instruction_Handle handle);
 
+struct Bytecode_Switch_Case
+{
+    Bytecode_Register case_val;
+    Bytecode_Register block_register;
+};
+
+struct Bytecode_Switch
+{
+    Dynamic_Array<Bytecode_Switch_Case> cases;
+};
+
 struct Bytecode_Phi_Args
 {
     Bytecode_Register true_value = {};
@@ -206,6 +225,7 @@ struct Bytecode_Function
     Dynamic_Array<Bytecode_Register> registers = {};
     Dynamic_Array<Bytecode_Block> blocks = {};
     Dynamic_Array<Bytecode_Phi_Args> phi_args = {};
+    Dynamic_Array<Bytecode_Switch> switches = {};
 
     Dynamic_Array<Type *> param_types = {};
 
@@ -363,6 +383,7 @@ ZAPI Bytecode_Register bytecode_emit_ptr_offset_pointer(Bytecode_Builder *builde
 
 ZAPI void bytecode_emit_jmp(Bytecode_Builder *builder, Bytecode_Block_Handle block);
 ZAPI void bytecode_emit_jmp_if(Bytecode_Builder *builder, Bytecode_Register cond, Bytecode_Block_Handle then_block, Bytecode_Block_Handle else_block);
+ZAPI void bytecode_emit_switch(Bytecode_Builder *builder, Bytecode_Register value, Dynamic_Array<Bytecode_Switch_Case> cases);
 
 ZAPI Bytecode_Register bytecode_emit_load(Bytecode_Builder *builder, Bytecode_Register reg);
 ZAPI void bytecode_emit_store(Bytecode_Builder *builder, Bytecode_Register value, Bytecode_Register dest);

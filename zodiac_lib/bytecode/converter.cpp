@@ -812,7 +812,45 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             break;
         }
 
-        case AST_Statement_Kind::SWITCH: assert(false); break;
+        case AST_Statement_Kind::SWITCH: {
+
+            Bytecode_Register value_reg = ast_expr_to_bytecode(bc, stmt->switch_stmt.value);
+
+            auto initial_block_handle = bc->builder->insert_block_index;
+
+            Dynamic_Array<Bytecode_Switch_Case> bc_cases;
+            dynamic_array_create(bc->allocator, &bc_cases, stmt->switch_stmt.cases.count);
+
+            auto post_switch_block = bytecode_create_block(bc->builder, cfn, "switch.post");
+
+            for (s64 i = 0; i < stmt->switch_stmt.cases.count; i++) {
+
+                auto case_stmt = stmt->switch_stmt.cases[i];
+
+                assert(!case_stmt->switch_case_stmt.is_default);
+
+                assert(EXPR_IS_CONST(case_stmt->switch_case_stmt.case_value));
+                Bytecode_Register case_value = ast_expr_to_bytecode(bc, case_stmt->switch_case_stmt.case_value);
+
+                Bytecode_Block_Handle case_block = bytecode_append_block(bc->builder, cfn, "switch.case");
+                bytecode_set_insert_point(bc->builder, cfn, case_block);
+
+                ast_stmt_to_bytecode(bc, case_stmt->switch_case_stmt.case_stmt);
+
+                bytecode_emit_jmp(bc->builder, post_switch_block);
+
+                dynamic_array_append(&bc_cases, { case_value, bytecode_block_value(bc->builder, case_block)});
+            }
+
+            bytecode_set_insert_point(bc->builder, cfn, initial_block_handle);
+            bytecode_emit_switch(bc->builder, value_reg, bc_cases);
+
+            bytecode_append_block(bc->builder, cfn, post_switch_block);
+            bytecode_set_insert_point(bc->builder, cfn, post_switch_block);
+
+            break;
+        }
+
         case AST_Statement_Kind::SWITCH_CASE: assert(false); break;
 
         case AST_Statement_Kind::DEFER: {
@@ -1872,14 +1910,16 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
     // We need to pass in all the functions, otherwise the handles won't work
     auto functions = Array_Ref(bc->builder->functions);
 
-    bytecode_validator_init(bc->context, temp_allocator_allocator(), &validator, functions, nullptr);
-    bool bytecode_valid = validate_bytecode(&validator);
+    if (bc->context->options.validate_bytecode) {
+        bytecode_validator_init(bc->context, temp_allocator_allocator(), &validator, functions, nullptr);
+        bool bytecode_valid = validate_bytecode(&validator);
 
-    if (!bytecode_valid) {
-        assert(validator.errors.count);
+        if (!bytecode_valid) {
+            assert(validator.errors.count);
 
-        bytecode_validator_print_errors(&validator);
-        return -1;
+            bytecode_validator_print_errors(&validator);
+            return -1;
+        }
     }
 
     bc->builder->insert_fn_index = original_insert_fn_index;
