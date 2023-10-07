@@ -1,5 +1,5 @@
 
-#run main();
+// #run main();
 
 Day :: enum {
     MONDAY,
