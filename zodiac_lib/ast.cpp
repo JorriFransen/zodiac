@@ -1308,11 +1308,35 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
         }
 
         case AST_Statement_Kind::SWITCH: {
-            string_builder_append(sb, "SWITCH");
+            semicolon = false;
+            string_builder_append(sb, "switch ");
+            ast_print_expression(sb, stmt->switch_stmt.value);
+            string_builder_append(sb, " {\n");
+            for (s64 i = 0; i < stmt->switch_stmt.cases.count; i++) {
+
+                auto case_stmt = stmt->switch_stmt.cases[i];
+                ast_print_statement(sb, case_stmt, indent + 1);
+            }
+            ast_print_indent(sb, indent);
+            string_builder_append(sb, "}");
             break;
         }
 
-        case AST_Statement_Kind::SWITCH_CASE: assert(false); break;
+        case AST_Statement_Kind::SWITCH_CASE: {
+            semicolon = false;
+            if (stmt->switch_case_stmt.is_default) {
+                string_builder_append(sb, "default:");
+            } else {
+                string_builder_append(sb, "case ");
+                ast_print_expression(sb, stmt->switch_case_stmt.case_value);
+                string_builder_append(sb, ":");
+            }
+
+            ast__print_statement_internal(sb, stmt->switch_case_stmt.case_stmt, indent + 1, false);
+            string_builder_append(sb, "\n");
+
+            break;
+        }
 
         case AST_Statement_Kind::DEFER: {
             string_builder_append(sb, "defer ");
