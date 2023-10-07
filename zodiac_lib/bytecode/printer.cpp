@@ -352,6 +352,31 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
 
         case Bytecode_Opcode::SWITCH: {
             PRINT_OP_(SWITCH);
+            print_a = false;
+            print_b = false;
+
+            bytecode_print_register(builder, fn, instruction->a, sb);
+
+            string_builder_append(sb, "\n      [ ");
+
+            auto cases = fn->switches[instruction->b.switch_handle.index].cases;
+
+            for (s64 i = 0 ; i < cases.count; i++) {
+
+                if (i != 0) {
+                    string_builder_append(sb, "\n        ");
+                }
+
+                bytecode_print_register(builder, fn, cases[i].case_val, sb);
+                string_builder_append(sb, " -> ");
+
+                auto block_handle = cases[i].block_register.block_handle;
+                auto block_name = fn->blocks[block_handle].name;
+
+                string_builder_append(sb, "%.*s", (int)block_name.length, block_name.data);
+            }
+
+            string_builder_append(sb, " ]");
             break;
         };
 

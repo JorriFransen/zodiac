@@ -169,8 +169,8 @@ bool validate_function(Bytecode_Validator *validator, Bytecode_Function_Handle f
 
     auto nodes = validator_build_block_graph(function);
 
-    auto dot = block_graph_to_dot(nodes, function, temp_allocator_allocator());
-    printf("%.*s\n", (int)dot.length, dot.data);
+    // auto dot = block_graph_to_dot(nodes, function, temp_allocator_allocator());
+    // printf("%.*s\n", (int)dot.length, dot.data);
 
     bool noreturn = function->flags & BC_FUNCTION_FLAG_NORETURN;
 
@@ -1645,10 +1645,47 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             }
 
             return true;
-            break;
         }
 
-        case Bytecode_Opcode::SWITCH: assert(false); break;
+        case Bytecode_Opcode::SWITCH: {
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'a' register of 'SWITCH' must be a temporary");
+                return false;
+            }
+
+            if (instruction->a.type->kind != Type_Kind::INTEGER &&
+                instruction->a.type->kind != Type_Kind::ENUM) {
+                bytecode_validator_report_error(validator, "The 'a' register of 'SWITCH' bust be of integer or enum type");
+                return false;
+            }
+
+            if (instruction->b.kind != Bytecode_Register_Kind::SWITCH_CASES) {
+                bytecode_validator_report_error(validator, "The 'b' register of 'SWITCH' must be a 'SWITCH_CASES' register");
+                return false;
+            }
+
+            auto cases = visitor->current_function->switches[instruction->b.switch_handle.index].cases;
+
+            for (s64 i = 0; i < cases.count; i++) {
+
+                if (cases[i].case_val.kind != Bytecode_Register_Kind::TEMPORARY) {
+                    bytecode_validator_report_error(validator, "The value register of case %i must be a temporary", i);
+                    return false;
+                }
+
+                if (cases[i].case_val.type != instruction->a.type) {
+                    bytecode_validator_report_error(validator, "The case value register type does not match the switch register type");
+                    return false;
+                }
+
+                if (cases[i].block_register.kind != Bytecode_Register_Kind::BLOCK) {
+                    bytecode_validator_report_error(validator, "The block register of case %i is not of kind 'BLOCK'");
+                    return false;
+                }
+            }
+
+            return true;
+        }
 
         case Bytecode_Opcode::PHI: {
             if (instruction->a.kind != Bytecode_Register_Kind::PHI_ARGS) {
@@ -1718,9 +1755,14 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
     return false;
 }
 
-bool child_node_returns(Graph_Node *node)
+bool jump_to_node_returns(Graph_Node *node)
 {
-    assert(false);
+    for (s64 i = 0; i < node->jumps_to.count; i++) {
+        if (node->jumps_to[i]->returns) {
+            return true;
+        }
+    }
+
     return false;
 }
 
@@ -1775,7 +1817,18 @@ Array_Ref<Graph_Node> validator_build_block_graph(Bytecode_Function *func)
                 }
 
             } else if (last_op.op == Bytecode_Opcode::SWITCH) {
-                assert(false);
+
+                auto bc_switch = &func->switches[last_op.b.switch_handle.index];
+
+                for (s64 i = 0; i < bc_switch->cases.count; i++) {
+                    auto case_target = &nodes[bc_switch->cases[i].block_register.block_handle];
+
+                    dynamic_array_append(&current_node->jumps_to, case_target);
+
+                    if (case_target->returns) {
+                        current_node->returns = true;
+                    }
+                }
             }
         }
     }
@@ -1787,7 +1840,7 @@ Array_Ref<Graph_Node> validator_build_block_graph(Bytecode_Function *func)
         for (s64 i = nodes.count -1; i >= 0; i--) {
             auto node = &nodes[i];
             if (node->returns) continue;
-            if (child_node_returns(node)) {
+            if (jump_to_node_returns(node)) {
                 node->returns = true;
                 changed = true;
             }
@@ -1811,26 +1864,22 @@ String block_graph_to_dot(Array_Ref<Graph_Node> nodes, Bytecode_Function *func, 
         auto node = nodes[i];
         if (node.block) {
 
-            string_builder_append(&sb, "    %.*s [color=%s];\n",
+            string_builder_append(&sb, "    \"%.*s\" [color=%s];\n",
                    (int)node.block->name.length, node.block->name.data,
                    node.returns ? "green" : "red");
 
-            assert(false);
-            // if (node.a && node.a->block) {
-            //     string_builder_append(&sb, "    %.*s -> %.*s;\n",
-            //            (int)node.block->name.length, node.block->name.data,
-            //            (int)node.a->block->name.length, node.a->block->name.data);
-            // }
-            //
-            // if (node.b && node.b->block) {
-            //     string_builder_append(&sb, "    %.*s -> %.*s;\n",
-            //            (int)node.block->name.length, node.block->name.data,
-            //            (int)node.b->block->name.length, node.b->block->name.data);
-            // }
-            //
-            // if (node.a && !node.a->block) {
-            //     string_builder_append(&sb, "    %.*s -> exit;\n", (int)node.block->name.length, node.block->name.data);
-            // }
+            for (s64 i = 0; i < node.jumps_to.count; i++) {
+
+                auto jump_node = node.jumps_to[i];
+
+                if (jump_node->block) {
+                    string_builder_append(&sb, "    \"%.*s\" -> \"%.*s\";\n",
+                           (int)node.block->name.length, node.block->name.data,
+                           (int)jump_node->block->name.length, jump_node->block->name.data);
+                } else {
+                    string_builder_append(&sb, "    \"%.*s\" -> exit;\n", (int)node.block->name.length, node.block->name.data);
+                }
+            }
 
         } else {
             assert(node.returns);
