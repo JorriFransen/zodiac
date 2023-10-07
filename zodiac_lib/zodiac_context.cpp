@@ -275,16 +275,18 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
 
     if (ctx->options.print_bytecode) bytecode_print(ctx->bytecode_builder, temp_allocator_allocator());
 
-    Bytecode_Validator validator = {};
-    bytecode_validator_init(ctx, temp_allocator_allocator(), &validator, ctx->bytecode_builder->functions, nullptr);
-    defer { bytecode_validator_free(&validator); };
-    bool bytecode_valid = validate_bytecode(&validator);
+    if (ctx->options.validate_bytecode) {
+        Bytecode_Validator validator = {};
+        bytecode_validator_init(ctx, temp_allocator_allocator(), &validator, ctx->bytecode_builder->functions, nullptr);
+        defer { bytecode_validator_free(&validator); };
+        bool bytecode_valid = validate_bytecode(&validator);
 
-    if (!bytecode_valid) {
-        assert(validator.errors.count);
+        if (!bytecode_valid) {
+            assert(validator.errors.count);
 
-        bytecode_validator_print_errors(&validator);
-        return false;
+            bytecode_validator_print_errors(&validator);
+            return false;
+        }
     }
 
     if (!ctx->options.dont_emit_binary) {

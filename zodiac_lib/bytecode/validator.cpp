@@ -164,10 +164,13 @@ bool validate_function(Bytecode_Validator *validator, Bytecode_Function_Handle f
         }
     }
 
+    auto mark = temporary_allocator_get_mark(temp_allocator());
+    defer { temporary_allocator_reset(temp_allocator(), mark); };
+
     auto nodes = validator_build_block_graph(function);
 
-    // auto dot = block_graph_to_dot(nodes, function, temp_allocator_allocator());
-    // printf("%.*s\n", (int)dot.length, dot.data);
+    auto dot = block_graph_to_dot(nodes, function, temp_allocator_allocator());
+    printf("%.*s\n", (int)dot.length, dot.data);
 
     bool noreturn = function->flags & BC_FUNCTION_FLAG_NORETURN;
 
@@ -1645,6 +1648,8 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             break;
         }
 
+        case Bytecode_Opcode::SWITCH: assert(false); break;
+
         case Bytecode_Opcode::PHI: {
             if (instruction->a.kind != Bytecode_Register_Kind::PHI_ARGS) {
                 bytecode_validator_report_error(validator, "The 'a' register of 'PHI' must be a 'PHI_ARGS'.");
@@ -1713,18 +1718,25 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
     return false;
 }
 
+bool child_node_returns(Graph_Node *node)
+{
+    assert(false);
+    return false;
+}
+
 Array_Ref<Graph_Node> validator_build_block_graph(Bytecode_Function *func)
 {
-
     Dynamic_Array<Graph_Node> nodes;
     dynamic_array_create<Graph_Node>(temp_allocator_allocator(), &nodes, func->blocks.count + 1);
 
     for (s64 i = 0; i < func->blocks.count; i++) {
-        auto node = Graph_Node { .a = nullptr, .b = nullptr, .block = &func->blocks[i] };
+        Dynamic_Array<Graph_Node *> jumps_to;
+        dynamic_array_create(temp_allocator_allocator(), &jumps_to, 2);
+        auto node = Graph_Node { .jumps_to = jumps_to, .block = &func->blocks[i] };
         dynamic_array_append(&nodes, node);
     }
 
-    auto exit_node_ = Graph_Node { .a = nullptr, .b = nullptr, .block = nullptr };
+    auto exit_node_ = Graph_Node { .jumps_to = {}, .block = nullptr };
     auto exit_node = dynamic_array_append(&nodes, exit_node_);
     exit_node->returns = true;
 
@@ -1739,25 +1751,31 @@ Array_Ref<Graph_Node> validator_build_block_graph(Bytecode_Function *func)
             if (last_op.op == Bytecode_Opcode::RETURN_VOID ||
                 last_op.op == Bytecode_Opcode::RETURN) {
 
-                current_node->a = exit_node;
+                dynamic_array_append(&current_node->jumps_to, exit_node);
                 current_node->returns = true;
 
             }  else if (last_op.op == Bytecode_Opcode::JMP) {
 
-                current_node->a = &nodes[last_op.a.block_handle];
-                if (current_node->a->returns) {
+                auto target_node = &nodes[last_op.a.block_handle];
+                dynamic_array_append(&current_node->jumps_to, target_node);
+                if (target_node->returns) {
                     current_node->returns = true;
                 }
 
-            } else if (last_op.op == Bytecode_Opcode::JMP_IF){
+            } else if (last_op.op == Bytecode_Opcode::JMP_IF) {
 
-                current_node->a = &nodes[last_op.b.block_handle];
-                current_node->b = &nodes[last_op.dest.block_handle];
+                auto target_a = &nodes[last_op.b.block_handle];
+                auto target_b = &nodes[last_op.dest.block_handle];
 
-                if (current_node->a->returns || current_node->b->returns) {
+                dynamic_array_append(&current_node->jumps_to, target_a);
+                dynamic_array_append(&current_node->jumps_to, target_b);
+
+                if (target_a->returns || target_b->returns) {
                     current_node->returns = true;
                 }
 
+            } else if (last_op.op == Bytecode_Opcode::SWITCH) {
+                assert(false);
             }
         }
     }
@@ -1769,8 +1787,7 @@ Array_Ref<Graph_Node> validator_build_block_graph(Bytecode_Function *func)
         for (s64 i = nodes.count -1; i >= 0; i--) {
             auto node = &nodes[i];
             if (node->returns) continue;
-            if ((node->a && node->a->returns) ||
-                (node->b && node->b->returns)) {
+            if (child_node_returns(node)) {
                 node->returns = true;
                 changed = true;
             }
@@ -1798,21 +1815,22 @@ String block_graph_to_dot(Array_Ref<Graph_Node> nodes, Bytecode_Function *func, 
                    (int)node.block->name.length, node.block->name.data,
                    node.returns ? "green" : "red");
 
-            if (node.a && node.a->block) {
-                string_builder_append(&sb, "    %.*s -> %.*s;\n",
-                       (int)node.block->name.length, node.block->name.data,
-                       (int)node.a->block->name.length, node.a->block->name.data);
-            }
-
-            if (node.b && node.b->block) {
-                string_builder_append(&sb, "    %.*s -> %.*s;\n",
-                       (int)node.block->name.length, node.block->name.data,
-                       (int)node.b->block->name.length, node.b->block->name.data);
-            }
-
-            if (node.a && !node.a->block) {
-                string_builder_append(&sb, "    %.*s -> exit;\n", (int)node.block->name.length, node.block->name.data);
-            }
+            assert(false);
+            // if (node.a && node.a->block) {
+            //     string_builder_append(&sb, "    %.*s -> %.*s;\n",
+            //            (int)node.block->name.length, node.block->name.data,
+            //            (int)node.a->block->name.length, node.a->block->name.data);
+            // }
+            //
+            // if (node.b && node.b->block) {
+            //     string_builder_append(&sb, "    %.*s -> %.*s;\n",
+            //            (int)node.block->name.length, node.block->name.data,
+            //            (int)node.b->block->name.length, node.b->block->name.data);
+            // }
+            //
+            // if (node.a && !node.a->block) {
+            //     string_builder_append(&sb, "    %.*s -> exit;\n", (int)node.block->name.length, node.block->name.data);
+            // }
 
         } else {
             assert(node.returns);

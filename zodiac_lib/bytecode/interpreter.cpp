@@ -1121,6 +1121,8 @@ switch (operand.type->bit_size) { \
             break;
         }
 
+        case Bytecode_Opcode::SWITCH: assert(false);
+
         case Bytecode_Opcode::PHI: {
             assert(instruction.a.phi_args_handle < current_function->phi_args.count);
             auto phi_args = current_function->phi_args[instruction.a.phi_args_handle];

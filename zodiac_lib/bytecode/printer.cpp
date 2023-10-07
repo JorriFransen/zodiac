@@ -350,6 +350,11 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
             break;
         }
 
+        case Bytecode_Opcode::SWITCH: {
+            PRINT_OP_(SWITCH);
+            break;
+        };
+
         case Bytecode_Opcode::PHI: {
             PRINT_OP_(PHI);
             string_builder_append(sb, " ");
@@ -553,6 +558,11 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
             string_builder_append(sb, " %.*s",
                                    (int)false_block.name.length, false_block.name.data);
 
+            break;
+        }
+
+        case Bytecode_Register_Kind::SWITCH_CASES: {
+            assert(false);
             break;
         }
 

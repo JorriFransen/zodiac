@@ -151,11 +151,13 @@ MunitResult Simple_Function_Call(const MunitParameter params[], void* user_data_
     bytecode_validator_init(&zc, c_allocator(), &validator, bb.functions, nullptr);
     defer { bytecode_validator_free(&validator); };
 
-    bool bytecode_valid = validate_bytecode(&validator);
+    if (bb.zodiac_context->options.validate_bytecode) {
+        bool bytecode_valid = validate_bytecode(&validator);
 
-    if (!bytecode_valid) {
-        bytecode_validator_print_errors(&validator);
-        return MUNIT_FAIL;
+        if (!bytecode_valid) {
+            bytecode_validator_print_errors(&validator);
+            return MUNIT_FAIL;
+        }
     }
 
     Interpreter interp = interpreter_create(c_allocator(), &zc);

@@ -42,6 +42,7 @@ struct Zodiac_Options
     bool use_bool_to_string_for_PRINT_in_llvm = false;
     bool report_errors = true; // Used in the tests to not display errors for succeeding tests
     bool trace_bytecode_validation = false;
+    bool validate_bytecode = true;
 };
 
 enum class File_To_Parse_Kind
