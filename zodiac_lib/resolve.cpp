@@ -969,6 +969,7 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
             break;
         }
 
+        case AST_Expression_Kind::RANGE: assert(false); break;
 
         case AST_Expression_Kind::CAST: {
             assert(expr->cast.type_spec);
@@ -1380,6 +1381,8 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             }
             break;
         }
+
+        case AST_Expression_Kind::RANGE: assert(false); break;
 
         case AST_Expression_Kind::CALL: {
             AST_Expression *base = expr->call.base;
@@ -2784,6 +2787,8 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
             break;
         }
+
+        case AST_Expression_Kind::RANGE: assert(false); break;
 
         case AST_Expression_Kind::CAST: {
             assert(EXPR_IS_TYPED(expr->cast.value));

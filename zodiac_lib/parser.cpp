@@ -424,6 +424,12 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
                 do {
 
                     AST_Expression *case_value = parse_expression(parser);
+
+                    if (match_token(parser, TOK_DOT_DOT)) {
+                        AST_Expression *max = parse_expression(parser);
+                        case_value = ast_range_expr_new(parser->context, {case_value->sr.start, max->sr.end}, case_value, max);
+                    }
+
                     dynamic_array_append(&case_values, case_value);
 
                 } while(match_token(parser, ','));

@@ -1087,6 +1087,7 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
         }
 
         case AST_Expression_Kind::BINARY: assert(false); break;
+        case AST_Expression_Kind::RANGE: assert(false); break;
         case AST_Expression_Kind::CAST: assert(false); break;
         case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
         case AST_Expression_Kind::COMPOUND: assert(false); break;
@@ -1444,6 +1445,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             break;
         }
 
+        case AST_Expression_Kind::RANGE: assert(false); break;
+
         case AST_Expression_Kind::CAST: {
             debug_assert(expr->resolved_type);
 
@@ -1574,6 +1577,7 @@ Bytecode_Register ast_const_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expre
         case AST_Expression_Kind::CALL: assert(false); break;
         case AST_Expression_Kind::UNARY: assert(false); break;
         case AST_Expression_Kind::BINARY: assert(false); break;
+        case AST_Expression_Kind::RANGE: assert(false); break;
         case AST_Expression_Kind::CAST: assert(false); break;
         case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
         case AST_Expression_Kind::COMPOUND: assert(false); break;
@@ -1760,6 +1764,8 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
             break;
         }
+
+        case AST_Expression_Kind::RANGE: assert(false); break;
 
         case AST_Expression_Kind::CAST: {
 

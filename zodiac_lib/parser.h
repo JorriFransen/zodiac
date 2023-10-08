@@ -31,12 +31,11 @@ ZAPI void parser_destroy(Parser *parser);
 // expr_operand = INT | REAL | NAME | compound | '(' expr ')' | 'null' | 'true' | 'false' | cast'('TYPE, expr')'
 // call_args = (expr ( ',' expr )* )?
 // expr_base = expr_operand ( '(' call_args ')' | '[' expr ']' | '.' NAME )*
-// expr_unary = ([+-*<!] expr_unary) | expr_base
+// expr_unary = ( ([+-*<!] | '#run') expr_unary) | expr_base
 // expr_mul = expr_unary ([/*] expr_unary)*
 // expr_add = expr_mul ([+-] expr_mul)*
 // expr_cmp = expr_add (([<>] | '==' | '!=' | '<=' | '>=') expr_add )*
-// expr_run = #run expr_cmp
-// expr = expr_cmp | expr_run
+// expr = expr_cmp
 
 enum class Parsed_Directive_Kind
 {

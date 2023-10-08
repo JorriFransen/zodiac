@@ -143,6 +143,14 @@ void ast_binary_expr_create(AST_Binary_Operator op, AST_Expression *lhs, AST_Exp
     out_expr->binary.rhs = rhs;
 }
 
+void ast_range_expr_create(AST_Expression *min, AST_Expression *max, AST_Expression *out_expr)
+{
+    ast_expression_create(AST_Expression_Kind::RANGE, AST_EXPR_FLAG_NONE, out_expr);
+
+    out_expr->range.min = min;
+    out_expr->range.max = max;
+}
+
 void ast_cast_expr_create(AST_Type_Spec *ts, AST_Expression *value, AST_Expression *out_expr)
 {
     debug_assert(ts && value && out_expr);
@@ -695,6 +703,13 @@ AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Bi
     return expr;
 }
 
+AST_Expression *ast_range_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *min, AST_Expression *max)
+{
+    auto expr = ast_expression_new(ctx, sr);
+    ast_range_expr_create(min, max, expr);
+    return expr;
+}
+
 AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_Spec *ts, AST_Expression *value)
 {
     debug_assert(ctx && ts && value);
@@ -1157,6 +1172,13 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
             string_builder_append(sb, " %s ", ast_binop_to_string[(int)expr->binary.op]);
             ast_print_expression(sb, expr->binary.rhs);
             string_builder_append(sb, ")");
+            break;
+        }
+
+        case AST_Expression_Kind::RANGE: {
+            ast_print_expression(sb, expr->range.min);
+            string_builder_append(sb, "..");
+            ast_print_expression(sb, expr->range.max);
             break;
         }
 

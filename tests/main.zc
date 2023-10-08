@@ -13,7 +13,6 @@ main :: () {
     print_i(99);
     print_i(99);
 
-
     return 0;
 }
 

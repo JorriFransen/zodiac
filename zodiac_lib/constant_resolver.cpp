@@ -126,6 +126,8 @@ Constant_Resolve_Result resolve_constant_integer_expr(AST_Expression *expr, Type
             return resolve_constant_integer_binary_expr(expr, type);
         }
 
+        case AST_Expression_Kind::RANGE: assert(false); break;
+
         case AST_Expression_Kind::CAST: {
 
             auto from = expr->cast.value->resolved_type;
@@ -303,6 +305,7 @@ Constant_Resolve_Result resolve_constant_bool_expr(AST_Expression *expr)
         case AST_Expression_Kind::CALL: assert(false); break;
         case AST_Expression_Kind::UNARY: assert(false); break;
         case AST_Expression_Kind::BINARY: assert(false); break;
+        case AST_Expression_Kind::RANGE: assert(false); break;
         case AST_Expression_Kind::CAST: assert(false); break;
 
         case AST_Expression_Kind::RUN_DIRECTIVE: {
@@ -374,6 +377,7 @@ Constant_Resolve_Result resolve_constant_real_expr(AST_Expression *expr)
         case AST_Expression_Kind::CALL: assert(false); break;
         case AST_Expression_Kind::UNARY: assert(false); break;
         case AST_Expression_Kind::BINARY: assert(false); break;
+        case AST_Expression_Kind::RANGE: assert(false); break;
         case AST_Expression_Kind::CAST: assert(false); break;
 
         case AST_Expression_Kind::RUN_DIRECTIVE: {
@@ -407,6 +411,7 @@ Constant_Resolve_Result resolve_constant_pointer_expression(AST_Expression *expr
         case AST_Expression_Kind::CALL: assert(false); break;
         case AST_Expression_Kind::UNARY: assert(false); break;
         case AST_Expression_Kind::BINARY: assert(false); break;
+        case AST_Expression_Kind::RANGE: assert(false); break;
 
         case AST_Expression_Kind::CAST: {
             auto base_expr = expr->cast.value;

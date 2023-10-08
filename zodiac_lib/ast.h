@@ -117,6 +117,12 @@ struct AST_Binary_Expression
     AST_Expression *rhs;
 };
 
+struct AST_Range_Expression
+{
+    AST_Expression *min;
+    AST_Expression *max;
+};
+
 struct AST_Cast_Expression
 {
     Type *type;
@@ -155,6 +161,7 @@ enum class AST_Expression_Kind
 
     UNARY,
     BINARY,
+    RANGE,
 
     CAST,
 
@@ -202,6 +209,7 @@ struct AST_Expression
         AST_Call_Expression call;
         AST_Unary_Expression unary;
         AST_Binary_Expression binary;
+        AST_Range_Expression range;
         AST_Cast_Expression cast;
         AST_Directive_Expression directive;
         AST_Compound_Expression compound;
@@ -578,6 +586,7 @@ ZAPI void ast_call_expr_create(AST_Expression *base, Dynamic_Array<AST_Expressio
 ZAPI void ast_index_expr_create(AST_Expression *base, AST_Expression *index, AST_Expression *out_expr);
 ZAPI void ast_unary_expr_create(AST_Unary_Operator op, AST_Expression *operand, AST_Expression *out_expr);
 ZAPI void ast_binary_expr_create(AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs, AST_Expression *out_expr);
+ZAPI void ast_range_expr_create(AST_Expression *min, AST_Expression *max, AST_Expression *out_expr);
 ZAPI void ast_cast_expr_create(AST_Type_Spec *ts, AST_Expression *value, AST_Expression *out_expr);
 ZAPI void ast_cast_expr_create(Type *type, AST_Expression *value, AST_Expression *out_expr);
 ZAPI void ast_run_directive_expr_create(AST_Directive *directive, AST_Expression *out_expr);
@@ -638,6 +647,7 @@ ZAPI AST_Expression *ast_index_expr_new(Zodiac_Context *ctx, Source_Range sr, AS
 ZAPI AST_Expression *ast_call_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *base, Dynamic_Array<AST_Expression *> args);
 ZAPI AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Unary_Operator op, AST_Expression *operand);
 ZAPI AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs);
+ZAPI AST_Expression *ast_range_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *min, AST_Expression *max);
 ZAPI AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_Spec *ts, AST_Expression *value);
 ZAPI AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range sr, Type *type, AST_Expression *value);
 ZAPI AST_Expression *ast_run_directive_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Directive *directive);
