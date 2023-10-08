@@ -381,7 +381,7 @@ void ast_constant_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, 
     out_decl->variable.resolved_type = nullptr;
 }
 
-void ast_parameter_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range sr, AST_Declaration *out_decl)
+void ast_parameter_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Declaration *out_decl)
 {
     debug_assert(out_decl);
 
@@ -393,7 +393,7 @@ void ast_parameter_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_R
     out_decl->parameter.resolved_type = nullptr;
 }
 
-void ast_field_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range sr, AST_Declaration *out_decl)
+void ast_field_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Declaration *out_decl)
 {
     debug_assert(out_decl);
 
@@ -879,7 +879,7 @@ AST_Declaration *ast_parameter_decl_new(Zodiac_Context *ctx, Source_Range sr, AS
     debug_assert(ctx);
 
     auto decl = ast_declaration_new(ctx, sr);
-    ast_parameter_decl_create(ident, ts, sr, decl);
+    ast_parameter_decl_create(ident, ts, decl);
 
     return decl;
 }
@@ -889,7 +889,7 @@ AST_Declaration *ast_field_decl_new(Zodiac_Context *ctx, Source_Range sr, AST_Id
     debug_assert(ctx);
 
     auto decl = ast_declaration_new(ctx, sr);
-    ast_field_decl_create(ident, ts, sr, decl);
+    ast_field_decl_create(ident, ts, decl);
 
     return decl;
 }

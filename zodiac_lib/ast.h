@@ -601,8 +601,8 @@ ZAPI void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
 
 ZAPI void ast_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
 ZAPI void ast_constant_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
-ZAPI void ast_parameter_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range sr, AST_Declaration *out_decl);
-ZAPI void ast_field_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range sr, AST_Declaration *out_decl);
+ZAPI void ast_parameter_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Declaration *out_decl);
+ZAPI void ast_field_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Declaration *out_decl);
 ZAPI void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynamic_Array<AST_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration *out_decl, AST_Declaration_Flags flags);
 ZAPI void ast_aggregate_decl_create(AST_Identifier *ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Declaration *> fields, AST_Declaration *out_decl);
 ZAPI void ast_enum_member_decl_create(AST_Identifier ident, AST_Expression *value, AST_Declaration *out_decl);
