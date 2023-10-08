@@ -168,7 +168,7 @@ AST_Expression *parse_expr_base(Parser *parser)
     AST_Expression *expr = parse_expr_operand(parser);
     return_if_null(expr);
 
-    auto start_pos = expr->range.start;
+    auto start_pos = expr->sr.start;
 
     while (is_token(parser, '(') || is_token(parser, '[') || is_token(parser, '.')) {
 
@@ -223,31 +223,31 @@ AST_Expression *parse_expr_unary(Parser *parser)
     if (match_token(parser, '+')) {
 
         AST_Expression *operand = parse_expr_unary(parser);
-        return ast_unary_expr_new(parser->context, {start_pos, operand->range.end} , AST_Unary_Operator::PLUS, operand);
+        return ast_unary_expr_new(parser->context, {start_pos, operand->sr.end} , AST_Unary_Operator::PLUS, operand);
 
     } else if (match_token(parser, '-')) {
 
         AST_Expression *operand = parse_expr_unary(parser);
-        return ast_unary_expr_new(parser->context, {start_pos, operand->range.end}, AST_Unary_Operator::MINUS, operand);
+        return ast_unary_expr_new(parser->context, {start_pos, operand->sr.end}, AST_Unary_Operator::MINUS, operand);
 
     } else if (match_token(parser, '*')) {
 
         AST_Expression *operand = parse_expr_unary(parser);
-        return ast_unary_expr_new(parser->context, {start_pos, operand->range.end}, AST_Unary_Operator::ADDRESS_OF, operand);
+        return ast_unary_expr_new(parser->context, {start_pos, operand->sr.end}, AST_Unary_Operator::ADDRESS_OF, operand);
 
     } else if (match_token(parser, '<')) {
         AST_Expression *operand = parse_expr_unary(parser);
-        return ast_unary_expr_new(parser->context, {start_pos, operand->range.end}, AST_Unary_Operator::DEREF, operand);
+        return ast_unary_expr_new(parser->context, {start_pos, operand->sr.end}, AST_Unary_Operator::DEREF, operand);
     } else if (match_token(parser, '!')) {
         AST_Expression *operand = parse_expr_unary(parser);
-        return ast_unary_expr_new(parser->context, {start_pos, operand->range.end}, AST_Unary_Operator::NOT, operand);
+        return ast_unary_expr_new(parser->context, {start_pos, operand->sr.end}, AST_Unary_Operator::NOT, operand);
     } else if (is_token(parser, '#')) {
         Parsed_Directive pd = parse_directive(parser, false);
         assert(pd.data);
         auto directive = pd.data;
         assert(directive->kind == AST_Directive_Kind::RUN);
 
-        return ast_run_directive_expr_new(parser->context, directive->range, directive);
+        return ast_run_directive_expr_new(parser->context, directive->sr, directive);
     } else {
         return parse_expr_base(parser);
     }
@@ -285,7 +285,7 @@ AST_Expression *parse_expr_mul(Parser *parser)
 
         auto ast_op = token_kind_to_ast_binop[(int)op];
         debug_assert(ast_op != AST_Binary_Operator::INVALID);
-        lhs = ast_binary_expr_new(parser->context, {lhs->range.start, rhs->range.end}, ast_op, lhs, rhs);
+        lhs = ast_binary_expr_new(parser->context, {lhs->sr.start, rhs->sr.end}, ast_op, lhs, rhs);
     }
 
     return lhs;
@@ -305,7 +305,7 @@ AST_Expression *parse_expr_add(Parser *parser)
 
         auto ast_op = token_kind_to_ast_binop[(int)op];
         debug_assert(ast_op != AST_Binary_Operator::INVALID);
-        lhs = ast_binary_expr_new(parser->context, {lhs->range.start, rhs->range.end}, ast_op, lhs, rhs);
+        lhs = ast_binary_expr_new(parser->context, {lhs->sr.start, rhs->sr.end}, ast_op, lhs, rhs);
     }
 
     return lhs;
@@ -325,7 +325,7 @@ AST_Expression *parse_expr_cmp(Parser *parser)
 
         auto cmp_op = token_kind_to_ast_binop[(int)op];
         debug_assert(cmp_op != AST_Binary_Operator::INVALID);
-        lhs = ast_binary_expr_new(parser->context, {lhs->range.start, rhs->range.end}, cmp_op, lhs, rhs);
+        lhs = ast_binary_expr_new(parser->context, {lhs->sr.start, rhs->sr.end}, cmp_op, lhs, rhs);
     }
 
     return lhs;
@@ -347,7 +347,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
         AST_Statement *then_stmt = parse_statement(parser);
         AST_Statement *else_stmt = nullptr;
 
-        auto end_pos = then_stmt->range.end;
+        auto end_pos = then_stmt->sr.end;
 
         auto temp_else_ifs = temp_array_create<AST_If_Block>(temp_allocator_allocator());
 
@@ -359,10 +359,10 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
                 AST_Statement *else_if_then = parse_statement(parser);
                 AST_If_Block else_if = { else_if_cond, else_if_then, nullptr };
                 dynamic_array_append(&temp_else_ifs.array, else_if);
-                end_pos = else_if_then->range.end;
+                end_pos = else_if_then->sr.end;
             } else {
                 else_stmt = parse_statement(parser);
-                end_pos = else_stmt->range.end;
+                end_pos = else_stmt->sr.end;
                 break;
             }
         }
@@ -376,7 +376,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
         AST_Expression *cond = parse_expression(parser);
         AST_Statement *do_stmt = parse_statement(parser);
 
-        return ast_while_stmt_new(parser->context, { start_pos, do_stmt->range.end }, cond, do_stmt);
+        return ast_while_stmt_new(parser->context, { start_pos, do_stmt->sr.end }, cond, do_stmt);
 
     } else if (match_keyword(parser, keyword_for)) {
 
@@ -393,7 +393,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         AST_Statement *inc_stmt = parse_statement(parser, true);
 
-        auto end_pos = inc_stmt->range.end;
+        auto end_pos = inc_stmt->sr.end;
 
         if (expect_rparen) {
             end_pos = cur_tok(parser).range.end;
@@ -436,7 +436,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
                 return_if_null(case_body);
 
                 assert(case_body);
-                AST_Statement *case_stmt = ast_switch_case_stmt_new(parser->context, {case_start, case_body->range.end}, case_values, case_body);
+                AST_Statement *case_stmt = ast_switch_case_stmt_new(parser->context, {case_start, case_body->sr.end}, case_values, case_body);
 
                 dynamic_array_append(&cases, case_stmt);
 
@@ -445,7 +445,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
                 expect_token(parser, ':');
                 AST_Statement *default_stmt = parse_statement(parser);
 
-                AST_Statement *case_stmt = ast_switch_case_stmt_new(parser->context, {case_start, default_stmt->range.end}, {}, default_stmt);
+                AST_Statement *case_stmt = ast_switch_case_stmt_new(parser->context, {case_start, default_stmt->sr.end}, {}, default_stmt);
 
                 dynamic_array_append(&cases, case_stmt);
 
@@ -521,7 +521,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
     } else if (match_keyword(parser, keyword_defer)) {
 
         AST_Statement *stmt = parse_statement(parser);
-        return ast_defer_stmt_new(parser->context, {start_pos, stmt->range.end}, stmt);
+        return ast_defer_stmt_new(parser->context, {start_pos, stmt->sr.end}, stmt);
     }
 
     Token t = cur_tok(parser);
@@ -559,7 +559,7 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
         assert(pd.kind == Parsed_Directive_Kind::DATA);
         assert(pd.data);
         assert(pd.data->kind == AST_Directive_Kind::FALLTROUGH);
-        return ast_falltrough_stmt_new(parser->context, pd.data->range, pd.data);
+        return ast_falltrough_stmt_new(parser->context, pd.data->sr, pd.data);
     }
 
     AST_Statement *result = nullptr;
@@ -569,7 +569,7 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
     return_if_null(expr);
 
     if (expr->kind == AST_Expression_Kind::CALL) {
-        result = ast_call_stmt_new(parser->context, expr->range, expr);
+        result = ast_call_stmt_new(parser->context, expr->sr, expr);
 
     } else if (expr->kind == AST_Expression_Kind::IDENTIFIER && match_token(parser, ':')) {
 
@@ -606,7 +606,7 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
         }
 
     } else if (expr->kind == AST_Expression_Kind::RUN_DIRECTIVE) {
-        report_parse_error(parser, expr->range, "Result value of #run in local scope is not used");
+        report_parse_error(parser, expr->sr, "Result value of #run in local scope is not used");
         return nullptr;
     } else if (is_token(parser, '+') || is_token(parser, '-') || is_token(parser, '*') || is_token(parser, '/')) {
 
@@ -616,14 +616,14 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
 
         auto rhs = parse_expression(parser);
         auto op = token_kind_to_ast_binop[op_token.kind];
-        auto new_value = ast_binary_expr_new(parser->context, {start_pos, rhs->range.end}, op, expr, rhs);
+        auto new_value = ast_binary_expr_new(parser->context, {start_pos, rhs->sr.end}, op, expr, rhs);
 
-        result = ast_assign_stmt_new(parser->context, {start_pos, new_value->range.end}, expr, new_value);
+        result = ast_assign_stmt_new(parser->context, {start_pos, new_value->sr.end}, expr, new_value);
         result->flags |= AST_STMT_FLAG_COMPOUND_ASSIGNMENT;
     } else {
         expect_token(parser, '=');
         AST_Expression *value = parse_expression(parser);
-        result = ast_assign_stmt_new(parser->context, {start_pos, value->range.end}, expr, value);
+        result = ast_assign_stmt_new(parser->context, {start_pos, value->sr.end}, expr, value);
     }
 
     debug_assert(result);
@@ -648,7 +648,7 @@ AST_Statement *parse_switch_case_body(Parser *parser)
     }
 
     if (first_stmt->kind == AST_Statement_Kind::BLOCK) {
-        report_parse_error(parser, first_stmt->range.end, "Expected 'case' or 'range' after case block");
+        report_parse_error(parser, first_stmt->sr.end, "Expected 'case' or 'range' after case block");
         return nullptr;
     }
 
@@ -660,7 +660,7 @@ AST_Statement *parse_switch_case_body(Parser *parser)
         dynamic_array_append(&stmts, stmt);
     }
 
-    Source_Range range = { first_stmt->range.start, stmts[stmts.array.count-1]->range.end };
+    Source_Range range = { first_stmt->sr.start, stmts[stmts.array.count-1]->sr.end };
     return ast_block_stmt_new(parser->context, range, temp_array_finalize(&parser->context->ast_allocator, &stmts));
 
 
@@ -692,7 +692,7 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
             expect_token(parser, TOK_NAME);
             expect_token(parser, ':');
             AST_Type_Spec *ts = parse_type_spec(parser);
-            Source_Pos end = ts->range.end;
+            Source_Pos end = ts->sr.end;
 
             AST_Identifier param_ident;
             ast_identifier_create(name_tok.atom, name_tok.range, &param_ident);
@@ -715,7 +715,7 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
     if (match_token(parser, TOK_RIGHT_ARROW)) {
         return_ts = parse_type_spec(parser);
     } else if (foreign) {
-        report_parse_error(parser, ident.range, "Foreign function must specify return type");
+        report_parse_error(parser, ident.sr, "Foreign function must specify return type");
     }
 
     AST_Declaration_Flags flags = AST_DECL_FLAG_NONE;
@@ -739,7 +739,7 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
         expect_token(parser, ';');
     }
 
-    return ast_function_decl_new(parser->context, ident.range, ident, params, return_ts, statements, flags);
+    return ast_function_decl_new(parser->context, ident.sr, ident, params, return_ts, statements, flags);
 }
 
 AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier ident)
@@ -789,7 +789,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
 
         for (u64 i = 0; i < temp_idents.array.count; i++) {
 
-            Source_Range field_range = { temp_idents.array[i].range.start, ts->range.end };
+            Source_Range field_range = { temp_idents.array[i].sr.start, ts->sr.end };
 
             AST_Declaration *field_decl = ast_field_decl_new(parser->context, field_range, temp_idents.array[i], ts);
             dynamic_array_append(&temp_fields.array, field_decl);
@@ -797,7 +797,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
     }
 
     auto fields = temp_array_finalize(&parser->context->ast_allocator, &temp_fields);
-    return ast_aggregate_decl_new(parser->context, ident.range, ident, kind, fields);
+    return ast_aggregate_decl_new(parser->context, ident.sr, ident, kind, fields);
 }
 
 AST_Declaration *parse_enum_declaration(Parser *parser, AST_Identifier ident)
@@ -823,8 +823,8 @@ AST_Declaration *parse_enum_declaration(Parser *parser, AST_Identifier ident)
         }
 
         if (!(is_token(parser, ',') || is_token(parser, ';'))) {
-            auto pos = member_ident.range;
-            if (member_value) pos = member_value->range;
+            auto pos = member_ident.sr;
+            if (member_value) pos = member_value->sr;
             report_parse_error(parser, pos, "Expected enum member to be terminated with ';' or ','");
             return nullptr;
         }
@@ -832,14 +832,14 @@ AST_Declaration *parse_enum_declaration(Parser *parser, AST_Identifier ident)
         auto member_end = cur_tok(parser).range.end;
         next_token(parser);
 
-        AST_Declaration *member_decl = ast_enum_member_decl_new(parser->context, {ident.range.start, member_end}, member_ident, member_value);
+        AST_Declaration *member_decl = ast_enum_member_decl_new(parser->context, {ident.sr.start, member_end}, member_ident, member_value);
         dynamic_array_append(&members, member_decl);
     }
 
     auto end_pos = cur_tok(parser).range.end;
     expect_token(parser, '}');
 
-    return ast_enum_decl_new(parser->context, {ident.range.start, end_pos}, ident, members);
+    return ast_enum_decl_new(parser->context, {ident.sr.start, end_pos}, ident, members);
 }
 
 AST_Declaration *parse_declaration(Parser *parser, Parsed_Directive  pd)
@@ -885,7 +885,7 @@ AST_Declaration *parse_declaration(Parser *parser, Parsed_Directive  pd)
 
         expect_token(parser, ';');
 
-        return ast_constant_variable_decl_new(parser->context, ident.range, ident, ts, const_value);
+        return ast_constant_variable_decl_new(parser->context, ident.sr, ident, ts, const_value);
 
     } else if (is_token(parser, '=') || is_token(parser, ';')) {
 
@@ -908,7 +908,7 @@ AST_Declaration *parse_declaration(Parser *parser, Parsed_Directive  pd)
             match_token(parser, ';');
         }
 
-        return ast_variable_decl_new(parser->context, Source_Range { ident.range.start, end }, ident, ts, value);
+        return ast_variable_decl_new(parser->context, Source_Range { ident.sr.start, end }, ident, ts, value);
     }
 
     // Should be unreachable, if not one of the cases in the 'if' above, an error should have been reported
@@ -923,7 +923,7 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
         case '*': {
             next_token(parser);
             AST_Type_Spec *base = parse_type_spec(parser);
-            return ast_pointer_ts_new(parser->context, { t.range.start, base->range.end }, base);
+            return ast_pointer_ts_new(parser->context, { t.range.start, base->sr.end }, base);
         }
 
         case '[': {
@@ -940,7 +940,7 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
 
             assert(base_ts);
 
-            Source_Range range = { t.range.start, base_ts->range.end };
+            Source_Range range = { t.range.start, base_ts->sr.end };
             if (length_expr) {
                 return ast_static_array_ts_new(parser->context, range, length_expr, base_ts);
             } else {
@@ -997,18 +997,18 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
 
                     if (member_stmt->kind != AST_Statement_Kind::CALL &&
                         member_stmt->kind != AST_Statement_Kind::PRINT) {
-                        report_parse_error(parser, member_stmt->range, "Only print and call statements are allowed in run blocks");
+                        report_parse_error(parser, member_stmt->sr, "Only print and call statements are allowed in run blocks");
                         return {};
                     }
                 }
 
             }
 
-            result.data = ast_run_directive_new(parser->context, { start_pos, stmt->range.end }, stmt);
+            result.data = ast_run_directive_new(parser->context, { start_pos, stmt->sr.end }, stmt);
         } else {
 
             AST_Expression *expr = parse_expression(parser);
-            result.data = ast_run_directive_new(parser->context, { start_pos, expr->range.end }, expr);
+            result.data = ast_run_directive_new(parser->context, { start_pos, expr->sr.end }, expr);
         }
 
         if (eat_semicolon) match_token(parser, ';');
@@ -1073,10 +1073,10 @@ AST_File *parse_file(Parser *parser)
         if (pd.kind == Parsed_Directive_Kind::DATA) {
             auto directive = pd.data;
             if (directive->kind == AST_Directive_Kind::RUN) {
-                decl = ast_run_directive_decl_new(parser->context, directive->range, directive);
+                decl = ast_run_directive_decl_new(parser->context, directive->sr, directive);
             } else {
                 assert(directive->kind == AST_Directive_Kind::IMPORT);
-                decl = ast_import_directive_decl_new(parser->context, directive->range, directive);
+                decl = ast_import_directive_decl_new(parser->context, directive->sr, directive);
             }
         } else {
             decl = parse_declaration(parser, pd);

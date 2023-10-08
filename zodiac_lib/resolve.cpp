@@ -473,7 +473,7 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
         auto decl_sym = scope_get_symbol(scope, decl->identifier.name);
         if (decl_sym && decl_sym->decl != decl)
         {
-            report_redecl(ctx, decl_sym->range, decl->identifier.name, decl->identifier.range);
+            report_redecl(ctx, decl_sym->sr, decl->identifier.name, decl->identifier.sr);
             return;
         }
 
@@ -627,12 +627,12 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
 
             if (!found) {
                 // Check relative to the file this #import is in
-                String current_file_dir = filesystem_dir_name(ta, decl->range.start.name);
+                String current_file_dir = filesystem_dir_name(ta, decl->sr.start.name);
                 assert(filesystem_is_dir(current_file_dir));
 
                 String test_path = string_format(ta, "%s" ZODIAC_PATH_SEPARATOR "%s", current_file_dir.data, relative_path.data);
 
-                if (string_equal(decl->range.start.name, test_path)) {
+                if (string_equal(decl->sr.start.name, test_path)) {
                     ZWARN("#import imports it's own file: '%s'", test_path.data);
                 }
 
@@ -1632,7 +1632,7 @@ Dynamic_Array<Type_Enum_Member> resolve_enum_member_values(Zodiac_Context *ctx, 
             bool member_resolved = true;
             if (!mem_decl->enum_member.value_expr) {
 
-                mem_decl->enum_member.value_expr = ast_integer_literal_expr_new(ctx, mem_decl->range, { .s64 = current_value });
+                mem_decl->enum_member.value_expr = ast_integer_literal_expr_new(ctx, mem_decl->sr, { .s64 = current_value });
 
                 bool name_result = name_resolve_expr(ctx, mem_decl->enum_member.value_expr, scope);
                 assert(name_result);
@@ -2130,7 +2130,7 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                 if (if_block.cond->resolved_type->kind == Type_Kind::BOOLEAN) {
                     // ok
                 } else if (valid_static_type_conversion(if_block.cond->resolved_type, &builtin_type_bool)) {
-                    AST_Expression *cast_expr = ast_cast_expr_new(resolver->ctx, if_block.cond->range, &builtin_type_bool, if_block.cond);
+                    AST_Expression *cast_expr = ast_cast_expr_new(resolver->ctx, if_block.cond->sr, &builtin_type_bool, if_block.cond);
                     if_block.cond = cast_expr;
 
                     bool name_result = name_resolve_expr(resolver->ctx, cast_expr, scope);
@@ -2251,7 +2251,7 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                     }
 
                     AST_Expression *value_expr = stmt->return_stmt.value;
-                    AST_Expression *cast_expr = ast_cast_expr_new(resolver->ctx, value_expr->range, expected_type, value_expr);
+                    AST_Expression *cast_expr = ast_cast_expr_new(resolver->ctx, value_expr->sr, expected_type, value_expr);
                     bool cast_name_result = name_resolve_expr(resolver->ctx, cast_expr, scope);
                     assert(cast_name_result);
                     bool cast_type_result = type_resolve_expression(resolver, cast_expr, scope, nullptr);
@@ -2316,7 +2316,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
     Type *inferred_type = nullptr;
     if (infer_type_from) {
-        inferred_type = infer_type(ctx, infer_type_from, expr->range);
+        inferred_type = infer_type(ctx, infer_type_from, expr->sr);
         if (!inferred_type) return false;
     }
 

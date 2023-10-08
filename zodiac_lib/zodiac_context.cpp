@@ -248,7 +248,7 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
                 assert(run_res.value.type == expr->resolved_type);
 
                 Scope *scope = directive->run.scope;
-                Source_Range range = expr->range;
+                Source_Range range = expr->sr;
                 AST_Expression *new_expr = interpreter_register_to_ast_expression(ctx->bytecode_converter, run_res.value, scope, range);
 
                 assert(new_expr->resolved_type);

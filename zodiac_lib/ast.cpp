@@ -12,12 +12,12 @@
 namespace Zodiac
 {
 
-void ast_identifier_create(Atom name, Source_Range range, AST_Identifier *out_ident)
+void ast_identifier_create(Atom name, Source_Range sr, AST_Identifier *out_ident)
 {
     debug_assert(out_ident);
 
     out_ident->name = name;
-    out_ident->range = range;
+    out_ident->sr = sr;
     out_ident->scope = nullptr;
 }
 
@@ -381,7 +381,7 @@ void ast_constant_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, 
     out_decl->variable.resolved_type = nullptr;
 }
 
-void ast_parameter_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range range, AST_Declaration *out_decl)
+void ast_parameter_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Declaration *out_decl)
 {
     debug_assert(out_decl);
 
@@ -393,7 +393,7 @@ void ast_parameter_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_R
     out_decl->parameter.resolved_type = nullptr;
 }
 
-void ast_field_decl_create(AST_Identifier ident, AST_Type_Spec *ts, Source_Range range, AST_Declaration *out_decl)
+void ast_field_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Declaration *out_decl)
 {
     debug_assert(out_decl);
 
@@ -582,374 +582,374 @@ void ast_file_create(Atom name, Dynamic_Array<AST_Declaration *> decls, AST_File
     out_file->declarations = decls;
 }
 
-AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Integer_Value value)
+AST_Expression *ast_integer_literal_expr_new(Zodiac_Context *ctx, Source_Range sr, Integer_Value value)
 {
     debug_assert(ctx);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_integer_literal_expr_create(value, expr);
     return expr;
 }
 
-AST_Expression *ast_real_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Real_Value value)
+AST_Expression *ast_real_literal_expr_new(Zodiac_Context *ctx, Source_Range sr, Real_Value value)
 {
     debug_assert(ctx);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_real_literal_expr_create(value, expr);
     return expr;
 }
 
-AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Source_Range range, Atom atom)
+AST_Expression *ast_string_literal_expr_new(Zodiac_Context *ctx, Source_Range sr, Atom atom)
 {
     debug_assert(ctx);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_string_literal_expr_create(atom, expr);
     return expr;
 }
 
-AST_Expression *ast_character_literal_expr_new(Zodiac_Context *ctx, Source_Range range, char character)
+AST_Expression *ast_character_literal_expr_new(Zodiac_Context *ctx, Source_Range sr, char character)
 {
     debug_assert(ctx);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_character_literal_expr_create(character, expr);
     return expr;
 }
 
-AST_Expression *ast_null_literal_expr_new(Zodiac_Context *ctx, Source_Range range)
+AST_Expression *ast_null_literal_expr_new(Zodiac_Context *ctx, Source_Range sr)
 {
     debug_assert(ctx);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_null_literal_expr_create(expr);
     return expr;
 }
 
-AST_Expression *ast_bool_literal_expr_new(Zodiac_Context *ctx, Source_Range range, bool value)
+AST_Expression *ast_bool_literal_expr_new(Zodiac_Context *ctx, Source_Range sr, bool value)
 {
     debug_assert(ctx);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_bool_literal_expr_create(expr, value);
 
     return expr;
 }
 
-AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Source_Range range, Atom atom)
+AST_Expression *ast_identifier_expr_new(Zodiac_Context *ctx, Source_Range sr, Atom atom)
 {
     debug_assert(ctx);
 
     AST_Identifier ident;
-    ast_identifier_create(atom, range, &ident);
+    ast_identifier_create(atom, sr, &ident);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_identifier_expr_create(ident, expr);
     return expr;
 }
 
-AST_Expression *ast_member_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *base, Atom atom)
+AST_Expression *ast_member_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *base, Atom atom)
 {
     debug_assert(ctx && base);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_member_expr_create(base, atom, expr);
     return expr;
 }
 
-AST_Expression *ast_index_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *base, AST_Expression *index)
+AST_Expression *ast_index_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *base, AST_Expression *index)
 {
     debug_assert(ctx && base && index);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_index_expr_create(base, index, expr);
     return expr;
 }
 
-AST_Expression *ast_call_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *base, Dynamic_Array<AST_Expression *> args)
+AST_Expression *ast_call_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *base, Dynamic_Array<AST_Expression *> args)
 {
     debug_assert(ctx && base);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_call_expr_create(base, args, expr);
     return expr;
 
 }
 
-AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Unary_Operator op, AST_Expression *operand)
+AST_Expression *ast_unary_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Unary_Operator op, AST_Expression *operand)
 {
     debug_assert(ctx && operand);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_unary_expr_create(op, operand, expr);
     return expr;
 }
 
-AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs)
+AST_Expression *ast_binary_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Binary_Operator op, AST_Expression *lhs, AST_Expression *rhs)
 {
     debug_assert(ctx && lhs && rhs);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_binary_expr_create(op, lhs, rhs, expr);
     return expr;
 }
 
-AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *ts, AST_Expression *value)
+AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_Spec *ts, AST_Expression *value)
 {
     debug_assert(ctx && ts && value);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_cast_expr_create(ts, value, expr);
     return expr;
 }
 
-AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range range, Type *type, AST_Expression *value)
+AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range sr, Type *type, AST_Expression *value)
 {
     debug_assert(ctx && type && value);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_cast_expr_create(type, value, expr);
     return expr;
 }
 
-AST_Expression *ast_run_directive_expr_new(Zodiac_Context *ctx, Source_Range range, AST_Directive *directive)
+AST_Expression *ast_run_directive_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Directive *directive)
 {
     debug_assert(ctx && directive);
 
     debug_assert(directive->kind == AST_Directive_Kind::RUN);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_run_directive_expr_create(directive, expr);
     return expr;
 }
 
-AST_Expression *ast_compound_expr_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> expressions)
+AST_Expression *ast_compound_expr_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Expression *> expressions)
 {
     debug_assert(ctx && expressions.count);
 
-    auto expr = ast_expression_new(ctx, range);
+    auto expr = ast_expression_new(ctx, sr);
     ast_compound_expr_create(expressions, expr);
     return expr;
 }
 
-AST_Expression *ast_expression_new(Zodiac_Context *ctx, Source_Range range)
+AST_Expression *ast_expression_new(Zodiac_Context *ctx, Source_Range sr)
 {
     AST_Expression *result = alloc<AST_Expression>(&ctx->ast_allocator);
-    result->range = range;
+    result->sr = sr;
     return result;
 }
 
-AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Statement *> statements)
+AST_Statement *ast_block_stmt_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Statement *> statements)
 {
     debug_assert(ctx);
 
-    auto stmt = ast_statement_new(ctx, range);
+    auto stmt = ast_statement_new(ctx, sr);
     ast_block_stmt_create(statements, stmt);
     return stmt;
 }
 
-AST_Statement *ast_declaration_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Declaration *decl)
+AST_Statement *ast_declaration_stmt_new(Zodiac_Context *ctx, Source_Range sr, AST_Declaration *decl)
 {
     debug_assert(ctx && decl);
 
-    auto stmt = ast_statement_new(ctx, range);
+    auto stmt = ast_statement_new(ctx, sr);
     ast_declaration_stmt_create(decl, stmt);
     return stmt;
 }
 
-AST_Statement *ast_assign_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *dest, AST_Expression *value)
+AST_Statement *ast_assign_stmt_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *dest, AST_Expression *value)
 {
     debug_assert(ctx && dest && value);
 
-    auto stmt = ast_statement_new(ctx, range);
+    auto stmt = ast_statement_new(ctx, sr);
     ast_assign_stmt_create(dest, value, stmt);
     return stmt;
 }
 
-AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *call)
+AST_Statement *ast_call_stmt_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *call)
 {
     debug_assert(ctx && call);
 
-    auto stmt = ast_statement_new(ctx, range);
+    auto stmt = ast_statement_new(ctx, sr);
     ast_call_stmt_create(call, stmt);
     return stmt;
 }
 
-AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_If_Block> blocks, AST_Statement *else_stmt)
+AST_Statement *ast_if_stmt_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_If_Block> blocks, AST_Statement *else_stmt)
 {
     debug_assert(ctx && blocks.count);
 
-    auto stmt = ast_statement_new(ctx, range);
+    auto stmt = ast_statement_new(ctx, sr);
     ast_if_stmt_create(blocks, else_stmt, stmt);
     return stmt;
 }
 
-AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *cond, AST_Statement *body_stmt)
+AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *cond, AST_Statement *body_stmt)
 {
     debug_assert(ctx && cond && body_stmt);
 
-    auto stmt = ast_statement_new(ctx, range);
+    auto stmt = ast_statement_new(ctx, sr);
     ast_while_stmt_create(cond, body_stmt, stmt);
     return stmt;
 }
 
-AST_Statement *ast_for_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Declaration *init_decl, AST_Expression *cond_expr, AST_Statement *inc_stmt, AST_Statement *body_stmt)
+AST_Statement *ast_for_stmt_new(Zodiac_Context *ctx, Source_Range sr, AST_Declaration *init_decl, AST_Expression *cond_expr, AST_Statement *inc_stmt, AST_Statement *body_stmt)
 {
-    auto stmt = ast_statement_new(ctx, range);
+    auto stmt = ast_statement_new(ctx, sr);
     ast_for_stmt_create(init_decl, cond_expr, inc_stmt, body_stmt, stmt);
     return stmt;
 }
 
-ZAPI AST_Statement *ast_switch_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *value, Dynamic_Array<AST_Statement *>cases)
+ZAPI AST_Statement *ast_switch_stmt_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *value, Dynamic_Array<AST_Statement *>cases)
 {
-    auto stmt = ast_statement_new(ctx, range);
+    auto stmt = ast_statement_new(ctx, sr);
     ast_switch_stmt_create(value, cases, stmt);
     return stmt;
 }
 
-AST_Statement *ast_switch_case_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> case_values, AST_Statement *case_stmt)
+AST_Statement *ast_switch_case_stmt_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Expression *> case_values, AST_Statement *case_stmt)
 {
-    auto stmt = ast_statement_new(ctx, range);
+    auto stmt = ast_statement_new(ctx, sr);
     ast_switch_case_stmt_create(case_values, case_stmt, stmt);
     return stmt;
 }
 
-AST_Statement *ast_falltrough_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Directive *directive)
+AST_Statement *ast_falltrough_stmt_new(Zodiac_Context *ctx, Source_Range sr, AST_Directive *directive)
 {
-    auto stmt = ast_statement_new(ctx, range);
+    auto stmt = ast_statement_new(ctx, sr);
     ast_falltrough_stmt_create(directive, stmt);
     return stmt;
 }
 
-AST_Statement *ast_defer_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Statement *stmt_to_defer)
+AST_Statement *ast_defer_stmt_new(Zodiac_Context *ctx, Source_Range sr, AST_Statement *stmt_to_defer)
 {
-    auto stmt = ast_statement_new(ctx, range);
+    auto stmt = ast_statement_new(ctx, sr);
     ast_defer_stmt_create(stmt_to_defer, stmt);
     return stmt;
 }
 
-AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *value)
+AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *value)
 {
     debug_assert(ctx);
 
-    auto stmt = ast_statement_new(ctx, range);
+    auto stmt = ast_statement_new(ctx, sr);
     ast_return_stmt_create(value, stmt);
     return stmt;
 }
 
-AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> exprs, bool newline)
+AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Expression *> exprs, bool newline)
 {
     debug_assert(ctx);
 
-    auto stmt = ast_statement_new(ctx, range);
+    auto stmt = ast_statement_new(ctx, sr);
     ast_print_stmt_create(exprs, newline, stmt);
     return stmt;
 }
 
-AST_Statement *ast_statement_new(Zodiac_Context *ctx, Source_Range range)
+AST_Statement *ast_statement_new(Zodiac_Context *ctx, Source_Range sr)
 {
     debug_assert(ctx);
 
     AST_Statement *result = alloc<AST_Statement>(&ctx->ast_allocator);
-    result->range = range;
+    result->sr = sr;
     return result;
 }
 
-AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value)
+AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Range sr, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value)
 {
     debug_assert(ctx);
 
-    auto decl = ast_declaration_new(ctx, range);
+    auto decl = ast_declaration_new(ctx, sr);
     ast_variable_decl_create(ident, ts, value, decl);
     return decl;
 }
 
-AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value)
+AST_Declaration *ast_constant_variable_decl_new(Zodiac_Context *ctx, Source_Range sr, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value)
 {
     debug_assert(ctx && value);
 
-    auto decl = ast_declaration_new(ctx, range);
+    auto decl = ast_declaration_new(ctx, sr);
     ast_constant_variable_decl_create(ident, ts, value, decl);
     return decl;
 }
 
-AST_Declaration *ast_parameter_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts)
+AST_Declaration *ast_parameter_decl_new(Zodiac_Context *ctx, Source_Range sr, AST_Identifier ident, AST_Type_Spec *ts)
 {
     debug_assert(ctx);
 
-    auto decl = ast_declaration_new(ctx, range);
-    ast_parameter_decl_create(ident, ts, range, decl);
+    auto decl = ast_declaration_new(ctx, sr);
+    ast_parameter_decl_create(ident, ts, decl);
 
     return decl;
 }
 
-AST_Declaration *ast_field_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Type_Spec *ts)
+AST_Declaration *ast_field_decl_new(Zodiac_Context *ctx, Source_Range sr, AST_Identifier ident, AST_Type_Spec *ts)
 {
     debug_assert(ctx);
 
-    auto decl = ast_declaration_new(ctx, range);
-    ast_field_decl_create(ident, ts, range, decl);
+    auto decl = ast_declaration_new(ctx, sr);
+    ast_field_decl_create(ident, ts, decl);
 
     return decl;
 }
 
-AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, Dynamic_Array<AST_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration_Flags flags)
+AST_Declaration *ast_function_decl_new(Zodiac_Context *ctx, Source_Range sr, AST_Identifier ident, Dynamic_Array<AST_Declaration *> args, AST_Type_Spec *return_ts, Dynamic_Array<AST_Statement *> body, AST_Declaration_Flags flags)
 {
     debug_assert(ctx);
 
-    auto decl = ast_declaration_new(ctx, range);
+    auto decl = ast_declaration_new(ctx, sr);
     ast_function_decl_create(&ctx->ast_allocator, ident, args, return_ts, body, decl, flags);
     return decl;
 }
 
-AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Declaration *> fields)
+AST_Declaration *ast_aggregate_decl_new(Zodiac_Context *ctx, Source_Range sr, AST_Identifier ident, AST_Declaration_Kind kind, Dynamic_Array<AST_Declaration *> fields)
 {
     debug_assert(ctx);
     debug_assert(kind == AST_Declaration_Kind::STRUCT || kind == AST_Declaration_Kind::UNION);
 
-    auto decl = ast_declaration_new(ctx, range);
+    auto decl = ast_declaration_new(ctx, sr);
     ast_aggregate_decl_create(ident, kind, fields, decl);
     return decl;
 }
 
-AST_Declaration *ast_enum_member_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, AST_Expression *value)
+AST_Declaration *ast_enum_member_decl_new(Zodiac_Context *ctx, Source_Range sr, AST_Identifier ident, AST_Expression *value)
 {
-    auto decl = ast_declaration_new(ctx, range);
+    auto decl = ast_declaration_new(ctx, sr);
     ast_enum_member_decl_create(ident, value, decl);
     return decl;
 }
 
-AST_Declaration *ast_enum_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident, Dynamic_Array<AST_Declaration *> members)
+AST_Declaration *ast_enum_decl_new(Zodiac_Context *ctx, Source_Range sr, AST_Identifier ident, Dynamic_Array<AST_Declaration *> members)
 {
-    auto decl = ast_declaration_new(ctx, range);
+    auto decl = ast_declaration_new(ctx, sr);
     ast_enum_decl_create(ident, members, decl);
     return decl;
 }
 
-AST_Declaration *ast_run_directive_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Directive *run_directive)
+AST_Declaration *ast_run_directive_decl_new(Zodiac_Context *ctx, Source_Range sr, AST_Directive *run_directive)
 {
     debug_assert(ctx && run_directive);
     debug_assert(run_directive->kind == AST_Directive_Kind::RUN);
 
-    auto decl = ast_declaration_new(ctx, range);
+    auto decl = ast_declaration_new(ctx, sr);
     ast_run_directive_decl_create(run_directive, decl);
     return decl;
 }
 
-AST_Declaration *ast_import_directive_decl_new(Zodiac_Context *ctx, Source_Range range, AST_Directive *import_directive)
+AST_Declaration *ast_import_directive_decl_new(Zodiac_Context *ctx, Source_Range sr, AST_Directive *import_directive)
 {
-    auto decl = ast_declaration_new(ctx, range);
+    auto decl = ast_declaration_new(ctx, sr);
     ast_import_directive_decl_create(import_directive, decl);
     return decl;
 }
 
-AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Range range)
+AST_Declaration *ast_declaration_new(Zodiac_Context *ctx, Source_Range sr)
 {
     debug_assert(ctx);
 
     AST_Declaration *result = alloc<AST_Declaration>(&ctx->ast_allocator);
-    result->range = range;
+    result->sr = sr;
     return result;
 }
 
@@ -968,99 +968,99 @@ const char *ast_binop_to_string[(int)AST_Binary_Operator::LAST_BINOP + 1] = {
     [(int)AST_Binary_Operator::GTEQ] = ">=",
 };
 
-AST_Type_Spec *ast_type_ts_new(Zodiac_Context *ctx, Source_Range range, Type *type)
+AST_Type_Spec *ast_type_ts_new(Zodiac_Context *ctx, Source_Range sr, Type *type)
 {
     debug_assert(ctx);
 
-    auto ts = ast_type_spec_new(ctx, range);
+    auto ts = ast_type_spec_new(ctx, sr);
     ast_type_ts_create(type, ts);
     return ts;
 }
 
-AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Identifier ident)
+AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Identifier ident)
 {
     debug_assert(ctx);
 
-    auto ts = ast_type_spec_new(ctx, range);
+    auto ts = ast_type_spec_new(ctx, sr);
     ast_name_ts_create(ident, ts);
     return ts;
 }
 
-AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *base)
+AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_Spec *base)
 {
     debug_assert(ctx && base);
 
-    auto ts = ast_type_spec_new(ctx, range);
+    auto ts = ast_type_spec_new(ctx, sr);
     ast_pointer_ts_create(base, ts);
     return ts;
 }
 
-AST_Type_Spec *ast_static_array_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *length_expr, AST_Type_Spec *element_ts)
+AST_Type_Spec *ast_static_array_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *length_expr, AST_Type_Spec *element_ts)
 {
     debug_assert(ctx && length_expr && element_ts);
 
-    auto ts = ast_type_spec_new(ctx, range);
+    auto ts = ast_type_spec_new(ctx, sr);
     ast_static_array_ts_create(length_expr, element_ts, ts);
     return ts;
 }
 
-AST_Type_Spec *ast_slice_ts_new(Zodiac_Context *ctx, Source_Range range, AST_Type_Spec *element_ts)
+AST_Type_Spec *ast_slice_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_Spec *element_ts)
 {
-    auto ts = ast_type_spec_new(ctx, range);
+    auto ts = ast_type_spec_new(ctx, sr);
     ast_slice_ts_create(element_ts, ts);
     return ts;
 }
 
-AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range range)
+AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range sr)
 {
     debug_assert(ctx);
 
     AST_Type_Spec *result = alloc<AST_Type_Spec>(&ctx->ast_allocator);
-    result->range = range;
+    result->sr = sr;
     return result;
 }
 
-AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *expr)
+AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *expr)
 {
     debug_assert(ctx && expr);
 
-    AST_Directive *result = ast_directive_new(ctx, range);
+    AST_Directive *result = ast_directive_new(ctx, sr);
     ast_run_directive_create(expr, result);
 
     return result;
 }
 
-AST_Directive *ast_import_directive_new(Zodiac_Context *ctx, Source_Range range, Atom path)
+AST_Directive *ast_import_directive_new(Zodiac_Context *ctx, Source_Range sr, Atom path)
 {
-    AST_Directive *result = ast_directive_new(ctx, range);
+    AST_Directive *result = ast_directive_new(ctx, sr);
     ast_import_directive_create(path, result);
 
     return result;
 }
 
-AST_Directive *ast_falltrough_directive_new(Zodiac_Context *ctx, Source_Range range)
+AST_Directive *ast_falltrough_directive_new(Zodiac_Context *ctx, Source_Range sr)
 {
-    AST_Directive *result = ast_directive_new(ctx, range);
+    AST_Directive *result = ast_directive_new(ctx, sr);
     ast_falltrough_directive_create(result);
     return result;
 }
 
-AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Statement *stmt)
+AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range sr, AST_Statement *stmt)
 {
     debug_assert(ctx && stmt);
 
-    AST_Directive *result = ast_directive_new(ctx, range);
+    AST_Directive *result = ast_directive_new(ctx, sr);
     ast_run_directive_create(stmt, result);
 
     return result;
 }
 
-AST_Directive *ast_directive_new(Zodiac_Context *ctx, Source_Range range)
+AST_Directive *ast_directive_new(Zodiac_Context *ctx, Source_Range sr)
 {
     debug_assert(ctx);
 
     auto dir = alloc<AST_Directive>(&ctx->ast_allocator);
-    dir->range = range;
+    dir->sr = sr;
 
     return dir;
 }

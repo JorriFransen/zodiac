@@ -2,6 +2,7 @@
 
 #include "bytecode/bytecode.h"
 #include "bytecode/interpreter.h"
+#include "containers/dynamic_array.h"
 #include "containers/hash_table.h"
 #include "containers/stack.h"
 #include "defines.h"

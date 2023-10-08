@@ -85,19 +85,19 @@ Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Sy
 {
     assert(scope);
 
-    Source_Range range = {};
+    Source_Range sr = {};
 
     if (decl) {
-        range = decl->range;
+        sr = decl->sr;
     } else {
         Source_Pos pos = { .name = "<builtin>", .line = 0, .index_in_line = 0, };
-        range = { pos, pos };
+        sr = { pos, pos };
     }
 
-    return scope_add_symbol(ctx, scope, kind, state, flags, name, decl, range);
+    return scope_add_symbol(ctx, scope, kind, state, flags, name, decl, sr);
 }
 
-Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Range range)
+Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_State state, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Range sr)
 {
     assert(ctx);
     assert(scope);
@@ -107,11 +107,11 @@ Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Sy
     auto ex_sym = scope_get_symbol(scope, name);
     if (ex_sym) {
         assert(decl);
-        report_redecl(ctx, ex_sym->range, name, decl->identifier.range);
+        report_redecl(ctx, ex_sym->sr, name, decl->identifier.sr);
         return nullptr;
     }
 
-    Symbol sym = { kind, state, flags, name, decl, range };
+    Symbol sym = { kind, state, flags, name, decl, sr };
 
     dynamic_array_append(&scope->symbols, sym);
 
@@ -120,13 +120,13 @@ Symbol *scope_add_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Sy
 
 Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
 {
-    return add_unresolved_symbol(ctx, scope, kind, flags, name, decl, decl->range);
+    return add_unresolved_symbol(ctx, scope, kind, flags, name, decl, decl->sr);
 }
 
-Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Range range)
+Symbol *add_unresolved_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl, Source_Range sr)
 {
     assert(scope && decl);
-    return scope_add_symbol(ctx, scope, kind, Symbol_State::UNRESOLVED, flags, name, decl, range);
+    return scope_add_symbol(ctx, scope, kind, Symbol_State::UNRESOLVED, flags, name, decl, sr);
 }
 
 Symbol *add_typed_symbol(Zodiac_Context *ctx, Scope *scope, Symbol_Kind kind, Symbol_Flags flags, Atom name, AST_Declaration *decl)
@@ -167,7 +167,7 @@ bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declarati
             for (s64 i = 0; i < decl->function.params.count; i++) {
                 auto param = decl->function.params[i];
 
-                auto param_sym = add_unresolved_symbol(ctx, parameter_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param->identifier.name, param, param->identifier.range);
+                auto param_sym = add_unresolved_symbol(ctx, parameter_scope, Symbol_Kind::PARAM, SYM_FLAG_NONE, param->identifier.name, param, param->identifier.sr);
                 if (!param_sym) {
                     return false;
                 }
@@ -185,7 +185,7 @@ bool add_unresolved_decl_symbol(Zodiac_Context *ctx, Scope *scope, AST_Declarati
 
             for (s64 i = 0; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
-                auto mem_sym = add_unresolved_symbol(ctx, aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field->identifier.name, field, field->identifier.range);
+                auto mem_sym = add_unresolved_symbol(ctx, aggregate_scope, Symbol_Kind::MEMBER, SYM_FLAG_NONE, field->identifier.name, field, field->identifier.sr);
                 if (!mem_sym) {
                     return false;
                 }
