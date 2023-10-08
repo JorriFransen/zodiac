@@ -189,12 +189,12 @@ struct Bytecode_Switch_Case
 {
     Bytecode_Register case_val;
     Bytecode_Register block_register;
+    bool is_default;
 };
 
 struct Bytecode_Switch
 {
     Dynamic_Array<Bytecode_Switch_Case> cases;
-
     Bytecode_Block_Handle default_or_post_block;
 };
 

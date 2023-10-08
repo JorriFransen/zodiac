@@ -822,32 +822,37 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             dynamic_array_create(bc->allocator, &bc_cases, stmt->switch_stmt.cases.count);
 
             auto post_switch_block = bytecode_create_block(bc->builder, cfn, "switch.post");
+            auto default_or_post_block = post_switch_block;
 
             for (s64 i = 0; i < stmt->switch_stmt.cases.count; i++) {
 
                 auto case_stmt = stmt->switch_stmt.cases[i];
 
-                assert(!case_stmt->switch_case_stmt.is_default);
-
-                assert(EXPR_IS_CONST(case_stmt->switch_case_stmt.case_value));
-                Bytecode_Register case_value = ast_expr_to_bytecode(bc, case_stmt->switch_case_stmt.case_value);
-
+                Bytecode_Register case_value = {};
                 Bytecode_Block_Handle case_block = bytecode_append_block(bc->builder, cfn, "switch.case");
                 bytecode_set_insert_point(bc->builder, cfn, case_block);
+
+                if (!case_stmt->switch_case_stmt.is_default) {
+                    assert(EXPR_IS_CONST(case_stmt->switch_case_stmt.case_value));
+                    case_value = ast_expr_to_bytecode(bc, case_stmt->switch_case_stmt.case_value);
+                } else {
+                    default_or_post_block = case_block;
+                }
 
                 ast_stmt_to_bytecode(bc, case_stmt->switch_case_stmt.case_stmt);
 
                 bytecode_emit_jmp(bc->builder, post_switch_block);
 
-                dynamic_array_append(&bc_cases, { case_value, bytecode_block_value(bc->builder, case_block)});
+                Bytecode_Switch_Case bc_case = { case_value, bytecode_block_value(bc->builder, case_block),
+                                                 case_stmt->switch_case_stmt.is_default };
+
+                dynamic_array_append(&bc_cases, bc_case);
             }
 
             bytecode_set_insert_point(bc->builder, cfn, initial_block_handle);
+            bytecode_emit_switch(bc->builder, value_reg, bc_cases, default_or_post_block);
 
-            auto post_block = bytecode_append_block(bc->builder, cfn, post_switch_block);
-
-            bytecode_emit_switch(bc->builder, value_reg, bc_cases, post_block);
-
+            bytecode_append_block(bc->builder, cfn, post_switch_block);
             bytecode_set_insert_point(bc->builder, cfn, post_switch_block);
 
             break;
