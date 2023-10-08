@@ -3633,6 +3633,49 @@ Token_Kind2.INT: 257)OUT_STR" };
     return MUNIT_OK;
 }
 
+MunitResult Switch_Int(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        print_int :: (i: s64) {
+
+            switch (i) {
+                case 0: println("i == 0");
+                case 1: println("i == 1");
+                case 2: println("i == 2");
+                case 3: println("i == 3");
+                case 4: println("i == 4");
+            }
+        }
+
+        main :: () {
+
+            print_int(0);
+            print_int(1);
+            print_int(2);
+            print_int(3);
+            print_int(4);
+
+            print_int(5);
+            print_int(99);
+            print_int(-1);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(i == 0
+i == 1
+i == 2
+i == 3
+i == 4)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 MunitResult Switch_Enum_Incomplete(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(

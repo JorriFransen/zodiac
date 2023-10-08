@@ -720,7 +720,7 @@ void flatten_enum_declaration(Resolver *resolver, AST_Declaration *decl, Scope *
     dynamic_array_append(&node->nodes, flat_node);
 }
 
-void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest)
+void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest, Infer_Node *infer_node/*=nullptr*/)
 {
     debug_assert(resolver && stmt && scope && dest);
 
@@ -818,17 +818,21 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
 
             flatten_expression(resolver, stmt->switch_stmt.value, scope, dest);
 
+            Infer_Node *case_value_infer_node = infer_node_new(resolver->ctx, stmt->switch_stmt.value);
+
             for (s64 i = 0; i < stmt->switch_stmt.cases.count; i++) {
-                flatten_statement(resolver, stmt->switch_stmt.cases[i], scope, dest);
+                flatten_statement(resolver, stmt->switch_stmt.cases[i], scope, dest, case_value_infer_node);
             }
             break;
         }
 
         case AST_Statement_Kind::SWITCH_CASE: {
 
+            assert(infer_node);
+
             auto value = stmt->switch_case_stmt.case_value;
             if (value) {
-                flatten_expression(resolver, stmt->switch_case_stmt.case_value, scope, dest);
+                flatten_expression(resolver, stmt->switch_case_stmt.case_value, scope, dest, infer_node);
             }
 
             stack_push(&resolver->switch_case_stack, stmt);
