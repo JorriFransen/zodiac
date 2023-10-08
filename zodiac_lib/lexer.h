@@ -15,10 +15,11 @@ enum Token_Kind
 
     // Ascii range (mostly here so the character literals can be used in switch statements)
     TOK_STAR = '*',   // 42
+    TOK_DOT = '.',    // 46
     TOK_LBRACK = '[', // 91
     TOK_RBRACK = ']', // 93
 
-    TOK_INT = 128,
+    TOK_INT = 256,
     TOK_REAL,
     TOK_STRING,
     TOK_CHAR,
@@ -26,6 +27,7 @@ enum Token_Kind
     TOK_KEYWORD,
 
     TOK_RIGHT_ARROW,
+    TOK_DOT_DOT,
 
     TOK_EQ,
     TOK_NEQ,

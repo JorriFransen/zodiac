@@ -20,8 +20,8 @@ main :: () {
 print_i :: (i: s64) {
 
     switch i {
-        case 0, 1, 2: println(i, ": 0..2"); #falltrough;
-        case 3, 4: println(i, ": 3..4");
+        case 0..2: println(i, ": 0..2");
+        case 3..4: println(i, ": 3..4");
     }
 }
 

@@ -189,6 +189,9 @@ case (first_char): {                                                \
         case '.': {
             if (isdigit(lex->stream[1])) {
                 if (!lex_real(lex)) return false;
+            } else if (lex->stream[1] == '.') {
+                lex->token.kind = TOK_DOT_DOT;
+                lex->stream += 2;
             } else {
                 lex->token.kind = (Token_Kind)*lex->stream;
                 lex->stream += 1;
@@ -203,10 +206,11 @@ case (first_char): {                                                \
                 lex->stream += 1;
             }
 
-            char c = *lex->stream;
+            char c = lex->stream[0];
+            char cc = lex->stream[1];
             lex->stream = start;
 
-            if (c == '.' || tolower(c) == 'e') {
+            if ((c == '.' && cc != '.') || tolower(c) == 'e') {
                 if (!lex_real(lex)) return false;
             } else {
                 if (!lex_int(lex)) return false;

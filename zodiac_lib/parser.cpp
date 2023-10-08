@@ -253,7 +253,7 @@ AST_Expression *parse_expr_unary(Parser *parser)
     }
 }
 
-file_local AST_Binary_Operator token_kind_to_ast_binop[256] = {
+file_local AST_Binary_Operator token_kind_to_ast_binop[TOK_LAST] = {
 
     ['+'] = AST_Binary_Operator::ADD,
     ['-'] = AST_Binary_Operator::SUB,
