@@ -11,7 +11,7 @@ main :: () {
 
     print_i(5);
     print_i(99);
-    print_i(99);
+    print_i(-1);
 
     return 0;
 }
@@ -19,8 +19,9 @@ main :: () {
 print_i :: (i: s64) {
 
     switch i {
-        case 0..2: println(i, ": 0..2");
+        case 0..2, 99: println(i, ": 0..2 or 99");
         case 3..4: println(i, ": 3..4");
+        default: println(i, ": whatever");
     }
 }
 

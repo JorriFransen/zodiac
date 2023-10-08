@@ -969,7 +969,11 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
             break;
         }
 
-        case AST_Expression_Kind::RANGE: assert(false); break;
+        case AST_Expression_Kind::RANGE: {
+            flatten_expression(resolver, expr->range.min_expr, scope, dest, infer_node);
+            flatten_expression(resolver, expr->range.max_expr, scope, dest, infer_node);
+            break;
+        }
 
         case AST_Expression_Kind::CAST: {
             assert(expr->cast.type_spec);
@@ -1382,7 +1386,10 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             break;
         }
 
-        case AST_Expression_Kind::RANGE: assert(false); break;
+        case AST_Expression_Kind::RANGE: {
+            // Leaf
+            break;
+        }
 
         case AST_Expression_Kind::CALL: {
             AST_Expression *base = expr->call.base;
@@ -2788,7 +2795,62 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             break;
         }
 
-        case AST_Expression_Kind::RANGE: assert(false); break;
+        case AST_Expression_Kind::RANGE: {
+
+            auto min = expr->range.min_expr;
+            auto max = expr->range.max_expr;
+
+            if (min->resolved_type->kind != Type_Kind::INTEGER) {
+                fatal_resolve_error(ctx, min, "Expected integer type in range expression, got: '%s",
+                                    temp_type_string(min->resolved_type).data);
+                return false;
+            }
+            if (max->resolved_type->kind != Type_Kind::INTEGER) {
+                fatal_resolve_error(ctx, max, "Expected integer type in range expression, got: '%s",
+                                    temp_type_string(max->resolved_type).data);
+                return false;
+            }
+
+            if (min->resolved_type != max->resolved_type) {
+                fatal_resolve_error(ctx, expr, "Mismatching types in range: '%s' and '%s'",
+                                    temp_type_string(min->resolved_type).data,
+                                    temp_type_string(max->resolved_type).data);
+                return false;
+            }
+
+            if (!EXPR_IS_CONST(min)) {
+                fatal_resolve_error(ctx, min, "Expected constant in range expression");
+                return false;
+            }
+            if (!EXPR_IS_CONST(max)) {
+                fatal_resolve_error(ctx, max, "Expected constant in range expression");
+                return false;
+            }
+
+            auto min_result = resolve_constant_integer_expr(min);
+            assert(min_result.kind == Constant_Resolve_Result_Kind::OK);
+            assert(min_result.type == min->resolved_type);
+
+            s64 min_value = min_result.integer.s64;
+
+            auto max_result = resolve_constant_integer_expr(max);
+            assert(max_result.kind == Constant_Resolve_Result_Kind::OK);
+            assert(max_result.type == max->resolved_type);
+
+            s64 max_value = max_result.integer.s64;
+
+            if (min_value >= max_value) {
+                fatal_resolve_error(ctx, expr, "Invalid range: %i..%i", min_value, max_value);
+                return false;
+            }
+
+            expr->range.min_value = min_value;
+            expr->range.max_value = max_value;
+
+            expr->flags |= AST_EXPR_FLAG_CONST;
+            expr->resolved_type = min->resolved_type;
+            break;
+        }
 
         case AST_Expression_Kind::CAST: {
             assert(EXPR_IS_TYPED(expr->cast.value));

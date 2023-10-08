@@ -7,9 +7,8 @@
 - Recursive functions
 
 - Switch
-  - Ranges
+  - Check for overlapping ranges and duplicate values in multi value cases
   - Optimize blocks that are empty, or only have a falltrough
-  - Allow non constant switch values? ( this will require generating if-like code to check the non const cases first )
 
 - Specify enum types
 - #complete on enum types and switch statements

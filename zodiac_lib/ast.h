@@ -119,8 +119,11 @@ struct AST_Binary_Expression
 
 struct AST_Range_Expression
 {
-    AST_Expression *min;
-    AST_Expression *max;
+    AST_Expression *min_expr;
+    AST_Expression *max_expr;
+
+    s64 min_value;
+    s64 max_value;
 };
 
 struct AST_Cast_Expression

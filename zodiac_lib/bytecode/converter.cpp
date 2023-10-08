@@ -859,10 +859,24 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                     assert(!case_stmt->switch_case_stmt.is_default);
 
                     for (s64 case_value_index = 0; case_value_index < case_values.count; case_value_index++) {
-                        Bytecode_Register case_value = ast_expr_to_bytecode(bc, case_values[case_value_index]);
+                        auto case_value = case_values[case_value_index];
 
-                        Bytecode_Switch_Case bc_case = { case_value, bytecode_block_value(bc->builder, case_block), false };
-                        dynamic_array_append(&bc_cases, bc_case);
+                        if (case_value->kind == AST_Expression_Kind::RANGE) {
+                            assert(case_value->resolved_type->kind == Type_Kind::INTEGER);
+
+                            for (s64 i = case_value->range.min_value; i <= case_value->range.max_value; i++) {
+                                Bytecode_Register case_value_reg = bytecode_integer_literal(bc->builder, case_value->resolved_type, i);
+
+                                Bytecode_Switch_Case bc_case = { case_value_reg, bytecode_block_value(bc->builder, case_block), false };
+                                dynamic_array_append(&bc_cases, bc_case);
+                            }
+
+                        } else {
+                            Bytecode_Register case_value_reg = ast_expr_to_bytecode(bc, case_value);
+
+                            Bytecode_Switch_Case bc_case = { case_value_reg, bytecode_block_value(bc->builder, case_block), false };
+                            dynamic_array_append(&bc_cases, bc_case);
+                        }
                     }
                 } else {
                     assert(case_stmt->switch_case_stmt.is_default);

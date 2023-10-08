@@ -355,6 +355,7 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
             print_a = false;
             print_b = false;
 
+            string_builder_append(sb, " ");
             bytecode_print_register(builder, fn, instruction->a, sb);
 
             string_builder_append(sb, " [\n");

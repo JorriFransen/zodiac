@@ -147,8 +147,8 @@ void ast_range_expr_create(AST_Expression *min, AST_Expression *max, AST_Express
 {
     ast_expression_create(AST_Expression_Kind::RANGE, AST_EXPR_FLAG_NONE, out_expr);
 
-    out_expr->range.min = min;
-    out_expr->range.max = max;
+    out_expr->range.min_expr = min;
+    out_expr->range.max_expr = max;
 }
 
 void ast_cast_expr_create(AST_Type_Spec *ts, AST_Expression *value, AST_Expression *out_expr)
@@ -1176,9 +1176,9 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
         }
 
         case AST_Expression_Kind::RANGE: {
-            ast_print_expression(sb, expr->range.min);
+            ast_print_expression(sb, expr->range.min_expr);
             string_builder_append(sb, "..");
-            ast_print_expression(sb, expr->range.max);
+            ast_print_expression(sb, expr->range.max_expr);
             break;
         }
 

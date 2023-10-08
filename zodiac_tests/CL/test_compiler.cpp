@@ -3988,6 +3988,134 @@ R"OUT_STR(0: 0..2
     return MUNIT_OK;
 }
 
+MunitResult Switch_Int_Range(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        main :: () {
+
+            print_i(0);
+            print_i(1);
+            print_i(2);
+            print_i(3);
+            print_i(4);
+
+            print_i(5);
+            print_i(99);
+            print_i(-1);
+
+            return 0;
+        }
+
+        print_i :: (i: s64) {
+
+            switch i {
+                case 0..2: println(i, ": 0..2");
+                case 3..4: println(i, ": 3..4");
+            }
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(0: 0..2
+1: 0..2
+2: 0..2
+3: 3..4
+4: 3..4)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Switch_Int_Range_Default(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        main :: () {
+
+            print_i(0);
+            print_i(1);
+            print_i(2);
+            print_i(3);
+            print_i(4);
+
+            print_i(5);
+            print_i(99);
+            print_i(-1);
+
+            return 0;
+        }
+
+        print_i :: (i: s64) {
+
+            switch i {
+                case 0..2: println(i, ": 0..2");
+                case 3..4: println(i, ": 3..4");
+                default: println(i, ": whatever");
+            }
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(0: 0..2
+1: 0..2
+2: 0..2
+3: 3..4
+4: 3..4
+5: whatever
+99: whatever
+-1: whatever)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Switch_Int_Range_Multi(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        main :: () {
+
+            print_i(0);
+            print_i(1);
+            print_i(2);
+            print_i(3);
+            print_i(4);
+
+            print_i(5);
+            print_i(99);
+            print_i(-1);
+
+            return 0;
+        }
+
+        print_i :: (i: s64) {
+
+            switch i {
+                case 0..2, 99: println(i, ": 0..2 or 99");
+                case 3..4, -1: println(i, ": 3..4 or -1");
+                default: println(i, ": whatever");
+            }
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(0: 0..2 or 99
+1: 0..2 or 99
+2: 0..2 or 99
+3: 3..4 or -1
+4: 3..4 or -1
+5: whatever
+99: 0..2 or 99
+-1: 3..4 or -1)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 MunitResult Switch_Enum_Incomplete(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
