@@ -315,6 +315,13 @@ void ast_switch_case_stmt_create(AST_Expression *case_value, AST_Statement *case
     out_stmt->switch_case_stmt.is_default = case_value == nullptr;
 }
 
+void ast_falltrough_stmt_create(AST_Directive *directive, AST_Statement *out_stmt)
+{
+    ast_statement_create(AST_Statement_Kind::FALLTROUGH, out_stmt);
+
+    out_stmt->falltrough.directive = directive;
+}
+
 void ast_defer_stmt_create(AST_Statement *stmt_to_defer, AST_Statement *out_stmt)
 {
     ast_statement_create(AST_Statement_Kind::DEFER, out_stmt);
@@ -553,6 +560,11 @@ void ast_import_directive_create(Atom path, AST_Directive *out_dir)
     ast_directive_create(AST_Directive_Kind::IMPORT, out_dir);
 
     out_dir->import.path = path;
+}
+
+void ast_falltrough_directive_create(AST_Directive *out_dir)
+{
+    ast_directive_create(AST_Directive_Kind::FALLTROUGH, out_dir);
 }
 
 void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir)
@@ -803,6 +815,13 @@ AST_Statement *ast_switch_case_stmt_new(Zodiac_Context *ctx, Source_Range range,
     return stmt;
 }
 
+AST_Statement *ast_falltrough_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Directive *directive)
+{
+    auto stmt = ast_statement_new(ctx, range);
+    ast_falltrough_stmt_create(directive, stmt);
+    return stmt;
+}
+
 AST_Statement *ast_defer_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Statement *stmt_to_defer)
 {
     auto stmt = ast_statement_new(ctx, range);
@@ -1016,6 +1035,13 @@ AST_Directive *ast_import_directive_new(Zodiac_Context *ctx, Source_Range range,
     AST_Directive *result = ast_directive_new(ctx, range);
     ast_import_directive_create(path, result);
 
+    return result;
+}
+
+AST_Directive *ast_falltrough_directive_new(Zodiac_Context *ctx, Source_Range range)
+{
+    AST_Directive *result = ast_directive_new(ctx, range);
+    ast_falltrough_directive_create(result);
     return result;
 }
 
@@ -1335,6 +1361,11 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
             ast__print_statement_internal(sb, stmt->switch_case_stmt.case_stmt, indent + 1, false);
             string_builder_append(sb, "\n");
 
+            break;
+        }
+
+        case AST_Statement_Kind::FALLTROUGH: {
+            string_builder_append(sb, "#falltrough");
             break;
         }
 

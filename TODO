@@ -2,6 +2,7 @@
 - Switch
   - Ranges
   - Falltrough
+  - Optimize blocks that are empty, or only have a falltrough
 
 - Recursive functions
 

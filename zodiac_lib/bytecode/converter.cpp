@@ -38,6 +38,7 @@ void bytecode_converter_init(Allocator *allocator, Zodiac_Context *context, Byte
 
     hash_table_create(allocator, &out_bc->functions);
     stack_init(allocator, &out_bc->defer_stack);
+    stack_init(allocator, &out_bc->switch_case_stack);
     hash_table_create(allocator, &out_bc->allocations);
     hash_table_create(allocator, &out_bc->implicit_lvalues);
     hash_table_create(allocator, &out_bc->globals);
@@ -824,12 +825,19 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             auto post_switch_block = bytecode_create_block(bc->builder, cfn, "switch.post");
             auto default_or_post_block = post_switch_block;
 
+            auto blocks = temp_array_create<Bytecode_Block_Handle>(temp_allocator_allocator(), stmt->switch_stmt.cases.count);
+
+            for (s64 i = 0; i < stmt->switch_stmt.cases.count; i++) {
+                auto block_handle = bytecode_append_block(bc->builder, cfn, "switch.case");
+                dynamic_array_append(&blocks, block_handle);
+            }
+
             for (s64 i = 0; i < stmt->switch_stmt.cases.count; i++) {
 
                 auto case_stmt = stmt->switch_stmt.cases[i];
 
                 Bytecode_Register case_value = {};
-                Bytecode_Block_Handle case_block = bytecode_append_block(bc->builder, cfn, "switch.case");
+                auto case_block = blocks[i];
                 bytecode_set_insert_point(bc->builder, cfn, case_block);
 
                 if (!case_stmt->switch_case_stmt.is_default) {
@@ -839,9 +847,15 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                     default_or_post_block = case_block;
                 }
 
+                stack_push(&bc->switch_case_stack, { stmt, i, blocks, post_switch_block });
+
                 ast_stmt_to_bytecode(bc, case_stmt->switch_case_stmt.case_stmt);
 
-                bytecode_emit_jmp(bc->builder, post_switch_block);
+                stack_pop(&bc->switch_case_stack);
+
+                if (!bytecode_block_is_terminated(bytecode_get_insert_block(bc->builder))) {
+                    bytecode_emit_jmp(bc->builder, post_switch_block);
+                }
 
                 Bytecode_Switch_Case bc_case = { case_value, bytecode_block_value(bc->builder, case_block),
                                                  case_stmt->switch_case_stmt.is_default };
@@ -855,10 +869,32 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             bytecode_append_block(bc->builder, cfn, post_switch_block);
             bytecode_set_insert_point(bc->builder, cfn, post_switch_block);
 
+            temp_array_destroy(&blocks);
+
             break;
         }
 
         case AST_Statement_Kind::SWITCH_CASE: assert(false); break;
+
+        case AST_Statement_Kind::FALLTROUGH: {
+            auto switch_info = stack_top(&bc->switch_case_stack);
+
+            Bytecode_Block_Handle target_block = -1;
+
+            if (switch_info.current_case_index >= switch_info.switch_stmt->switch_stmt.cases.count - 1) {
+                // In the last block
+                target_block = switch_info.post_block;
+            } else {
+                auto target_block_index = switch_info.current_case_index + 1;
+                assert(target_block_index >= 0 && target_block_index < switch_info.case_blocks.count);
+                target_block = switch_info.case_blocks[target_block_index];
+            }
+
+            assert(target_block != -1);
+
+            bytecode_emit_jmp(bc->builder, target_block);
+            break;
+        }
 
         case AST_Statement_Kind::DEFER: {
             stack_push(&bc->defer_stack, stmt);

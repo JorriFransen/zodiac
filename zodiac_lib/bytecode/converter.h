@@ -22,6 +22,15 @@ struct Zodiac_Context;
 
 namespace Bytecode {
 
+struct Bytecode_Switch_Case_Info
+{
+    AST_Statement *switch_stmt;
+    s64 current_case_index;
+
+    Array_Ref<Bytecode_Block_Handle> case_blocks;
+    Bytecode_Block_Handle post_block;
+};
+
 struct Bytecode_Converter
 {
     Allocator *allocator;
@@ -30,6 +39,8 @@ struct Bytecode_Converter
 
     Hash_Table<AST_Declaration *, Bytecode_Function_Handle> functions;
     Stack<AST_Statement *> defer_stack;
+
+    Stack<Bytecode_Switch_Case_Info> switch_case_stack;
 
     // TODO: should these be separated per function?
     Hash_Table<AST_Declaration *, Bytecode_Register> allocations;
