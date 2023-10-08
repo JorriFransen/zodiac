@@ -1130,6 +1130,7 @@ switch (operand.type->bit_size) { \
             Interpreter_Register value_reg = interpreter_load_register(interp, instruction.a);
 
             Bytecode_Block_Handle default_block_handle = -1;
+            bool match = false;
 
             for (s64 i = 0; i < bc_cases.cases.count; i++) {
 
@@ -1138,6 +1139,7 @@ switch (operand.type->bit_size) { \
 
                     if (value_reg.value.integer.u64 == case_value_reg.value.integer.u64) {
                         target_block_handle = bc_cases.cases[i].block_register.block_handle;
+                        match = true;
                         break;
                     }
 
@@ -1147,7 +1149,7 @@ switch (operand.type->bit_size) { \
                 }
             }
 
-            if (default_block_handle != -1) {
+            if (!match && default_block_handle != -1) {
                 assert(default_block_handle == target_block_handle);
             }
 

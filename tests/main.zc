@@ -32,8 +32,15 @@ print_day :: (d: Day) {
 
     switch d {
         case Day.MONDAY: println("Day.MONDAY: ", d);
-        case Day.TUESDAY: print("Day.TUESDAY: ", d); println();
+
+        case Day.TUESDAY: {
+            print("Day.TUESDAY: ", d);
+            println();
+            // #falltrough;
+        }
+
         default: println("Some other day: ", d);
+        case Day.SUNDAY: println("Day.SUNDAY: ", d);
     }
 }
 
