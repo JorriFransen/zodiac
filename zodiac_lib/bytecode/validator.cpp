@@ -1668,14 +1668,16 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
 
             for (s64 i = 0; i < cases.count; i++) {
 
-                if (cases[i].case_val.kind != Bytecode_Register_Kind::TEMPORARY) {
-                    bytecode_validator_report_error(validator, "The value register of case %i must be a temporary", i);
-                    return false;
-                }
+                if (!cases[i].is_default) {
+                    if (cases[i].case_val.kind != Bytecode_Register_Kind::TEMPORARY) {
+                        bytecode_validator_report_error(validator, "The value register of case %i must be a temporary", i);
+                        return false;
+                    }
 
-                if (cases[i].case_val.type != instruction->a.type) {
-                    bytecode_validator_report_error(validator, "The case value register type does not match the switch register type");
-                    return false;
+                    if (cases[i].case_val.type != instruction->a.type) {
+                        bytecode_validator_report_error(validator, "The case value register type does not match the switch register type");
+                        return false;
+                    }
                 }
 
                 if (cases[i].block_register.kind != Bytecode_Register_Kind::BLOCK) {

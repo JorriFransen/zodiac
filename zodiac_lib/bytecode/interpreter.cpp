@@ -1129,13 +1129,28 @@ switch (operand.type->bit_size) { \
 
             Interpreter_Register value_reg = interpreter_load_register(interp, instruction.a);
 
-            for (s64 i = 0; i < bc_cases.cases.count; i++) {
-                Interpreter_Register case_value_reg = interpreter_load_register(interp, bc_cases.cases[i].case_val);
+            Bytecode_Block_Handle default_block_handle = -1;
+            bool match = false;
 
-                if (value_reg.value.integer.u64 == case_value_reg.value.integer.u64) {
-                    target_block_handle = bc_cases.cases[i].block_register.block_handle;
-                    break;
+            for (s64 i = 0; i < bc_cases.cases.count; i++) {
+
+                if (!bc_cases.cases[i].is_default) {
+                    Interpreter_Register case_value_reg = interpreter_load_register(interp, bc_cases.cases[i].case_val);
+
+                    if (value_reg.value.integer.u64 == case_value_reg.value.integer.u64) {
+                        target_block_handle = bc_cases.cases[i].block_register.block_handle;
+                        match = true;
+                        break;
+                    }
+
+                } else {
+                    assert_msg(default_block_handle == -1, "Only one default block is allowed");
+                    default_block_handle = bc_cases.cases[i].block_register.block_handle;
                 }
+            }
+
+            if (!match && default_block_handle != -1) {
+                assert(default_block_handle == target_block_handle);
             }
 
             assert(target_block_handle >= 0 && target_block_handle < current_function->blocks.count);

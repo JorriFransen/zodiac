@@ -364,7 +364,12 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
             for (s64 i = 0 ; i < cases.count; i++) {
 
                 string_builder_append(sb, "      ");
-                bytecode_print_register(builder, fn, cases[i].case_val, sb);
+                if (cases[i].is_default) {
+                    string_builder_append(sb, "default ");
+                } else {
+                    bytecode_print_register(builder, fn, cases[i].case_val, sb);
+                }
+
                 string_builder_append(sb, " -> ");
 
                 auto block_handle = cases[i].block_register.block_handle;

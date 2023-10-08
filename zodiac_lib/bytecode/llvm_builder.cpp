@@ -903,9 +903,11 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
             for (s64 i = 0; i < bc_cases.cases.count; i++) {
 
-                auto case_val = static_cast<llvm::ConstantInt*>(llvm_builder_emit_register(builder, bc_cases.cases[i].case_val));
-                auto case_block = get_llvm_block(builder, blocks, bc_cases.cases[i].block_register.block_handle);
-                switch_inst->addCase(case_val, case_block);
+                if (!bc_cases.cases[i].is_default) {
+                    auto case_val = static_cast<llvm::ConstantInt*>(llvm_builder_emit_register(builder, bc_cases.cases[i].case_val));
+                    auto case_block = get_llvm_block(builder, blocks, bc_cases.cases[i].block_register.block_handle);
+                    switch_inst->addCase(case_val, case_block);
+                }
             }
             break;
         }

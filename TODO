@@ -1,14 +1,17 @@
 
 - Switch
-  - Bytecode instruction
   - Ranges
   - Falltrough
-  - #complete on enums or #incomplete on switch?
+
+- Recursive functions
 
 - Break
   - Loops
   - Switch
   - Labels (use the  loop condition / iterator / switch value  somehow)
+
+- Specify enum types
+- #complete on enum types and switch statements
 
 - Calling function pointers
 
