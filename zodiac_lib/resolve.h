@@ -140,7 +140,7 @@ ZAPI Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range 
 
 ZAPI void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest, Infer_Node *infer_node = nullptr);
 ZAPI void flatten_enum_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope);
-ZAPI void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest);
+ZAPI void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest, Infer_Node *infer_node = nullptr);
 ZAPI void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, Dynamic_Array<Flat_Node> *dest, Infer_Node *infer_node = nullptr);
 ZAPI void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node> *dest, bool via_pointer = false);
 ZAPI void flatten_directive(Resolver *resolver, AST_Directive *directive, Scope *scope, Dynamic_Array<Flat_Node> *dest);
