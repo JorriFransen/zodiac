@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include "containers/dynamic_array.h"
+#include "containers/stack.h"
 #include "defines.h"
 
 namespace Zodiac
@@ -104,6 +105,9 @@ struct Resolver
     Dynamic_Array<Flat_Root_Node *> nodes_to_type_resolve;
     Dynamic_Array<Flat_Root_Node *> nodes_to_emit_bytecode;
     Dynamic_Array<Flat_Root_Node *> nodes_to_run_bytecode;
+
+    // Only used during flattening
+    Stack<AST_Statement *> switch_case_stack;
 };
 
 typedef u64 Resolve_Results;

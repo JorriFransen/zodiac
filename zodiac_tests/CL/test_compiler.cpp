@@ -3707,6 +3707,142 @@ Some other day: 6)OUT_STR" };
     return MUNIT_OK;
 }
 
+MunitResult Switch_Enum_Falltrough(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        main :: () {
+
+            print_day(Day.MONDAY);
+            print_day(Day.TUESDAY);
+            print_day(Day.WEDNESDAY);
+            print_day(Day.THURSDAY);
+            print_day(Day.FRIDAY);
+            print_day(Day.SATURDAY);
+            print_day(Day.SUNDAY);
+
+            return 0;
+        }
+
+        print_day :: (d: Day) {
+
+            switch d {
+                case Day.MONDAY: println("Day.MONDAY: ", d);
+
+                case Day.TUESDAY: {
+                    print("Day.TUESDAY: ", d);
+                    println();
+                    #falltrough;
+                }
+
+                default: println("Some other day: ", d);
+                case Day.SUNDAY: println("Day.SUNDAY: ", d);
+            }
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(Day.MONDAY: 0
+Day.TUESDAY: 1
+Some other day: 1
+Some other day: 2
+Some other day: 3
+Some other day: 4
+Some other day: 5
+Day.SUNDAY: 6)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Switch_Enum_Falltrough_Last(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        main :: () {
+
+            print_day(Day.MONDAY);
+            print_day(Day.TUESDAY);
+            print_day(Day.WEDNESDAY);
+            print_day(Day.THURSDAY);
+            print_day(Day.FRIDAY);
+            print_day(Day.SATURDAY);
+            print_day(Day.SUNDAY);
+
+            return 0;
+        }
+
+        print_day :: (d: Day) {
+
+            switch d {
+                case Day.MONDAY: println("Day.MONDAY: ", d);
+                case Day.TUESDAY: println("Day.TUESDAY: ", d);
+                default: println("Some other day: ", d);
+                case Day.SUNDAY: println("Day.SUNDAY: ", d); #falltrough;
+            }
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(Day.MONDAY: 0
+Day.TUESDAY: 1
+Some other day: 2
+Some other day: 3
+Some other day: 4
+Some other day: 5
+Day.SUNDAY: 6)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Switch_Enum_Falltrough_Multiple(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        main :: () {
+
+            print_day(Day.MONDAY);
+            print_day(Day.TUESDAY);
+            print_day(Day.WEDNESDAY);
+            print_day(Day.THURSDAY);
+            print_day(Day.FRIDAY);
+            print_day(Day.SATURDAY);
+            print_day(Day.SUNDAY);
+
+            return 0;
+        }
+
+        print_day :: (d: Day) {
+
+            switch d {
+                case Day.MONDAY: #falltrough
+                case Day.TUESDAY: #falltrough
+                case Day.WEDNESDAY: #falltrough
+                case Day.THURSDAY: #falltrough
+                case Day.FRIDAY: println("Day ", d, " is a week day");
+                case Day.SATURDAY: #falltrough
+                case Day.SUNDAY: println("Day ", d, " is a weekend day");
+            }
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(Day 0 is a week day
+Day 1 is a week day
+Day 2 is a week day
+Day 3 is a week day
+Day 4 is a week day
+Day 5 is a weekend day
+Day 6 is a weekend day)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef DAY_ENUM_DECL
 #undef RESOLVE_ERR
 

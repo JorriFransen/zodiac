@@ -31,16 +31,13 @@ main :: () {
 print_day :: (d: Day) {
 
     switch d {
-        case Day.MONDAY: println("Day.MONDAY: ", d);
-
-        case Day.TUESDAY: {
-            print("Day.TUESDAY: ", d);
-            println();
-            #falltrough;
-        }
-
-        default: println("Some other day: ", d);
-        case Day.SUNDAY: println("Day.SUNDAY: ", d);
+        case Day.MONDAY: #falltrough
+        case Day.TUESDAY: #falltrough
+        case Day.WEDNESDAY: #falltrough
+        case Day.THURSDAY: #falltrough
+        case Day.FRIDAY: println("Day ", d, " is a week day");
+        case Day.SATURDAY: #falltrough
+        case Day.SUNDAY: println("Day ", d, " is a weekend day");
     }
 }
 

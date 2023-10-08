@@ -44,6 +44,8 @@ void resolver_create(Resolver *resolver, Zodiac_Context *ctx)
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_emit_bytecode);
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_run_bytecode);
 
+    stack_init(&dynamic_allocator, &resolver->switch_case_stack);
+
     assert(resolver->global_scope);
     assert(resolver->global_scope->global.file == nullptr);
 
@@ -819,7 +821,6 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
             for (s64 i = 0; i < stmt->switch_stmt.cases.count; i++) {
                 flatten_statement(resolver, stmt->switch_stmt.cases[i], scope, dest);
             }
-
             break;
         }
 
@@ -830,12 +831,20 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
                 flatten_expression(resolver, stmt->switch_case_stmt.case_value, scope, dest);
             }
 
+            stack_push(&resolver->switch_case_stack, stmt);
+
             flatten_statement(resolver, stmt->switch_case_stmt.case_stmt, scope, dest);
 
+            auto popped_stmt = stack_pop(&resolver->switch_case_stack);
+            assert(popped_stmt == stmt);
             break;
         }
 
         case AST_Statement_Kind::FALLTROUGH: {
+            if (!stack_count(&resolver->switch_case_stack)) {
+                fatal_resolve_error(resolver->ctx, stmt, "#falltrough is only allowed in switch cases");
+                return;
+            }
             break;
         }
 
@@ -1320,13 +1329,9 @@ bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
 
         case AST_Statement_Kind::SWITCH:
         case AST_Statement_Kind::SWITCH_CASE:
+        case AST_Statement_Kind::FALLTROUGH:
         case AST_Statement_Kind::DEFER: {
             // Leaf
-            break;
-        }
-
-        case AST_Statement_Kind::FALLTROUGH: {
-            assert(false);
             break;
         }
 
@@ -2191,7 +2196,7 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
         }
 
         case AST_Statement_Kind::FALLTROUGH: {
-            assert(false);
+            // Leaf
             break;
         }
 

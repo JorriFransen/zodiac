@@ -243,19 +243,11 @@ AST_Expression *parse_expr_unary(Parser *parser)
         return ast_unary_expr_new(parser->context, {start_pos, operand->range.end}, AST_Unary_Operator::NOT, operand);
     } else if (is_token(parser, '#')) {
         Parsed_Directive pd = parse_directive(parser, false);
+        assert(pd.data);
+        auto directive = pd.data;
+        assert(directive->kind == AST_Directive_Kind::RUN);
 
-        if (pd.kind == Parsed_Directive_Kind::DATA) {
-            assert(pd.data);
-            auto directive = pd.data;
-            assert(directive->kind == AST_Directive_Kind::RUN);
-
-            return ast_run_directive_expr_new(parser->context, directive->range, directive);
-        } else {
-            assert(pd.kind == Parsed_Directive_Kind::DATA);
-            assert(pd.data);
-            assert(pd.data->kind == AST_Directive_Kind::FALLTROUGH);
-            assert(false);
-        }
+        return ast_run_directive_expr_new(parser->context, directive->range, directive);
     } else {
         return parse_expr_base(parser);
     }
@@ -552,7 +544,7 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
         return ast_block_stmt_new(parser->context, {start_pos, end_pos}, statements);
     }
 
-    if (is_token(parser, '#')) {
+    if (is_token(parser, '#') && peek_token(parser).atom == directive_falltrough) {
         auto pd = parse_directive(parser);
         assert(pd.kind == Parsed_Directive_Kind::DATA);
         assert(pd.data);
