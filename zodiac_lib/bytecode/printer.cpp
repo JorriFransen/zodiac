@@ -357,26 +357,23 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
 
             bytecode_print_register(builder, fn, instruction->a, sb);
 
-            string_builder_append(sb, "\n      [ ");
+            string_builder_append(sb, " [\n");
 
             auto cases = fn->switches[instruction->b.switch_handle.index].cases;
 
             for (s64 i = 0 ; i < cases.count; i++) {
 
-                if (i != 0) {
-                    string_builder_append(sb, "\n        ");
-                }
-
+                string_builder_append(sb, "      ");
                 bytecode_print_register(builder, fn, cases[i].case_val, sb);
                 string_builder_append(sb, " -> ");
 
                 auto block_handle = cases[i].block_register.block_handle;
                 auto block_name = fn->blocks[block_handle].name;
 
-                string_builder_append(sb, "%.*s", (int)block_name.length, block_name.data);
+                string_builder_append(sb, "%.*s\n", (int)block_name.length, block_name.data);
             }
 
-            string_builder_append(sb, " ]");
+            string_builder_append(sb, "    ]");
             break;
         };
 

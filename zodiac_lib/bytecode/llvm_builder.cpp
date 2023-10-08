@@ -891,7 +891,24 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             break;
         }
 
-        case Bytecode_Opcode::SWITCH: assert(false); break;
+        case Bytecode_Opcode::SWITCH: {
+
+            auto bc_cases = builder->current_bytecode_function->switches[bc_inst.b.switch_handle.index];
+
+            auto switch_value = llvm_builder_emit_register(builder, bc_inst.a);
+
+            llvm::BasicBlock *default_block = get_llvm_block(builder, blocks, bc_cases.default_or_post_block);
+
+            auto switch_inst = irb->CreateSwitch(switch_value, default_block, bc_cases.cases.count);
+
+            for (s64 i = 0; i < bc_cases.cases.count; i++) {
+
+                auto case_val = static_cast<llvm::ConstantInt*>(llvm_builder_emit_register(builder, bc_cases.cases[i].case_val));
+                auto case_block = get_llvm_block(builder, blocks, bc_cases.cases[i].block_register.block_handle);
+                switch_inst->addCase(case_val, case_block);
+            }
+            break;
+        }
 
         case Bytecode_Opcode::PHI: {
             auto llvm_type = llvm_type_from_ast_type(builder, bc_inst.dest.type);

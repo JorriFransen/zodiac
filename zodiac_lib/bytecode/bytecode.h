@@ -194,6 +194,8 @@ struct Bytecode_Switch_Case
 struct Bytecode_Switch
 {
     Dynamic_Array<Bytecode_Switch_Case> cases;
+
+    Bytecode_Block_Handle default_or_post_block;
 };
 
 struct Bytecode_Phi_Args
@@ -383,7 +385,7 @@ ZAPI Bytecode_Register bytecode_emit_ptr_offset_pointer(Bytecode_Builder *builde
 
 ZAPI void bytecode_emit_jmp(Bytecode_Builder *builder, Bytecode_Block_Handle block);
 ZAPI void bytecode_emit_jmp_if(Bytecode_Builder *builder, Bytecode_Register cond, Bytecode_Block_Handle then_block, Bytecode_Block_Handle else_block);
-ZAPI void bytecode_emit_switch(Bytecode_Builder *builder, Bytecode_Register value, Dynamic_Array<Bytecode_Switch_Case> cases);
+ZAPI void bytecode_emit_switch(Bytecode_Builder *builder, Bytecode_Register value, Dynamic_Array<Bytecode_Switch_Case> cases, Bytecode_Block_Handle post_or_default_block);
 
 ZAPI Bytecode_Register bytecode_emit_load(Bytecode_Builder *builder, Bytecode_Register reg);
 ZAPI void bytecode_emit_store(Bytecode_Builder *builder, Bytecode_Register value, Bytecode_Register dest);

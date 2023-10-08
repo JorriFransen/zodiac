@@ -1398,13 +1398,13 @@ void bytecode_emit_jmp_if(Bytecode_Builder *builder, Bytecode_Register cond, Byt
     bytecode_emit_instruction(builder, Bytecode_Opcode::JMP_IF, cond, then_block_value, else_block_value);
 }
 
-void bytecode_emit_switch(Bytecode_Builder *builder, Bytecode_Register value, Dynamic_Array<Bytecode_Switch_Case> cases)
+void bytecode_emit_switch(Bytecode_Builder *builder, Bytecode_Register value, Dynamic_Array<Bytecode_Switch_Case> cases, Bytecode_Block_Handle post_or_default_block)
 {
     assert(builder->insert_fn_index >= 0 &&
            builder->insert_fn_index < builder->functions.count);
     auto fn = &builder->functions[builder->insert_fn_index];
 
-    Bytecode_Switch bc_switch = { cases };
+    Bytecode_Switch bc_switch = { cases, post_or_default_block };
     Bytecode_Switch_Handle handle = { fn->phi_args.count };
     dynamic_array_append(&fn->switches, bc_switch);
 

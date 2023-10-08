@@ -3643,6 +3643,51 @@ Token_Kind2.INT: 257)OUT_STR" };
 
     return MUNIT_OK;
 }
+
+MunitResult Switch_Enum_Incomplete(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+    Day :: enum {
+        MONDAY,
+        TUESDAY,
+        WEDNESDAY,
+        THURSDAY,
+        FRIDAY,
+        SATURDAY,
+        SUNDAY,
+    }
+
+    print_day :: (d: Day) {
+
+        switch d {
+            case Day.MONDAY: println("Day.MONDAY: ", d);
+            case Day.TUESDAY: print("Day.TUESDAY: ", d); println();
+            // default: println("Some other day: ", d);
+        }
+    }
+
+    main :: () {
+
+        print_day(Day.MONDAY);
+        print_day(Day.TUESDAY);
+        print_day(Day.WEDNESDAY);
+        print_day(Day.THURSDAY);
+        print_day(Day.FRIDAY);
+        print_day(Day.SATURDAY);
+        print_day(Day.SUNDAY);
+        return 0;
+    }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(Day.MONDAY: 0
+Day.TUESDAY: 1)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
 #undef RESOLVE_ERR
 
 }}
