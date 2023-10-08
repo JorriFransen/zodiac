@@ -1,5 +1,5 @@
 
-// #run main();
+#run main();
 
 Day :: enum {
     MONDAY,
@@ -15,6 +15,11 @@ main :: () {
 
     print_day(Day.MONDAY);
     print_day(Day.TUESDAY);
+    print_day(Day.WEDNESDAY);
+    print_day(Day.THURSDAY);
+    print_day(Day.FRIDAY);
+    print_day(Day.SATURDAY);
+    print_day(Day.SUNDAY);
 
     // simple_integer_switch(10);
     // complex_integer_switch(10);

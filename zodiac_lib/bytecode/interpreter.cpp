@@ -1121,7 +1121,32 @@ switch (operand.type->bit_size) { \
             break;
         }
 
-        case Bytecode_Opcode::SWITCH: assert(false);
+        case Bytecode_Opcode::SWITCH: {
+            assert(instruction.b.switch_handle.index < current_function->switches.count);
+            auto bc_cases = current_function->switches[instruction.b.switch_handle.index];
+
+            Bytecode_Block_Handle target_block_handle = bc_cases.default_or_post_block;
+
+            Interpreter_Register value_reg = interpreter_load_register(interp, instruction.a);
+
+            for (s64 i = 0; i < bc_cases.cases.count; i++) {
+                Interpreter_Register case_value_reg = interpreter_load_register(interp, bc_cases.cases[i].case_val);
+
+                if (value_reg.value.integer.u64 == case_value_reg.value.integer.u64) {
+                    target_block_handle = bc_cases.cases[i].block_register.block_handle;
+                    break;
+                }
+            }
+
+            assert(target_block_handle >= 0 && target_block_handle < current_function->blocks.count);
+
+            advance_ip = false;
+            interp->jumped_from_block = frame->bp;
+            frame->bp = target_block_handle;
+            frame->ip = 0;
+
+            break;
+        }
 
         case Bytecode_Opcode::PHI: {
             assert(instruction.a.phi_args_handle < current_function->phi_args.count);
