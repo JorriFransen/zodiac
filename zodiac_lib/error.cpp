@@ -79,7 +79,7 @@ Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind
     va_list args;
     va_start(args, fmt);
 
-    auto result = zodiac_report_error(context, kind, expr->range, fmt, args);
+    auto result = zodiac_report_error(context, kind, expr->sr, fmt, args);
 
     va_end(args);
 
@@ -91,7 +91,7 @@ Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind
     va_list args;
     va_start(args, fmt);
 
-    auto result = zodiac_report_error(context, kind, stmt->range, fmt, args);
+    auto result = zodiac_report_error(context, kind, stmt->sr, fmt, args);
 
     va_end(args);
 
@@ -104,7 +104,7 @@ Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind
     va_list args;
     va_start(args, fmt);
 
-    auto result = zodiac_report_error(context, kind, decl->range, fmt, args);
+    auto result = zodiac_report_error(context, kind, decl->sr, fmt, args);
 
     va_end(args);
 
@@ -116,7 +116,7 @@ Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind
     va_list args;
     va_start(args, fmt);
 
-    auto result = zodiac_report_error(context, kind, ts->range, fmt, args);
+    auto result = zodiac_report_error(context, kind, ts->sr, fmt, args);
 
     va_end(args);
 
@@ -128,7 +128,7 @@ Error_Handle zodiac_report_error(Zodiac_Context *context, Zodiac_Error_Kind kind
     va_list args;
     va_start(args, fmt);
 
-    auto result = zodiac_report_error(context, kind, directive->range, fmt, args);
+    auto result = zodiac_report_error(context, kind, directive->sr, fmt, args);
 
     va_end(args);
 

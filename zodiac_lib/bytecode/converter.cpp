@@ -1906,7 +1906,7 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
 
     Atom run_wrapper_name;
     {
-        auto spos = run_directive->range.start;
+        auto spos = run_directive->sr.start;
 
         char buf[256];
         auto len = string_format(buf, "rw_%.*s:%i:%i", (int)spos.name.length, spos.name.data, spos.line, spos.index_in_line);
