@@ -21,7 +21,6 @@ main :: () {
     print_day(Day.SATURDAY);
     print_day(Day.SUNDAY);
 
-    // simple_integer_switch(10);
     // complex_integer_switch(10);
     // complex_enum_switch(10);
 
@@ -41,10 +40,6 @@ print_day :: (d: Day) {
     }
 }
 
-// simple_integer_switch :: (i: s64) {
-//     return 0;
-// }
-//
 // complex_integer_switch :: (i: s64) {
 //
 //     switch i {

@@ -1,15 +1,14 @@
 
-- Switch
-  - Ranges
-  - Falltrough
-  - Optimize blocks that are empty, or only have a falltrough
-
-- Recursive functions
-
 - Break
   - Loops
   - Switch
   - Labels (use the  loop condition / iterator / switch value  somehow)
+
+- Recursive functions
+
+- Switch
+  - Ranges
+  - Optimize blocks that are empty, or only have a falltrough
 
 - Specify enum types
 - #complete on enum types and switch statements
