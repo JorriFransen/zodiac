@@ -843,9 +843,11 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             }
 
             bytecode_set_insert_point(bc->builder, cfn, initial_block_handle);
-            bytecode_emit_switch(bc->builder, value_reg, bc_cases);
 
-            bytecode_append_block(bc->builder, cfn, post_switch_block);
+            auto post_block = bytecode_append_block(bc->builder, cfn, post_switch_block);
+
+            bytecode_emit_switch(bc->builder, value_reg, bc_cases, post_block);
+
             bytecode_set_insert_point(bc->builder, cfn, post_switch_block);
 
             break;
