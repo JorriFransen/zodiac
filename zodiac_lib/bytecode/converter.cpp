@@ -832,22 +832,18 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                 dynamic_array_append(&blocks, block_handle);
             }
 
-            for (s64 i = 0; i < stmt->switch_stmt.cases.count; i++) {
+            for (s64 case_index = 0; case_index < stmt->switch_stmt.cases.count; case_index++) {
 
-                auto case_stmt = stmt->switch_stmt.cases[i];
+                auto case_stmt = stmt->switch_stmt.cases[case_index];
 
-                Bytecode_Register case_value = {};
-                auto case_block = blocks[i];
+                auto case_block = blocks[case_index];
                 bytecode_set_insert_point(bc->builder, cfn, case_block);
 
-                if (!case_stmt->switch_case_stmt.is_default) {
-                    assert(EXPR_IS_CONST(case_stmt->switch_case_stmt.case_value));
-                    case_value = ast_expr_to_bytecode(bc, case_stmt->switch_case_stmt.case_value);
-                } else {
+                if (case_stmt->switch_case_stmt.is_default) {
                     default_or_post_block = case_block;
                 }
 
-                stack_push(&bc->switch_case_stack, { stmt, i, blocks, post_switch_block });
+                stack_push(&bc->switch_case_stack, { stmt, case_index, blocks, post_switch_block });
 
                 ast_stmt_to_bytecode(bc, case_stmt->switch_case_stmt.case_stmt);
 
@@ -857,10 +853,23 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                     bytecode_emit_jmp(bc->builder, post_switch_block);
                 }
 
-                Bytecode_Switch_Case bc_case = { case_value, bytecode_block_value(bc->builder, case_block),
-                                                 case_stmt->switch_case_stmt.is_default };
+                auto case_values = case_stmt->switch_case_stmt.case_values;
 
-                dynamic_array_append(&bc_cases, bc_case);
+                if (case_values.count) {
+                    assert(!case_stmt->switch_case_stmt.is_default);
+
+                    for (s64 case_value_index = 0; case_value_index < case_values.count; case_value_index++) {
+                        Bytecode_Register case_value = ast_expr_to_bytecode(bc, case_values[case_value_index]);
+
+                        Bytecode_Switch_Case bc_case = { case_value, bytecode_block_value(bc->builder, case_block), false };
+                        dynamic_array_append(&bc_cases, bc_case);
+                    }
+                } else {
+                    assert(case_stmt->switch_case_stmt.is_default);
+                    Bytecode_Switch_Case bc_case = { {}, bytecode_block_value(bc->builder, case_block), true };
+                    dynamic_array_append(&bc_cases, bc_case);
+                }
+
             }
 
             bytecode_set_insert_point(bc->builder, cfn, initial_block_handle);

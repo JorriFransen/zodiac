@@ -3814,7 +3814,7 @@ four)OUT_STR" };
     return MUNIT_OK;
 }
 
-MunitResult Switch_Int_Falltrough_Multiple(const MunitParameter params[], void* user_data_or_fixture) {
+MunitResult Switch_Int_Falltrough_Multi(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
         print_int :: (i: s64) {
@@ -3854,6 +3854,133 @@ value is within range
 value is outside range
 value is outside range
 value is outside range)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Switch_Int_Multi_Val(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        print_i :: (i: s64) {
+
+            switch i {
+                case 0, 1, 2: println(i, ": 0..2");
+                case 3, 4: println(i, ": 3..4");
+            }
+        }
+
+        main :: () {
+
+            print_i(0);
+            print_i(1);
+            print_i(2);
+            print_i(3);
+            print_i(4);
+
+            print_i(5);
+            print_i(99);
+            print_i(-1);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(0: 0..2
+1: 0..2
+2: 0..2
+3: 3..4
+4: 3..4)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Switch_Int_Multi_Val_Default(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        print_i :: (i: s64) {
+
+            switch i {
+                case 0, 1, 2: println(i, ": 0..2");
+                case 3, 4: println(i, ": 3..4");
+                default: println(i, ": <0 || >4");
+            }
+        }
+
+        main :: () {
+
+            print_i(0);
+            print_i(1);
+            print_i(2);
+            print_i(3);
+            print_i(4);
+
+            print_i(5);
+            print_i(99);
+            print_i(-1);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(0: 0..2
+1: 0..2
+2: 0..2
+3: 3..4
+4: 3..4
+5: <0 || >4
+99: <0 || >4
+-1: <0 || >4)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Switch_Int_Multi_Val_Falltrough(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        print_i :: (i: s64) {
+
+            switch i {
+                case 0, 1, 2: println(i, ": 0..2"); #falltrough;
+                case 3, 4: println(i, ": 3..4");
+            }
+        }
+
+        main :: () {
+
+            print_i(0);
+            print_i(1);
+            print_i(2);
+            print_i(3);
+            print_i(4);
+
+            print_i(5);
+            print_i(99);
+            print_i(-1);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(0: 0..2
+0: 3..4
+1: 0..2
+1: 3..4
+2: 0..2
+2: 3..4
+3: 3..4
+4: 3..4)OUT_STR" };
 
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };
@@ -4026,7 +4153,7 @@ Day.SUNDAY: 6)OUT_STR" };
     return MUNIT_OK;
 }
 
-MunitResult Switch_Enum_Falltrough_Multiple(const MunitParameter params[], void* user_data_or_fixture) {
+MunitResult Switch_Enum_Falltrough_Multi(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
         main :: () {

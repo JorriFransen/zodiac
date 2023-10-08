@@ -1,53 +1,27 @@
 
 #run main();
 
-Day :: enum {
-    MONDAY,
-    TUESDAY,
-    WEDNESDAY,
-    THURSDAY,
-    FRIDAY,
-    SATURDAY,
-    SUNDAY,
-}
-
 main :: () {
 
-    print_day(Day.MONDAY);
-    print_day(Day.TUESDAY);
-    print_day(Day.WEDNESDAY);
-    print_day(Day.THURSDAY);
-    print_day(Day.FRIDAY);
-    print_day(Day.SATURDAY);
-    print_day(Day.SUNDAY);
+    print_i(0);
+    print_i(1);
+    print_i(2);
+    print_i(3);
+    print_i(4);
 
-    // complex_integer_switch(10);
-    // complex_enum_switch(10);
+    print_i(5);
+    print_i(99);
+    print_i(99);
+
 
     return 0;
 }
 
-print_day :: (d: Day) {
+print_i :: (i: s64) {
 
-    switch d {
-        case Day.MONDAY: #falltrough
-        case Day.TUESDAY: #falltrough
-        case Day.WEDNESDAY: #falltrough
-        case Day.THURSDAY: #falltrough
-        case Day.FRIDAY: println("Day ", d, " is a week day");
-        case Day.SATURDAY: #falltrough
-        case Day.SUNDAY: println("Day ", d, " is a weekend day");
+    switch i {
+        case 0, 1, 2: println(i, ": 0..2"); #falltrough;
+        case 3, 4: println(i, ": 3..4");
     }
 }
 
-// complex_integer_switch :: (i: s64) {
-//
-//     switch i {
-//         case 0..9: println("0 <= i <= 9");
-//         case 10..19: println("10 <= i <= 19");
-//         case 42, 69: println("i is secret");
-//         case 70..79, 90..99: println("(70 <= i <= 79) || (90 <= i <= 99)");
-//         default: println("WHAT WERE YOU THINKING!?");
-//     }
-//     return 0;
-// }

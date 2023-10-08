@@ -418,15 +418,25 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
             auto case_start = cur_tok(parser).range.start;
             if (match_keyword(parser, keyword_case)) {
 
-                AST_Expression *case_value = parse_expression(parser);
+                Dynamic_Array<AST_Expression *> case_values;
+                dynamic_array_create(&parser->context->ast_allocator, &case_values, 1);
+
+                do {
+
+                    AST_Expression *case_value = parse_expression(parser);
+                    dynamic_array_append(&case_values, case_value);
+
+                } while(match_token(parser, ','));
+
                 expect_token(parser, ':');
+
+                assert(case_values.count);
 
                 AST_Statement *case_body = parse_switch_case_body(parser);
                 return_if_null(case_body);
 
-                assert(case_value);
                 assert(case_body);
-                AST_Statement *case_stmt = ast_switch_case_stmt_new(parser->context, {case_start, case_body->range.end}, case_value, case_body);
+                AST_Statement *case_stmt = ast_switch_case_stmt_new(parser->context, {case_start, case_body->range.end}, case_values, case_body);
 
                 dynamic_array_append(&cases, case_stmt);
 
@@ -435,7 +445,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
                 expect_token(parser, ':');
                 AST_Statement *default_stmt = parse_statement(parser);
 
-                AST_Statement *case_stmt = ast_switch_case_stmt_new(parser->context, {case_start, default_stmt->range.end}, nullptr, default_stmt);
+                AST_Statement *case_stmt = ast_switch_case_stmt_new(parser->context, {case_start, default_stmt->range.end}, {}, default_stmt);
 
                 dynamic_array_append(&cases, case_stmt);
 

@@ -306,13 +306,13 @@ void ast_switch_stmt_create(AST_Expression *value, Dynamic_Array<AST_Statement *
     out_stmt->switch_stmt.cases = cases;
 }
 
-void ast_switch_case_stmt_create(AST_Expression *case_value, AST_Statement *case_stmt, AST_Statement *out_stmt)
+void ast_switch_case_stmt_create(Dynamic_Array<AST_Expression *> case_values, AST_Statement *case_stmt, AST_Statement *out_stmt)
 {
     ast_statement_create(AST_Statement_Kind::SWITCH_CASE, out_stmt);
 
-    out_stmt->switch_case_stmt.case_value = case_value;
+    out_stmt->switch_case_stmt.case_values = case_values;
     out_stmt->switch_case_stmt.case_stmt = case_stmt;
-    out_stmt->switch_case_stmt.is_default = case_value == nullptr;
+    out_stmt->switch_case_stmt.is_default = case_values.count == 0;
 }
 
 void ast_falltrough_stmt_create(AST_Directive *directive, AST_Statement *out_stmt)
@@ -808,10 +808,10 @@ ZAPI AST_Statement *ast_switch_stmt_new(Zodiac_Context *ctx, Source_Range range,
     return stmt;
 }
 
-AST_Statement *ast_switch_case_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *case_value, AST_Statement *case_stmt)
+AST_Statement *ast_switch_case_stmt_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> case_values, AST_Statement *case_stmt)
 {
     auto stmt = ast_statement_new(ctx, range);
-    ast_switch_case_stmt_create(case_value, case_stmt, stmt);
+    ast_switch_case_stmt_create(case_values, case_stmt, stmt);
     return stmt;
 }
 
@@ -1354,7 +1354,11 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
                 string_builder_append(sb, "default:");
             } else {
                 string_builder_append(sb, "case ");
-                ast_print_expression(sb, stmt->switch_case_stmt.case_value);
+
+                for (s64 i = 0; i < stmt->switch_case_stmt.case_values.count; i++) {
+                    if (i > 0) string_builder_append(sb, ", ");
+                    ast_print_expression(sb, stmt->switch_case_stmt.case_values[i]);
+                }
                 string_builder_append(sb, ":");
             }
 

@@ -129,12 +129,15 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Switch_Int_Default) \
     X(Switch_Int_Falltrough) \
     X(Switch_Int_Falltrough_Last) \
-    X(Switch_Int_Falltrough_Multiple) \
+    X(Switch_Int_Falltrough_Multi) \
+    X(Switch_Int_Multi_Val) \
+    X(Switch_Int_Multi_Val_Default) \
+    X(Switch_Int_Multi_Val_Falltrough) \
     X(Switch_Enum_Incomplete) \
     X(Switch_Enum_Default) \
     X(Switch_Enum_Falltrough) \
     X(Switch_Enum_Falltrough_Last) \
-    X(Switch_Enum_Falltrough_Multiple) \
+    X(Switch_Enum_Falltrough_Multi) \
 
 
 // Function declarations

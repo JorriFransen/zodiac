@@ -830,9 +830,9 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
 
             assert(infer_node);
 
-            auto value = stmt->switch_case_stmt.case_value;
-            if (value) {
-                flatten_expression(resolver, stmt->switch_case_stmt.case_value, scope, dest, infer_node);
+            for (s64 i = 0; i < stmt->switch_case_stmt.case_values.count; i++) {
+                auto value = stmt->switch_case_stmt.case_values[i];
+                flatten_expression(resolver, value, scope, dest, infer_node);
             }
 
             stack_push(&resolver->switch_case_stack, stmt);
@@ -2170,9 +2170,9 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                 auto case_stmt = stmt->switch_stmt.cases[i];
 
                 if (!case_stmt->switch_case_stmt.is_default) {
-                    assert(case_stmt->switch_case_stmt.case_value);
+                    assert(case_stmt->switch_case_stmt.case_values[0]);
 
-                    auto case_value = case_stmt->switch_case_stmt.case_value;
+                    auto case_value = case_stmt->switch_case_stmt.case_values[0];
 
                     if (case_value->resolved_type != value_type) {
                         fatal_resolve_error(resolver->ctx, case_value, "Mismatching type in switch case, expected: '%s', got: '%s'",
@@ -2185,17 +2185,19 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
         }
 
         case AST_Statement_Kind::SWITCH_CASE: {
-            auto value_expr = stmt->switch_case_stmt.case_value;
-            if (value_expr) {
-                assert(value_expr->resolved_type);
-                if (!(value_expr->resolved_type->kind == Type_Kind::INTEGER ||
-                      value_expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER ||
-                      value_expr->resolved_type->kind == Type_Kind::ENUM)) {
-                    fatal_resolve_error(resolver->ctx, value_expr, "Expected integer or enum type, got: '%s'", temp_type_string(value_expr->resolved_type).data);
-                    return false;
+            for (s64 i =0 ; i < stmt->switch_case_stmt.case_values.count; i++) {
+
+                auto value_expr = stmt->switch_case_stmt.case_values[i];
+                if (value_expr) {
+                    assert(value_expr->resolved_type);
+                    if (!(value_expr->resolved_type->kind == Type_Kind::INTEGER ||
+                          value_expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER ||
+                          value_expr->resolved_type->kind == Type_Kind::ENUM)) {
+                        fatal_resolve_error(resolver->ctx, value_expr, "Expected integer or enum type, got: '%s'", temp_type_string(value_expr->resolved_type).data);
+                        return false;
+                    }
                 }
             }
-
             break;
         }
 
