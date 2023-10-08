@@ -841,7 +841,9 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
                 ast_stmt_to_bytecode(bc, case_stmt->switch_case_stmt.case_stmt);
 
-                bytecode_emit_jmp(bc->builder, post_switch_block);
+                if (!bytecode_block_is_terminated(bytecode_get_insert_block(bc->builder))) {
+                    bytecode_emit_jmp(bc->builder, post_switch_block);
+                }
 
                 Bytecode_Switch_Case bc_case = { case_value, bytecode_block_value(bc->builder, case_block),
                                                  case_stmt->switch_case_stmt.is_default };
@@ -859,6 +861,8 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
         }
 
         case AST_Statement_Kind::SWITCH_CASE: assert(false); break;
+
+        case AST_Statement_Kind::FALLTROUGH: assert(false); break;
 
         case AST_Statement_Kind::DEFER: {
             stack_push(&bc->defer_stack, stmt);

@@ -37,8 +37,8 @@ void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser)
     debug_assert(ctx && lxr && out_parser);
     out_parser->context = ctx;
     out_parser->lxr = lxr;
-    out_parser->error = false;
     queue_create(&dynamic_allocator, &out_parser->peeked_tokens);
+    out_parser->error = false;
 }
 
 void parser_destroy(Parser *parser)
@@ -243,12 +243,19 @@ AST_Expression *parse_expr_unary(Parser *parser)
         return ast_unary_expr_new(parser->context, {start_pos, operand->range.end}, AST_Unary_Operator::NOT, operand);
     } else if (is_token(parser, '#')) {
         Parsed_Directive pd = parse_directive(parser, false);
-        assert(pd.kind == Parsed_Directive_Kind::DATA);
-        assert(pd.data);
-        auto directive = pd.data;
-        assert(directive->kind == AST_Directive_Kind::RUN);
 
-        return ast_run_directive_expr_new(parser->context, directive->range, directive);
+        if (pd.kind == Parsed_Directive_Kind::DATA) {
+            assert(pd.data);
+            auto directive = pd.data;
+            assert(directive->kind == AST_Directive_Kind::RUN);
+
+            return ast_run_directive_expr_new(parser->context, directive->range, directive);
+        } else {
+            assert(pd.kind == Parsed_Directive_Kind::DATA);
+            assert(pd.data);
+            assert(pd.data->kind == AST_Directive_Kind::FALLTROUGH);
+            assert(false);
+        }
     } else {
         return parse_expr_base(parser);
     }
@@ -543,6 +550,14 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
 
         auto statements = temp_array_finalize(&parser->context->ast_allocator, &temp_statements);
         return ast_block_stmt_new(parser->context, {start_pos, end_pos}, statements);
+    }
+
+    if (is_token(parser, '#')) {
+        auto pd = parse_directive(parser);
+        assert(pd.kind == Parsed_Directive_Kind::DATA);
+        assert(pd.data);
+        assert(pd.data->kind == AST_Directive_Kind::FALLTROUGH);
+        return ast_falltrough_stmt_new(parser->context, pd.data->range, pd.data);
     }
 
     AST_Statement *result = nullptr;
@@ -991,10 +1006,10 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
         } else {
 
             AST_Expression *expr = parse_expression(parser);
-            if (eat_semicolon) match_token(parser, ';');
             result.data = ast_run_directive_new(parser->context, { start_pos, expr->range.end }, expr);
         }
 
+        if (eat_semicolon) match_token(parser, ';');
         return result;
 
     } else if (directive_name_tok.atom == directive_import) {
@@ -1007,11 +1022,19 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
 
         result.kind = Parsed_Directive_Kind::DATA;
         result.data = ast_import_directive_new(parser->context, { start_pos, str_lit_tok.range.end }, path);
+
+        if (eat_semicolon) match_token(parser, ';');
         return result;
 
 
     } else if (directive_name_tok.atom == directive_foreign) {
         result.kind = Parsed_Directive_Kind::FOREIGN;
+        if (eat_semicolon) match_token(parser, ';');
+        return result;
+    } else if (directive_name_tok.atom == directive_falltrough) {
+        result.kind = Parsed_Directive_Kind::DATA;
+        result.data = ast_falltrough_directive_new(parser->context, { start_pos, directive_name_tok.range.end});
+        if (eat_semicolon) match_token(parser, ';');
         return result;
     } else {
         assert_msg(false, "Unknown directive");
@@ -1047,12 +1070,12 @@ AST_File *parse_file(Parser *parser)
 
         if (pd.kind == Parsed_Directive_Kind::DATA) {
             auto directive = pd.data;
-             if (directive->kind == AST_Directive_Kind::RUN) {
-                 decl = ast_run_directive_decl_new(parser->context, directive->range, directive);
-             } else {
-                 assert(directive->kind == AST_Directive_Kind::IMPORT);
-                 decl = ast_import_directive_decl_new(parser->context, directive->range, directive);
-             }
+            if (directive->kind == AST_Directive_Kind::RUN) {
+                decl = ast_run_directive_decl_new(parser->context, directive->range, directive);
+            } else {
+                assert(directive->kind == AST_Directive_Kind::IMPORT);
+                decl = ast_import_directive_decl_new(parser->context, directive->range, directive);
+            }
         } else {
             decl = parse_declaration(parser, pd);
         }

@@ -835,6 +835,10 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
             break;
         }
 
+        case AST_Statement_Kind::FALLTROUGH: {
+            break;
+        }
+
         case AST_Statement_Kind::RETURN: {
 
             if (stmt->return_stmt.value) {
@@ -1318,6 +1322,11 @@ bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
         case AST_Statement_Kind::SWITCH_CASE:
         case AST_Statement_Kind::DEFER: {
             // Leaf
+            break;
+        }
+
+        case AST_Statement_Kind::FALLTROUGH: {
+            assert(false);
             break;
         }
 
@@ -2178,6 +2187,11 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                 }
             }
 
+            break;
+        }
+
+        case AST_Statement_Kind::FALLTROUGH: {
+            assert(false);
             break;
         }
 

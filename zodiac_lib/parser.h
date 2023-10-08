@@ -19,9 +19,9 @@ struct Parser
     Zodiac_Context *context;
     Lexer *lxr;
 
-    bool error = true;
-
     Queue<Token> peeked_tokens;
+
+    bool error = true;
 };
 
 ZAPI void parser_create(Zodiac_Context *ctx, Lexer *lxr, Parser *out_parser);

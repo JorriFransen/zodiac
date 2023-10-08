@@ -251,6 +251,11 @@ struct AST_Switch_Case_Statement
     bool is_default;
 };
 
+struct AST_Falltrough_Statement
+{
+    AST_Directive *directive;
+};
+
 struct AST_Switch_Statement
 {
     AST_Expression *value;
@@ -305,8 +310,10 @@ enum class AST_Statement_Kind
     IF,
     WHILE,
     FOR,
+
     SWITCH,
     SWITCH_CASE,
+    FALLTROUGH,
 
     DEFER,
 
@@ -345,6 +352,7 @@ struct AST_Statement
         AST_For_Statement for_stmt;
         AST_Switch_Statement switch_stmt;
         AST_Switch_Case_Statement switch_case_stmt;
+        AST_Falltrough_Statement falltrough;
         AST_Defer_Statement defer_stmt;
         AST_Return_Statement return_stmt;
         AST_Print_Expression print_expr;
@@ -514,6 +522,7 @@ enum class AST_Directive_Kind
 
     RUN,
     IMPORT,
+    FALLTROUGH,
 };
 
 enum class AST_Run_Directive_Kind
@@ -584,6 +593,7 @@ ZAPI void ast_while_stmt_create(AST_Expression *cond, AST_Statement *body_stmt, 
 ZAPI void ast_for_stmt_create(AST_Statement *init_stmt, AST_Expression *cond_expr, AST_Statement *inc_stmt, AST_Statement *body_stmt, AST_Statement *out_stmt);
 ZAPI void ast_switch_stmt_create(AST_Expression *value, Dynamic_Array<AST_Statement *> cases, AST_Statement *out_stmt);
 ZAPI void ast_switch_case_stmt_create(AST_Expression *case_value, AST_Statement *case_stmt, AST_Statement *out_stmt);
+ZAPI void ast_falltrough_stmt_create(AST_Directive *directive, AST_Statement *out_stmt);
 ZAPI void ast_defer_stmt_create(AST_Statement *stmt_to_defer, AST_Statement *out_stmt);
 ZAPI void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt);
 ZAPI void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, bool newline, AST_Statement *out_stmt);
@@ -611,6 +621,7 @@ ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
 ZAPI void ast_run_directive_create(AST_Expression *expr, AST_Directive *out_dir);
 ZAPI void ast_run_directive_create(AST_Statement *stmt, AST_Directive *out_dir);
 ZAPI void ast_import_directive_create(Atom path, AST_Directive *out_dir);
+ZAPI void ast_falltrough_directive_create(AST_Directive *out_dir);
 ZAPI void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir);
 
 ZAPI void ast_file_create(Atom name, Dynamic_Array<AST_Declaration *> decls, AST_File *out_file);
@@ -642,6 +653,7 @@ ZAPI AST_Statement *ast_while_stmt_new(Zodiac_Context *ctx, Source_Range range, 
 ZAPI AST_Statement *ast_for_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Declaration *init_decl, AST_Expression *cond_expr, AST_Statement *inc_stmt, AST_Statement *body_stmt);
 ZAPI AST_Statement *ast_switch_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *value, Dynamic_Array<AST_Statement *>cases);
 ZAPI AST_Statement *ast_switch_case_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *case_value, AST_Statement *case_stmt);
+ZAPI AST_Statement *ast_falltrough_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Directive *directive);
 ZAPI AST_Statement *ast_defer_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Statement *stmt_to_defer);
 ZAPI AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *value);
 ZAPI AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range range, Dynamic_Array<AST_Expression *> exprs, bool newline);
@@ -669,6 +681,7 @@ ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range range);
 ZAPI AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Expression *expr);
 ZAPI AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range range, AST_Statement *stmt);
 ZAPI AST_Directive *ast_import_directive_new(Zodiac_Context *ctx, Source_Range range, Atom path);
+ZAPI AST_Directive *ast_falltrough_directive_new(Zodiac_Context *ctx, Source_Range range);
 ZAPI AST_Directive *ast_directive_new(Zodiac_Context *ctx, Source_Range range);
 
 ZAPI AST_File *ast_file_new(Zodiac_Context *ctx, Atom name, Dynamic_Array<AST_Declaration *> decls);

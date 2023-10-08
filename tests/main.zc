@@ -36,7 +36,7 @@ print_day :: (d: Day) {
         case Day.TUESDAY: {
             print("Day.TUESDAY: ", d);
             println();
-            // #falltrough;
+            #falltrough;
         }
 
         default: println("Some other day: ", d);
