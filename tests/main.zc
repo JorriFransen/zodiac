@@ -1,10 +1,30 @@
 
-#run main();
+// #run main();
 
-main :: () {
+factorial_iterative :: (n: s64) {
 
-    i := 1 -1;
-    print(i);
+    result := 1;
+
+    for i := 1; i <= n; i += 1 {
+
+        result *= i;
+    }
+
+    return result;
+}
+
+factorial_recursive :: (n: s64) {
+
+    if n <= 1 return 1;
+
+    return factorial_recursive(n - 1) * n;
+}
+
+main :: () -> s64 {
+
+    for i := 0; i < 20; i+=1 {
+        println(i, ": ", factorial_iterative(i), ", ", factorial_recursive(i));
+    }
 
     return 0;
 }
