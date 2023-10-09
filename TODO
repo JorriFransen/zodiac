@@ -1,4 +1,6 @@
 
+- Name the executable after the source file passed in on the command line
+
 - Break
   - Loops
   - Switch

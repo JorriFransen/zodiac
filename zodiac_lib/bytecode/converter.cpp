@@ -419,6 +419,17 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             has_inits = true;
         }
 
+        for (s64 i = 0; i < decl->function.params.count; i++) {
+            auto param_decl = decl->function.params[i];
+
+            Bytecode_Register alloc_reg;
+            bool found = hash_table_find(&bc->allocations, param_decl, &alloc_reg);
+            assert(found);
+
+            auto arg_reg = bytecode_emit_load_argument(bc->builder, i);
+            bytecode_emit_store_alloc(bc->builder, arg_reg, alloc_reg);
+        }
+
         if (has_inits) {
             Bytecode_Block_Handle inits_block_handle = bytecode_append_block(bc->builder, fn_handle, "inits");
             bytecode_emit_jmp(bc->builder, inits_block_handle);
@@ -495,17 +506,6 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                     hash_table_add(&bc->implicit_lvalues, expr, array_alloc);
                 }
             }
-        }
-
-        for (s64 i = 0; i < decl->function.params.count; i++) {
-            auto param_decl = decl->function.params[i];
-
-            Bytecode_Register alloc_reg;
-            bool found = hash_table_find(&bc->allocations, param_decl, &alloc_reg);
-            assert(found);
-
-            auto arg_reg = bytecode_emit_load_argument(bc->builder, i);
-            bytecode_emit_store_alloc(bc->builder, arg_reg, alloc_reg);
         }
 
         temporary_allocator_reset(temp_allocator(), mark);
@@ -791,6 +791,8 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             auto for_cond_block = bytecode_append_block(bc->builder, cfn, "for.cond");
             auto for_body_block = bytecode_create_block(bc->builder, cfn, "for.body");
             auto post_for_block = bytecode_create_block(bc->builder, cfn, "for.post");
+
+            ast_decl_to_bytecode(bc, stmt->for_stmt.init_decl);
 
             bytecode_emit_jmp(bc->builder, for_cond_block);
 

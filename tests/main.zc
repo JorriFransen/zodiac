@@ -1,11 +1,25 @@
 
-#run main();
+// #run main(:);
 
-X :: 10 % 7;
+
+is_prime :: (n: s64) -> bool {
+
+    if n < 2 return false;
+
+    for i := n - 1; i > 1; i -= 1 {
+        if n % i == 0 {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 main :: () {
-    println(X);
-    println(12 % 7);
+
+    for i := 0; i < 20; i += 1 {
+        println(i, ": ", is_prime(i));
+    }
 
     return 0;
 }
