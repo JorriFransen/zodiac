@@ -1,4 +1,6 @@
 
+- Register bytecode functions via the function protos
+- We still crash when recursing too deep in the interpreter, it seems to be related to growing/reallocating registers in push_stack_frame
 - Logical && and ||
 
 - Break

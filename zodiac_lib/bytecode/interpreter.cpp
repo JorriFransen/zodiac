@@ -552,6 +552,13 @@ switch (operand.type->bit_size) { \
             assert(arg_count.type == &builtin_type_s64);
             assert(arg_count.value.integer.s64 <= stack_count(&interp->arg_stack));
 
+            advance_ip = false;
+            // We need to advance here since pushing a new stack frame here might cause the frame stack to grow.
+            //  The frames are stored by value in the stack, but at the end of this function we advance the ip
+            //  via a pointer to the frame. So when the push of the new frame causes the stack to grow (reallocate)
+            //  this pointer will be invalid.
+            frame->ip += 1;
+
             interpreter_push_stack_frame(interp, instruction.a.value.function_handle, arg_count.value.integer.s64, instruction.dest.index);
             break;
         }
@@ -1602,8 +1609,12 @@ void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle 
         assert(fn->type->function.return_type->kind != Type_Kind::VOID);
     }
 
+    // ZTRACE("Pusing stack frame for function: %s", fn->name.data);
+
     auto free_register_count = interp->registers.count - interp->used_register_count;
     if (free_register_count < fn->registers.count) {
+
+        // ZTRACE("\n\n\nGROWING!!!\n\n");
 
         auto old_data = interp->registers.data;
 
@@ -1675,6 +1686,12 @@ Interpreter_Stack_Frame interpreter_pop_stack_frame(Interpreter *interp)
     auto fn_handle = old_frame.fn_handle;
     assert(fn_handle >= 0 && fn_handle < interp->functions.count);
     auto fn = interp->functions[fn_handle];
+
+    // ZTRACE("Popping stack frame for function: '%s'", fn.name.data);
+    // if (stack_count(&interp->frames)) {
+    //     auto nf = stack_top_ptr(&interp->frames);
+    //     ZTRACE("Restored ip, bp: %i, %i", nf->ip, nf->bp);
+    // }
 #endif
 
     assert(old_frame.registers.count == fn.registers.count);

@@ -1756,6 +1756,9 @@ bool type_resolve_node(Resolver *resolver, Flat_Node *node)
             assert(sym && sym->kind == Symbol_Kind::FUNC);
             assert(sym->state == Symbol_State::RESOLVED);
             sym->state = Symbol_State::TYPED;
+
+            func_decl->flags |= AST_DECL_FLAG_TYPED;
+
             return true;
         }
 
