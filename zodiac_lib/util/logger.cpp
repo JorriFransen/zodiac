@@ -17,15 +17,12 @@ struct Logging_System_State
 {
     File_Handle out_file;
     File_Handle err_file;
-    File_Handle log_file;
 };
 
 file_local bool logging_system_initialized = false;
 file_local Logging_System_State logging_system_state;
 
 file_local Log_Level max_log_level = Log_Level::INFO;
-
-file_local void write_log_file(const String_Ref message);
 
 bool logging_system_initialize(Log_Level mll/*=Log_Level::INFO*/)
 {
@@ -35,11 +32,6 @@ bool logging_system_initialize(Log_Level mll/*=Log_Level::INFO*/)
 
     filesystem_stdout_file(&logging_system_state.out_file);
     filesystem_stderr_file(&logging_system_state.err_file);
-
-    if (!filesystem_open("console.log", FILE_MODE_WRITE, &logging_system_state.log_file)) {
-        platform_console_write_error("ERROR: Unable to open 'console.log' for writing!", Platform_Console_Color::Red);
-        return false;
-    }
 
     logging_system_initialized = true;
 
@@ -120,19 +112,6 @@ void log_message(Log_Level log_level, const char *file, s64 line, const String_R
         platform_file_write(&logging_system_state.err_file, out_message, level_colors[level_index]);
     } else {
         platform_file_write(&logging_system_state.out_file, out_message, level_colors[level_index]);
-    }
-
-    write_log_file(out_message);
-}
-
-file_local void write_log_file(const String_Ref message)
-{
-    u64 out_size;
-    bool result = filesystem_write(&logging_system_state.log_file, message.length, message.data, &out_size);
-    assert(out_size == message.length);
-
-    if (!result) {
-        platform_console_write_error("ERROR: writing to 'console.log' failed!");
     }
 }
 
