@@ -96,7 +96,8 @@ enum class AST_Binary_Operator
     SUB,
     MUL,
     DIV,
-    LAST_ARITHMETIC_OP = DIV,
+    MOD,
+    LAST_ARITHMETIC_OP = MOD,
 
     EQ,
     FIRST_CMP_OP = EQ,

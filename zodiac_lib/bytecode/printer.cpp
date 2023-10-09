@@ -201,6 +201,7 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
         BINOP_CASE_(I_SUB)
         BINOP_CASE_(I_MUL)
         BINOP_CASE_(I_DIV)
+        BINOP_CASE_(I_MOD)
 
         BINOP_CASE_(I_EQ)
         BINOP_CASE_(I_NEQ)

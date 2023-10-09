@@ -292,6 +292,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
         VALIDATE_INTEGER_BINOP(I_SUB)
         VALIDATE_INTEGER_BINOP(I_MUL)
         VALIDATE_INTEGER_BINOP(I_DIV)
+        VALIDATE_INTEGER_BINOP(I_MOD)
 
 #undef VALIDATE_INTEGER_BINOP
 

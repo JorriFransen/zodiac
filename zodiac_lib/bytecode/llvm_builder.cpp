@@ -305,7 +305,7 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
     return result;
 }
 
-#define EMIT_INTEGER_BINOP(op) { \
+#define EMIT_INTEGER_BINOP_AUTO(op) { \
     llvm::Value *lhs = llvm_builder_emit_register(builder, bc_inst.a); \
     llvm::Value *rhs = llvm_builder_emit_register(builder, bc_inst.b); \
     assert(bc_inst.a.type->kind == Type_Kind::INTEGER); \
@@ -314,13 +314,21 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
     break; \
 }
 
-#define EMIT_INTEGER_BINOP_S(op) { \
+#define EMIT_INTEGER_BINOP(op) { \
+    llvm::Value *lhs = llvm_builder_emit_register(builder, bc_inst.a); \
+    llvm::Value *rhs = llvm_builder_emit_register(builder, bc_inst.b); \
     assert(bc_inst.a.type->kind == Type_Kind::INTEGER); \
-    if (bc_inst.a.type->integer.sign) { EMIT_INTEGER_BINOP(S##op); } \
-    else { EMIT_INTEGER_BINOP(U##op) } \
+    llvm::Value *result = nullptr; \
+    if (bc_inst.a.type->integer.sign) { \
+        result = irb->CreateS##op(lhs, rhs); \
+    } else { \
+        result = irb->CreateU##op(lhs, rhs); \
+    } \
+    llvm_builder_store_result(builder, bc_inst.dest, result); \
+    break; \
 }
 
-#define EMIT_INTEGER_CMP_BINOP(op) { \
+#define EMIT_INTEGER_CMP_BINOP_AUTO(op) { \
     llvm::Value *lhs = llvm_builder_emit_register(builder, bc_inst.a); \
     llvm::Value *rhs = llvm_builder_emit_register(builder, bc_inst.b); \
     assert(bc_inst.a.type == bc_inst.b.type); \
@@ -332,10 +340,23 @@ bool llvm_builder_emit_function(LLVM_Builder *builder, Bytecode_Function_Handle 
     break; \
 }
 
-#define EMIT_INTEGER_CMP_BINOP_S(op) { \
-    assert(bc_inst.a.type->kind == Type_Kind::INTEGER); \
-    if (bc_inst.a.type->integer.sign) { EMIT_INTEGER_CMP_BINOP(S##op) } \
-    else { EMIT_INTEGER_CMP_BINOP(U##op) } \
+#define EMIT_INTEGER_CMP_BINOP(op) { \
+    llvm::Value *lhs = llvm_builder_emit_register(builder, bc_inst.a); \
+    llvm::Value *rhs = llvm_builder_emit_register(builder, bc_inst.b); \
+    assert(bc_inst.a.type == bc_inst.b.type); \
+    assert(bc_inst.a.type->kind == Type_Kind::INTEGER || bc_inst.a.type->kind == Type_Kind::BOOLEAN || bc_inst.a.type->kind == Type_Kind::ENUM); \
+    assert(bc_inst.dest.type->kind == Type_Kind::BOOLEAN); \
+    bool sign = (bc_inst.a.type->kind == Type_Kind::INTEGER && bc_inst.a.type->integer.sign) || \
+                (bc_inst.a.type->kind == Type_Kind::ENUM && bc_inst.a.type->enumeration.integer_type->integer.sign); \
+    llvm::Value *result; \
+    if (sign) { \
+        result = irb->CreateICmpS##op(lhs, rhs); \
+    } else {\
+        result = irb->CreateICmpU##op(lhs, rhs); \
+    } \
+    assert(result); \
+    llvm_builder_store_result(builder, bc_inst.dest, result); \
+    break; \
 }
 
 #define EMIT_FLOAT_BINOP(op) { \
@@ -369,17 +390,18 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             assert(false);
         }
 
-        case Bytecode_Opcode::I_ADD: EMIT_INTEGER_BINOP(Add)
-        case Bytecode_Opcode::I_SUB: EMIT_INTEGER_BINOP(Sub)
-        case Bytecode_Opcode::I_MUL: EMIT_INTEGER_BINOP(Mul)
-        case Bytecode_Opcode::I_DIV: EMIT_INTEGER_BINOP_S(Div)
+        case Bytecode_Opcode::I_ADD: EMIT_INTEGER_BINOP_AUTO(Add)
+        case Bytecode_Opcode::I_SUB: EMIT_INTEGER_BINOP_AUTO(Sub)
+        case Bytecode_Opcode::I_MUL: EMIT_INTEGER_BINOP_AUTO(Mul)
+        case Bytecode_Opcode::I_DIV: EMIT_INTEGER_BINOP(Div)
+        case Bytecode_Opcode::I_MOD: EMIT_INTEGER_BINOP(Rem);
 
-        case Bytecode_Opcode::I_EQ:    EMIT_INTEGER_CMP_BINOP(EQ)
-        case Bytecode_Opcode::I_NEQ:   EMIT_INTEGER_CMP_BINOP(NE)
-        case Bytecode_Opcode::I_GT:    EMIT_INTEGER_CMP_BINOP_S(GT)
-        case Bytecode_Opcode::I_LT:    EMIT_INTEGER_CMP_BINOP_S(LT)
-        case Bytecode_Opcode::I_GT_EQ: EMIT_INTEGER_CMP_BINOP_S(GE)
-        case Bytecode_Opcode::I_LT_EQ: EMIT_INTEGER_CMP_BINOP_S(LE)
+        case Bytecode_Opcode::I_EQ:    EMIT_INTEGER_CMP_BINOP_AUTO(EQ)
+        case Bytecode_Opcode::I_NEQ:   EMIT_INTEGER_CMP_BINOP_AUTO(NE)
+        case Bytecode_Opcode::I_GT:    EMIT_INTEGER_CMP_BINOP(GT)
+        case Bytecode_Opcode::I_LT:    EMIT_INTEGER_CMP_BINOP(LT)
+        case Bytecode_Opcode::I_GT_EQ: EMIT_INTEGER_CMP_BINOP(GE)
+        case Bytecode_Opcode::I_LT_EQ: EMIT_INTEGER_CMP_BINOP(LE)
 
         case Bytecode_Opcode::F_ADD: EMIT_FLOAT_BINOP(FAdd)
         case Bytecode_Opcode::F_SUB: EMIT_FLOAT_BINOP(FSub)

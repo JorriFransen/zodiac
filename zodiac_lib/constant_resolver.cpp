@@ -243,6 +243,7 @@ Constant_Resolve_Result resolve_constant_integer_binary_expr(AST_Expression *exp
         case AST_Binary_Operator::SUB: EXECUTE_BINOP(-)
         case AST_Binary_Operator::MUL: EXECUTE_BINOP(*)
         case AST_Binary_Operator::DIV: EXECUTE_BINOP(/)
+        case AST_Binary_Operator::MOD: EXECUTE_BINOP(%)
 
         case AST_Binary_Operator::EQ: EXECUTE_CMP_BINOP(==);
         case AST_Binary_Operator::NEQ: assert(false); break;

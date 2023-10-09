@@ -696,6 +696,19 @@ Bytecode_Register bytecode_emit_load_argument(Bytecode_Builder *builder, s64 ind
         return {}; \
     }
 
+#define EMIT_INT_BINOP_(op) \
+    assert(a.kind == Bytecode_Register_Kind::TEMPORARY); \
+    assert(b.kind == Bytecode_Register_Kind::TEMPORARY); \
+    assert(a.type == b.type && "EMIT_BINOP_ register types don't match"); \
+    auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, a.type); \
+    if (a.type->kind == Type_Kind::INTEGER) { \
+        bytecode_emit_instruction(builder, Bytecode_Opcode::I_##op, a, b, result); \
+        return result; \
+    } else { \
+        assert_msg(false, "EMIT_BINOP_ unsupported binop type"); \
+        return {}; \
+    }
+
 Bytecode_Register bytecode_emit_add(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b)
 {
     EMIT_BINOP_(ADD)
@@ -717,6 +730,11 @@ Bytecode_Register bytecode_emit_div(Bytecode_Builder *builder, Bytecode_Register
                                     Bytecode_Register b)
 {
     EMIT_BINOP_(DIV)
+}
+
+Bytecode_Register bytecode_emit_mod(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b)
+{
+    EMIT_INT_BINOP_(MOD)
 }
 
 #undef EMIT_INTEGER_BINOP_

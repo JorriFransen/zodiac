@@ -23,6 +23,7 @@ struct Bytecode_Register;
     ZODIAC_BC_OP(I_SUB) \
     ZODIAC_BC_OP(I_MUL) \
     ZODIAC_BC_OP(I_DIV) \
+    ZODIAC_BC_OP(I_MOD) \
     ZODIAC_BC_OP(I_EQ) \
     ZODIAC_BC_OP(I_NEQ) \
     ZODIAC_BC_OP(I_GT) \
@@ -329,6 +330,7 @@ ZAPI Bytecode_Register bytecode_emit_add(Bytecode_Builder *builder, Bytecode_Reg
 ZAPI Bytecode_Register bytecode_emit_sub(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b);
 ZAPI Bytecode_Register bytecode_emit_mul(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b);
 ZAPI Bytecode_Register bytecode_emit_div(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b);
+ZAPI Bytecode_Register bytecode_emit_mod(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b);
 
 ZAPI Bytecode_Register bytecode_emit_eq(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b);
 ZAPI Bytecode_Register bytecode_emit_neq(Bytecode_Builder *builder, Bytecode_Register a, Bytecode_Register b);

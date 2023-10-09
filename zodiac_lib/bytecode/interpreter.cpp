@@ -219,6 +219,7 @@ break; \
         case Bytecode_Opcode::I_SUB: INTEGER_BINOP_CASE(-)
         case Bytecode_Opcode::I_MUL: INTEGER_BINOP_CASE(*)
         case Bytecode_Opcode::I_DIV: INTEGER_BINOP_CASE(/)
+        case Bytecode_Opcode::I_MOD: INTEGER_BINOP_CASE(%)
 
 #define INTEGER_BINOP_CMP_CASE(op) { \
 Interpreter_Register lhs = interpreter_load_register(interp, instruction.a); \

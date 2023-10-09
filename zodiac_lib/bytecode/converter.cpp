@@ -1433,6 +1433,10 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     return bytecode_emit_div(bc->builder, lhs_reg, rhs_reg);
                 }
 
+                case AST_Binary_Operator::MOD: {
+                    return bytecode_emit_mod(bc->builder, lhs_reg, rhs_reg);
+                }
+
                 case AST_Binary_Operator::EQ: {
                     return bytecode_emit_eq(bc->builder, lhs_reg, rhs_reg);
                 }

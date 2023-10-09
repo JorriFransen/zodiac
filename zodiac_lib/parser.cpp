@@ -260,6 +260,8 @@ file_local AST_Binary_Operator token_kind_to_ast_binop[TOK_LAST] = {
     ['*'] = AST_Binary_Operator::MUL,
     ['/'] = AST_Binary_Operator::DIV,
 
+    ['%'] = AST_Binary_Operator::MOD,
+
     [TOK_EQ] = AST_Binary_Operator::EQ,
     [TOK_NEQ] = AST_Binary_Operator::NEQ,
     ['<'] = AST_Binary_Operator::LT,
@@ -277,7 +279,7 @@ AST_Expression *parse_expr_mul(Parser *parser)
     AST_Expression *lhs = parse_expr_unary(parser);
     return_if_null(lhs);
 
-    while (is_token(parser, '*') || is_token(parser, '/')) {
+    while (is_token(parser, '*') || is_token(parser, '/') || is_token(parser, '%')) {
         char op = cur_tok(parser).kind;
         next_token(parser);
 
