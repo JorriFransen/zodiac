@@ -58,7 +58,7 @@ ZAPI AST_Identifier parse_identifier(Parser *parser);
 ZAPI AST_Expression *parse_expr_compound(Parser *parser);
 ZAPI AST_Expression *parse_expr_operand(Parser *parser);
 ZAPI AST_Expression *parse_expr_base(Parser *parser);
-ZAPI AST_Expression *parse_expr_unary(Parser *parser);
+ZAPI AST_Expression *_parse_expr_unary(Parser *parser);
 ZAPI AST_Expression *parse_expr_mul(Parser *parser);
 ZAPI AST_Expression *parse_expr_add(Parser *parser);
 ZAPI AST_Expression *parse_expr_cmp(Parser *parser);

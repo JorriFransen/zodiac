@@ -24,9 +24,10 @@ namespace Zodiac
     (parser)->context->errors[handle].fatal = true; \
 }
 
-#define expect_token(p, c) if (!_expect_token((p), (c))) { return {}; }
+#define expect_token(p, c) { if (!_expect_token((p), (c))) { return {}; } }
 
 #define parse_expression(p) _parse_expression(p); if ((p)->error) { return {}; }
+#define parse_expr_unary(p) _parse_expr_unary(p); if ((p)->error) { return {}; }
 #define parse_statement(...) _parse_statement(__VA_ARGS__); if ((FIRST_VARARG(__VA_ARGS__))->error) { return {}; }
 #define parse_type_spec(p) _parse_type_spec(p); if ((p)->error) { return nullptr; }
 
@@ -215,7 +216,7 @@ AST_Expression *parse_expr_base(Parser *parser)
     return expr;
 }
 
-AST_Expression *parse_expr_unary(Parser *parser)
+AST_Expression *_parse_expr_unary(Parser *parser)
 {
     debug_assert(parser);
     Source_Pos start_pos = cur_tok(parser).range.start;
@@ -304,6 +305,7 @@ AST_Expression *parse_expr_add(Parser *parser)
         next_token(parser);
 
         AST_Expression *rhs = parse_expr_mul(parser);
+        return_if_null(rhs);
 
         auto ast_op = token_kind_to_ast_binop[(int)op];
         debug_assert(ast_op != AST_Binary_Operator::INVALID);
@@ -324,6 +326,7 @@ AST_Expression *parse_expr_cmp(Parser *parser)
         next_token(parser);
 
         AST_Expression *rhs = parse_expr_add(parser);
+        return_if_null(rhs);
 
         auto cmp_op = token_kind_to_ast_binop[(int)op];
         debug_assert(cmp_op != AST_Binary_Operator::INVALID);
