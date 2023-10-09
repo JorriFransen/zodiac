@@ -378,13 +378,32 @@ String platform_dir_name(Allocator *allocator, const String_Ref path)
     WCHAR drive_name[_MAX_DRIVE];
     WCHAR dir_name[_MAX_DIR];
 
-    _wsplitpath_s(wide_path.data, drive_name, _MAX_DRIVE, dir_name, _MAX_DIR, nullptr, 0, nullptr, 0);
+    auto res = _wsplitpath_s(wide_path.data, drive_name, _MAX_DRIVE, dir_name, _MAX_DIR, nullptr, 0, nullptr, 0);
+    assert(res == 0);
 
     // Remove trailing '\\'
     auto cut_dir_name = Wide_String_Ref(dir_name);
     cut_dir_name.length -= 1;
 
-    Wide_String result = string_append(temp_allocator_allocator(), Wide_String_Ref(drive_name), cut_dir_name);
+    Wide_String result = string_append(temp_allocator_allocator(), drive_name, cut_dir_name);
+
+    return string_create(allocator, result.data, result.length);
+}
+
+String platform_base_name(Allocator *allocator, const String_Ref path)
+{
+    assert(filesystem_exists(path));
+    assert(path.data[path.length] == '\0');
+
+    Wide_String wide_path = Wide_String(temp_allocator_allocator(), path);
+
+    WCHAR file_name[_MAX_FNAME];
+    WCHAR extension[_MAX_EXT];
+
+    auto res = _wsplitpath_s(wide_path.data, nullptr, 0, nullptr, 0, file_name, _MAX_FNAME, extension, _MAX_EXT);
+    assert(res == 0);
+
+    Wide_String result = string_append(temp_allocator_allocator(), file_name, extension);
 
     return string_create(allocator, result.data, result.length);
 }
