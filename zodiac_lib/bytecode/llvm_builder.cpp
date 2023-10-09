@@ -1079,7 +1079,7 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Array_Ref<LLVM_B
 
         case Type_Kind::POINTER: {
             llvm::Value *fmt_str_lit = llvm_builder_emit_cstring_literal(builder, "%p");
-            llvm::Value *null_fmt_str_lit = llvm_builder_emit_cstring_literal(builder, "%p");
+            llvm::Value *null_fmt_str_lit = llvm_builder_emit_cstring_literal(builder, "(nil)");
 
 
             llvm::Type *int_type = llvm::Type::getIntNTy(*builder->llvm_context, pointer_size);
