@@ -121,7 +121,7 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
 
     out_context->builtin_string_type = nullptr;
 
-    if (!out_context->options.output_filename_specified) {
+    if (!out_context->options.output_filename_specified && out_context->options.input_file_name.length > 0) {
 
         auto in_base = filesystem_base_name(temp_allocator_allocator(), out_context->options.input_file_name);
         auto dot_index = string_last_index_of(in_base, '.');
