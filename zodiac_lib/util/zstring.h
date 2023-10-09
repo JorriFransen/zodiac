@@ -108,6 +108,8 @@ ZAPI bool string_contains(const String_Ref &string, const String_Ref &sub_string
 ZAPI bool string_starts_with(const String_Ref &string, const String_Ref &start);
 ZAPI bool string_ends_with(const String_Ref &string, const String_Ref &end);
 ZAPI bool string_equal(const String_Ref &a, const String_Ref &b);
+ZAPI s64 string_index_of(const String_Ref &a, char c);
+ZAPI s64 string_last_index_of(const String_Ref &a, char c);
 
 ZAPI const String string_format(Allocator *allocator, const String_Ref fmt, ...);
 ZAPI const String string_format_va_list(Allocator *allocator, const String_Ref fmt, va_list args);

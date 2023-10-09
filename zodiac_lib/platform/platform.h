@@ -65,6 +65,7 @@ ZAPI void platform_console_write_error(const String_Ref message, Platform_Consol
 
 ZAPI String platform_exe_path(Allocator *allocator);
 ZAPI String platform_dir_name(Allocator *allocator, const String_Ref path);
+ZAPI String platform_base_name(Allocator *allocator, const String_Ref path);
 ZAPI String platform_cwd(Allocator *allocator);
 
 ZAPI void platform_exit(int exit_code);

@@ -240,6 +240,24 @@ bool string_equal(const String_Ref &a, const String_Ref &b)
     return zmemcmp(a.data, b.data, a.length) == 0;
 }
 
+s64 string_index_of(const String_Ref &a, char c)
+{
+    for (s64 i = 0; i < a.length; i++) {
+        if (a[i] == c) return i;
+    }
+
+    return -1;
+}
+
+s64 string_last_index_of(const String_Ref &a, char c)
+{
+    for (s64 i = a.length - 1; i >= 0; i--) {
+        if (a[i] == c) return i;
+    }
+
+    return -1;
+}
+
 const String string_format(Allocator* allocator, const String_Ref fmt, ...)
 {
     va_list args;

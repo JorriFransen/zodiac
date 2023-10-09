@@ -121,6 +121,18 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
 
     out_context->builtin_string_type = nullptr;
 
+    if (!out_context->options.output_filename_specified) {
+
+        auto in_base = filesystem_base_name(temp_allocator_allocator(), out_context->options.input_file_name);
+        auto dot_index = string_last_index_of(in_base, '.');
+
+        if (dot_index != -1) {
+            in_base.length = dot_index;
+        }
+        out_context->options.output_file_name = string_append(&dynamic_allocator, in_base, ZPLATFORM_DEFAULT_EXE_EXTENSION);
+        out_context->options.output_filename_specified = true;
+    }
+
     temporary_allocator_reset(temp_allocator(), temp_mark);
 }
 

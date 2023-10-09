@@ -518,6 +518,19 @@ String platform_dir_name(Allocator *allocator, const String_Ref path)
     return string_create(allocator, result);
 }
 
+String platform_base_name(Allocator *allocator, const String_Ref path)
+{
+    assert(filesystem_exists(path));
+    assert(path.data[path.length] == '\0');
+
+    // Dirname may modify the passed in string, so copy it first
+    auto _path = string_copy(temp_allocator_allocator(), path);
+
+    char *result = basename((char *)_path.data);
+
+    return string_create(allocator, result);
+}
+
 String platform_cwd(Allocator *allocator)
 {
     const size_t cwd_buf_size = 1024;

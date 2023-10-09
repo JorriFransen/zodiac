@@ -51,6 +51,7 @@ ZAPI void filesystem_stderr_file(File_Handle *out_file);
 
 ZAPI String filesystem_exe_path(Allocator *allocator);
 ZAPI String filesystem_dir_name(Allocator *allocator, const String_Ref path);
+ZAPI String filesystem_base_name(Allocator *allocator, const String_Ref path);
 ZAPI String filesystem_cwd(Allocator *allocator);
 
 }

@@ -32,7 +32,7 @@ void parse_command_line_options(Zodiac_Options *opts, int argc, const char **arg
 
     cxxoptions.add_options()
         ("input_file_name", "Input file name", STRDEF(""))
-        ("o,output_file_name", "Output file name", STRDEF("a.out" ZPLATFORM_DEFAULT_EXE_EXTENSION))
+        ("o,output_file_name", "Output file name", STRDEF(""))
 
         ("n,no_binary", "Do not emit binary", BDEF(false))
 
@@ -65,6 +65,7 @@ void parse_command_line_options(Zodiac_Options *opts, int argc, const char **arg
 
     opts->input_file_name = string_copy(da, result["input_file_name"].as<std::string>());
     opts->output_file_name = string_copy(da, result["output_file_name"].as<std::string>());
+    opts->output_filename_specified = result["output_file_name"].count();
 
     opts->dont_emit_binary = result["no_binary"].as<bool>();
 

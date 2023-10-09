@@ -30,6 +30,7 @@ struct Zodiac_Options
 {
     String_Ref input_file_name = {};
     String_Ref output_file_name = DEFAULT_OUTPUT_FILENAME;
+    bool output_filename_specified = false;
 
     bool dont_emit_binary = false;
 
