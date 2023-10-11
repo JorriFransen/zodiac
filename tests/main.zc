@@ -3,8 +3,35 @@
 main :: () {
     println("Type info test!");
 
-    s64_info := #type_info(s64);
-    print(s64_info);
+    print_ti(#type_info(s64));
+    print_ti(#type_info(u64));
+    print_ti(#type_info(s32));
+    print_ti(#type_info(u32));
+    print_ti(#type_info(s16));
+    print_ti(#type_info(u16));
+    print_ti(#type_info(s8));
+    print_ti(#type_info(u8));
+
+    println();
+
+    print_ti(#type_info(r64));
+    print_ti(#type_info(r32));
 
     return 0;
 }
+
+print_ti :: (ti: *Type_Info) {
+
+    switch (ti.kind) {
+
+        case Type_Info_Kind.Integer:
+            ii := cast(*Type_Info_Int, ti);
+            print("Integer, ", ti.size, " bytes, ");
+            if ii.sign println("signed");
+            else println("unsigned");
+
+        case Type_Info_Kind.Real:
+            println("Real, ", ti.size, " bytes");
+    }
+}
+

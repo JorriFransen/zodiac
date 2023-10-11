@@ -1849,6 +1849,10 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type, boo
 
     auto string_type = get_string_type(interp->context);
 
+    if (type->kind == Type_Kind::ENUM) {
+        type = type->enumeration.integer_type;
+    }
+
     switch (type->kind) {
         default: assert_msg(false, "Unreachable");
         case Type_Kind::INVALID: assert(false); break;

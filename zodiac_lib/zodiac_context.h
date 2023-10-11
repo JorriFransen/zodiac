@@ -16,6 +16,7 @@ struct File_Handle;
 struct Flat_Root_Node;
 struct Resolver;
 struct Type;
+struct Type_Info;
 struct Zodiac_Error;
 
 namespace Bytecode {
@@ -99,6 +100,9 @@ struct Zodiac_Context
     String support_lib_static_path;
 
     Type *builtin_string_type;
+    Type *builtin_type_info_type;
+
+    Dynamic_Array<Type_Info *> type_infos;
 };
 
 ZAPI void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context);

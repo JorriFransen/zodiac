@@ -102,6 +102,7 @@ void create_type(Type *type, Type_Kind kind, u64 bit_size, Type_Flags flags/*=TY
     type->bit_size = bit_size;
     type->flags = flags;
     type->pointer_to = nullptr;
+    type->info_index = -1;
 }
 
 void create_integer_type(Type *type, u64 bit_size, bool sign)
@@ -371,7 +372,24 @@ Type *get_string_type(Zodiac_Context *ctx)
         }
     }
 
-    assert_msg(false, "Builting string type could not be found");
+    assert_msg(false, "Builting String type could not be found");
+}
+
+Type *get_type_info_type(Zodiac_Context *ctx)
+{
+    if (ctx->builtin_type_info_type) {
+        return ctx->builtin_type_info_type;
+    }
+
+    for (s64 i = 0; i < struct_types.count; i++) {
+        auto st = struct_types[i];
+        if (st->structure.name == atom_Type_Info) {
+            ctx->builtin_type_info_type = st;
+            return st;
+        }
+    }
+
+    assert_msg(false, "Builting Type_Info type could not be found");
 }
 
 Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Allocator *allocator, bool vararg/*=false*/)

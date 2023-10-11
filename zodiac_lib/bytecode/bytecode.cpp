@@ -844,7 +844,12 @@ Bytecode_Register bytecode_emit_cast(Bytecode_Builder *builder, Type *target_typ
         }
 
         case Type_Kind::FLOAT: assert(false); break;
-        case Type_Kind::POINTER: assert(false); break;
+
+        case Type_Kind::POINTER: {
+            assert(op_type->kind == Type_Kind::POINTER);
+            return bytecode_emit_bitcast(builder, target_type, operand_register);
+        }
+
         case Type_Kind::FUNCTION: assert(false); break;
 
         case Type_Kind::BOOLEAN: {
@@ -938,7 +943,13 @@ Bytecode_Register bytecode_emit_bitcast(Bytecode_Builder *builder, Type *target_
 
         case Type_Kind::FLOAT: assert(false); break;
         case Type_Kind::BOOLEAN: assert(false); break;
-        case Type_Kind::POINTER: assert(false); break;
+
+        case Type_Kind::POINTER: {
+            if (from_type->kind == Type_Kind::POINTER) break;
+            else assert(false);
+            break;
+        }
+
         case Type_Kind::STRUCTURE: assert(false); break;
         case Type_Kind::ENUM: assert(false); break;
         case Type_Kind::STATIC_ARRAY: assert(false); break;

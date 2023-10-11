@@ -994,7 +994,10 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
             break;
         }
 
-        case AST_Expression_Kind::TYPE_INFO: assert(false); break;
+        case AST_Expression_Kind::TYPE_INFO: {
+            flatten_type_spec(resolver, expr->directive.directive->type_info.ts, scope, dest);
+            break;
+        }
 
         case AST_Expression_Kind::COMPOUND: {
 
@@ -1540,16 +1543,10 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
             break;
         }
 
-        case AST_Expression_Kind::CAST: {
-            // leaf
-            break;
-        }
-
-
-        case AST_Expression_Kind::TYPE_INFO: assert(false); break;
-
+        case AST_Expression_Kind::CAST:
         case AST_Expression_Kind::INDEX:
-        case AST_Expression_Kind::COMPOUND: {
+        case AST_Expression_Kind::COMPOUND:
+        case AST_Expression_Kind::TYPE_INFO: {
             // leaf
             break;
         }
@@ -2933,6 +2930,8 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
             } else if (target_type->kind == Type_Kind::ENUM) {
                 valid_conversion = valid_static_type_conversion(operand_type, target_type);
+            } else if (target_type->kind == Type_Kind::POINTER && operand_type->kind == Type_Kind::POINTER) {
+                valid_conversion = true;
             } else if (target_type->kind == Type_Kind::POINTER && operand_type->kind == Type_Kind::INTEGER) {
                 valid_conversion = valid_static_type_conversion(operand_type, target_type);
             } else if (target_type->kind == Type_Kind::BOOLEAN && operand_type->kind == Type_Kind::POINTER) {
@@ -3001,7 +3000,13 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             break;
         }
 
-        case AST_Expression_Kind::TYPE_INFO: assert(false); break;
+        case AST_Expression_Kind::TYPE_INFO: {
+            auto ts = expr->directive.directive->type_info.ts;
+            assert(ts->resolved_type);
+
+            expr->resolved_type = get_pointer_type(get_type_info_type(ctx), &ctx->ast_allocator);
+            break;
+        }
 
         case AST_Expression_Kind::COMPOUND: {
             assert(inferred_type);

@@ -14,6 +14,7 @@
 #include "scope.h"
 #include "source_pos.h"
 #include "type.h"
+#include "type_info.h"
 #include "util/asserts.h"
 #include "util/logger.h"
 #include "util/zstring.h"
@@ -1512,7 +1513,25 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
         case AST_Expression_Kind::COMPOUND: {
             return ast_compound_expr_to_bytecode(bc, expr);
         }
-        case AST_Expression_Kind::TYPE_INFO: assert(false); break;
+
+        case AST_Expression_Kind::TYPE_INFO: {
+
+            Type *target_type = expr->directive.directive->type_info.ts->resolved_type;
+            assert(target_type);
+
+            if (target_type->info_index -1) {
+                add_type_info(bc->context, target_type);
+            }
+
+            assert(target_type->info_index >= 0 && target_type->info_index < bc->context->type_infos.count);
+            return bytecode_pointer_literal(bc->builder, expr->resolved_type, bc->context->type_infos[target_type->info_index]);
+            assert(false);
+
+            // We want to create a TYPE_INFO instruction, which returns the pointer, or emit the info as constants here.
+
+            assert(false);
+            break;
+        }
     }
 
     assert(false);

@@ -120,6 +120,9 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
     assert(filesystem_exists(out_context->support_lib_static_path));
 
     out_context->builtin_string_type = nullptr;
+    out_context->builtin_type_info_type = nullptr;
+
+    dynamic_array_create(&dynamic_allocator, &out_context->type_infos);
 
     if (!out_context->options.output_filename_specified && out_context->options.input_file_name.length > 0) {
 

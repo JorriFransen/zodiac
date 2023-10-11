@@ -27,6 +27,7 @@ struct Zodiac_Context;
     ZODIAC_NAME_TYPE_DEF(void)       \
     ZODIAC_NAME_TYPE_DEF(bool)       \
     ZODIAC_NAME_TYPE_DEF(String)     \
+    ZODIAC_NAME_TYPE_DEF(Type_Info)  \
 
 // Builtin type atoms
 #define ZODIAC_NUMERIC_TYPE_DEF(type, size) ZAPI extern Atom atom_##type##size;
@@ -79,6 +80,8 @@ struct Type
     Type_Flags flags;
 
     Type *pointer_to;
+
+    s64 info_index;
 
     union {
 
@@ -167,7 +170,9 @@ ZAPI Type *get_enum_type(Atom name, Dynamic_Array<Type_Enum_Member> members, Typ
 ZAPI Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator);
 ZAPI Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocator);
 ZAPI Type *get_function_type(Type *return_type, Array_Ref<Type *> param_types, Allocator *allocator, bool vararg = false);
+
 ZAPI Type *get_string_type(Zodiac_Context *ctx);
+ZAPI Type *get_type_info_type(Zodiac_Context *ctx);
 
 ZAPI Type *sym_decl_type(Symbol *sym);
 
