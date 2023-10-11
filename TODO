@@ -1,8 +1,6 @@
 
 - Register bytecode functions via the function protos
 
-- Add signcast (casting integers of the same size) to make the types in bytecode more explicit (bytecode_emit_integer_cast)
-
 - Logical && and ||
 
 - Break

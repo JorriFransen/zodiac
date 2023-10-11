@@ -883,17 +883,9 @@ Bytecode_Register bytecode_emit_integer_cast(Bytecode_Builder *builder, Type *ta
     if (target_type->kind == Type_Kind::INTEGER) {
 
         if (target_type->bit_size == op_type->bit_size) {
-            // Bytecode_Register result = {
-            //     .kind = Bytecode_Register_Kind::TEMPORARY,
-            //     .flags = operand_register.flags,
-            //     .index = -1,
-            //     .type = target_type,
-            // };
 
-            auto result = operand_register;
-            result.type = target_type;
-
-            return result;
+            bytecode_emit_instruction(builder, Bytecode_Opcode::BITCAST, operand_register, {}, dest_register);
+            return dest_register;
 
         } else if (target_type->bit_size < op_type->bit_size) {
 
