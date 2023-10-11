@@ -42,6 +42,7 @@ Type builtin_type_r32;
 s64 pointer_size;
 Dynamic_Array<Type *> function_types;
 Dynamic_Array<Type *> struct_types;
+Dynamic_Array<Type *> enum_types;
 Dynamic_Array<Type *> static_array_types;
 Dynamic_Array<Type *> slice_types;
 
@@ -63,6 +64,7 @@ ZODIAC_BUILTIN_TYPES
 
     dynamic_array_create(&dynamic_allocator, &function_types);
     dynamic_array_create(&dynamic_allocator, &struct_types);
+    dynamic_array_create(&dynamic_allocator, &enum_types);
     dynamic_array_create(&dynamic_allocator, &static_array_types);
     dynamic_array_create(&dynamic_allocator, &slice_types);
 
@@ -290,6 +292,7 @@ Type *get_enum_type(Atom name, Dynamic_Array<Type_Enum_Member> members, Type *in
     result->enumeration.members = members;
     result->enumeration.integer_type = integer_type;
 
+    dynamic_array_append(&enum_types, result);
     return result;
 }
 
@@ -372,7 +375,24 @@ Type *get_string_type(Zodiac_Context *ctx)
         }
     }
 
-    assert_msg(false, "Builting String type could not be found");
+    assert_msg(false, "Builtin String type could not be found");
+}
+
+Type *get_type_info_kind_type(Zodiac_Context *ctx)
+{
+    if (ctx->builtin_type_info_kind_type) {
+        return ctx->builtin_type_info_kind_type;
+    }
+
+    for (s64 i = 0; i < enum_types.count; i++) {
+        auto st = enum_types[i];
+        if (st->enumeration.name == atom_Type_Info_Kind) {
+            ctx->builtin_type_info_kind_type = st;
+            return st;
+        }
+    }
+
+    assert_msg(false, "Builtin Type_Info_Kind type could not be found");
 }
 
 Type *get_type_info_type(Zodiac_Context *ctx)
@@ -389,7 +409,24 @@ Type *get_type_info_type(Zodiac_Context *ctx)
         }
     }
 
-    assert_msg(false, "Builting Type_Info type could not be found");
+    assert_msg(false, "Builtin Type_Info type could not be found");
+}
+
+ZAPI Type *get_type_info_int_type(Zodiac_Context *ctx)
+{
+    if (ctx->builtin_type_info_int_type) {
+        return ctx->builtin_type_info_int_type;
+    }
+
+    for (s64 i = 0; i < struct_types.count; i++) {
+        auto st = struct_types[i];
+        if (st->structure.name == atom_Type_Info_Int) {
+            ctx->builtin_type_info_int_type = st;
+            return st;
+        }
+    }
+
+    assert_msg(false, "Builtin Type_Info type could not be found");
 }
 
 Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Allocator *allocator, bool vararg/*=false*/)

@@ -13,21 +13,23 @@ struct Allocator;
 struct String_Builder;
 struct Zodiac_Context;
 
-#define ZODIAC_BUILTIN_TYPES         \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 64)   \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 64)   \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 32)   \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 32)   \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 16)   \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 16)   \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 8)    \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 8)    \
-    ZODIAC_NUMERIC_TYPE_DEF(r, 32)   \
-    ZODIAC_NUMERIC_TYPE_DEF(r, 64)   \
-    ZODIAC_NAME_TYPE_DEF(void)       \
-    ZODIAC_NAME_TYPE_DEF(bool)       \
-    ZODIAC_NAME_TYPE_DEF(String)     \
-    ZODIAC_NAME_TYPE_DEF(Type_Info)  \
+#define ZODIAC_BUILTIN_TYPES             \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 64)       \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 64)       \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 32)       \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 32)       \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 16)       \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 16)       \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 8)        \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 8)        \
+    ZODIAC_NUMERIC_TYPE_DEF(r, 32)       \
+    ZODIAC_NUMERIC_TYPE_DEF(r, 64)       \
+    ZODIAC_NAME_TYPE_DEF(void)           \
+    ZODIAC_NAME_TYPE_DEF(bool)           \
+    ZODIAC_NAME_TYPE_DEF(String)         \
+    ZODIAC_NAME_TYPE_DEF(Type_Info_Kind) \
+    ZODIAC_NAME_TYPE_DEF(Type_Info)      \
+    ZODIAC_NAME_TYPE_DEF(Type_Info_Int)  \
 
 // Builtin type atoms
 #define ZODIAC_NUMERIC_TYPE_DEF(type, size) ZAPI extern Atom atom_##type##size;
@@ -146,6 +148,7 @@ ZAPI extern Type builtin_type_r32;
 ZAPI extern s64 pointer_size;
 ZAPI extern Dynamic_Array<Type *> function_types;
 ZAPI extern Dynamic_Array<Type *> struct_types;
+ZAPI extern Dynamic_Array<Type *> enum_types_types;
 ZAPI extern Dynamic_Array<Type *> static_array_types;
 ZAPI extern Dynamic_Array<Type *> slice_types;
 
@@ -172,7 +175,9 @@ ZAPI Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *al
 ZAPI Type *get_function_type(Type *return_type, Array_Ref<Type *> param_types, Allocator *allocator, bool vararg = false);
 
 ZAPI Type *get_string_type(Zodiac_Context *ctx);
+ZAPI Type *get_type_info_kind_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_type(Zodiac_Context *ctx);
+ZAPI Type *get_type_info_int_type(Zodiac_Context *ctx);
 
 ZAPI Type *sym_decl_type(Symbol *sym);
 

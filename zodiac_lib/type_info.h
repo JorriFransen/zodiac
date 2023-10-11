@@ -10,10 +10,10 @@ struct Zodiac_Context;
 
 enum class Type_Info_Kind
 {
-    INVALID,
+    INVALID = 0,
 
-    INTEGER,
-    REAL,
+    INTEGER = 1,
+    REAL    = 2,
 };
 
 struct Type_Info
@@ -30,5 +30,5 @@ struct Type_Info_Int
 
 ZAPI void add_type_info(Zodiac_Context *ctx, Type *type);
 ZAPI void init_type_info_base(Type_Info *ti, Type_Info_Kind kind, s64 bit_size);
-    
+
 }

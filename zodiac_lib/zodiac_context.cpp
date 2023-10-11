@@ -120,7 +120,9 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
     assert(filesystem_exists(out_context->support_lib_static_path));
 
     out_context->builtin_string_type = nullptr;
+    out_context->builtin_type_info_kind_type = nullptr;
     out_context->builtin_type_info_type = nullptr;
+    out_context->builtin_type_info_int_type = nullptr;
 
     dynamic_array_create(&dynamic_allocator, &out_context->type_infos);
 
@@ -251,6 +253,10 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
 
         if (!bytecode_valid) {
             assert(validator.errors.count);
+
+            if (ctx->options.print_bytecode) {
+                bytecode_print(ctx->bytecode_builder, temp_allocator_allocator());
+            }
 
             bytecode_validator_print_errors(&validator);
             return false;

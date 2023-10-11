@@ -100,7 +100,9 @@ struct Zodiac_Context
     String support_lib_static_path;
 
     Type *builtin_string_type;
+    Type *builtin_type_info_kind_type;
     Type *builtin_type_info_type;
+    Type *builtin_type_info_int_type;
 
     Dynamic_Array<Type_Info *> type_infos;
 };

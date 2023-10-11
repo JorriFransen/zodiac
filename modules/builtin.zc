@@ -9,10 +9,10 @@ String :: struct {
 }
 
 Type_Info_Kind :: enum {
-    Invalid,
+    Invalid :: 0,
 
-    Integer,
-    Real,
+    Integer :: 1,
+    Real    :: 2,
 }
 
 // This must always be the first member of any Type_Info_* structure
@@ -25,3 +25,5 @@ Type_Info_Int :: struct {
     base: Type_Info;
     sign: bool;
 }
+
+_type_info_pointers : []*Type_Info;

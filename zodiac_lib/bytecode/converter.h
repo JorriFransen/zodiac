@@ -52,6 +52,8 @@ struct Bytecode_Converter
     // TODO: should these be separated per file?
     Hash_Table<AST_Declaration *, Bytecode_Global_Handle> globals;
 
+    Dynamic_Array<Bytecode_Register> type_infos;
+
     s64 run_directive_count; // Used to generate unique names
     Hash_Table<AST_Directive *, Bytecode_Function_Handle> run_directives;
     Hash_Table<AST_Directive *, Bytecode_Register> run_results;
@@ -82,6 +84,9 @@ ZAPI Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Ex
 ZAPI Bytecode_Register ast_const_compound_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *compound_expr);
 
 ZAPI void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, Bytecode_Register lvalue_reg);
+
+ZAPI void converter_add_type_info(Bytecode_Converter *bc, Type *target_type);
+ZAPI Bytecode_Register converter_type_info_base(Bytecode_Converter *bc, Type *target_type);
 
 ZAPI Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directive *run_directive);
 
