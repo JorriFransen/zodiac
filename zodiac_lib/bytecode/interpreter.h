@@ -41,11 +41,12 @@ struct Interpreter_Stack_Frame
     s64 bp = 0;
     Bytecode_Function_Handle fn_handle = -1;
 
-    s64 register_offset;
+    s64 register_start;
     s64 register_count;
 
-    Array_Ref<u8> stack_mem = {};
-    u8 *sp = nullptr;
+    s64 stack_start;
+    s64 stack_count;
+    s64 sp;
 
     s64 dest_index = -1;
 };

@@ -44,7 +44,7 @@ void interpreter_init(Allocator *allocator, Zodiac_Context *context, Interpreter
     out_interp->registers.count = register_count;
     out_interp->used_register_count = 0;
 
-    const auto stack_mem_size = MEBIBYTE(1);
+    const auto stack_mem_size = KIBIBYTE(1);
     out_interp->stack_mem.data = alloc_array<u8>(allocator, stack_mem_size);
     out_interp->stack_mem.count = stack_mem_size;
     out_interp->stack_mem_used = 0;
@@ -632,7 +632,8 @@ switch (operand.type->bit_size) { \
                         if (!dest_reg.pointer) {
                             assert(return_value.type->bit_size % 8 == 0);
                             auto size = return_value.type->bit_size / 8;
-                            dest_reg.pointer = new_frame->sp;
+
+                            dest_reg.pointer = &interp->stack_mem[new_frame->sp];
                             new_frame->sp += size;
                         }
 
@@ -660,9 +661,10 @@ switch (operand.type->bit_size) { \
             // @Cleanup: @TODO: @FIXME: alignment?
             assert (instruction.a.type->bit_size % 8 == 0);
             auto size = instruction.a.type->bit_size / 8;
-            assert(frame->sp + size <= frame->stack_mem.data + frame->stack_mem.count);
 
-            u8 *ptr = frame->sp;
+            assert(frame->sp + size <= frame->stack_start + frame->stack_count);
+
+            u8 *ptr = &interp->stack_mem[frame->sp];
             frame->sp += size;
 
             Interpreter_Register alloc_register = {
@@ -808,12 +810,12 @@ switch (operand.type->bit_size) { \
             // @Cleanup: @TODO: @FIXME: alignment?
             assert(struct_type->bit_size % 8 == 0);
             auto size = struct_type->bit_size / 8;
-            assert(frame->sp + size <= frame->stack_mem.data + frame->stack_mem.count);
+            assert(frame->sp + size <= frame->stack_start + frame->stack_count);
 
             Interpreter_Register dest_reg = interpreter_load_register(interp, instruction.dest);
 
             if (!dest_reg.pointer) {
-                u8 *ptr = frame->sp;
+                u8 *ptr = &interp->stack_mem[frame->sp];
                 frame->sp += size;
                 dest_reg.pointer = ptr;
             }
@@ -894,12 +896,12 @@ switch (operand.type->bit_size) { \
             // @Cleanup: @TODO: @FIXME: alignment?
             assert(array_type->bit_size % 8 == 0);
             auto size = array_type->bit_size / 8;
-            assert(frame->sp + size <= frame->stack_mem.data + frame->stack_mem.count);
+            assert(frame->sp + size <= frame->stack_start + frame->stack_count);
 
             Interpreter_Register dest_reg = interpreter_load_register(interp, instruction.dest);
 
             if (!dest_reg.pointer) {
-                u8 *ptr = frame->sp;
+                u8 *ptr = &interp->stack_mem[frame->sp];
                 frame->sp += size;
                 dest_reg.pointer = ptr;
             }
@@ -1273,7 +1275,7 @@ void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_co
     void *return_val_ptr = nullptr;
     if (dest_index >= 0) {
         assert(dest_index < frame->register_count);
-        Interpreter_Register *dest_reg = &interp->registers[frame->register_offset + dest_index];
+        Interpreter_Register *dest_reg = &interp->registers[frame->register_start + dest_index];
 
         switch (dest_reg->type->kind) {
             case Type_Kind::INVALID: assert(false); break;
@@ -1320,16 +1322,17 @@ Interpreter_Register *interpreter_handle_ffi_callback(Interpreter *interp, Bytec
            .ip = 0,
            .bp = 0,
            .fn_handle = -1,
-           .register_offset = interp->used_register_count,
+           .register_start = interp->used_register_count,
            .register_count = 1,
-           .stack_mem = {},
-           .sp = nullptr,
+           .stack_start = 0,
+           .stack_count = 0,
+           .sp = 0,
            .dest_index = -1,
        };
 
        interp->used_register_count += 1;
-       interp->registers[dummy_frame.register_offset].type = return_type;
-       return_value_reg = & interp->registers[dummy_frame.register_offset];
+       interp->registers[dummy_frame.register_start].type = return_type;
+       return_value_reg = & interp->registers[dummy_frame.register_start];
 
        stack_push(&interp->frames, dummy_frame);
    }
@@ -1368,7 +1371,7 @@ Interpreter_Register interpreter_load_register(Interpreter *interp, Bytecode_Reg
             assert(frame->fn_handle >= 0 && frame->fn_handle < interp->functions.count);
 
             assert(bc_reg.index < frame->register_count);
-            auto interp_reg_ptr = &interp->registers[frame->register_offset + bc_reg.index];
+            auto interp_reg_ptr = &interp->registers[frame->register_start + bc_reg.index];
             assert(interp_reg_ptr->type == bc_reg.type);
             return *interp_reg_ptr;
         }
@@ -1453,9 +1456,9 @@ void interpreter_load_pointer(Interpreter *interp, u8 *source, Interpreter_Regis
             if (!dest->pointer) {
                 auto frame = stack_top_ptr(&interp->frames);
 
-                assert(frame->sp + size <= frame->stack_mem.data + frame->stack_mem.count);
+                assert(frame->sp + size <= frame->stack_start + frame->stack_count);
 
-                u8 *ptr = frame->sp;
+                u8 *ptr = &interp->stack_mem[frame->sp];
                 frame->sp += size;
 
                 dest->pointer = ptr;
@@ -1476,7 +1479,7 @@ void interpreter_store_register(Interpreter *interp, Interpreter_Register source
 
     auto frame = stack_top_ptr(&interp->frames);
     assert(dest.index <= frame->register_count);
-    auto dest_ptr = &interp->registers[frame->register_offset + dest.index];
+    auto dest_ptr = &interp->registers[frame->register_start + dest.index];
 
     bool agg_lit = source.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL;
 
@@ -1618,6 +1621,8 @@ void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle 
         auto old_data = interp->registers.data;
 
         auto new_count = interp->registers.count * 2;
+        assert(new_count -interp->used_register_count < fn->registers.count);
+
         auto new_data = alloc_array<Interpreter_Register>(interp->allocator, new_count);
         zmemcpy(new_data, old_data, interp->registers.count * sizeof(Interpreter_Register));
 
@@ -1626,26 +1631,38 @@ void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle 
         free(interp->allocator, old_data);
     }
 
-#ifndef NDEBUG
     auto free_stack_size = interp->stack_mem.count - interp->stack_mem_used;
-    assert(free_stack_size >= fn->required_stack_size);
-#endif
+    if (free_stack_size < fn->required_stack_size) {
+
+        auto old_data = interp->stack_mem.data;
+
+        auto new_count = interp->stack_mem.count * 2;
+        while (new_count - interp->stack_mem_used < fn->required_stack_size) {
+            new_count *= 2;
+        }
+
+        auto new_data = alloc_array<u8>(interp->allocator, new_count);
+        zmemcpy(new_data, old_data, interp->stack_mem.count * sizeof(interp->stack_mem.data[0]));
+
+        interp->stack_mem = { new_data, new_count };
+
+        free(interp->allocator, old_data);
+    }
 
     Interpreter_Stack_Frame new_frame = {
         .ip = 0,
         .bp = 0,
         .fn_handle = fn_handle,
-        .register_offset = interp->used_register_count,
+        .register_start = interp->used_register_count,
         .register_count = fn->registers.count,
-        .stack_mem = {},
-        .sp = nullptr,
+        .stack_start = interp->stack_mem_used,
+        .stack_count = fn->required_stack_size,
+        .sp = interp->stack_mem_used,
         .dest_index = result_index,
     };
 
     if (fn->required_stack_size) {
-        new_frame.stack_mem = Array_Ref<u8>(&interp->stack_mem[interp->stack_mem_used], fn->required_stack_size),
-        new_frame.sp = &new_frame.stack_mem[0];
-        zmemset(new_frame.stack_mem.data, 0, new_frame.stack_mem.count * sizeof(new_frame.stack_mem.data[0]));
+        zmemset(&interp->stack_mem[new_frame.stack_start], 0, new_frame.stack_count * sizeof(interp->stack_mem.data[0]));
     }
 
     interp->used_register_count += fn->registers.count;
@@ -1653,10 +1670,10 @@ void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle 
 
         interp->stack_mem_used += fn->required_stack_size;
 
-        zmemset(&interp->registers[new_frame.register_offset], 0, new_frame.register_count * sizeof(Interpreter_Register));
+        zmemset(&interp->registers[new_frame.register_start], 0, new_frame.register_count * sizeof(Interpreter_Register));
 
         for (s64 i = 0; i < new_frame.register_count; i++) {
-            interp->registers[new_frame.register_offset + i].type = fn->registers[i].type;
+            interp->registers[new_frame.register_start + i].type = fn->registers[i].type;
         }
     }
 
@@ -1691,8 +1708,8 @@ Interpreter_Stack_Frame interpreter_pop_stack_frame(Interpreter *interp)
     assert(old_frame.register_count == fn.registers.count);
     interp->used_register_count -= old_frame.register_count;
 
-    assert(old_frame.stack_mem.count == fn.required_stack_size);
-    interp->stack_mem_used -= old_frame.stack_mem.count;
+    assert(old_frame.stack_count == fn.required_stack_size);
+    interp->stack_mem_used -= old_frame.stack_count;
 
     return old_frame;
 }
