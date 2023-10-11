@@ -2762,8 +2762,15 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                 } else if (lhs->resolved_type->kind == Type_Kind::INTEGER &&
                             rhs->resolved_type->kind == Type_Kind::INTEGER) {
-                    assert(lhs->resolved_type == rhs->resolved_type);
+
+                    if (lhs->resolved_type != rhs->resolved_type) {
+                        fatal_resolve_error(ctx, expr, "Mismatching types in binary arithmetic expression: '%s' and '%s'",
+                                            temp_type_string(lhs->resolved_type).data, temp_type_string(rhs->resolved_type).data);
+                        return false;
+                    }
                     expr->resolved_type = lhs->resolved_type;
+
+
                 } else if (inferred_type){
                     assert(inferred_type->kind == Type_Kind::INTEGER);
                     expr->resolved_type = inferred_type;
@@ -2780,7 +2787,13 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     assert(valid_static_type_conversion(rhs->resolved_type, lhs->resolved_type));
                     rhs->resolved_type = lhs->resolved_type;
                 }
-                assert(lhs->resolved_type == rhs->resolved_type);
+
+                if (lhs->resolved_type != rhs->resolved_type) {
+                    fatal_resolve_error(ctx, expr, "Mismatching types in binary compare expression: '%s' and '%s'",
+                                        temp_type_string(lhs->resolved_type).data, temp_type_string(rhs->resolved_type).data);
+                    return false;
+                }
+
                 if (lhs->resolved_type == &builtin_type_unsized_integer) {
                     lhs->resolved_type = &builtin_type_s64;
                     rhs->resolved_type = &builtin_type_s64;

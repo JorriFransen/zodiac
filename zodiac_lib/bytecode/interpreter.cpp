@@ -1621,7 +1621,9 @@ void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle 
         auto old_data = interp->registers.data;
 
         auto new_count = interp->registers.count * 2;
-        assert(new_count -interp->used_register_count < fn->registers.count);
+        while (new_count - interp->used_register_count < fn->registers.count) {
+            new_count *= 2;
+        }
 
         auto new_data = alloc_array<Interpreter_Register>(interp->allocator, new_count);
         zmemcpy(new_data, old_data, interp->registers.count * sizeof(Interpreter_Register));

@@ -22,7 +22,7 @@ factorial_recursive :: (n: s64) {
 
 main :: () {
 
-    for i := 0; i < 22; i+=1 {
+    for i := 0; i < 21; i+=1 {
 
         fi := factorial_iterative(i);
         fr := factorial_recursive(i);
