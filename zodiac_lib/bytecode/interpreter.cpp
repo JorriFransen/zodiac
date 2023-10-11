@@ -5,6 +5,7 @@
 
 #include "common.h"
 #include "memory/allocator.h"
+#include "memory/allocator.h"
 #include "memory/zmemory.h"
 #include "platform/platform.h"
 #include "type.h"
@@ -1271,7 +1272,8 @@ void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_co
     auto frame = stack_top_ptr(&interp->frames);
     void *return_val_ptr = nullptr;
     if (dest_index >= 0) {
-        Interpreter_Register *dest_reg = &frame->registers[dest_index];
+        assert(dest_index < frame->register_count);
+        Interpreter_Register *dest_reg = &interp->registers[frame->register_offset + dest_index];
 
         switch (dest_reg->type->kind) {
             case Type_Kind::INVALID: assert(false); break;
@@ -1318,15 +1320,16 @@ Interpreter_Register *interpreter_handle_ffi_callback(Interpreter *interp, Bytec
            .ip = 0,
            .bp = 0,
            .fn_handle = -1,
-           .registers = Array_Ref<Interpreter_Register>(&interp->registers[interp->used_register_count], 1),
+           .register_offset = interp->used_register_count,
+           .register_count = 1,
            .stack_mem = {},
            .sp = nullptr,
            .dest_index = -1,
        };
 
        interp->used_register_count += 1;
-       dummy_frame.registers[0].type = return_type;
-       return_value_reg = &dummy_frame.registers[0];
+       interp->registers[dummy_frame.register_offset].type = return_type;
+       return_value_reg = & interp->registers[dummy_frame.register_offset];
 
        stack_push(&interp->frames, dummy_frame);
    }
@@ -1364,8 +1367,8 @@ Interpreter_Register interpreter_load_register(Interpreter *interp, Bytecode_Reg
             auto frame = stack_top_ptr(&interp->frames);
             assert(frame->fn_handle >= 0 && frame->fn_handle < interp->functions.count);
 
-            assert(bc_reg.index < frame->registers.count);
-            auto interp_reg_ptr = &frame->registers[bc_reg.index];
+            assert(bc_reg.index < frame->register_count);
+            auto interp_reg_ptr = &interp->registers[frame->register_offset + bc_reg.index];
             assert(interp_reg_ptr->type == bc_reg.type);
             return *interp_reg_ptr;
         }
@@ -1472,8 +1475,8 @@ void interpreter_store_register(Interpreter *interp, Interpreter_Register source
     assert(dest.type == source.type);
 
     auto frame = stack_top_ptr(&interp->frames);
-    assert(dest.index <= frame->registers.count);
-    auto dest_ptr = &frame->registers[dest.index];
+    assert(dest.index <= frame->register_count);
+    auto dest_ptr = &interp->registers[frame->register_offset + dest.index];
 
     bool agg_lit = source.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL;
 
@@ -1609,12 +1612,8 @@ void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle 
         assert(fn->type->function.return_type->kind != Type_Kind::VOID);
     }
 
-    // ZTRACE("Pusing stack frame for function: %s", fn->name.data);
-
     auto free_register_count = interp->registers.count - interp->used_register_count;
     if (free_register_count < fn->registers.count) {
-
-        // ZTRACE("\n\n\nGROWING!!!\n\n");
 
         auto old_data = interp->registers.data;
 
@@ -1636,7 +1635,8 @@ void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle 
         .ip = 0,
         .bp = 0,
         .fn_handle = fn_handle,
-        .registers = Array_Ref<Interpreter_Register>(&interp->registers[interp->used_register_count], fn->registers.count),
+        .register_offset = interp->used_register_count,
+        .register_count = fn->registers.count,
         .stack_mem = {},
         .sp = nullptr,
         .dest_index = result_index,
@@ -1653,10 +1653,10 @@ void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle 
 
         interp->stack_mem_used += fn->required_stack_size;
 
-        zmemset(new_frame.registers.data, 0, new_frame.registers.count * sizeof(new_frame.registers.data[0]));
+        zmemset(&interp->registers[new_frame.register_offset], 0, new_frame.register_count * sizeof(Interpreter_Register));
 
-        for (s64 i = 0; i < new_frame.registers.count; i++) {
-            new_frame.registers[i].type = fn->registers[i].type;
+        for (s64 i = 0; i < new_frame.register_count; i++) {
+            interp->registers[new_frame.register_offset + i].type = fn->registers[i].type;
         }
     }
 
@@ -1686,16 +1686,10 @@ Interpreter_Stack_Frame interpreter_pop_stack_frame(Interpreter *interp)
     auto fn_handle = old_frame.fn_handle;
     assert(fn_handle >= 0 && fn_handle < interp->functions.count);
     auto fn = interp->functions[fn_handle];
-
-    // ZTRACE("Popping stack frame for function: '%s'", fn.name.data);
-    // if (stack_count(&interp->frames)) {
-    //     auto nf = stack_top_ptr(&interp->frames);
-    //     ZTRACE("Restored ip, bp: %i, %i", nf->ip, nf->bp);
-    // }
 #endif
 
-    assert(old_frame.registers.count == fn.registers.count);
-    interp->used_register_count -= old_frame.registers.count;
+    assert(old_frame.register_count == fn.registers.count);
+    interp->used_register_count -= old_frame.register_count;
 
     assert(old_frame.stack_mem.count == fn.required_stack_size);
     interp->stack_mem_used -= old_frame.stack_mem.count;
