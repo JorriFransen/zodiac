@@ -223,60 +223,13 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
         if (ctx->errors.count) return false;
 
         for (s64 i = 0; i < ctx->resolver->nodes_to_run_bytecode.count; i++) {
-            Flat_Root_Node *root_node = ctx->resolver->nodes_to_run_bytecode[i];
+            auto node = ctx->resolver->nodes_to_run_bytecode[i];
 
-            AST_Directive *directive = nullptr;
-            bool from_expr = false;
-
-            if (root_node->root.kind == Flat_Node_Kind::DECL) {
-                auto decl = root_node->root.decl;
-
-                assert(decl->kind == AST_Declaration_Kind::RUN_DIRECTIVE);
-                assert(decl->directive->kind == AST_Directive_Kind::RUN);
-                directive = decl->directive;
-
-            } else {
-                assert(root_node->root.kind == Flat_Node_Kind::RUN);
-                directive = root_node->root.run.expr->directive.directive;
-                from_expr = true;
+            if (do_run_job(ctx, node)) {
+                dynamic_array_remove_ordered(&ctx->resolver->nodes_to_run_bytecode, i);
+                i--;
             }
-
-            assert(directive);
-
-            Bytecode_Function_Handle wrapper_handle;
-            bool found = hash_table_find(&ctx->bytecode_converter->run_directives, directive, &wrapper_handle);
-            assert(found);
-
-            File_Handle std_out_handle;
-            if (ctx->interp_stdout_file) {
-                std_out_handle = *ctx->interp_stdout_file;
-            } else {
-                filesystem_stdout_file(&std_out_handle);
-            }
-            auto run_res = execute_run_wrapper(ctx->bytecode_converter, wrapper_handle, std_out_handle);
-
-            if (from_expr) {
-                auto expr = root_node->root.run.expr;
-                assert(run_res.value.type == expr->resolved_type);
-
-                Scope *scope = directive->run.scope;
-                Source_Range range = expr->sr;
-                AST_Expression *new_expr = interpreter_register_to_ast_expression(ctx->bytecode_converter, run_res.value, scope, range);
-
-                assert(new_expr->resolved_type);
-                assert(EXPR_IS_CONST(new_expr));
-
-                Bytecode_Register value_reg = ast_expr_to_bytecode(ctx->bytecode_converter, new_expr);
-                expr->directive.generated_expression = new_expr;
-
-                hash_table_add(&ctx->bytecode_converter->run_results, directive, value_reg);
-            }
-
-            free_run_wrapper_result(&run_res);
         }
-
-        // For now assume runs never fail...
-        ctx->resolver->nodes_to_run_bytecode.count = 0;
     }
 
     if (ctx->options.print_ast) {
@@ -403,6 +356,81 @@ bool do_parse_jobs(Zodiac_Context *ctx)
     }
 
     ctx->files_to_parse.count = 0;
+
+    return true;
+}
+
+bool do_run_job(Zodiac_Context *ctx, Flat_Root_Node *root_node)
+{
+    assert(root_node->root.kind == Flat_Node_Kind::RUN ||
+           root_node->root.kind == Flat_Node_Kind::DECL);
+
+    AST_Directive *directive = nullptr;
+    bool from_expr = false;
+
+    if (root_node->root.kind == Flat_Node_Kind::DECL) {
+        auto decl = root_node->root.decl;
+
+        assert(decl->kind == AST_Declaration_Kind::RUN_DIRECTIVE);
+        assert(decl->directive->kind == AST_Directive_Kind::RUN);
+        directive = decl->directive;
+
+    } else {
+        assert(root_node->root.kind == Flat_Node_Kind::RUN);
+        directive = root_node->root.run.expr->directive.directive;
+        from_expr = true;
+    }
+
+    assert(directive);
+
+    Bytecode_Function_Handle wrapper_handle;
+    bool found = hash_table_find(&ctx->bytecode_converter->run_directives, directive, &wrapper_handle);
+    assert(found);
+
+    auto wrapper_fn = &ctx->bytecode_converter->builder->functions[wrapper_handle];
+
+    for (s64 i = 0; i < directive->run.called_functions.count; i++) {
+        AST_Declaration *called_fn_decl = directive->run.called_functions[i];
+
+        Bytecode_Function_Handle called_fn_handle;
+        bool found = hash_table_find(&ctx->bytecode_converter->functions,  called_fn_decl, &called_fn_handle);
+        assert(found);
+
+        auto called_fn = ctx->bytecode_converter->builder->functions[called_fn_handle];
+
+        // No block means not emitted yet
+        if (called_fn.blocks.count == 0) {
+            ZTRACE("Waiting for '%s' to be emitted before executing run job '%s'", called_fn.name.data, wrapper_fn->name.data);
+            return false;
+        }
+    }
+
+    File_Handle std_out_handle;
+    if (ctx->interp_stdout_file) {
+        std_out_handle = *ctx->interp_stdout_file;
+    } else {
+        filesystem_stdout_file(&std_out_handle);
+    }
+    auto run_res = execute_run_wrapper(ctx->bytecode_converter, wrapper_handle, std_out_handle);
+
+    if (from_expr) {
+        auto expr = root_node->root.run.expr;
+        assert(run_res.value.type == expr->resolved_type);
+
+        Scope *scope = directive->run.scope;
+        Source_Range range = expr->sr;
+        AST_Expression *new_expr = interpreter_register_to_ast_expression(ctx->bytecode_converter, run_res.value, scope, range);
+
+        assert(new_expr->resolved_type);
+        assert(EXPR_IS_CONST(new_expr));
+
+        Bytecode_Register value_reg = ast_expr_to_bytecode(ctx->bytecode_converter, new_expr);
+        expr->directive.generated_expression = new_expr;
+
+        hash_table_add(&ctx->bytecode_converter->run_results, directive, value_reg);
+    }
+
+    free_run_wrapper_result(&run_res);
 
     return true;
 }

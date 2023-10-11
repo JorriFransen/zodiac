@@ -13,6 +13,7 @@ namespace Zodiac
 
 struct AST_File;
 struct File_Handle;
+struct Flat_Root_Node;
 struct Resolver;
 struct Type;
 struct Zodiac_Error;
@@ -109,5 +110,6 @@ ZAPI bool zodiac_context_compile(Zodiac_Context *ctx, String_Ref code, const cha
 ZAPI bool zodiac_context_compile(Zodiac_Context *ctx);
 
 ZAPI bool do_parse_jobs(Zodiac_Context *ctx);
+ZAPI bool do_run_job(Zodiac_Context *ctx, Flat_Root_Node *root_node);
 
 }

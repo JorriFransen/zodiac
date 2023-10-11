@@ -561,6 +561,8 @@ struct AST_Directive
 
             AST_Expression *expr;
             AST_Statement *stmt;
+
+            Dynamic_Array<AST_Declaration *> called_functions;
         } run;
 
         struct {

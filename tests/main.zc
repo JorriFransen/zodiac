@@ -1,4 +1,20 @@
 
-main :: () -> s64 { return 0; }
+Vec2 :: struct { x, y: s64; }
 
-infer_void_return2 :: () { }
+#run main();
+
+make_vector :: (x: s64, y: s64) -> Vec2 {
+    result: Vec2;
+    result.x = x;
+    result.y = y;
+    return result;
+}
+
+main :: () {
+    print(vector);
+    return 0;
+}
+
+vector := #run make_vector(2, 3);
+
+

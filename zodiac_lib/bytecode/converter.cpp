@@ -143,6 +143,8 @@ bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
                 auto decl = root_node->root.decl;
                 assert(decl->kind == AST_Declaration_Kind::FUNCTION);
 
+                ZDEBUG("Registering bytecode function: '%s'", decl->identifier.name.data);
+
                 BC_Function_Flag flags = BC_FUNCTION_FLAG_NONE;
 
                 bool foreign = decl->flags & AST_DECL_FLAG_FOREIGN;
@@ -331,6 +333,8 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     assert(decl->function.type);
     assert(decl->function.type->kind == Type_Kind::FUNCTION);
     assert(decl->identifier.name.data);
+
+    ZDEBUG("Emitting bytecode function: '%s'", decl->identifier.name.data)
 
     Bytecode_Function_Handle fn_handle;
     bool found = hash_table_find(&bc->functions, decl, &fn_handle);
@@ -1967,9 +1971,9 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
 
     Type *run_wrapper_type = get_function_type(return_type, {}, &bc->context->ast_allocator);
 
-    auto fn_handle = bytecode_function_create(bc->builder, run_wrapper_name, run_wrapper_type, BC_FUNCTION_FLAG_RUN_WRAPPER);
-    auto entry_block = bytecode_append_block(bc->builder, fn_handle, "entry");
-    bytecode_set_insert_point(bc->builder, fn_handle, entry_block);
+    auto wrapper_handle = bytecode_function_create(bc->builder, run_wrapper_name, run_wrapper_type, BC_FUNCTION_FLAG_RUN_WRAPPER);
+    auto entry_block = bytecode_append_block(bc->builder, wrapper_handle, "entry");
+    bytecode_set_insert_point(bc->builder, wrapper_handle, entry_block);
 
     Bytecode_Register result_register;
 
@@ -1997,6 +2001,29 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
         bytecode_emit_return(bc->builder);
     }
 
+    assert(run_directive->run.called_functions.data == nullptr);
+    assert(run_directive->run.called_functions.count == 0);
+    dynamic_array_create(&bc->context->ast_allocator, &run_directive->run.called_functions, 1);
+
+    auto wrapper_fn = &bc->builder->functions[wrapper_handle];
+    for (s64 bi = 0; bi < wrapper_fn->blocks.count; bi++) {
+        auto block = &wrapper_fn->blocks[bi];
+        for (s64 ii = 0; ii < block->instructions.count; ii++) {
+            auto inst = &block->instructions[ii];
+
+            if (inst->op == Bytecode_Opcode::CALL) {
+                assert(inst->a.kind == Bytecode_Register_Kind::FUNCTION);
+                auto fn_handle = inst->a.value.function_handle;
+
+                AST_Declaration *fn_decl;
+                bool found = hash_table_find_key(&bc->functions, fn_handle, &fn_decl);
+                assert(found);
+
+                dynamic_array_append(&run_directive->run.called_functions, fn_decl);
+            }
+        }
+    }
+
     Bytecode_Validator validator = {};
 
     // We need to pass in all the functions, otherwise the handles won't work
@@ -2017,7 +2044,7 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
     bc->builder->insert_fn_index = original_insert_fn_index;
     bc->builder->insert_block_index = original_insert_block_index;
 
-    return fn_handle;
+    return wrapper_handle;
 }
 
 Run_Wrapper_Result execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle)
