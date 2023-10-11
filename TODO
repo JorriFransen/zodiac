@@ -1,6 +1,7 @@
 
-- We still crash when recursing too deep in the interpreter, it seems to be related to growing/reallocating registers in push_stack_frame
 - Register bytecode functions via the function protos
+
+- Add signcast (casting integers of the same size) to make the types in bytecode more explicit (bytecode_emit_integer_cast)
 
 - Logical && and ||
 
