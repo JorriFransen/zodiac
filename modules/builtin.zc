@@ -7,3 +7,21 @@ String :: struct {
     data: *u8;
     length: s64;
 }
+
+Type_Info_Kind :: enum {
+    Invalid,
+
+    Integer,
+    Real,
+}
+
+// This must always be the first member of any Type_Info_* structure
+Type_Info :: struct {
+    kind: Type_Info_Kind;
+    size: s64;
+}
+
+Type_Info_Int :: struct {
+    base: Type_Info;
+    sign: bool;
+}

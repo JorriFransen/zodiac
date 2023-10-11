@@ -1125,7 +1125,7 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
         case AST_Expression_Kind::CAST: assert(false); break;
         case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
         case AST_Expression_Kind::COMPOUND: assert(false); break;
-
+        case AST_Expression_Kind::TYPE_INFO: assert(false); break;
     }
 
     assert(false);
@@ -1509,9 +1509,10 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             return value_reg;
         }
 
-        case Zodiac::AST_Expression_Kind::COMPOUND: {
+        case AST_Expression_Kind::COMPOUND: {
             return ast_compound_expr_to_bytecode(bc, expr);
         }
+        case AST_Expression_Kind::TYPE_INFO: assert(false); break;
     }
 
     assert(false);
@@ -1619,6 +1620,7 @@ Bytecode_Register ast_const_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expre
         case AST_Expression_Kind::CAST: assert(false); break;
         case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
         case AST_Expression_Kind::COMPOUND: assert(false); break;
+        case AST_Expression_Kind::TYPE_INFO: assert(false); break;
     }
 }
 
@@ -1851,6 +1853,8 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
             }
             return ast_const_compound_expr_to_bytecode(bc, expr);
         }
+
+        case AST_Expression_Kind::TYPE_INFO: assert(false); break;
     }
 
     assert(false);

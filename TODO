@@ -1,14 +1,10 @@
 
-- Register bytecode functions via the function protos
-
 - Logical && and ||
 
 - Break
   - Loops
   - Switch
   - Labels (use the  loop condition / iterator / switch value  somehow)
-
-- Recursive functions
 
 - Switch
   - Enum ranges?

@@ -163,6 +163,7 @@ Constant_Resolve_Result resolve_constant_integer_expr(AST_Expression *expr, Type
         }
 
         case AST_Expression_Kind::COMPOUND: assert(false); break;
+        case AST_Expression_Kind::TYPE_INFO: assert(false); break;
     }
 
     assert(false);
@@ -315,6 +316,7 @@ Constant_Resolve_Result resolve_constant_bool_expr(AST_Expression *expr)
         }
 
         case AST_Expression_Kind::COMPOUND: assert(false); break;
+        case AST_Expression_Kind::TYPE_INFO: assert(false); break;
 
     }
 
@@ -387,6 +389,7 @@ Constant_Resolve_Result resolve_constant_real_expr(AST_Expression *expr)
         }
 
         case AST_Expression_Kind::COMPOUND: assert(false); break;
+        case AST_Expression_Kind::TYPE_INFO: assert(false); break;
     }
 
     assert(false);
@@ -426,6 +429,7 @@ Constant_Resolve_Result resolve_constant_pointer_expression(AST_Expression *expr
 
         case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
         case AST_Expression_Kind::COMPOUND: assert(false); break;
+        case AST_Expression_Kind::TYPE_INFO: assert(false); break;
     }
 }
 

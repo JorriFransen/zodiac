@@ -29,7 +29,7 @@ namespace Zodiac
 #define parse_expression(p) _parse_expression(p); if ((p)->error) { return {}; }
 #define parse_expr_unary(p) _parse_expr_unary(p); if ((p)->error) { return {}; }
 #define parse_statement(...) _parse_statement(__VA_ARGS__); if ((FIRST_VARARG(__VA_ARGS__))->error) { return {}; }
-#define parse_type_spec(p) _parse_type_spec(p); if ((p)->error) { return nullptr; }
+#define parse_type_spec(p) _parse_type_spec(p); if ((p)->error) { return {}; }
 
 #define return_if_null(n) { if (!(n)) { debug_assert(parser->error); return nullptr; }}
 
@@ -243,12 +243,18 @@ AST_Expression *_parse_expr_unary(Parser *parser)
         AST_Expression *operand = parse_expr_unary(parser);
         return ast_unary_expr_new(parser->context, {start_pos, operand->sr.end}, AST_Unary_Operator::NOT, operand);
     } else if (is_token(parser, '#')) {
+
         Parsed_Directive pd = parse_directive(parser, false);
         assert(pd.data);
         auto directive = pd.data;
-        assert(directive->kind == AST_Directive_Kind::RUN);
 
-        return ast_run_directive_expr_new(parser->context, directive->sr, directive);
+        if (directive->kind == AST_Directive_Kind::RUN) {
+            return ast_run_directive_expr_new(parser->context, directive->sr, directive);
+        } else if (directive->kind == AST_Directive_Kind::TYPE_INFO) {
+            return ast_type_info_expr_new(parser->context, directive->sr, directive);
+        } else {
+            assert_msg(false, "Unhandled directive expression");
+        }
     } else {
         return parse_expr_base(parser);
     }
@@ -1049,6 +1055,19 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
         result.data = ast_falltrough_directive_new(parser->context, { start_pos, directive_name_tok.range.end});
         if (eat_semicolon) match_token(parser, ';');
         return result;
+    } else if (directive_name_tok.atom == directive_type_info) {
+        result.kind = Parsed_Directive_Kind::DATA;
+
+        expect_token(parser, '(');
+        AST_Type_Spec *ts = parse_type_spec(parser);
+
+        auto end_pos = cur_tok(parser).range.end;
+        expect_token(parser, ')');
+
+        result.data = ast_type_info_directive_new(parser->context, { start_pos, end_pos }, ts);
+        if (eat_semicolon) match_token(parser, ';');
+        return result;
+
     } else {
         assert_msg(false, "Unknown directive");
     }

@@ -1,25 +1,10 @@
 
-
-func_a :: (x: s64) {
-    println("a: ", x);
-
-    if (x <= 0) return;
-
-    func_b(x - 1);
-}
-
-func_b :: (x: s64) {
-    println("b: ", x);
-
-    if (x <= 0) return;
-
-    func_a(x - 1);
-}
-
+#run main();
 main :: () {
+    println("Type info test!");
 
-    func_a(10);
+    s64_info := #type_info(s64);
+    print(s64_info);
+
     return 0;
 }
-
-#run main();
