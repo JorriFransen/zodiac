@@ -139,7 +139,26 @@ bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
                 break;
             };
 
-            case Flat_Node_Kind::FUNCTION_PROTO: break;
+            case Flat_Node_Kind::FUNCTION_PROTO: {
+                auto decl = root_node->root.decl;
+                assert(decl->kind == AST_Declaration_Kind::FUNCTION);
+
+                BC_Function_Flag flags = BC_FUNCTION_FLAG_NONE;
+
+                bool foreign = decl->flags & AST_DECL_FLAG_FOREIGN;
+
+                if (foreign) {
+                    flags |= BC_FUNCTION_FLAG_FOREIGN;
+                }
+
+                bool found = hash_table_find(&bc->functions, decl);
+                assert(!found);
+
+                auto fn_handle = bytecode_function_create(bc->builder, decl->identifier.name, decl->function.type, flags);
+
+                hash_table_add(&bc->functions, decl, fn_handle);
+                break;
+            }
 
             case Flat_Node_Kind::RUN: {
                 assert(root_node->root.run.expr->kind == AST_Expression_Kind::RUN_DIRECTIVE);
@@ -313,16 +332,11 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     assert(decl->function.type->kind == Type_Kind::FUNCTION);
     assert(decl->identifier.name.data);
 
-    BC_Function_Flag flags = BC_FUNCTION_FLAG_NONE;
+    Bytecode_Function_Handle fn_handle;
+    bool found = hash_table_find(&bc->functions, decl, &fn_handle);
+    assert(found);
 
     bool foreign = decl->flags & AST_DECL_FLAG_FOREIGN;
-
-    if (foreign) {
-        flags |= BC_FUNCTION_FLAG_FOREIGN;
-    }
-
-    auto fn_handle = bytecode_function_create(bc->builder, decl->identifier.name, decl->function.type, flags);
-    hash_table_add(&bc->functions, decl, fn_handle);
 
     if (foreign) {
         return;

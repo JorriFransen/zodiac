@@ -280,10 +280,15 @@ Resolve_Results resolve_types(Resolver *resolver)
             // Done type resolving, move to bytecode emit
             // node->current_index = 0;
 
+            bool is_enum_member = node->root.kind == Flat_Node_Kind::DECL && node->root.decl->kind == AST_Declaration_Kind::ENUM_MEMBER;
+            bool is_function = node->root.kind == Flat_Node_Kind::DECL && node->root.decl->kind == AST_Declaration_Kind::FUNCTION;
+
+            if (is_function && !(node->root.decl->flags & AST_DECL_FLAG_PROTO_DONE)) {
+                continue;
+            }
+
             dynamic_array_remove_ordered(&resolver->nodes_to_type_resolve, flat_index);
             flat_index -= 1;
-
-            bool is_enum_member = node->root.kind == Flat_Node_Kind::DECL && node->root.decl->kind == AST_Declaration_Kind::ENUM_MEMBER;
 
             if (!is_enum_member) {
                 dynamic_array_append(&resolver->nodes_to_emit_bytecode, node);
@@ -1758,6 +1763,7 @@ bool type_resolve_node(Resolver *resolver, Flat_Node *node)
             sym->state = Symbol_State::TYPED;
 
             func_decl->flags |= AST_DECL_FLAG_TYPED;
+            func_decl->flags |= AST_DECL_FLAG_PROTO_DONE;
 
             return true;
         }

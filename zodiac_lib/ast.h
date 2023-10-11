@@ -463,10 +463,11 @@ typedef u32 AST_Declaration_Flags;
 
 enum AST_Declaration_Flag : AST_Declaration_Flags
 {
-    AST_DECL_FLAG_NONE    = 0x00,
-    AST_DECL_FLAG_GLOBAL  = 0x01,
-    AST_DECL_FLAG_TYPED   = 0x02,
-    AST_DECL_FLAG_FOREIGN = 0x04,
+    AST_DECL_FLAG_NONE       = 0x00,
+    AST_DECL_FLAG_GLOBAL     = 0x01,
+    AST_DECL_FLAG_TYPED      = 0x02,
+    AST_DECL_FLAG_FOREIGN    = 0x04,
+    AST_DECL_FLAG_PROTO_DONE = 0x08,
 };
 
 #define DECL_IS_GLOBAL(d) ((d)->flags & AST_DECL_FLAG_GLOBAL)
