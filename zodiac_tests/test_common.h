@@ -45,7 +45,7 @@ void print_bytecode(const Bytecode_Builder *bb);
     filesystem_flush(&stream); \
     u64 length; \
     filesystem_size(&stream, &length); \
-    const auto _buf_size = 1024; \
+    const auto _buf_size = 4096; \
     munit_assert((s64)_buf_size > length); \
     char _buf[_buf_size]; \
     u64 read_length; \

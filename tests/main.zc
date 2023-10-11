@@ -1,20 +1,25 @@
 
-Vec2 :: struct { x, y: s64; }
 
-#run main();
+func_a :: (x: s64) {
+    println("a: ", x);
 
-make_vector :: (x: s64, y: s64) -> Vec2 {
-    result: Vec2;
-    result.x = x;
-    result.y = y;
-    return result;
+    if (x <= 0) return;
+
+    func_b(x - 1);
+}
+
+func_b :: (x: s64) {
+    println("b: ", x);
+
+    if (x <= 0) return;
+
+    func_a(x - 1);
 }
 
 main :: () {
-    print(vector);
+
+    func_a(10);
     return 0;
 }
 
-vector := #run make_vector(2, 3);
-
-
+#run main();
