@@ -1075,7 +1075,7 @@ switch (operand.type->bit_size) { \
 
             u8 *ptr = ptr_register.value.pointer;
 
-            assert(ptr);
+            assert_msg(ptr, "PTR_OFFSET_PTR on a null pointer");
 
             auto element_type = instruction.a.type->pointer.base;
 
@@ -1772,7 +1772,12 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
         // @Cleanup: @TODO: @FIXME: alignment
         auto copy_size = mem_reg.type->bit_size / 8;
 
-        switch (mem_reg.type->kind) {
+        auto mem_type = mem_reg.type;
+        if (mem_type->kind == Type_Kind::ENUM) {
+            mem_type = mem_type->enumeration.integer_type;
+        }
+
+        switch (mem_type->kind) {
 
             case Type_Kind::INVALID: assert(false); break;
             case Type_Kind::VOID: assert(false); break;

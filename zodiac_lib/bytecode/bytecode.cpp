@@ -575,14 +575,31 @@ Bytecode_Register bytecode_array_literal(Bytecode_Builder *bb, Dynamic_Array<Byt
     debug_assert(bb && values.count && type);
     assert(type->kind == Type_Kind::STATIC_ARRAY);
 
-#ifndef NDEBUG
-    for (s64 i = 0; i < values.count; i++) {
-        debug_assert(values[i].flags & BC_REGISTER_FLAG_LITERAL);
-        debug_assert(values[i].flags & BC_REGISTER_FLAG_CONSTANT);
-    }
-#endif // NDEBUG
+    bool all_literal = true;
+    bool all_const = true;
 
-    auto result = bytecode_register_create(bb, Bytecode_Register_Kind::TEMPORARY, type, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT);
+    for (s64 i = 0; i < values.count; i++) {
+
+        if (!(values[i].flags & BC_REGISTER_FLAG_LITERAL) &&
+            values[i].kind != Bytecode_Register_Kind::GLOBAL &&
+            values[i].kind != Bytecode_Register_Kind::ALLOC) {
+            all_literal = false;
+        }
+
+        if (!(values[i].flags & BC_REGISTER_FLAG_CONSTANT) && values[i].kind != Bytecode_Register_Kind::GLOBAL) {
+            all_const = false;
+        }
+
+        if (!all_literal && !all_const) {
+            break;
+        }
+    }
+
+    Bytecode_Register_Flags flags = BC_REGISTER_FLAG_NONE;
+    if (all_literal) flags |= BC_REGISTER_FLAG_LITERAL;
+    if (all_const) flags |= BC_REGISTER_FLAG_CONSTANT;
+
+    auto result = bytecode_register_create(bb, Bytecode_Register_Kind::TEMPORARY, type, flags);
 
     result.value.compound = values;
 

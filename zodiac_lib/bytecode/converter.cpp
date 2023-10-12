@@ -44,7 +44,6 @@ void bytecode_converter_init(Allocator *allocator, Zodiac_Context *context, Byte
     hash_table_create(allocator, &out_bc->allocations);
     hash_table_create(allocator, &out_bc->implicit_lvalues);
     hash_table_create(allocator, &out_bc->globals);
-    dynamic_array_create(allocator, &out_bc->type_infos);
     hash_table_create(allocator, &out_bc->run_directives);
     hash_table_create(allocator, &out_bc->run_results);
 
@@ -1522,7 +1521,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             assert(target_type);
 
             if (target_type->info_index == -1) {
-                converter_add_type_info(bc, target_type);
+                add_type_info(bc->context, target_type);
             }
 
             // TODO: We don't need to do this every time!
@@ -1964,97 +1963,6 @@ void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, 
     }
 }
 
-void converter_add_type_info(Bytecode_Converter *bc, Type *target_type)
-{
-    assert(target_type->info_index == -1);
-    add_type_info(bc->context, target_type);
-
-    assert(bc->type_infos.count == target_type->info_index);
-
-    Type *global_type = nullptr;
-    Bytecode_Global_Handle global_handle = -1;
-
-    auto base_value = converter_type_info_base(bc, target_type);
-
-    switch (target_type->kind) {
-        case Type_Kind::INVALID: assert(false); break;
-        case Type_Kind::VOID: assert(false); break;
-        case Type_Kind::UNSIZED_INTEGER: assert(false); break;
-
-        case Type_Kind::INTEGER: {
-            auto type = get_type_info_int_type(bc->context);
-            global_type = type;
-
-            Bytecode_Register members[2] = {
-                base_value,
-                bytecode_boolean_literal(bc->builder, type->structure.member_types[1], target_type->integer.sign)
-            };
-
-            auto value = bytecode_aggregate_literal(bc->builder, members, type);
-            global_type = type;
-            global_handle = bytecode_create_global(bc->builder, "type_info_int", global_type, true, value);
-            break;
-        }
-
-        case Type_Kind::FLOAT: {
-            global_type = base_value.type;
-            global_handle = bytecode_create_global(bc->builder, "type_info_real", global_type, true, base_value);
-            break;
-        }
-
-        case Type_Kind::BOOLEAN: assert(false); break;
-        case Type_Kind::POINTER: assert(false); break;
-        case Type_Kind::STRUCTURE: assert(false); break;
-        case Type_Kind::ENUM: assert(false); break;
-        case Type_Kind::STATIC_ARRAY: assert(false); break;
-        case Type_Kind::SLICE: assert(false); break;
-        case Type_Kind::FUNCTION: assert(false); break;
-    }
-
-    assert(global_type);
-    assert(global_handle >= 0);
-
-    auto global_reg = bytecode_register_create(bc->builder, Bytecode_Register_Kind::GLOBAL, global_type);
-    global_reg.index = global_handle;
-    dynamic_array_append(&bc->type_infos, global_reg);
-}
-
-Bytecode_Register converter_type_info_base(Bytecode_Converter *bc, Type *target_type)
-{
-    auto type_info_type = get_type_info_type(bc->context);
-
-    assert(target_type->bit_size % 8 == 0);
-    auto size = target_type->bit_size / 8;
-
-    Type_Info_Kind kind = Type_Info_Kind::INVALID;
-
-    switch (target_type->kind) {
-        case Type_Kind::INVALID: assert(false); break;
-        case Type_Kind::VOID: assert(false); break;
-        case Type_Kind::UNSIZED_INTEGER: assert(false); break;
-
-        case Type_Kind::INTEGER: kind = Type_Info_Kind::INTEGER; break;
-        case Type_Kind::FLOAT:   kind = Type_Info_Kind::REAL;    break;
-
-        case Type_Kind::BOOLEAN: assert(false); break;
-        case Type_Kind::POINTER: assert(false); break;
-        case Type_Kind::STRUCTURE: assert(false); break;
-        case Type_Kind::ENUM: assert(false); break;
-        case Type_Kind::STATIC_ARRAY: assert(false); break;
-        case Type_Kind::SLICE: assert(false); break;
-        case Type_Kind::FUNCTION: assert(false); break;
-    }
-
-    assert(kind != Type_Info_Kind::INVALID);
-
-    Bytecode_Register members[2] = {
-        bytecode_integer_literal(bc->builder, type_info_type->structure.member_types[0]->enumeration.integer_type, (s64)kind),
-        bytecode_integer_literal(bc->builder, type_info_type->structure.member_types[1], size)
-    };
-
-    return bytecode_aggregate_literal(bc->builder, members, type_info_type);
-}
-
 Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directive *run_directive)
 {
     debug_assert(bc && run_directive);
@@ -2187,27 +2095,27 @@ Run_Wrapper_Result execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function
 
 
     // Setup the _type_info_table
-    auto type_info_pointer_type = get_pointer_type(get_type_info_type(bc->context), &bc->context->ast_allocator);
-    auto static_arr_type = get_static_array_type(type_info_pointer_type, bc->type_infos.count, &bc->context->ast_allocator);
+    if (bc->context->type_infos.count) {
+        auto type_info_pointer_type = get_pointer_type(get_type_info_type(bc->context), &bc->context->ast_allocator);
 
-    Bytecode_Register arr_val = bytecode_array_literal(bc->builder, Array_Ref(bc->type_infos), static_arr_type);
+        Bytecode_Register arr_ptr_val = bytecode_pointer_literal(bc->builder, type_info_pointer_type->pointer_to, bc->context->type_infos.data);
 
-    bool found = false;
-    for (s64 i = 0; i < bc->builder->globals.count; i++) {
-        auto global = &bc->builder->globals[i];
+        bool found = false;
+        for (s64 i = 0; i < bc->builder->globals.count; i++) {
+            auto global = &bc->builder->globals[i];
 
-        if (global->atom == "_type_info_table") {
-            Bytecode_Register members[2] = {
-                arr_val,
-                bytecode_integer_literal(bc->builder, &builtin_type_s64, bc->type_infos.count)
-            };
-            global->initial_value = bytecode_aggregate_literal(bc->builder, members, global->type);
-            found = true;
-            break;
+            if (global->atom == "_type_info_pointers") {
+                Bytecode_Register members[2] = {
+                    arr_ptr_val,
+                    bytecode_integer_literal(bc->builder, &builtin_type_s64, bc->context->type_infos.count)
+                };
+                global->initial_value = bytecode_aggregate_literal(bc->builder, members, global->type);
+                found = true;
+                break;
+            }
         }
+        assert(found);
     }
-    assert(found);
-
 
     auto run_prog = bytecode_get_program(bc->builder);
 

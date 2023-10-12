@@ -243,8 +243,6 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
         }
     }
 
-    if (ctx->options.print_bytecode) bytecode_print(ctx->bytecode_builder, temp_allocator_allocator());
-
     if (ctx->options.validate_bytecode) {
         Bytecode_Validator validator = {};
         bytecode_validator_init(ctx, temp_allocator_allocator(), &validator, ctx->bytecode_builder->functions, nullptr);
@@ -262,6 +260,8 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
             return false;
         }
     }
+
+    if (ctx->options.print_bytecode) bytecode_print(ctx->bytecode_builder, temp_allocator_allocator());
 
     if (!ctx->options.dont_emit_binary) {
 
