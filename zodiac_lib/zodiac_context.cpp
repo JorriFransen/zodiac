@@ -200,9 +200,10 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
     dynamic_array_append(&ctx->files_to_parse, ftp);
 
     bool parser_done = false;
-    bool resolver_done = false;
 
-    while (!parser_done || !resolver_done) {
+    Resolve_Results resolve_result = RESOLVE_RESULT_NONE;
+
+    while (!parser_done || !(resolve_result & RESOLVE_RESULT_DONE) || ctx->resolver->nodes_to_run_bytecode.count) {
         parser_done = do_parse_jobs(ctx);
         if (ctx->parse_error) {
             // do_parse_jobs() should have reported any errors
@@ -216,7 +217,30 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
         } else if (ctx->errors.count) return false;
 
 
-        resolver_done = resolver_cycle(ctx->resolver);
+        resolve_result = resolver_cycle(ctx->resolver);
+
+        bool ran_bytecode_jobs = false;
+
+        // TODO: FIXME:
+        // This is a temporary fix, we need to check if all called functions are emitted before running,
+        // right now we only check calls directly in the run directive.
+        if (!(resolve_result & RESOLVE_RESULT_PROGRESS)) {
+
+            for (s64 i = 0; i < ctx->resolver->nodes_to_run_bytecode.count; i++) {
+                auto node = ctx->resolver->nodes_to_run_bytecode[i];
+
+                if (do_run_job(ctx, node)) {
+                    dynamic_array_remove_ordered(&ctx->resolver->nodes_to_run_bytecode, i);
+                    i--;
+                    ran_bytecode_jobs = true;
+                }
+            }
+        }
+
+        if (ran_bytecode_jobs) {
+            ctx->errors.count = 0;
+            temporary_allocator_reset(&ctx->error_allocator_state);
+        }
 
         if (ctx->options.report_errors) {
             if (resolver_report_errors(ctx->resolver)) {
@@ -227,15 +251,6 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
         assert(ctx->errors.count == 0);
         emit_bytecode(ctx->resolver, ctx->bytecode_converter);
         if (ctx->errors.count) return false;
-
-        for (s64 i = 0; i < ctx->resolver->nodes_to_run_bytecode.count; i++) {
-            auto node = ctx->resolver->nodes_to_run_bytecode[i];
-
-            if (do_run_job(ctx, node)) {
-                dynamic_array_remove_ordered(&ctx->resolver->nodes_to_run_bytecode, i);
-                i--;
-            }
-        }
     }
 
     if (ctx->options.print_ast) {

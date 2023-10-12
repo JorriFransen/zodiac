@@ -27,7 +27,7 @@ main :: () {
     print_ti(#type_info(bool));
 
     println();
-    // pointers();
+    pointers();
 
     return 0;
 }
@@ -38,64 +38,43 @@ pointers :: () {
 
 print_ti :: (ti: *Type_Info) -> void {
 
-    // switch (ti.kind) {
-    //
-    //     case Type_Info_Kind.Void:
-    //         print("void, ", ti.size, " bytes");
-    //
-    //     case Type_Info_Kind.Integer:
-    //         ii := cast(*Type_Info_Int, ti);
-    //
-    //         print("Integer, ", ti.size, " bytes, ");
-    //         if ii.sign print("signed");
-    //         else print("unsigned");
-    //
-    //
-    //     case Type_Info_Kind.Real:
-    //         print("Real, ", ti.size, " bytes");
-    //
-    //     case Type_Info_Kind.Bool:
-    //         print("bool, ", ti.size, " bytes");
-    //
-    //     case Type_Info_Kind.Pointer:
-    //         pi := cast(*Type_Info_Pointer, ti);
-    //
-    //         print("Pointer: (");
-    //         print_ti(pi.pointer_to);
-    //         print("), ", ti.size, " bytes");
-    //
-    //
-    //     default: print("!!! UNHANDLED TYPE !!!");
-    // }
+    switch (ti.kind) {
 
-    if (ti.kind == Type_Info_Kind.Void) {
-        print("void, ", ti.size, " bytes");
+        case Type_Info_Kind.Void:
+            print("void, ", ti.size, " bytes");
 
-    // } else if (ti.kind == Type_Info_Kind.Integer) {
-    //
-    //     ii := cast(*Type_Info_Int, ti);
-    //
-    //     print("Integer, ", ti.size, " bytes, ");
-    //     if ii.sign print("signed");
-    //     else print("unsigned");
+        case Type_Info_Kind.Integer:
+            ii := cast(*Type_Info_Int, ti);
 
-    // } else if (ti.kind == Type_Info_Kind.Bool) {
-    //     print("bool, ", ti.size, " bytes");
+            print("Integer, ", ti.size, " bytes, ");
+            if ii.sign print("signed");
+            else print("unsigned");
 
-    // } else if (ti.kind == Type_Info_Kind.Real) {
-    //     print("Real, ", ti.size, " bytes");
 
-    // } else if (ti.kind == Type_Info_Kind.Pointer) {
-    //     pi := cast(*Type_Info_Pointer, ti);
-    //
-    //     print("Pointer: (");
-    //     print_ti(pi.pointer_to);
-    //     print("), ", ti.size, " bytes");
+        case Type_Info_Kind.Real:
+            print("Real, ", ti.size, " bytes");
 
-    } else {
-        print("!!! UNHANDLED TYPE !!!");
+        case Type_Info_Kind.Bool:
+            print("bool, ", ti.size, " bytes");
+
+        case Type_Info_Kind.Pointer:
+            pi := cast(*Type_Info_Pointer, ti);
+
+            print("Pointer: (to: ");
+            print_short_type(pi.pointer_to);
+            print("), ", ti.size, " bytes");
+
+
+        default: print("!!! Unhandled type in 'print_ti'");
     }
 
     println();
 }
 
+print_short_type :: (ti: *Type_Info) -> void {
+
+    switch (ti.kind) {
+        case Type_Info_Kind.Void: print("void");
+        default: print("!!! Unhandled type in 'print_short_type'");
+    }
+}

@@ -100,7 +100,7 @@ void resolver_add_file(Resolver *resolver, AST_File *file)
     }
 }
 
-bool resolver_cycle(Resolver *resolver)
+Resolve_Results resolver_cycle(Resolver *resolver)
 {
     debug_assert(resolver);
 
@@ -108,11 +108,11 @@ bool resolver_cycle(Resolver *resolver)
 
     Resolve_Results names_result = resolve_names(resolver);
 
-    if (resolver->ctx->fatal_resolve_error) return false;;
+    if (resolver->ctx->fatal_resolve_error) return RESOLVE_RESULT_NONE;
 
     Resolve_Results types_result = resolve_types(resolver);
 
-    if (resolver->ctx->fatal_resolve_error) return false;
+    if (resolver->ctx->fatal_resolve_error) return RESOLVE_RESULT_NONE;
 
     done = (names_result & RESOLVE_RESULT_DONE) && (types_result & RESOLVE_RESULT_DONE);
     bool progress = (names_result & RESOLVE_RESULT_PROGRESS) || (types_result & RESOLVE_RESULT_PROGRESS);
@@ -121,13 +121,17 @@ bool resolver_cycle(Resolver *resolver)
 
     if (!progress && !done) {
         assert(resolver->ctx->errors.count);
-        return false;
+        return RESOLVE_RESULT_NONE;
     } else if (progress && resolve_error_count(resolver->ctx)) {
         resolver->ctx->errors.count = 0;
         temporary_allocator_reset(&resolver->ctx->error_allocator_state);
     }
 
-    return done;
+    Resolve_Results result = RESOLVE_RESULT_NONE;
+    if (done) result |= RESOLVE_RESULT_DONE;
+    if (progress) result |= RESOLVE_RESULT_PROGRESS;
+
+    return result;
 }
 
 bool resolver_report_errors(Resolver *resolver)

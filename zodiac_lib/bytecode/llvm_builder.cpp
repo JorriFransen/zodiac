@@ -116,6 +116,7 @@ void llvm_builder_init(LLVM_Builder *builder, Allocator *allocator, Bytecode_Bui
     hash_table_create(allocator, &builder->functions);
     hash_table_create(allocator, &builder->struct_types);
     hash_table_create(allocator, &builder->string_literals);
+    hash_table_create(allocator, &builder->type_infos);
 
     builder->current_function = nullptr;
 
@@ -1799,9 +1800,7 @@ llvm::Constant *llvm_type_info_array_pointer(LLVM_Builder *builder)
 
         // Create a constant for the type info
         llvm::Constant *type_info_value = llvm_emit_type_info(builder, ti);
-        llvm::GlobalVariable *glob_var = new llvm::GlobalVariable(*builder->llvm_module, type_info_value->getType(), true, llvm::GlobalValue::PrivateLinkage, type_info_value, "type_info");
-
-        dynamic_array_append(&llvm_infos, static_cast<llvm::Constant *>(glob_var));
+        dynamic_array_append(&llvm_infos, type_info_value);
     }
 
     auto array_type = llvm::ArrayType::get(type_info_pointer_type, type_infos.count);
@@ -1814,6 +1813,10 @@ llvm::Constant *llvm_type_info_array_pointer(LLVM_Builder *builder)
 
 llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
 {
+    llvm::Constant *result = nullptr;
+    bool found = hash_table_find(&builder->type_infos, ti, &result);
+    if (found) return result;
+
     auto base = llvm_emit_type_info_base(builder, ti);
 
     switch (ti->kind) {
@@ -1822,7 +1825,8 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
         case Type_Info_Kind::VOID:
         case Type_Info_Kind::REAL:
         case Type_Info_Kind::BOOL: {
-            return base;
+            result = base;
+            break;
         }
 
         case Type_Info_Kind::INTEGER: {
@@ -1838,7 +1842,8 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
                 llvm_builder_emit_bool_literal(builder, bool_type, ii->sign)
             };
 
-            return llvm::ConstantStruct::get(type_info_int_type, members);
+            result =  llvm::ConstantStruct::get(type_info_int_type, members);
+            break;
         }
 
         case Type_Info_Kind::POINTER: {
@@ -1849,13 +1854,21 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
 
             llvm::Constant *members[2] = {
                 base,
-                llvm::Constant::getNullValue(base->getType()->getPointerTo()),
+                llvm_emit_type_info(builder, pi->pointer_to)
             };
             assert(pi);
 
-            return llvm::ConstantStruct::get(type_info_pointer_type, members);
+            result = llvm::ConstantStruct::get(type_info_pointer_type, members);
         }
     }
+
+    assert(result);
+
+    llvm::GlobalVariable *glob_var = new llvm::GlobalVariable(*builder->llvm_module, result->getType(), true, llvm::GlobalValue::PrivateLinkage, result, "type_info");
+
+    hash_table_add(&builder->type_infos, ti, static_cast<llvm::Constant *>(glob_var));
+
+    return glob_var;
 }
 
 llvm::Constant *llvm_emit_type_info_base(LLVM_Builder *builder, Type_Info *ti)

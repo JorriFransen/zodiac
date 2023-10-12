@@ -114,6 +114,7 @@ struct LLVM_Builder
     Hash_Table<Bytecode_Function_Handle, llvm::Function*> functions = {};
     Hash_Table<Type *, llvm::StructType *> struct_types = {};
     Hash_Table<Atom, llvm::Constant *> string_literals = {};
+    Hash_Table<Type_Info *, llvm::Constant *> type_infos = {};
 
     llvm::Function *current_function = nullptr;
     Bytecode_Function *current_bytecode_function = nullptr;
