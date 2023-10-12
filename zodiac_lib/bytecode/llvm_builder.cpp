@@ -8,6 +8,7 @@
 #include "memory/temporary_allocator.h"
 #include "platform/filesystem.h"
 #include "type.h"
+#include "type_info.h"
 #include "util/logger.h"
 #include "util/string_builder.h"
 #include "zodiac_context.h"
@@ -188,8 +189,23 @@ void llvm_builder_emit_global(LLVM_Builder *builder, Bytecode_Global_Handle glob
             assert(glob->initial_value.kind == Bytecode_Register_Kind::ZEROINITIALIZER);
         }
 
-        llvm::Constant *init_val = llvm_builder_emit_constant(builder, glob->initial_value);
+        llvm::Constant *init_val = nullptr;
+
+        if (glob->atom == "_type_info_pointers") {
+            auto array_ptr = llvm_type_info_array_pointer(builder);
+            auto array_count = llvm::ConstantInt::get(llvm_type_from_ast_type(builder, &builtin_type_s64), builder->zodiac_context->type_infos.count);
+
+            auto struct_type = static_cast<llvm::StructType *>(llvm_type);
+            llvm::Constant *members[2] = { array_ptr, array_count };
+            init_val = llvm::ConstantStruct::get(struct_type, members);
+
+        } else {
+            init_val = llvm_builder_emit_constant(builder, glob->initial_value);
+        }
+        assert(init_val);
+
         llvm_glob_var->setInitializer(init_val);
+
     } else {
         llvm_glob_var->setInitializer(llvm::Constant::getNullValue(llvm_type));
     }
@@ -1764,6 +1780,80 @@ llvm::Function *llvm_get_intrinsic(LLVM_Builder *builder, Type *fn_type, const c
     result = llvm::Function::Create(llvm_func_type, llvm::GlobalValue::ExternalLinkage, name, builder->llvm_module);
     assert(result);
     return result;
+}
+
+llvm::Constant *llvm_type_info_array_pointer(LLVM_Builder *builder)
+{
+    auto &type_infos = builder->zodiac_context->type_infos;
+
+    llvm::Type *type_info_type = llvm_type_from_ast_type(builder, get_type_info_type(builder->zodiac_context));
+    llvm::Type *type_info_pointer_type = type_info_type->getPointerTo();
+
+
+    Dynamic_Array<llvm::Constant *> llvm_infos;
+    dynamic_array_create(builder->allocator, &llvm_infos, type_infos.count);
+
+    for (s64 i = 0; i < type_infos.count; i++) {
+
+        auto ti = type_infos[i];
+
+        // Create a constant for the type info
+        llvm::Constant *type_info_value = llvm_emit_type_info(builder, ti);
+        llvm::GlobalVariable *glob_var = new llvm::GlobalVariable(*builder->llvm_module, type_info_value->getType(), true, llvm::GlobalValue::PrivateLinkage, type_info_value, "type_info");
+
+        dynamic_array_append(&llvm_infos, static_cast<llvm::Constant *>(glob_var));
+    }
+
+    auto array_type = llvm::ArrayType::get(type_info_pointer_type, type_infos.count);
+    llvm::Constant *type_info_array_value = llvm::ConstantArray::get(array_type, { llvm_infos.data, (size_t)llvm_infos.count });
+
+    llvm::GlobalVariable *array_glob_var = new llvm::GlobalVariable(*builder->llvm_module, type_info_array_value->getType(), true, llvm::GlobalValue::PrivateLinkage, type_info_array_value, "type_info_array");
+
+    return static_cast<llvm::Constant *>(array_glob_var);
+}
+
+llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
+{
+    auto base = llvm_emit_type_info_base(builder, ti);
+
+    switch (ti->kind) {
+        case Type_Info_Kind::INVALID: assert(false); break;
+
+        case Type_Info_Kind::INTEGER: {
+
+            auto ii = (Type_Info_Int *)ti;
+
+            auto zodiac_type_info_int = get_type_info_int_type(builder->zodiac_context);
+            auto type_info_int_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, zodiac_type_info_int));
+            auto bool_type = zodiac_type_info_int->structure.member_types[1];
+
+            llvm::Constant *members[2] = {
+                base,
+                llvm_builder_emit_bool_literal(builder, bool_type, ii->sign)
+            };
+
+            return llvm::ConstantStruct::get(type_info_int_type, members);
+        }
+
+        case Type_Info_Kind::REAL: {
+            return base;
+        }
+    }
+}
+
+llvm::Constant *llvm_emit_type_info_base(LLVM_Builder *builder, Type_Info *ti)
+{
+    auto type_info_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, get_type_info_type(builder->zodiac_context)));
+    auto type_info_kind_type = static_cast<llvm::IntegerType *>(llvm_type_from_ast_type(builder, get_type_info_kind_type(builder->zodiac_context)));
+    auto size_type = static_cast<llvm::IntegerType *>(llvm_type_from_ast_type(builder, &builtin_type_s64));
+
+
+    llvm::Constant *members[2] = {
+        llvm::ConstantInt::get(type_info_kind_type, (s64)ti->kind),
+        llvm::ConstantInt::get(size_type, (s64)ti->byte_size)
+    };
+
+    return llvm::ConstantStruct::get(type_info_type, members);
 }
 
 void llvm_builder_emit_binary(LLVM_Builder *builder)

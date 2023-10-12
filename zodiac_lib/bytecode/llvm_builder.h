@@ -72,6 +72,7 @@ struct Allocator;
 struct Atom;
 struct Real_Value;
 struct Type;
+struct Type_Info;
 struct Zodiac_Context;
 union Integer_Value;
 
@@ -157,6 +158,10 @@ ZAPI llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type);
 ZAPI llvm::BasicBlock *get_llvm_block(LLVM_Builder *builder, Array_Ref<LLVM_Block> blocks, Bytecode_Block_Handle handle);
 
 ZAPI llvm::Function *llvm_get_intrinsic(LLVM_Builder *builder, Type *fn_type, const char *name);
+
+ZAPI llvm::Constant *llvm_type_info_array_pointer(LLVM_Builder *builder);
+ZAPI llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti);
+ZAPI llvm::Constant *llvm_emit_type_info_base(LLVM_Builder *builder, Type_Info *ti);
 
 ZAPI void llvm_builder_emit_binary(LLVM_Builder *builder);
 ZAPI bool llvm_builder_run_linker(LLVM_Builder *builder);
