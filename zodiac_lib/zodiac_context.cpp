@@ -124,6 +124,8 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
     out_context->builtin_type_info_type = nullptr;
     out_context->builtin_type_info_int_type = nullptr;
     out_context->builtin_type_info_pointer_type = nullptr;
+    out_context->builtin_type_info_struct_type = nullptr;
+    out_context->builtin_type_info_struct_member_type = nullptr;
 
     dynamic_array_create(&dynamic_allocator, &out_context->type_infos);
 

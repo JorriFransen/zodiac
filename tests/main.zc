@@ -1,6 +1,14 @@
 
 #run main();
 
+Vec2 :: struct { x, y: r64; }
+AABB :: struct { pos, size: Vec2; }
+
+Node :: struct {
+    value: s64;
+    next: *Node;
+}
+
 main :: () {
     println("Type info test!");
 
@@ -28,6 +36,13 @@ main :: () {
 
     println();
     pointers();
+
+    print_ti(#type_info(String));
+    print_ti(#type_info(Vec2));
+    print_ti(#type_info(AABB));
+    print_ti(#type_info(*Vec2));
+
+    // print_ti(#type_info(Node));
 
     return 0;
 }
@@ -81,6 +96,17 @@ print_ti :: (ti: *Type_Info) -> void {
             print("), ", ti.size, " bytes");
 
 
+        case Type_Info_Kind.Struct:
+            si := cast(*Type_Info_Struct, ti);
+            print("Struct: ", si.name, ", members: { ");
+
+            for i := 0; i < si.members.length; i += 1 {
+                member := si.members[i];
+                if i > 0 print(", ");
+                print_short_type(member.type);
+            }
+            print(" }");
+
         default: print("!!! Unhandled type in 'print_ti'");
     }
 
@@ -103,6 +129,10 @@ print_short_type :: (ti: *Type_Info) -> void {
             pi := cast(*Type_Info_Pointer, ti);
             print("*");
             print_short_type(pi.pointer_to);
+
+        case Type_Info_Kind.Struct:
+            si := cast(*Type_Info_Struct, ti);
+            print(si.name);
 
         default: print("!!! Unhandled type in 'print_short_type'");
     }

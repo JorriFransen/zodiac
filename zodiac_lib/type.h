@@ -13,24 +13,26 @@ struct Allocator;
 struct String_Builder;
 struct Zodiac_Context;
 
-#define ZODIAC_BUILTIN_TYPES                \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 64)          \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 64)          \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 32)          \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 32)          \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 16)          \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 16)          \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 8)           \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 8)           \
-    ZODIAC_NUMERIC_TYPE_DEF(r, 32)          \
-    ZODIAC_NUMERIC_TYPE_DEF(r, 64)          \
-    ZODIAC_NAME_TYPE_DEF(void)              \
-    ZODIAC_NAME_TYPE_DEF(bool)              \
-    ZODIAC_NAME_TYPE_DEF(String)            \
-    ZODIAC_NAME_TYPE_DEF(Type_Info_Kind)    \
-    ZODIAC_NAME_TYPE_DEF(Type_Info)         \
-    ZODIAC_NAME_TYPE_DEF(Type_Info_Int)     \
-    ZODIAC_NAME_TYPE_DEF(Type_Info_Pointer) \
+#define ZODIAC_BUILTIN_TYPES                      \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 64)                \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 64)                \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 32)                \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 32)                \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 16)                \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 16)                \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 8)                 \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 8)                 \
+    ZODIAC_NUMERIC_TYPE_DEF(r, 32)                \
+    ZODIAC_NUMERIC_TYPE_DEF(r, 64)                \
+    ZODIAC_NAME_TYPE_DEF(void)                    \
+    ZODIAC_NAME_TYPE_DEF(bool)                    \
+    ZODIAC_NAME_TYPE_DEF(String)                  \
+    ZODIAC_NAME_TYPE_DEF(Type_Info_Kind)          \
+    ZODIAC_NAME_TYPE_DEF(Type_Info)               \
+    ZODIAC_NAME_TYPE_DEF(Type_Info_Int)           \
+    ZODIAC_NAME_TYPE_DEF(Type_Info_Pointer)       \
+    ZODIAC_NAME_TYPE_DEF(Type_Info_Struct)        \
+    ZODIAC_NAME_TYPE_DEF(Type_Info_Struct_Member) \
 
 // Builtin type atoms
 #define ZODIAC_NUMERIC_TYPE_DEF(type, size) ZAPI extern Atom atom_##type##size;
@@ -128,6 +130,8 @@ struct Type
     Type() {}
 };
 
+#define TYPE_IS_SLICE_STRUCT(t) ((t)->kind == Type_Kind::STRUCTURE && (t)->flags & TYPE_FLAG_SLICE_STRUCT)
+
 ZAPI extern bool type_system_initialized;
 
 ZAPI extern Type builtin_type_unsized_integer;
@@ -180,6 +184,8 @@ ZAPI Type *get_type_info_kind_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_int_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_pointer_type(Zodiac_Context *ctx);
+ZAPI Type *get_type_info_struct_type(Zodiac_Context *ctx);
+ZAPI Type *get_type_info_struct_member_type(Zodiac_Context *ctx);
 
 ZAPI Type *sym_decl_type(Symbol *sym);
 

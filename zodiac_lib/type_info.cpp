@@ -1,6 +1,9 @@
 #include "type_info.h"
 
+#include "containers/dynamic_array.h"
+#include "memory/allocator.h"
 #include "type.h"
+#include "util/asserts.h"
 #include "zodiac_context.h"
 
 namespace Zodiac
@@ -57,7 +60,24 @@ Type_Info *add_type_info(Zodiac_Context *ctx, Type *type)
             break;
         }
 
-        case Type_Kind::STRUCTURE: assert(false); break;
+        case Type_Kind::STRUCTURE: {
+            auto structure_info = alloc<Type_Info_Struct>(allocator);
+            result = &structure_info->base;
+
+            init_type_info_base(result, Type_Info_Kind::STRUCT, type->bit_size);
+
+            auto members = alloc_array<Type_Info_Struct_Member>(allocator, type->structure.member_types.count);
+
+            for (s64 i = 0; i < type->structure.member_types.count; i++) {
+                members[i].type = add_type_info(ctx, type->structure.member_types[i]);
+            }
+
+            structure_info->name = string_copy(&ctx->bytecode_allocator, type->structure.name);
+            structure_info->members = members;
+            structure_info->member_count = type->structure.member_types.count;
+            break;
+        }
+
         case Type_Kind::ENUM: assert(false); break;
         case Type_Kind::STATIC_ARRAY: assert(false); break;
         case Type_Kind::SLICE: assert(false); break;

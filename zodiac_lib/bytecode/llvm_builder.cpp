@@ -1859,6 +1859,56 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
             assert(pi);
 
             result = llvm::ConstantStruct::get(type_info_pointer_type, members);
+            break;
+        }
+
+        case Type_Info_Kind::STRUCT: {
+
+            auto si = (Type_Info_Struct *)ti;
+
+            auto ast_struct_info_type = get_type_info_struct_type(builder->zodiac_context);
+            auto ast_struct_member_info_type = get_type_info_struct_member_type(builder->zodiac_context);
+            auto type_info_struct_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, ast_struct_info_type));
+            auto type_info_struct_member_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, ast_struct_member_info_type));
+
+            auto name = llvm_builder_emit_string_literal(builder, si->name);
+
+            auto members_array_type = llvm::ArrayType::get(type_info_struct_member_type, si->member_count);
+
+            Dynamic_Array<llvm::Constant *> members;
+            dynamic_array_create(builder->allocator, &members, si->member_count);
+
+            for (s64 i = 0; i < si->member_count; i++) {
+                auto member_name = llvm_builder_emit_string_literal(builder, String_Ref(si->members[i].name));
+                llvm::Constant *member_info_members[] = {
+                    member_name,
+                    llvm_emit_type_info(builder, si->members[i].type),
+                };
+                auto member_val = llvm::ConstantStruct::get(type_info_struct_member_type, member_info_members);
+
+                dynamic_array_append(&members, member_val);
+            }
+
+            auto members_array = llvm::ConstantArray::get(members_array_type, { members.data, (size_t)members.count } );
+            members_array = static_cast<llvm::Constant *>(new llvm::GlobalVariable(*builder->llvm_module, members_array->getType(), true, llvm::GlobalValue::PrivateLinkage, members_array, "struct_member_type_infos"));
+
+            auto members_slice_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, ast_struct_info_type->structure.member_types[2]));
+
+            llvm::Constant *slice_members[2] = {
+                members_array,
+                llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { .s64 = si->member_count }),
+            };
+
+            auto members_slice = llvm::ConstantStruct::get(members_slice_type, slice_members);
+
+            llvm::Constant *result_members[3] = {
+                base,
+                name,
+                members_slice,
+            };
+
+            result = llvm::ConstantStruct::get(type_info_struct_type, result_members);
+            break;
         }
     }
 

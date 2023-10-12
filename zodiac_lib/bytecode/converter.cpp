@@ -1075,7 +1075,8 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
 
                 return bytecode_emit_array_offset_pointer(bc->builder, base_reg, index_reg);
 
-            } else if (base_reg.type->kind == Type_Kind::STRUCTURE && base_reg.type->flags & TYPE_FLAG_SLICE_STRUCT) {
+            } else if (TYPE_IS_SLICE_STRUCT(base_reg.type) ||
+                       (base_reg.type->kind == Type_Kind::POINTER && TYPE_IS_SLICE_STRUCT(base_reg.type->pointer.base))) {
 
                 Bytecode_Register ptr_reg = bytecode_emit_aggregate_offset_pointer(bc->builder, base_reg, 0);
                 ptr_reg = bytecode_emit_load_pointer(bc->builder, ptr_reg);

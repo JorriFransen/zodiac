@@ -1,4 +1,6 @@
 
+- Replace all the special type getters with one that takes an atom.
+
 - Logical && and ||
 
 - Break
