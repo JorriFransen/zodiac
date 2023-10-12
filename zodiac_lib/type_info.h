@@ -15,6 +15,7 @@ enum class Type_Info_Kind
     VOID    = 1,
     INTEGER = 2,
     REAL    = 3,
+    BOOL    = 4,
 };
 
 struct Type_Info

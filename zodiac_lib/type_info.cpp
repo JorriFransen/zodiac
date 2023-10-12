@@ -40,7 +40,12 @@ void add_type_info(Zodiac_Context *ctx, Type *type)
             break;
         }
 
-        case Type_Kind::BOOLEAN: assert(false); break;
+        case Type_Kind::BOOLEAN: {
+            result = alloc<Type_Info>(allocator);
+            init_type_info_base(result, Type_Info_Kind::BOOL, type->bit_size);
+            break;
+        }
+
         case Type_Kind::POINTER: assert(false); break;
         case Type_Kind::STRUCTURE: assert(false); break;
         case Type_Kind::ENUM: assert(false); break;

@@ -21,6 +21,10 @@ main :: () {
     print_ti(#type_info(r64));
     print_ti(#type_info(r32));
 
+    println();
+
+    print_ti(#type_info(bool));
+
     return 0;
 }
 
@@ -39,6 +43,9 @@ print_ti :: (ti: *Type_Info) {
 
         case Type_Info_Kind.Real:
             println("Real, ", ti.size, " bytes");
+
+        case Type_Info_Kind.Bool:
+            println("bool, ", ti.size, " bytes");
 
         default: println("!!! UNHANDLED TYPE !!!");
     }

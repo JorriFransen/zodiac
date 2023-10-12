@@ -14,6 +14,7 @@ Type_Info_Kind :: enum {
     Void    :: 1,
     Integer :: 2,
     Real    :: 3,
+    Bool    :: 4,
 }
 
 // This must always be the first member of any Type_Info_* structure

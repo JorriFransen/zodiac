@@ -1820,7 +1820,8 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
         case Type_Info_Kind::INVALID: assert(false); break;
 
         case Type_Info_Kind::VOID:
-        case Type_Info_Kind::REAL: {
+        case Type_Info_Kind::REAL:
+        case Type_Info_Kind::BOOL: {
             return base;
         }
 
