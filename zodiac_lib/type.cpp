@@ -412,7 +412,7 @@ Type *get_type_info_type(Zodiac_Context *ctx)
     assert_msg(false, "Builtin Type_Info type could not be found");
 }
 
-ZAPI Type *get_type_info_int_type(Zodiac_Context *ctx)
+Type *get_type_info_int_type(Zodiac_Context *ctx)
 {
     if (ctx->builtin_type_info_int_type) {
         return ctx->builtin_type_info_int_type;
@@ -426,7 +426,24 @@ ZAPI Type *get_type_info_int_type(Zodiac_Context *ctx)
         }
     }
 
-    assert_msg(false, "Builtin Type_Info type could not be found");
+    assert_msg(false, "Builtin Type_Info_Int type could not be found");
+}
+
+Type *get_type_info_pointer_type(Zodiac_Context *ctx)
+{
+    if (ctx->builtin_type_info_pointer_type) {
+        return ctx->builtin_type_info_pointer_type;
+    }
+
+    for (s64 i = 0; i < struct_types.count; i++) {
+        auto st = struct_types[i];
+        if (st->structure.name == atom_Type_Info_Pointer) {
+            ctx->builtin_type_info_pointer_type = st;
+            return st;
+        }
+    }
+
+    assert_msg(false, "Builtin Type_Info_Pointer type could not be found");
 }
 
 Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Allocator *allocator, bool vararg/*=false*/)

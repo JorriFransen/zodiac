@@ -13,23 +13,24 @@ struct Allocator;
 struct String_Builder;
 struct Zodiac_Context;
 
-#define ZODIAC_BUILTIN_TYPES             \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 64)       \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 64)       \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 32)       \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 32)       \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 16)       \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 16)       \
-    ZODIAC_NUMERIC_TYPE_DEF(u, 8)        \
-    ZODIAC_NUMERIC_TYPE_DEF(s, 8)        \
-    ZODIAC_NUMERIC_TYPE_DEF(r, 32)       \
-    ZODIAC_NUMERIC_TYPE_DEF(r, 64)       \
-    ZODIAC_NAME_TYPE_DEF(void)           \
-    ZODIAC_NAME_TYPE_DEF(bool)           \
-    ZODIAC_NAME_TYPE_DEF(String)         \
-    ZODIAC_NAME_TYPE_DEF(Type_Info_Kind) \
-    ZODIAC_NAME_TYPE_DEF(Type_Info)      \
-    ZODIAC_NAME_TYPE_DEF(Type_Info_Int)  \
+#define ZODIAC_BUILTIN_TYPES                \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 64)          \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 64)          \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 32)          \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 32)          \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 16)          \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 16)          \
+    ZODIAC_NUMERIC_TYPE_DEF(u, 8)           \
+    ZODIAC_NUMERIC_TYPE_DEF(s, 8)           \
+    ZODIAC_NUMERIC_TYPE_DEF(r, 32)          \
+    ZODIAC_NUMERIC_TYPE_DEF(r, 64)          \
+    ZODIAC_NAME_TYPE_DEF(void)              \
+    ZODIAC_NAME_TYPE_DEF(bool)              \
+    ZODIAC_NAME_TYPE_DEF(String)            \
+    ZODIAC_NAME_TYPE_DEF(Type_Info_Kind)    \
+    ZODIAC_NAME_TYPE_DEF(Type_Info)         \
+    ZODIAC_NAME_TYPE_DEF(Type_Info_Int)     \
+    ZODIAC_NAME_TYPE_DEF(Type_Info_Pointer) \
 
 // Builtin type atoms
 #define ZODIAC_NUMERIC_TYPE_DEF(type, size) ZAPI extern Atom atom_##type##size;
@@ -178,6 +179,7 @@ ZAPI Type *get_string_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_kind_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_int_type(Zodiac_Context *ctx);
+ZAPI Type *get_type_info_pointer_type(Zodiac_Context *ctx);
 
 ZAPI Type *sym_decl_type(Symbol *sym);
 

@@ -1840,6 +1840,21 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
 
             return llvm::ConstantStruct::get(type_info_int_type, members);
         }
+
+        case Type_Info_Kind::POINTER: {
+
+            auto pi = (Type_Info_Pointer *)ti;
+
+            auto type_info_pointer_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, get_type_info_pointer_type(builder->zodiac_context)));
+
+            llvm::Constant *members[2] = {
+                base,
+                llvm::Constant::getNullValue(base->getType()->getPointerTo()),
+            };
+            assert(pi);
+
+            return llvm::ConstantStruct::get(type_info_pointer_type, members);
+        }
     }
 }
 

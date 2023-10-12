@@ -6,9 +6,11 @@
 namespace Zodiac
 {
 
-void add_type_info(Zodiac_Context *ctx, Type *type)
+Type_Info *add_type_info(Zodiac_Context *ctx, Type *type)
 {
-    assert(type->info_index == -1);
+    if (type->info_index >= 0) {
+        return ctx->type_infos[type->info_index];
+    }
 
     auto allocator = &ctx->ast_allocator;
 
@@ -46,7 +48,15 @@ void add_type_info(Zodiac_Context *ctx, Type *type)
             break;
         }
 
-        case Type_Kind::POINTER: assert(false); break;
+        case Type_Kind::POINTER: {
+            auto pointer_info = alloc<Type_Info_Pointer>(allocator);
+            result = &pointer_info->base;
+
+            init_type_info_base(result, Type_Info_Kind::POINTER, type->bit_size);
+            pointer_info->pointer_to = add_type_info(ctx, type->pointer.base);
+            break;
+        }
+
         case Type_Kind::STRUCTURE: assert(false); break;
         case Type_Kind::ENUM: assert(false); break;
         case Type_Kind::STATIC_ARRAY: assert(false); break;
@@ -54,11 +64,14 @@ void add_type_info(Zodiac_Context *ctx, Type *type)
         case Type_Kind::FUNCTION: assert(false); break;
     }
 
-    auto index = ctx->type_infos.count;
-
     assert(result);
+
+    auto index = ctx->type_infos.count;
     dynamic_array_append(&ctx->type_infos, result);
+    assert(type->info_index == -1);
     type->info_index = index;
+
+    return result;
 }
 
 void init_type_info_base(Type_Info *ti, Type_Info_Kind kind, s64 bit_size)

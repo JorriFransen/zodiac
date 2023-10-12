@@ -16,6 +16,8 @@ enum class Type_Info_Kind
     INTEGER = 2,
     REAL    = 3,
     BOOL    = 4,
+
+    POINTER = 5,
 };
 
 struct Type_Info
@@ -30,7 +32,13 @@ struct Type_Info_Int
     bool sign;
 };
 
-ZAPI void add_type_info(Zodiac_Context *ctx, Type *type);
+struct Type_Info_Pointer
+{
+    Type_Info base;
+    Type_Info *pointer_to;
+};
+
+ZAPI Type_Info *add_type_info(Zodiac_Context *ctx, Type *type);
 ZAPI void init_type_info_base(Type_Info *ti, Type_Info_Kind kind, s64 bit_size);
 
 }
