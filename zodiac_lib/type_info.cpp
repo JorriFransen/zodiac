@@ -16,7 +16,13 @@ void add_type_info(Zodiac_Context *ctx, Type *type)
 
     switch (type->kind) {
         case Type_Kind::INVALID: assert(false); break;
-        case Type_Kind::VOID: assert(false); break;
+
+        case Type_Kind::VOID: {
+            result = alloc<Type_Info>(allocator);
+            init_type_info_base(result, Type_Info_Kind::VOID, type->bit_size);
+            break;
+        }
+
         case Type_Kind::UNSIZED_INTEGER: assert(false); break;
 
         case Type_Kind::INTEGER: {

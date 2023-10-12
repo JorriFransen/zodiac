@@ -11,8 +11,9 @@ String :: struct {
 Type_Info_Kind :: enum {
     Invalid :: 0,
 
-    Integer :: 1,
-    Real    :: 2,
+    Void    :: 1,
+    Integer :: 2,
+    Real    :: 3,
 }
 
 // This must always be the first member of any Type_Info_* structure

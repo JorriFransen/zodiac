@@ -145,8 +145,6 @@ bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
                 auto decl = root_node->root.decl;
                 assert(decl->kind == AST_Declaration_Kind::FUNCTION);
 
-                ZDEBUG("Registering bytecode function: '%s'", decl->identifier.name.data);
-
                 BC_Function_Flag flags = BC_FUNCTION_FLAG_NONE;
 
                 bool foreign = decl->flags & AST_DECL_FLAG_FOREIGN;
@@ -335,8 +333,6 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     assert(decl->function.type);
     assert(decl->function.type->kind == Type_Kind::FUNCTION);
     assert(decl->identifier.name.data);
-
-    ZDEBUG("Emitting bytecode function: '%s'", decl->identifier.name.data)
 
     Bytecode_Function_Handle fn_handle;
     bool found = hash_table_find(&bc->functions, decl, &fn_handle);

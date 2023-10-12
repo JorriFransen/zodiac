@@ -3,6 +3,10 @@
 main :: () {
     println("Type info test!");
 
+    print_ti(#type_info(void));
+
+    println();
+
     print_ti(#type_info(s64));
     print_ti(#type_info(u64));
     print_ti(#type_info(s32));
@@ -24,6 +28,9 @@ print_ti :: (ti: *Type_Info) {
 
     switch (ti.kind) {
 
+        case Type_Info_Kind.Void:
+            println("void, ", ti.size, " bytes");
+
         case Type_Info_Kind.Integer:
             ii := cast(*Type_Info_Int, ti);
             print("Integer, ", ti.size, " bytes, ");
@@ -32,6 +39,8 @@ print_ti :: (ti: *Type_Info) {
 
         case Type_Info_Kind.Real:
             println("Real, ", ti.size, " bytes");
+
+        default: println("!!! UNHANDLED TYPE !!!");
     }
 }
 

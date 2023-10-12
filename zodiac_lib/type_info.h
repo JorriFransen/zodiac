@@ -12,8 +12,9 @@ enum class Type_Info_Kind
 {
     INVALID = 0,
 
-    INTEGER = 1,
-    REAL    = 2,
+    VOID    = 1,
+    INTEGER = 2,
+    REAL    = 3,
 };
 
 struct Type_Info

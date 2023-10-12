@@ -1819,6 +1819,11 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
     switch (ti->kind) {
         case Type_Info_Kind::INVALID: assert(false); break;
 
+        case Type_Info_Kind::VOID:
+        case Type_Info_Kind::REAL: {
+            return base;
+        }
+
         case Type_Info_Kind::INTEGER: {
 
             auto ii = (Type_Info_Int *)ti;
@@ -1833,10 +1838,6 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
             };
 
             return llvm::ConstantStruct::get(type_info_int_type, members);
-        }
-
-        case Type_Info_Kind::REAL: {
-            return base;
         }
     }
 }
