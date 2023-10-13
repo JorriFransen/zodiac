@@ -103,6 +103,7 @@ print_ti :: (ti: *Type_Info) -> void {
             for i := 0; i < si.members.length; i += 1 {
                 member := si.members[i];
                 if i > 0 print(", ");
+                if member.name.length != 0 print(member.name, ": ");
                 print_short_type(member.type);
             }
             print(" }");

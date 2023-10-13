@@ -137,7 +137,7 @@ void create_pointer_type(Type *type, Type *base_type)
     base_type->pointer_to = type;
 }
 
-void create_struct_type(Type *type, Atom name, Dynamic_Array<Type *> member_types)
+void create_struct_type(Type *type, Atom name, Dynamic_Array<Type *> member_types, Dynamic_Array<String> member_names)
 {
     assert(type);
 
@@ -159,6 +159,7 @@ void create_struct_type(Type *type, Atom name, Dynamic_Array<Type *> member_type
 
     type->structure.name = name;
     type->structure.member_types = member_types;
+    type->structure.member_names = member_names;
 }
 
 void create_static_array_type(Type *type, Type *element_type, u64 count)
@@ -217,17 +218,17 @@ Type *get_pointer_type(Type *base, Allocator *allocator)
     return result;
 }
 
-Type *get_struct_type(Zodiac_Context *zc, const char *cstr_name, Array_Ref<Type *> member_types, Allocator *allocator)
+Type *get_struct_type(Zodiac_Context *zc, const char *cstr_name, Array_Ref<Type *> member_types, Array_Ref<String> member_names, Allocator *allocator)
 {
     assert(zc);
     assert(cstr_name);
     assert(allocator);
 
     Atom name_atom = atom_get(&zc->atoms, cstr_name);
-    return get_struct_type(name_atom, member_types, allocator);
+    return get_struct_type(name_atom, member_types, member_names, allocator);
 }
 
-Type *get_struct_type(Atom name, Array_Ref<Type *> member_types, Allocator *allocator)
+Type *get_struct_type(Atom name, Array_Ref<Type *> member_types, Array_Ref<String> member_names, Allocator *allocator)
 {
     assert(member_types.count);
     assert(allocator);
@@ -254,23 +255,25 @@ Type *get_struct_type(Atom name, Array_Ref<Type *> member_types, Allocator *allo
 
     auto result = alloc<Type>(allocator);
     auto members_copy = dynamic_array_copy(member_types, allocator);
+    auto names_copy = dynamic_array_copy(member_names, allocator);
 
-    create_struct_type(result, name, members_copy);
+    create_struct_type(result, name, members_copy, names_copy);
 
     dynamic_array_append(&struct_types, result);
 
     return result;
 }
 
-Type *finalize_struct_type(Type *unfinished, Array_Ref<Type *> member_types, Allocator *allocator)
+Type *finalize_struct_type(Type *unfinished, Array_Ref<Type *> member_types, Array_Ref<String> member_names, Allocator *allocator)
 {
     assert(unfinished->kind == Type_Kind::STRUCTURE);
     assert(unfinished->flags & TYPE_FLAG_UNFINISHED_STRUCT_TYPE);
 
     auto members_copy = dynamic_array_copy(member_types, allocator);
+    auto names_copy = dynamic_array_copy(member_names, allocator);
 
     auto pointer_to = unfinished->pointer_to;
-    create_struct_type(unfinished, unfinished->structure.name, members_copy);
+    create_struct_type(unfinished, unfinished->structure.name, members_copy, names_copy);
     unfinished->pointer_to = pointer_to;
 
     unfinished->flags &= ~TYPE_FLAG_UNFINISHED_STRUCT_TYPE;
@@ -334,7 +337,7 @@ Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocat
     auto name = atom_get(&ctx->atoms, name_);
     temporary_allocator_reset(temp_allocator(), mark);
 
-    Type *struct_type = get_struct_type(name, members, allocator);
+    Type *struct_type = get_struct_type(name, members, {}, allocator);
     struct_type->flags |= TYPE_FLAG_SLICE_STRUCT;
 
     auto global_scope = ctx->resolver->global_scope;

@@ -74,6 +74,7 @@ Type_Info *add_type_info(Zodiac_Context *ctx, Type *type)
             auto members = alloc_array<Type_Info_Struct_Member>(allocator, type->structure.member_types.count);
 
             for (s64 i = 0; i < type->structure.member_types.count; i++) {
+                members[i].name = string_copy(allocator, type->structure.member_names[i]);
                 members[i].type = add_type_info(ctx, type->structure.member_types[i]);
             }
 

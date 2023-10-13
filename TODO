@@ -1,6 +1,8 @@
 
 - Add member names to struct types? (we need some way to access them in type info)
 
+- Implicit integer to boolean conversion in if statements
+
 - Logical && and ||
 
 - Break

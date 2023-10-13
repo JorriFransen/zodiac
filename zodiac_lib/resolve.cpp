@@ -1967,9 +1967,11 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
         }
 
         case AST_Declaration_Kind::STRUCT: {
-            // auto temp_member_types = temp_array_create<Type *>(temp_allocator_allocator(), decl->aggregate.fields.count);
+
             Dynamic_Array<Type *> member_types;
+            Dynamic_Array<String> member_names;
             dynamic_array_create(&ctx->ast_allocator, &member_types, decl->aggregate.fields.count);
+            dynamic_array_create(&ctx->ast_allocator, &member_names, decl->aggregate.fields.count);
 
             for (s64 i = 0; i < decl->aggregate.fields.count; i++) {
                 auto field = decl->aggregate.fields[i];
@@ -1977,6 +1979,9 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                 assert(field->field.resolved_type);
 
                 dynamic_array_append(&member_types, field->field.resolved_type);
+
+                auto name = field->identifier.name;
+                dynamic_array_append(&member_names, string_create(&ctx->ast_allocator, (char *)name.data, name.length));
             }
 
             auto sym = scope_get_symbol(scope, decl->identifier.name);
@@ -1984,9 +1989,9 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             auto unfinished_type = sym->aggregate.unfinished_struct_type;
             if (unfinished_type) {
                 assert(unfinished_type->structure.name == decl->identifier.name);
-                decl->aggregate.resolved_type = finalize_struct_type(unfinished_type, member_types, &ctx->ast_allocator);
+                decl->aggregate.resolved_type = finalize_struct_type(unfinished_type, member_types, member_names, &ctx->ast_allocator);
             } else {
-                decl->aggregate.resolved_type = get_struct_type(decl->identifier.name, member_types, &ctx->ast_allocator);
+                decl->aggregate.resolved_type = get_struct_type(decl->identifier.name, member_types, member_names, &ctx->ast_allocator);
             }
 
             assert(sym && sym->state == Symbol_State::RESOLVED);
@@ -3175,7 +3180,7 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
                         struct_type = sym->aggregate.unfinished_struct_type;
                     } else {
                         struct_type = alloc<Type>(&ctx->ast_allocator);
-                        create_struct_type(struct_type, sym->name, {});
+                        create_struct_type(struct_type, sym->name, {}, {});
                         struct_type->flags |= TYPE_FLAG_UNFINISHED_STRUCT_TYPE;
                         sym->aggregate.unfinished_struct_type = struct_type;
                     }

@@ -101,6 +101,7 @@ struct Type
         struct {
             Atom name;
             Dynamic_Array<Type *> member_types;
+            Dynamic_Array<String> member_names;
         } structure;
 
         struct {
@@ -163,16 +164,16 @@ ZAPI void create_type(Type *type, Type_Kind kind, u64 bit_size, Type_Flags flags
 ZAPI void create_integer_type(Type *type, u64 bit_size, bool sign);
 ZAPI void create_float_type(Type *type, u64 bit_size);
 ZAPI void create_pointer_type(Type *type, Type *base_type);
-ZAPI void create_struct_type(Type *type, Atom name, Dynamic_Array<Type *> member_types);
+ZAPI void create_struct_type(Type *type, Atom name, Dynamic_Array<Type *> member_types, Dynamic_Array<String> member_names);
 ZAPI void create_static_array_type(Type *type, Type *element_type, u64 count);
 ZAPI void create_slice_type(Type *type, Type *element_type, Type *struct_type);
 ZAPI void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types, bool vararg = false);
 
 ZAPI Type *get_pointer_type(Type *base, Allocator *allocator);
 
-ZAPI Type *get_struct_type(Zodiac_Context *zc, const char *cstr_name, Array_Ref<Type *> member_types, Allocator *allocator);
-ZAPI Type *get_struct_type(Atom name, Array_Ref<Type *> member_types, Allocator *allocator);
-ZAPI Type *finalize_struct_type(Type *unfinished, Array_Ref<Type *> member_types, Allocator *allocator);
+ZAPI Type *get_struct_type(Zodiac_Context *zc, const char *cstr_name, Array_Ref<Type *> member_types, Array_Ref<String> member_names, Allocator *allocator);
+ZAPI Type *get_struct_type(Atom name, Array_Ref<Type *> member_types, Array_Ref<String> member_names, Allocator *allocator);
+ZAPI Type *finalize_struct_type(Type *unfinished, Array_Ref<Type *> member_types, Array_Ref<String> member_names, Allocator *allocator);
 ZAPI Type *get_enum_type(Atom name, Dynamic_Array<Type_Enum_Member> members, Type *integer_type, Allocator *allocator);
 
 ZAPI Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator);

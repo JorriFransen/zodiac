@@ -35,7 +35,7 @@ void init_test_context(Zodiac_Context *zc)
 
     Type *members[] = { get_pointer_type(&builtin_type_u8, &zc->ast_allocator),
                         &builtin_type_s64 };
-    get_struct_type(zc, "String", members, &zc->ast_allocator);
+    get_struct_type(zc, "String", members, {}, &zc->ast_allocator);
 }
 
 #define PRINT_NEWLINE bytecode_emit_print(&bb, bytecode_string_literal(&bb, "\n"));
@@ -393,7 +393,7 @@ MunitResult Insert_And_Extract_Value(const MunitParameter params[], void *user_d
     bytecode_set_insert_point(&bb, fn, entry_block);
 
     Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
-    Type *vec2_type = get_struct_type(&zc, "Vec2", vec2_mem_types, &zc.ast_allocator);
+    Type *vec2_type = get_struct_type(&zc, "Vec2", vec2_mem_types, {}, &zc.ast_allocator);
     munit_assert(vec2_type != nullptr);
 
     auto alloc = bytecode_emit_alloc(&bb, vec2_type, "struct_alloc");
@@ -469,10 +469,10 @@ MunitResult Extract_Struct_Value(const MunitParameter params[], void *user_data_
     defer { bytecode_builder_free(&bb); };
 
     Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
-    Type *vec2_type = get_struct_type(&zc, "vec2", vec2_mem_types, &zc.ast_allocator);
+    Type *vec2_type = get_struct_type(&zc, "vec2", vec2_mem_types, {}, &zc.ast_allocator);
 
     Type *aabb_mem_types[] = { vec2_type, vec2_type };
-    Type *aabb_type = get_struct_type(&zc, "aabb", aabb_mem_types, &zc.ast_allocator);
+    Type *aabb_type = get_struct_type(&zc, "aabb", aabb_mem_types, {}, &zc.ast_allocator);
 
     auto insert_and_extract_value_fn_type = get_function_type(aabb_type, { }, &zc.ast_allocator);
     auto insert_and_extract_value_fn = bytecode_function_create(&bb, "insert_and_extract_value", insert_and_extract_value_fn_type);
@@ -563,7 +563,7 @@ MunitResult Return_Struct(const MunitParameter params[], void *user_data_or_fixt
     defer { bytecode_builder_free(&bb); };
 
     Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
-    Type *vec2_type = get_struct_type(&zc, "vec2", vec2_mem_types, &zc.ast_allocator);
+    Type *vec2_type = get_struct_type(&zc, "vec2", vec2_mem_types, {}, &zc.ast_allocator);
 
     auto make_vec2_fn_type = get_function_type(vec2_type, { }, &zc.ast_allocator);
     auto make_vec2_fn = bytecode_function_create(&bb, "make_vec2", make_vec2_fn_type);
@@ -648,7 +648,7 @@ MunitResult Struct_Arguments(const MunitParameter params[], void *user_data_or_f
     defer { bytecode_builder_free(&bb); };
 
     Type *vec2_mem_types[] = { &builtin_type_r32, &builtin_type_r32 };
-    Type *vec2_type = get_struct_type(&zc, "vec2", vec2_mem_types, &zc.ast_allocator);
+    Type *vec2_type = get_struct_type(&zc, "vec2", vec2_mem_types, {}, &zc.ast_allocator);
 
     auto make_vec2_fn_type = get_function_type(vec2_type, { }, &zc.ast_allocator);
     auto make_vec2_fn = bytecode_function_create(&bb, "make_vec2", make_vec2_fn_type);
@@ -839,7 +839,7 @@ MunitResult Struct_Pointers(const MunitParameter params[], void *user_data_or_fi
     defer { bytecode_builder_free(&bb); };
 
     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
-    Type *vec_type = get_struct_type(&zc, "Vec2", vec_mem_types, &zc.ast_allocator);
+    Type *vec_type = get_struct_type(&zc, "Vec2", vec_mem_types, {}, &zc.ast_allocator);
 
     const s64 exit_code = 66;
 
@@ -907,7 +907,7 @@ MunitResult Invalid_Extract_Element(const MunitParameter params[], void *user_da
     defer { bytecode_builder_free(&bb); };
 
     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
-    Type *vec_type = get_struct_type(&zc, "Vec2", vec_mem_types, &zc.ast_allocator);
+    Type *vec_type = get_struct_type(&zc, "Vec2", vec_mem_types, {}, &zc.ast_allocator);
 
     auto main_fn_type = get_function_type(&builtin_type_s64, { }, &zc.ast_allocator);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
@@ -963,7 +963,7 @@ MunitResult Simple_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data
     defer { bytecode_builder_free(&bb); };
 
     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
-    Type *vec_type = get_struct_type(&zc, "Vec2", vec_mem_types, &zc.ast_allocator);
+    Type *vec_type = get_struct_type(&zc, "Vec2", vec_mem_types, {}, &zc.ast_allocator);
 
     const s64 exit_code = 132;
     const String_Ref stdout_str("66\n132");
@@ -1054,10 +1054,10 @@ MunitResult Nested_AGG_OFFSET_PTR(const MunitParameter params[], void *user_data
     defer { bytecode_builder_free(&bb); };
 
     Type *vec_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
-    Type *vec_type = get_struct_type(&zc, "Vec2", vec_mem_types, &zc.ast_allocator);
+    Type *vec_type = get_struct_type(&zc, "Vec2", vec_mem_types, {}, &zc.ast_allocator);
 
     Type *aabb_mem_types[] = { vec_type, vec_type };
-    Type *aabb_type = get_struct_type(&zc, "AABB", aabb_mem_types, &zc.ast_allocator);
+    Type *aabb_type = get_struct_type(&zc, "AABB", aabb_mem_types, {}, &zc.ast_allocator);
 
     const s64 exit_code = 33;
     const String_Ref stdout_str("11\n22\n33\n44");
@@ -1586,7 +1586,7 @@ MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[], void *us
     defer { bytecode_builder_free(&bb); };
 
     Type *vec2_mem_types[] = { &builtin_type_s64, &builtin_type_s64 };
-    Type *vec2_type = get_struct_type(&zc, "vec2", vec2_mem_types, &zc.ast_allocator);
+    Type *vec2_type = get_struct_type(&zc, "vec2", vec2_mem_types, {}, &zc.ast_allocator);
     Type *make_vec2_fn_type = get_function_type(vec2_type, vec2_mem_types, &zc.ast_allocator);
     auto make_vec2_fn = bytecode_function_create(&bb, "make_vec2", make_vec2_fn_type);
     auto make_vec2_entry_block = bytecode_append_block(&bb, make_vec2_fn, "entry");
