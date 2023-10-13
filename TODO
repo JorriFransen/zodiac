@@ -1,5 +1,4 @@
 
-- Replace all the special type getters with one that takes an atom.
 - Add member names to struct types? (we need some way to access them in type info)
 
 - Logical && and ||

@@ -179,6 +179,7 @@ ZAPI Type *get_static_array_type(Type *element_type, u64 count, Allocator *alloc
 ZAPI Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocator);
 ZAPI Type *get_function_type(Type *return_type, Array_Ref<Type *> param_types, Allocator *allocator, bool vararg = false);
 
+ZAPI Type *get_struct_type_by_name(Zodiac_Context *ctx, Atom name);
 ZAPI Type *get_string_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_kind_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_type(Zodiac_Context *ctx);

@@ -357,23 +357,26 @@ Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocat
     return result;
 }
 
+Type *get_struct_type_by_name(Zodiac_Context *ctx, Atom name)
+{
+    for (s64 i = 0; i < struct_types.count; i++) {
+        auto st = struct_types[i];
+        if (st->structure.name == name) {
+            return st;
+        }
+    }
+
+    assert_msg(false, "Struct type could not be found");
+}
+
 Type *get_string_type(Zodiac_Context *ctx)
 {
     if (ctx->builtin_string_type) {
         return ctx->builtin_string_type;
     }
 
-    for (s64 i = 0; i < struct_types.count; i++) {
-        auto st = struct_types[i];
-        if (st->structure.name == atom_String) {
-            auto u8_ptr_type = get_pointer_type(&builtin_type_u8, &ctx->ast_allocator);
-            assert(st->structure.member_types[0] == u8_ptr_type);
-            assert(st->structure.member_types[1] == &builtin_type_s64);
-
-            ctx->builtin_string_type = st;
-            return st;
-        }
-    }
+    auto result = get_struct_type_by_name(ctx, atom_String);
+    if (result) return result;
 
     assert_msg(false, "Builtin String type could not be found");
 }
@@ -401,13 +404,8 @@ Type *get_type_info_type(Zodiac_Context *ctx)
         return ctx->builtin_type_info_type;
     }
 
-    for (s64 i = 0; i < struct_types.count; i++) {
-        auto st = struct_types[i];
-        if (st->structure.name == atom_Type_Info) {
-            ctx->builtin_type_info_type = st;
-            return st;
-        }
-    }
+    auto result = get_struct_type_by_name(ctx, atom_Type_Info);
+    if (result) return result;
 
     assert_msg(false, "Builtin Type_Info type could not be found");
 }
@@ -418,13 +416,8 @@ Type *get_type_info_int_type(Zodiac_Context *ctx)
         return ctx->builtin_type_info_int_type;
     }
 
-    for (s64 i = 0; i < struct_types.count; i++) {
-        auto st = struct_types[i];
-        if (st->structure.name == atom_Type_Info_Int) {
-            ctx->builtin_type_info_int_type = st;
-            return st;
-        }
-    }
+    auto result = get_struct_type_by_name(ctx, atom_Type_Info_Int);
+    if (result) return result;
 
     assert_msg(false, "Builtin Type_Info_Int type could not be found");
 }
@@ -435,13 +428,8 @@ Type *get_type_info_pointer_type(Zodiac_Context *ctx)
         return ctx->builtin_type_info_pointer_type;
     }
 
-    for (s64 i = 0; i < struct_types.count; i++) {
-        auto st = struct_types[i];
-        if (st->structure.name == atom_Type_Info_Pointer) {
-            ctx->builtin_type_info_pointer_type = st;
-            return st;
-        }
-    }
+    auto result = get_struct_type_by_name(ctx, atom_Type_Info_Pointer);
+    if (result) return result;
 
     assert_msg(false, "Builtin Type_Info_Pointer type could not be found");
 }
@@ -452,13 +440,8 @@ Type *get_type_info_struct_type(Zodiac_Context *ctx)
         return ctx->builtin_type_info_struct_type;
     }
 
-    for (s64 i = 0; i < struct_types.count; i++) {
-        auto st = struct_types[i];
-        if (st->structure.name == atom_Type_Info_Struct) {
-            ctx->builtin_type_info_struct_type = st;
-            return st;
-        }
-    }
+    auto result = get_struct_type_by_name(ctx, atom_Type_Info_Struct);
+    if (result) return result;
 
     assert_msg(false, "Builtin Type_Info_Struct type could not be found");
 }
@@ -469,13 +452,8 @@ Type *get_type_info_struct_member_type(Zodiac_Context *ctx)
         return ctx->builtin_type_info_struct_member_type;
     }
 
-    for (s64 i = 0; i < struct_types.count; i++) {
-        auto st = struct_types[i];
-        if (st->structure.name == atom_Type_Info_Struct_Member) {
-            ctx->builtin_type_info_struct_member_type = st;
-            return st;
-        }
-    }
+    auto result = get_struct_type_by_name(ctx, atom_Type_Info_Struct_Member);
+    if (result) return result;
 
     assert_msg(false, "Builtin Type_Info_Struct type could not be found");
 }
