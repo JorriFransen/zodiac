@@ -1864,12 +1864,15 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
 
         case Type_Info_Kind::STRUCT: {
 
-            auto si = (Type_Info_Struct *)ti;
-
             auto ast_struct_info_type = get_type_info_struct_type(builder->zodiac_context);
             auto ast_struct_member_info_type = get_type_info_struct_member_type(builder->zodiac_context);
             auto type_info_struct_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, ast_struct_info_type));
             auto type_info_struct_member_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, ast_struct_member_info_type));
+
+            llvm::GlobalVariable *glob_var = new llvm::GlobalVariable(*builder->llvm_module, type_info_struct_type, true, llvm::GlobalValue::PrivateLinkage, nullptr, "type_info");
+            hash_table_add(&builder->type_infos, ti, static_cast<llvm::Constant *>(glob_var));
+
+            auto si = (Type_Info_Struct *)ti;
 
             auto name = llvm_builder_emit_string_literal(builder, si->name);
 
@@ -1908,17 +1911,22 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
             };
 
             result = llvm::ConstantStruct::get(type_info_struct_type, result_members);
+            glob_var->setInitializer(result);
+            result = glob_var;
             break;
         }
     }
 
     assert(result);
 
-    llvm::GlobalVariable *glob_var = new llvm::GlobalVariable(*builder->llvm_module, result->getType(), true, llvm::GlobalValue::PrivateLinkage, result, "type_info");
+    if (ti->kind != Type_Info_Kind::STRUCT) {
+        llvm::GlobalVariable *glob_var = new llvm::GlobalVariable(*builder->llvm_module, result->getType(), true, llvm::GlobalValue::PrivateLinkage, result, "type_info");
+        hash_table_add(&builder->type_infos, ti, static_cast<llvm::Constant *>(glob_var));
+        return glob_var;
+    }
 
-    hash_table_add(&builder->type_infos, ti, static_cast<llvm::Constant *>(glob_var));
+    return result;
 
-    return glob_var;
 }
 
 llvm::Constant *llvm_emit_type_info_base(LLVM_Builder *builder, Type_Info *ti)

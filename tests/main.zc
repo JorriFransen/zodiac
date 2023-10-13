@@ -42,7 +42,7 @@ main :: () {
     print_ti(#type_info(AABB));
     print_ti(#type_info(*Vec2));
 
-    // print_ti(#type_info(Node));
+    print_ti(#type_info(Node));
 
     return 0;
 }
