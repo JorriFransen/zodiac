@@ -1,5 +1,5 @@
 
-- Add member names to struct types? (we need some way to access them in type info)
+- #type/#typeof/#type_of
 
 - Implicit integer to boolean conversion in if statements
 
@@ -22,13 +22,11 @@
 
 - FFI with different return types
 
-- Lazy && and ||
-
 - Default values
     - Uninitialized
 
 - Assert
-- Slice bounds checking
+- Slice/Static array bounds checking
 
 - When emitting non constant compound expressions some of it's members/elements might be constant. Constant members should be emitted to a value first, which we can then use to insert the non const values into.
 
