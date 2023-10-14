@@ -95,6 +95,10 @@ main :: () {
     print_ti(#type_info([4][4]r32));
     print_ti(#type_info(*[4][4]r32));
 
+    print_ti(#type_info([]s64));
+    print_ti(#type_info([][]Vec2));
+    print_ti(#type_info(*[][]Vec2));
+
     return 0;
 }
 
@@ -180,6 +184,11 @@ print_ti :: (ti: *Type_Info) -> void {
             print_short_type(sai.element_type);
             print(", length: ", sai.length);
 
+        case Type_Info_Kind.Slice:
+            si := cast(*Type_Info_Slice, ti);
+            print("Slice: element_type: ");
+            print_short_type(si.element_type);
+
         default: print("!!! Unhandled type in 'print_ti'");
     }
 
@@ -215,6 +224,11 @@ print_short_type :: (ti: *Type_Info) -> void {
             sai := cast(*Type_Info_Static_Array, ti);
             print("[", sai.length, "]");
             print_short_type(sai.element_type);
+
+        case Type_Info_Kind.Slice:
+            si := cast(*Type_Info_Slice, ti);
+            print("[]");
+            print_short_type(si.element_type);
 
         default: print("!!! Unhandled type in 'print_short_type'");
     }

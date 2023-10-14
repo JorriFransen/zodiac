@@ -116,7 +116,16 @@ Type_Info *add_type_info(Zodiac_Context *ctx, Type *type)
             break;
         }
 
-        case Type_Kind::SLICE: assert(false); break;
+        case Type_Kind::SLICE: {
+
+            auto slice_info = alloc<Type_Info_Slice>(allocator);
+            result = &slice_info->base;
+
+            init_type_info_base(result, Type_Info_Kind::SLICE, type->bit_size);
+            slice_info->element_type = add_type_info(ctx, type->slice.element_type);
+            break;
+        }
+
         case Type_Kind::FUNCTION: assert(false); break;
     }
 

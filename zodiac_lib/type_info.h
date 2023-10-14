@@ -23,6 +23,7 @@ enum class Type_Info_Kind
     STRUCT       = 6,
     ENUM         = 7,
     STATIC_ARRAY = 8,
+    SLICE        = 9,
 };
 
 struct Type_Info
@@ -82,6 +83,13 @@ struct Type_Info_Static_Array
 
     Type_Info *element_type;
     s64 length;
+};
+
+struct Type_Info_Slice
+{
+    Type_Info base;
+
+    Type_Info *element_type;
 };
 
 ZAPI Type_Info *add_type_info(Zodiac_Context *ctx, Type *type);

@@ -129,6 +129,7 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
     out_context->builtin_type_info_enum_type = nullptr;
     out_context->builtin_type_info_enum_member_type = nullptr;
     out_context->builtin_type_info_static_array_type = nullptr;
+    out_context->builtin_type_info_slice_type = nullptr;
 
     dynamic_array_create(&dynamic_allocator, &out_context->type_infos);
 

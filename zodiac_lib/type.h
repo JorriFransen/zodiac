@@ -36,6 +36,7 @@ struct Zodiac_Context;
     ZODIAC_NAME_TYPE_DEF(Type_Info_Enum)          \
     ZODIAC_NAME_TYPE_DEF(Type_Info_Enum_Member)   \
     ZODIAC_NAME_TYPE_DEF(Type_Info_Static_Array)  \
+    ZODIAC_NAME_TYPE_DEF(Type_Info_Slice)         \
 
 // Builtin type atoms
 #define ZODIAC_NUMERIC_TYPE_DEF(type, size) ZAPI extern Atom atom_##type##size;
@@ -194,6 +195,7 @@ ZAPI Type *get_type_info_struct_member_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_enum_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_enum_member_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_static_array_type(Zodiac_Context *ctx);
+ZAPI Type *get_type_info_slice_type(Zodiac_Context *ctx);
 
 ZAPI Type *sym_decl_type(Symbol *sym);
 

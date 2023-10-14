@@ -1985,6 +1985,21 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
             result = llvm::ConstantStruct::get(type_info_static_array_type, result_members);
             break;
         }
+        case Type_Info_Kind::SLICE: {
+
+            auto ast_slice_info_type = get_type_info_slice_type(builder->zodiac_context);
+            auto type_info_slice_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, ast_slice_info_type));
+
+            auto si = (Type_Info_Slice *)ti;
+
+            llvm::Constant *result_members[2] = {
+                base,
+                llvm_emit_type_info(builder, si->element_type)
+            };
+
+            result = llvm::ConstantStruct::get(type_info_slice_type, result_members);
+            break;
+        }
     }
 
     assert(result);

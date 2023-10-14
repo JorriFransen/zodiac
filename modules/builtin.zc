@@ -21,6 +21,7 @@ Type_Info_Kind :: enum {
     Struct       :: 6,
     Enum         :: 7,
     Static_Array :: 8,
+    Slice        :: 9,
 }
 
 // This must always be the first member of any Type_Info_* structure
@@ -70,6 +71,12 @@ Type_Info_Static_Array :: struct {
 
     element_type: *Type_Info;
     length: s64;
+}
+
+Type_Info_Slice :: struct {
+    base: Type_Info;
+
+    element_type: *Type_Info;
 }
 
 _type_info_pointers : []*Type_Info;
