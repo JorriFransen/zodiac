@@ -79,6 +79,33 @@ Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytecode_F
     assert(interp);
     assert(functions.count);
 
+
+    // Setup the _type_info_table
+    if (interp->context->type_infos.count) {
+        auto type_info_pointer_type = get_pointer_type(get_type_info_type(interp->context), &interp->context->ast_allocator);
+
+        auto bb = interp->context->bytecode_builder;
+
+        Bytecode_Register arr_ptr_val = bytecode_pointer_literal(bb, type_info_pointer_type->pointer_to, interp->context->type_infos.data);
+
+        bool found = false;
+        for (s64 i = 0; i < bb->globals.count; i++) {
+            auto global = &bb->globals[i];
+
+            if (global->atom == "_type_info_pointers") {
+                Bytecode_Register members[2] = {
+                    arr_ptr_val,
+                    bytecode_integer_literal(bb, &builtin_type_s64, interp->context->type_infos.count)
+                };
+                global->initial_value = bytecode_aggregate_literal(bb, members, global->type);
+                found = true;
+                break;
+            }
+        }
+        assert(found);
+    }
+
+
     interp->functions = functions;
 
     for (s64 i = 0; i < foreign_functions.count; i++) {
