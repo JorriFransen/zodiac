@@ -143,6 +143,7 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Switch_Enum_Falltrough_Multi) \
     X(Recurse_Self) \
     X(Recurse_Indirect) \
+    X(Type_Info) \
 
 
 // Function declarations

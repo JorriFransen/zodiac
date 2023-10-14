@@ -2090,30 +2090,6 @@ Run_Wrapper_Result execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function
     ZTRACE("Executing run wrapper: '%s'", fn->name.data);
 #endif // NDEBUG
 
-
-    // Setup the _type_info_table
-    if (bc->context->type_infos.count) {
-        auto type_info_pointer_type = get_pointer_type(get_type_info_type(bc->context), &bc->context->ast_allocator);
-
-        Bytecode_Register arr_ptr_val = bytecode_pointer_literal(bc->builder, type_info_pointer_type->pointer_to, bc->context->type_infos.data);
-
-        bool found = false;
-        for (s64 i = 0; i < bc->builder->globals.count; i++) {
-            auto global = &bc->builder->globals[i];
-
-            if (global->atom == "_type_info_pointers") {
-                Bytecode_Register members[2] = {
-                    arr_ptr_val,
-                    bytecode_integer_literal(bc->builder, &builtin_type_s64, bc->context->type_infos.count)
-                };
-                global->initial_value = bytecode_aggregate_literal(bc->builder, members, global->type);
-                found = true;
-                break;
-            }
-        }
-        assert(found);
-    }
-
     auto run_prog = bytecode_get_program(bc->builder);
 
     Interpreter *run_interp = alloc<Interpreter>(&dynamic_allocator);
