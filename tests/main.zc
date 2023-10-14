@@ -86,9 +86,14 @@ main :: () {
     print_ti(#type_info(Node));
 
     print_ti(#type_info(Day));
+    print_ti(#type_info(*Day));
     print_ti(#type_info(Mode));
     print_ti(#type_info(Token_Kind));
     print_ti(#type_info(Token_Kind2));
+
+    print_ti(#type_info([2]s64));
+    print_ti(#type_info([4][4]r32));
+    print_ti(#type_info(*[4][4]r32));
 
     return 0;
 }
@@ -169,6 +174,12 @@ print_ti :: (ti: *Type_Info) -> void {
             }
             print(" }");
 
+        case Type_Info_Kind.Static_Array:
+            sai := cast(*Type_Info_Static_Array, ti);
+            print("Static array: element_type: ");
+            print_short_type(sai.element_type);
+            print(", length: ", sai.length);
+
         default: print("!!! Unhandled type in 'print_ti'");
     }
 
@@ -195,6 +206,15 @@ print_short_type :: (ti: *Type_Info) -> void {
         case Type_Info_Kind.Struct:
             si := cast(*Type_Info_Struct, ti);
             print(si.name);
+
+        case Type_Info_Kind.Enum:
+            ei := cast(*Type_Info_Enum, ti);
+            print(ei.name);
+
+        case Type_Info_Kind.Static_Array:
+            sai := cast(*Type_Info_Static_Array, ti);
+            print("[", sai.length, "]");
+            print_short_type(sai.element_type);
 
         default: print("!!! Unhandled type in 'print_short_type'");
     }

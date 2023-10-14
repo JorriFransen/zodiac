@@ -11,17 +11,18 @@ struct Zodiac_Context;
 
 enum class Type_Info_Kind
 {
-    INVALID = 0,
+    INVALID      = 0,
 
-    VOID    = 1,
-    INTEGER = 2,
-    REAL    = 3,
-    BOOL    = 4,
+    VOID         = 1,
+    INTEGER      = 2,
+    REAL         = 3,
+    BOOL         = 4,
 
-    POINTER = 5,
+    POINTER      = 5,
 
-    STRUCT  = 6,
-    ENUM    = 7,
+    STRUCT       = 6,
+    ENUM         = 7,
+    STATIC_ARRAY = 8,
 };
 
 struct Type_Info
@@ -73,6 +74,14 @@ struct Type_Info_Enum
 
     Type_Info_Enum_Member *members;
     s64 member_count;
+};
+
+struct Type_Info_Static_Array
+{
+    Type_Info base;
+
+    Type_Info *element_type;
+    s64 length;
 };
 
 ZAPI Type_Info *add_type_info(Zodiac_Context *ctx, Type *type);

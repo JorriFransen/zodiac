@@ -9,17 +9,18 @@ String :: struct {
 }
 
 Type_Info_Kind :: enum {
-    Invalid :: 0,
+    Invalid      :: 0,
 
-    Void    :: 1,
-    Integer :: 2,
-    Real    :: 3,
-    Bool    :: 4,
+    Void         :: 1,
+    Integer      :: 2,
+    Real         :: 3,
+    Bool         :: 4,
 
-    Pointer :: 5,
+    Pointer      :: 5,
 
-    Struct  :: 6,
-    Enum    :: 7,
+    Struct       :: 6,
+    Enum         :: 7,
+    Static_Array :: 8,
 }
 
 // This must always be the first member of any Type_Info_* structure
@@ -62,6 +63,13 @@ Type_Info_Enum :: struct {
     integer_type: *Type_Info;
 
     members: []Type_Info_Enum_Member;
+}
+
+Type_Info_Static_Array :: struct {
+    base: Type_Info;
+
+    element_type: *Type_Info;
+    length: s64;
 }
 
 _type_info_pointers : []*Type_Info;

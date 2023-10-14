@@ -104,7 +104,18 @@ Type_Info *add_type_info(Zodiac_Context *ctx, Type *type)
             break;
         }
 
-        case Type_Kind::STATIC_ARRAY: assert(false); break;
+        case Type_Kind::STATIC_ARRAY: {
+
+            auto static_array_info = alloc<Type_Info_Static_Array>(allocator);
+            result = &static_array_info->base;
+
+            init_type_info_base(result, Type_Info_Kind::STATIC_ARRAY, type->bit_size);
+            static_array_info->element_type = add_type_info(ctx, type->static_array.element_type);
+            static_array_info->length = type->static_array.count;
+
+            break;
+        }
+
         case Type_Kind::SLICE: assert(false); break;
         case Type_Kind::FUNCTION: assert(false); break;
     }

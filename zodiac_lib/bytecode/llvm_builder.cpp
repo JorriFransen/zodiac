@@ -1969,6 +1969,22 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
             result = llvm::ConstantStruct::get(type_info_enum_type, result_members);
             break;
         }
+        case Type_Info_Kind::STATIC_ARRAY: {
+
+            auto ast_sa_type = get_type_info_static_array_type(builder->zodiac_context);
+            auto type_info_static_array_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, ast_sa_type));
+
+            auto sai = (Type_Info_Static_Array *)ti;
+
+            llvm::Constant *result_members[3] = {
+                base,
+                llvm_emit_type_info(builder, sai->element_type),
+                llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { .s64 = sai->length })
+            };
+
+            result = llvm::ConstantStruct::get(type_info_static_array_type, result_members);
+            break;
+        }
     }
 
     assert(result);

@@ -491,7 +491,19 @@ Type *get_type_info_enum_member_type(Zodiac_Context *ctx)
     if (result) return result;
 
     assert_msg(false, "Builtin Type_Info_Enum type could not be found");
+}
 
+Type *get_type_info_static_array_type(Zodiac_Context *ctx)
+{
+    if (ctx->builtin_type_info_static_array_type) {
+        return ctx->builtin_type_info_static_array_type;
+    }
+
+    auto result = get_struct_type_by_name(ctx, atom_Type_Info_Static_Array);
+    ctx->builtin_type_info_static_array_type = result;
+    if (result) return result;
+
+    assert_msg(false, "Builtin Type_Info_Static_Array type could not be found");
 }
 
 Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Allocator *allocator, bool vararg/*=false*/)
