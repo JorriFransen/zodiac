@@ -542,6 +542,14 @@ void ast_slice_ts_create(AST_Type_Spec *element_ts, AST_Type_Spec *out_ts)
     out_ts->slice.element_ts = element_ts;
 }
 
+void ast_function_ts_create(Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts, AST_Type_Spec *out_ts)
+{
+    ast_type_spec_create(AST_Type_Spec_Kind::FUNCTION, out_ts);
+
+    out_ts->function.parameters = params;
+    out_ts->function.return_ts = return_ts;
+}
+
 void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts)
 {
     debug_assert(out_ts);
@@ -1048,6 +1056,13 @@ AST_Type_Spec *ast_slice_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_S
 {
     auto ts = ast_type_spec_new(ctx, sr);
     ast_slice_ts_create(element_ts, ts);
+    return ts;
+}
+
+AST_Type_Spec *ast_function_ts_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts)
+{
+    auto ts = ast_type_spec_new(ctx, sr);
+    ast_function_ts_create(params, return_ts, ts);
     return ts;
 }
 
@@ -1639,6 +1654,18 @@ file_local void ast__print_type_spec_internal(String_Builder *sb, AST_Type_Spec 
         case AST_Type_Spec_Kind::SLICE: {
             string_builder_append(sb, "[]");
             ast__print_type_spec_internal(sb, ts->static_array.element_ts, indent);
+            break;
+        }
+
+        case AST_Type_Spec_Kind::FUNCTION: {
+            string_builder_append(sb, "(");
+            for (s64 i = 0; i < ts->function.parameters.count; i++) {
+                if (i > 0) string_builder_append(sb, ", ");
+                ast__print_type_spec_internal(sb, ts->function.parameters[i], 0);
+            }
+            string_builder_append(sb, ") -> ");
+            ast__print_type_spec_internal(sb, ts->function.return_ts, 0);
+
             break;
         }
     }

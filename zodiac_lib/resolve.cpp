@@ -1062,6 +1062,14 @@ void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dyna
             flatten_type_spec(resolver, ts->slice.element_ts, scope, dest);
             break;
         }
+
+        case AST_Type_Spec_Kind::FUNCTION: {
+            for (s64 i = 0; i < ts->function.parameters.count; i++) {
+                flatten_type_spec(resolver, ts->function.parameters[i], scope, dest);
+            }
+            flatten_type_spec(resolver, ts->function.return_ts, scope, dest);
+            break;
+        }
     }
 
     Flat_Node flat_ts = to_flat_node(ts, scope, via_pointer);
@@ -1612,10 +1620,12 @@ bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
 
         case AST_Type_Spec_Kind::POINTER:
         case AST_Type_Spec_Kind::STATIC_ARRAY:
-        case AST_Type_Spec_Kind::SLICE: {
+        case AST_Type_Spec_Kind::SLICE:
+        case AST_Type_Spec_Kind::FUNCTION: {
             // Leaf
             break;
         }
+
     }
 
     return result;
@@ -3246,7 +3256,24 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
             assert(elem_ts->resolved_type);
             auto elem_type = elem_ts->resolved_type;
 
-            ts->resolved_type = get_slice_type(ctx,elem_type, &ctx->ast_allocator);
+            ts->resolved_type = get_slice_type(ctx, elem_type, &ctx->ast_allocator);
+            return true;
+        }
+
+        case AST_Type_Spec_Kind::FUNCTION: {
+
+            auto return_type = ts->function.return_ts->resolved_type;
+
+            auto param_types = temp_array_create<Type *>(temp_allocator_allocator());
+            defer { temp_array_destroy(&param_types); };
+
+            for (s64 i = 0; i < ts->function.parameters.count; i++) {
+                dynamic_array_append(&param_types, ts->function.parameters[i]->resolved_type);
+            }
+
+            ts->resolved_type = get_function_type(return_type, Array_Ref(param_types), &ctx->ast_allocator);
+
+
             return true;
         }
     }

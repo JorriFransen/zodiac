@@ -99,6 +99,9 @@ main :: () {
     print_ti(#type_info([][]Vec2));
     print_ti(#type_info(*[][]Vec2));
 
+    print_ti(#type_info( () -> void ));
+    print_ti(#type_info( (r64, r64) -> Vec2 ));
+
     return 0;
 }
 

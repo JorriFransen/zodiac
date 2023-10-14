@@ -955,14 +955,36 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
 
             AST_Type_Spec *base_ts = parse_type_spec(parser);
 
-            assert(base_ts);
-
             Source_Range range = { t.range.start, base_ts->sr.end };
             if (length_expr) {
                 return ast_static_array_ts_new(parser->context, range, length_expr, base_ts);
             } else {
                 return ast_slice_ts_new(parser->context, range, base_ts);
             }
+        }
+
+        case '(': {
+            next_token(parser);
+
+            auto params = temp_array_create<AST_Type_Spec *>(temp_allocator_allocator());
+
+            while (!match_token(parser, ')')) {
+
+                if (params.array.count) {
+                    expect_token(parser, ',');
+                }
+                AST_Type_Spec *param_ts = parse_type_spec(parser);
+                dynamic_array_append(&params, param_ts);
+            }
+
+            expect_token(parser, TOK_RIGHT_ARROW);
+
+            AST_Type_Spec *return_ts = parse_type_spec(parser);
+
+            auto pts = temp_array_finalize(&parser->context->ast_allocator, &params);
+
+            return ast_function_ts_new(parser->context, {t.range.start, return_ts->sr.end}, pts, return_ts);
+            break;
         }
 
         case TOK_NAME: {

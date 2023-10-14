@@ -14,6 +14,8 @@ enum Token_Kind
     TOK_INVALID = 0,
 
     // Ascii range (mostly here so the character literals can be used in switch statements)
+    TOK_LPAREN = '(', // 40
+    TOK_RPAREN = ')', // 41
     TOK_STAR = '*',   // 42
     TOK_DOT = '.',    // 46
     TOK_LBRACK = '[', // 91
