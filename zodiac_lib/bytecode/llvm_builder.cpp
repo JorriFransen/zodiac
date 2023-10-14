@@ -1878,8 +1878,9 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
 
             auto members_array_type = llvm::ArrayType::get(type_info_struct_member_type, si->member_count);
 
-            Dynamic_Array<llvm::Constant *> members;
-            dynamic_array_create(builder->allocator, &members, si->member_count);
+            auto members = temp_array_create<llvm::Constant *>(temp_allocator_allocator(), si->member_count);
+            defer { temp_array_destroy(&members); };
+            members.array.count = si->member_count;
 
             for (s64 i = 0; i < si->member_count; i++) {
                 auto member_name = llvm_builder_emit_string_literal(builder, String_Ref(si->members[i].name));
@@ -1887,12 +1888,11 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
                     member_name,
                     llvm_emit_type_info(builder, si->members[i].type),
                 };
-                auto member_val = llvm::ConstantStruct::get(type_info_struct_member_type, member_info_members);
 
-                dynamic_array_append(&members, member_val);
+                members[i] = llvm::ConstantStruct::get(type_info_struct_member_type, member_info_members);
             }
 
-            auto members_array = llvm::ConstantArray::get(members_array_type, { members.data, (size_t)members.count } );
+            auto members_array = llvm::ConstantArray::get(members_array_type, { members.array.data, (size_t)si->member_count } );
             members_array = static_cast<llvm::Constant *>(new llvm::GlobalVariable(*builder->llvm_module, members_array->getType(), true, llvm::GlobalValue::PrivateLinkage, members_array, "struct_member_type_infos"));
 
             auto members_slice_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, ast_struct_info_type->structure.member_types[2]));
@@ -1933,8 +1933,9 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
 
             auto members_array_type = llvm::ArrayType::get(type_info_enum_member_type, ei->member_count);
 
-            Dynamic_Array<llvm::Constant *> members;
-            dynamic_array_create(builder->allocator, &members, ei->member_count);
+            auto members = temp_array_create<llvm::Constant *>(temp_allocator_allocator(), ei->member_count);
+            defer { temp_array_destroy(&members); };
+            members.array.count = ei->member_count;
 
             for (s64 i = 0; i < ei->member_count; i++) {
                 auto member_name = llvm_builder_emit_string_literal(builder, String_Ref(ei->members[i].name));
@@ -1944,12 +1945,10 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
                     llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { .s64 = ei->members[i].value })
                 };
 
-                auto member_val = llvm::ConstantStruct::get(type_info_enum_member_type, member_info_members);
-
-                dynamic_array_append(&members, member_val);
+                members[i] = llvm::ConstantStruct::get(type_info_enum_member_type, member_info_members);
             }
 
-            auto members_array = llvm::ConstantArray::get(members_array_type, { members.data, (size_t)members.count });
+            auto members_array = llvm::ConstantArray::get(members_array_type, { members.array.data, (size_t)ei->member_count });
             members_array = static_cast<llvm::Constant *>(new llvm::GlobalVariable(*builder->llvm_module, members_array->getType(), true, llvm::GlobalValue::PrivateLinkage, members_array, "enum_member_type_infos"));
 
             llvm::Constant *slice_members[2] = {
