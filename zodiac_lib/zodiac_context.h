@@ -106,6 +106,8 @@ struct Zodiac_Context
     Type *builtin_type_info_pointer_type;
     Type *builtin_type_info_struct_type;
     Type *builtin_type_info_struct_member_type;
+    Type *builtin_type_info_enum_type;
+    Type *builtin_type_info_enum_member_type;
 
     Dynamic_Array<Type_Info *> type_infos;
 };

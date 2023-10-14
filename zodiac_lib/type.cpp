@@ -379,6 +379,7 @@ Type *get_string_type(Zodiac_Context *ctx)
     }
 
     auto result = get_struct_type_by_name(ctx, atom_String);
+    ctx->builtin_string_type = result;
     if (result) return result;
 
     assert_msg(false, "Builtin String type could not be found");
@@ -408,6 +409,7 @@ Type *get_type_info_type(Zodiac_Context *ctx)
     }
 
     auto result = get_struct_type_by_name(ctx, atom_Type_Info);
+    ctx->builtin_type_info_type = result;
     if (result) return result;
 
     assert_msg(false, "Builtin Type_Info type could not be found");
@@ -420,6 +422,7 @@ Type *get_type_info_int_type(Zodiac_Context *ctx)
     }
 
     auto result = get_struct_type_by_name(ctx, atom_Type_Info_Int);
+    ctx->builtin_type_info_int_type = result;
     if (result) return result;
 
     assert_msg(false, "Builtin Type_Info_Int type could not be found");
@@ -432,6 +435,7 @@ Type *get_type_info_pointer_type(Zodiac_Context *ctx)
     }
 
     auto result = get_struct_type_by_name(ctx, atom_Type_Info_Pointer);
+    ctx->builtin_type_info_pointer_type = result;
     if (result) return result;
 
     assert_msg(false, "Builtin Type_Info_Pointer type could not be found");
@@ -444,6 +448,7 @@ Type *get_type_info_struct_type(Zodiac_Context *ctx)
     }
 
     auto result = get_struct_type_by_name(ctx, atom_Type_Info_Struct);
+    ctx->builtin_type_info_struct_type = result;
     if (result) return result;
 
     assert_msg(false, "Builtin Type_Info_Struct type could not be found");
@@ -456,9 +461,37 @@ Type *get_type_info_struct_member_type(Zodiac_Context *ctx)
     }
 
     auto result = get_struct_type_by_name(ctx, atom_Type_Info_Struct_Member);
+    ctx->builtin_type_info_struct_member_type = result;
     if (result) return result;
 
     assert_msg(false, "Builtin Type_Info_Struct type could not be found");
+}
+
+Type *get_type_info_enum_type(Zodiac_Context *ctx)
+{
+    if (ctx->builtin_type_info_enum_type) {
+        return ctx->builtin_type_info_enum_type;
+    }
+
+    auto result = get_struct_type_by_name(ctx, atom_Type_Info_Enum);
+    ctx->builtin_type_info_enum_type = result;
+    if (result) return result;
+
+    assert_msg(false, "Builtin Type_Info_Enum type could not be found");
+}
+
+Type *get_type_info_enum_member_type(Zodiac_Context *ctx)
+{
+    if (ctx->builtin_type_info_enum_member_type) {
+        return ctx->builtin_type_info_enum_member_type;
+    }
+
+    auto result = get_struct_type_by_name(ctx, atom_Type_Info_Enum_Member);
+    ctx->builtin_type_info_enum_member_type = result;
+    if (result) return result;
+
+    assert_msg(false, "Builtin Type_Info_Enum type could not be found");
+
 }
 
 Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Allocator *allocator, bool vararg/*=false*/)

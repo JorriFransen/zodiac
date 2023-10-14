@@ -21,6 +21,7 @@ enum class Type_Info_Kind
     POINTER = 5,
 
     STRUCT  = 6,
+    ENUM    = 7,
 };
 
 struct Type_Info
@@ -54,6 +55,23 @@ struct Type_Info_Struct
     String name;
 
     Type_Info_Struct_Member *members;
+    s64 member_count;
+};
+
+struct Type_Info_Enum_Member
+{
+    String name;
+    s64 value;
+};
+
+struct Type_Info_Enum
+{
+    Type_Info base;
+
+    String name;
+    Type_Info *integer_type;
+
+    Type_Info_Enum_Member *members;
     s64 member_count;
 };
 

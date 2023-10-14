@@ -84,7 +84,26 @@ Type_Info *add_type_info(Zodiac_Context *ctx, Type *type)
             break;
         }
 
-        case Type_Kind::ENUM: assert(false); break;
+        case Type_Kind::ENUM: {
+
+            auto enum_info = alloc<Type_Info_Enum>(allocator);
+            result = &enum_info->base;
+
+            auto members = alloc_array<Type_Info_Enum_Member>(allocator, type->enumeration.members.count);
+
+            for (s64 i = 0; i < type->enumeration.members.count; i++) {
+                members[i].name = string_copy(allocator, type->enumeration.members[i].name);
+                members[i].value  = type->enumeration.members[i].value;
+            }
+
+            init_type_info_base(result, Type_Info_Kind::ENUM, type->bit_size);
+            enum_info->name = string_copy(&ctx->bytecode_allocator, type->enumeration.name);
+            enum_info->integer_type = add_type_info(ctx, type->enumeration.integer_type);
+            enum_info->members = members;
+            enum_info->member_count = type->enumeration.members.count;
+            break;
+        }
+
         case Type_Kind::STATIC_ARRAY: assert(false); break;
         case Type_Kind::SLICE: assert(false); break;
         case Type_Kind::FUNCTION: assert(false); break;

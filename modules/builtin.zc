@@ -19,6 +19,7 @@ Type_Info_Kind :: enum {
     Pointer :: 5,
 
     Struct  :: 6,
+    Enum    :: 7,
 }
 
 // This must always be the first member of any Type_Info_* structure
@@ -47,6 +48,20 @@ Type_Info_Struct :: struct {
 
     name: String;
     members: []Type_Info_Struct_Member;
+}
+
+Type_Info_Enum_Member :: struct {
+    name: String;
+    value: s64;
+}
+
+Type_Info_Enum :: struct {
+    base: Type_Info;
+
+    name: String;
+    integer_type: *Type_Info;
+
+    members: []Type_Info_Enum_Member;
 }
 
 _type_info_pointers : []*Type_Info;

@@ -9,6 +9,47 @@ Node :: struct {
     next: *Node;
 }
 
+Day :: enum {
+    MONDAY,
+    TUESDAY,
+    WEDNESDAY,
+    THURSDAY,
+    FRIDAY,
+    SATURDAY,
+    SUNDAY,
+}
+
+Mode :: enum {
+    INVALID;
+    READ  :: 11,
+    WRITE :: 22;
+    DRY_RUN;
+
+    SECRET :: 42;
+    UNIMPORTANT;
+}
+
+Token_Kind :: enum {
+
+    SECOND_NON_ASCII :: NAME + 1;
+    FIRST_NON_ASCII :: 256;
+    NAME :: FIRST_NON_ASCII;
+    INT;
+
+    PLUS :: Token_Kind2.PLUS;
+    STAR;
+}
+
+Token_Kind2 :: enum {
+
+    STAR :: 42,
+    PLUS :: 43,
+
+    FIRST_NON_ASCII :: NAME;
+    NAME :: 256;
+    INT;
+}
+
 main :: () {
     println("Type info test!");
 
@@ -43,6 +84,11 @@ main :: () {
     print_ti(#type_info(*Vec2));
 
     print_ti(#type_info(Node));
+
+    print_ti(#type_info(Day));
+    print_ti(#type_info(Mode));
+    print_ti(#type_info(Token_Kind));
+    print_ti(#type_info(Token_Kind2));
 
     return 0;
 }
@@ -105,6 +151,21 @@ print_ti :: (ti: *Type_Info) -> void {
                 if i > 0 print(", ");
                 if member.name.length != 0 print(member.name, ": ");
                 print_short_type(member.type);
+            }
+            print(" }");
+
+
+        case Type_Info_Kind.Enum:
+            ei := cast(*Type_Info_Enum, ti);
+            print("Enum: ", ei.name);
+            print(" base: ");
+            print_short_type(ei.integer_type);
+            print(", members { ");
+
+            for i := 0; i < ei.members.length; i += 1 {
+                member := ei.members[i];
+                if i > 0 print(", ");
+                print(member.name, " = ", member.value);
             }
             print(" }");
 
