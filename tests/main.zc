@@ -99,6 +99,8 @@ main :: () {
     print_ti(#type_info([][]Vec2));
     print_ti(#type_info(*[][]Vec2));
 
+    print_ti(#type_info( *() -> void ));
+    print_ti(#type_info( *(r64, r64) -> Vec2 ));
     print_ti(#type_info( () -> void ));
     print_ti(#type_info( (r64, r64) -> Vec2 ));
 
@@ -164,7 +166,7 @@ print_ti :: (ti: *Type_Info) -> void {
                 if member.name.length != 0 print(member.name, ": ");
                 print_short_type(member.type);
             }
-            print(" }");
+            print(" }, ", ti.size, " bytes");
 
 
         case Type_Info_Kind.Enum:
@@ -179,18 +181,31 @@ print_ti :: (ti: *Type_Info) -> void {
                 if i > 0 print(", ");
                 print(member.name, " = ", member.value);
             }
-            print(" }");
+            print(" }, ", ti.size, " bytes");
 
         case Type_Info_Kind.Static_Array:
             sai := cast(*Type_Info_Static_Array, ti);
             print("Static array: element_type: ");
             print_short_type(sai.element_type);
             print(", length: ", sai.length);
+            print(", ", ti.size, " bytes");
 
         case Type_Info_Kind.Slice:
             si := cast(*Type_Info_Slice, ti);
             print("Slice: element_type: ");
             print_short_type(si.element_type);
+            print(", ", ti.size, " bytes");
+
+        case Type_Info_Kind.Function:
+            fi := cast(*Type_Info_Function, ti);
+            print("Function: params: (");
+            for i := 0; i < fi.parameters.length; i += 1 {
+                if i > 0 print(", ");
+                print_short_type(fi.parameters[i]);
+            }
+            print(" ) return_type: ");
+            print_short_type(fi.return_type);
+            print(", ", ti.size, " bytes");
 
         default: print("!!! Unhandled type in 'print_ti'");
     }
@@ -232,6 +247,16 @@ print_short_type :: (ti: *Type_Info) -> void {
             si := cast(*Type_Info_Slice, ti);
             print("[]");
             print_short_type(si.element_type);
+
+        case Type_Info_Kind.Function:
+            fi := cast(*Type_Info_Function, ti);
+            print("(");
+            for i := 0; i < fi.parameters.length; i += 1 {
+                if i > 0 print(", ");
+                print_short_type(fi.parameters[i]);
+            }
+            print(") -> ");
+            print_short_type(fi.return_type);
 
         default: print("!!! Unhandled type in 'print_short_type'");
     }

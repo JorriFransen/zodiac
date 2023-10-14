@@ -110,6 +110,7 @@ struct Zodiac_Context
     Type *builtin_type_info_enum_member_type;
     Type *builtin_type_info_static_array_type;
     Type *builtin_type_info_slice_type;
+    Type *builtin_type_info_function_type;
 
     Dynamic_Array<Type_Info *> type_infos;
 };

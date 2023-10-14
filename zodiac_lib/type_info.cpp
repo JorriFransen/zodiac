@@ -117,7 +117,6 @@ Type_Info *add_type_info(Zodiac_Context *ctx, Type *type)
         }
 
         case Type_Kind::SLICE: {
-
             auto slice_info = alloc<Type_Info_Slice>(allocator);
             result = &slice_info->base;
 
@@ -126,7 +125,27 @@ Type_Info *add_type_info(Zodiac_Context *ctx, Type *type)
             break;
         }
 
-        case Type_Kind::FUNCTION: assert(false); break;
+        case Type_Kind::FUNCTION: {
+            auto func_info = alloc<Type_Info_Function>(allocator);
+            result = &func_info->base;
+
+            init_type_info_base(result, Type_Info_Kind::FUNCTION, type->bit_size);
+
+            auto param_count = type->function.parameter_types.count;
+
+            Type_Info **params = nullptr;
+            if (param_count) {
+                params = alloc_array<Type_Info *>(allocator, param_count);
+
+                for (s64 i = 0; i < param_count; i++) {
+                    params[i] = add_type_info(ctx, type->function.parameter_types[i]);
+                }
+            }
+
+            func_info->param_types = params;
+            func_info->param_count = param_count;
+            func_info->return_type = add_type_info(ctx, type->function.return_type);
+        }
     }
 
     assert(result);

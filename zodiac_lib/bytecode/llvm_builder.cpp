@@ -2000,6 +2000,53 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
             result = llvm::ConstantStruct::get(type_info_slice_type, result_members);
             break;
         }
+
+        case Type_Info_Kind::FUNCTION: {
+
+            auto ast_ti_type = get_type_info_type(builder->zodiac_context);
+            auto type_info_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, ast_ti_type));
+            auto ast_func_ti_type = get_type_info_function_type(builder->zodiac_context);
+            auto type_info_func_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, ast_func_ti_type));
+
+            auto params_slice_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, ast_func_ti_type->structure.member_types[1]));
+
+            auto fi = (Type_Info_Function *)ti;
+
+            llvm::Constant *members_array = nullptr;
+            if (fi->param_count) {
+                auto members_array_type = llvm::ArrayType::get(type_info_type->getPointerTo(), fi->param_count);
+
+                auto members = temp_array_create<llvm::Constant *>(temp_allocator_allocator(), fi->param_count);
+                defer { temp_array_destroy(&members); };
+
+                members.array.count = fi->param_count;
+
+                for (s64 i = 0; i < fi->param_count; i++) {
+                    members[i] = llvm_emit_type_info(builder, fi->param_types[i]);
+                }
+
+                members_array = llvm::ConstantArray::get(members_array_type, { members.array.data, (size_t)fi->param_count });
+                members_array = new llvm::GlobalVariable(*builder->llvm_module, members_array->getType(), true, llvm::GlobalValue::PrivateLinkage, members_array, "function_parameter_type_infos");
+            } else {
+                members_array = llvm::Constant::getNullValue(type_info_type->getPointerTo()->getPointerTo());
+            }
+
+            llvm::Constant *params_slice_members[2] = {
+                members_array,
+                llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { .s64 = fi->param_count })
+            };
+
+            auto parameters_slice = llvm::ConstantStruct::get(params_slice_type, params_slice_members);
+
+            llvm::Constant *result_members[3] = {
+                base,
+                parameters_slice,
+                llvm_emit_type_info(builder, fi->return_type),
+            };
+
+            result = llvm::ConstantStruct::get(type_info_func_type, result_members);
+            break;
+        }
     }
 
     assert(result);
