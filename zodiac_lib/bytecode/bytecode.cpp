@@ -1448,7 +1448,7 @@ void bytecode_emit_switch(Bytecode_Builder *builder, Bytecode_Register value, Dy
     auto fn = &builder->functions[builder->insert_fn_index];
 
     Bytecode_Switch bc_switch = { cases, post_or_default_block };
-    Bytecode_Switch_Handle handle = { fn->phi_args.count };
+    Bytecode_Switch_Handle handle = { fn->switches.count };
     dynamic_array_append(&fn->switches, bc_switch);
 
     Bytecode_Register cases_reg = bytecode_register_create(builder, Bytecode_Register_Kind::SWITCH_CASES, nullptr);
