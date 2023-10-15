@@ -428,7 +428,11 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
                     case Zodiac::Type_Kind::INVALID: assert(false); break;
                     case Zodiac::Type_Kind::VOID: assert(false); break;
                     case Zodiac::Type_Kind::UNSIZED_INTEGER: assert(false); break;
-                    case Zodiac::Type_Kind::FUNCTION: assert(false); break;
+
+                    case Zodiac::Type_Kind::FUNCTION: {
+                        type_to_string(type, sb);
+                        break;
+                    }
 
                     case Type_Kind::ENUM: {
                         type = type->enumeration.integer_type;

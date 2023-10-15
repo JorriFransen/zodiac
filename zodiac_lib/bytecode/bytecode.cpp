@@ -437,7 +437,9 @@ Bytecode_Register bytecode_zero_value(Bytecode_Builder *builder, Type *type)
             return bytecode_zero_value(builder, type->slice.struct_type);
         }
 
-        case Type_Kind::FUNCTION: assert(false); break;
+        case Type_Kind::FUNCTION: {
+            return bytecode_pointer_literal(builder, type, nullptr);
+        }
     }
 }
 
@@ -467,7 +469,7 @@ Bytecode_Register bytecode_integer_literal(Bytecode_Builder *builder, Type *type
 Bytecode_Register bytecode_pointer_literal(Bytecode_Builder *builder, Type *type, void *ptr)
 {
     debug_assert(builder);
-    assert(type->kind == Type_Kind::POINTER);
+    assert(type->kind == Type_Kind::POINTER || type->kind == Type_Kind::FUNCTION);
 
     auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, type, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT);
     result.value.pointer = (u8*)ptr;

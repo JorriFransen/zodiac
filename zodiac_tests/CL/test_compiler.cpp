@@ -4718,6 +4718,364 @@ Function: params: (r64, r64 ) return_type: Vec2, 8 bytes)OUT_STR" };
 
     return MUNIT_OK;
 }
+
+MunitResult Type_Of(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        Vec2 :: struct { x, y: r64; }
+        AABB :: struct { pos, size: Vec2; }
+
+        Node :: struct {
+            value: s64;
+            next: *Node;
+        }
+
+        Mode :: enum {
+            INVALID;
+            READ  :: 11,
+            WRITE :: 22;
+            DRY_RUN;
+
+            SECRET :: 42;
+            UNIMPORTANT;
+        }
+
+        Token_Kind :: enum {
+
+            SECOND_NON_ASCII :: NAME + 1;
+            FIRST_NON_ASCII :: 256;
+            NAME :: FIRST_NON_ASCII;
+            INT;
+
+            PLUS :: Token_Kind2.PLUS;
+            STAR;
+        }
+
+        Token_Kind2 :: enum {
+
+            STAR :: 42,
+            PLUS :: 43,
+
+            FIRST_NON_ASCII :: NAME;
+            NAME :: 256;
+            INT;
+        }
+
+        main :: () {
+            println("Type info test!");
+
+            s_64 : s64;
+            u_64 : u64;
+            s_32 : s32;
+            u_32 : u32;
+            s_16 : s16;
+            u_16 : u16;
+            s_8 : s8;
+            u_8 : u8;
+
+            print_ti(#type_info(#type_of(s_64)));
+            print_ti(#type_info(#type_of(u_64)));
+            print_ti(#type_info(#type_of(s_32)));
+            print_ti(#type_info(#type_of(u_32)));
+            print_ti(#type_info(#type_of(s_16)));
+            print_ti(#type_info(#type_of(u_16)));
+            print_ti(#type_info(#type_of(s_8)));
+            print_ti(#type_info(#type_of(u_8)));
+
+            println(#type_info(#type_of(s_64)) == #type_info(s64));
+            println(#type_info(#type_of(u_64)) == #type_info(u64));
+            println(#type_info(#type_of(s_32)) == #type_info(s32));
+            println(#type_info(#type_of(u_32)) == #type_info(u32));
+            println(#type_info(#type_of(s_16)) == #type_info(s16));
+            println(#type_info(#type_of(u_16)) == #type_info(u16));
+            println(#type_info(#type_of(s_8)) == #type_info(s8));
+            println(#type_info(#type_of(u_8)) == #type_info(u8));
+
+            r_64 : r64;
+            r_32 : r32;
+
+            print_ti(#type_info(#type_of(r_64)));
+            print_ti(#type_info(#type_of(r_32)));
+
+            println(#type_info(#type_of(r_64)) == #type_info(r64));
+            println(#type_info(#type_of(r_32)) == #type_info(r32));
+
+            b : bool;
+
+            print_ti(#type_info(bool));
+
+            pointers();
+
+            str : String;
+            vec : Vec2;
+            rect : AABB;
+            node : Node;
+
+            print_ti(#type_info(#type_of(str)));
+            print_ti(#type_info(#type_of(vec)));
+            print_ti(#type_info(#type_of(rect)));
+            print_ti(#type_info(#type_of(node)));
+
+            println(#type_info(#type_of(str)) == #type_info(String));
+            println(#type_info(#type_of(vec)) == #type_info(Vec2));
+            println(#type_info(#type_of(rect)) == #type_info(AABB));
+            println(#type_info(#type_of(node)) == #type_info(Node));
+
+            day: Day;
+            mode: Mode;
+            tok1: Token_Kind;
+            tok2: Token_Kind2;
+
+            print_ti(#type_info(#type_of(day)));
+            print_ti(#type_info(#type_of(mode)));
+            print_ti(#type_info(#type_of(tok1)));
+            print_ti(#type_info(#type_of(tok2)));
+
+            println(#type_info(#type_of(day)) == #type_info(Day));
+            println(#type_info(#type_of(mode)) == #type_info(Mode));
+            println(#type_info(#type_of(tok1)) == #type_info(Token_Kind));
+            println(#type_info(#type_of(tok2)) == #type_info(Token_Kind2));
+
+            a1 : [2]s64;
+            a2 : [4][4]r32;
+
+            print_ti(#type_info(#type_of(a1)));
+            print_ti(#type_info(#type_of(a2)));
+
+            println(#type_info(#type_of(a1 )) == #type_info([2]s64));
+            println(#type_info(#type_of(a2 )) == #type_info([4][4]r32));
+
+            s1 : []s64;
+            s2 : [][]s64;
+
+            print_ti(#type_info(#type_of(s1)));
+            print_ti(#type_info(#type_of(s2)));
+
+            println(#type_info(#type_of(s1)) == #type_info([]s64));
+            println(#type_info(#type_of(s2)) == #type_info([][]s64));
+
+            f1 : () -> void;
+            f2 : (r64, r64) -> Vec2;
+
+            print_ti(#type_info(#type_of(f1)));
+            print_ti(#type_info(#type_of(f2)));
+
+            println(#type_info(#type_of(f1)) == #type_info( ()-> void));
+            println(#type_info(#type_of(f2)) == #type_info( (r64, r64) -> Vec2));
+
+            return 0;
+        }
+
+        pointers :: () {
+            vptr : *void;
+            vecptr : *Vec2;
+
+            print_ti(#type_info(#type_of(vptr)));
+            print_ti(#type_info(#type_of(vecptr)));
+
+            println(#type_info(#type_of(vptr)) == #type_info(*void));
+            println(#type_info(#type_of(vecptr)) == #type_info(*Vec2));
+
+        }
+
+        print_ti :: (ti: *Type_Info) -> void {
+
+            switch (ti.kind) {
+
+                case Type_Info_Kind.Void:
+                    print("void, ", ti.size, " bytes");
+
+                case Type_Info_Kind.Integer:
+                    ii := cast(*Type_Info_Int, ti);
+
+                    print("Integer, ", ti.size, " bytes, ");
+                    if ii.sign print("signed");
+                    else print("unsigned");
+
+
+                case Type_Info_Kind.Real:
+                    print("Real, ", ti.size, " bytes");
+
+                case Type_Info_Kind.Bool:
+                    print("bool, ", ti.size, " bytes");
+
+                case Type_Info_Kind.Pointer:
+                    pi := cast(*Type_Info_Pointer, ti);
+
+                    print("Pointer: (to: ");
+                    print_short_type(pi.pointer_to);
+                    print("), ", ti.size, " bytes");
+
+
+                case Type_Info_Kind.Struct:
+                    si := cast(*Type_Info_Struct, ti);
+                    print("Struct: ", si.name, ", members: { ");
+
+                    for i := 0; i < si.members.length; i += 1 {
+                        member := si.members[i];
+                        if i > 0 print(", ");
+                        if member.name.length != 0 print(member.name, ": ");
+                        print_short_type(member.type);
+                    }
+                    print(" }, ", ti.size, " bytes");
+
+
+                case Type_Info_Kind.Enum:
+                    ei := cast(*Type_Info_Enum, ti);
+                    print("Enum: ", ei.name);
+                    print(" base: ");
+                    print_short_type(ei.integer_type);
+                    print(", members { ");
+
+                    for i := 0; i < ei.members.length; i += 1 {
+                        member := ei.members[i];
+                        if i > 0 print(", ");
+                        print(member.name, " = ", member.value);
+                    }
+                    print(" }, ", ti.size, " bytes");
+
+                case Type_Info_Kind.Static_Array:
+                    sai := cast(*Type_Info_Static_Array, ti);
+                    print("Static array: element_type: ");
+                    print_short_type(sai.element_type);
+                    print(", length: ", sai.length);
+                    print(", ", ti.size, " bytes");
+
+                case Type_Info_Kind.Slice:
+                    si := cast(*Type_Info_Slice, ti);
+                    print("Slice: element_type: ");
+                    print_short_type(si.element_type);
+                    print(", ", ti.size, " bytes");
+
+                case Type_Info_Kind.Function:
+                    fi := cast(*Type_Info_Function, ti);
+                    print("Function: params: (");
+                    for i := 0; i < fi.parameters.length; i += 1 {
+                        if i > 0 print(", ");
+                        print_short_type(fi.parameters[i]);
+                    }
+                    print(" ) return_type: ");
+                    print_short_type(fi.return_type);
+                    print(", ", ti.size, " bytes");
+
+                default: print("!!! Unhandled type in 'print_ti'");
+            }
+
+            println();
+        }
+
+        print_short_type :: (ti: *Type_Info) -> void {
+
+            switch (ti.kind) {
+                case Type_Info_Kind.Void: print("void");
+                case Type_Info_Kind.Real: print("r", ti.size * 8);
+                case Type_Info_Kind.Bool: print("bool");
+
+                case Type_Info_Kind.Integer:
+                    ii := cast(*Type_Info_Int, ti);
+                    if ii.sign print("s"); else print("u");
+                    print(ti.size * 8);
+
+                case Type_Info_Kind.Pointer:
+                    pi := cast(*Type_Info_Pointer, ti);
+                    print("*");
+                    print_short_type(pi.pointer_to);
+
+                case Type_Info_Kind.Struct:
+                    si := cast(*Type_Info_Struct, ti);
+                    print(si.name);
+
+                case Type_Info_Kind.Enum:
+                    ei := cast(*Type_Info_Enum, ti);
+                    print(ei.name);
+
+                case Type_Info_Kind.Static_Array:
+                    sai := cast(*Type_Info_Static_Array, ti);
+                    print("[", sai.length, "]");
+                    print_short_type(sai.element_type);
+
+                case Type_Info_Kind.Slice:
+                    si := cast(*Type_Info_Slice, ti);
+                    print("[]");
+                    print_short_type(si.element_type);
+
+                case Type_Info_Kind.Function:
+                    fi := cast(*Type_Info_Function, ti);
+                    print("(");
+                    for i := 0; i < fi.parameters.length; i += 1 {
+                        if i > 0 print(", ");
+                        print_short_type(fi.parameters[i]);
+                    }
+                    print(") -> ");
+                    print_short_type(fi.return_type);
+
+                default: print("!!! Unhandled type in 'print_short_type'");
+            }
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(Type info test!
+Integer, 8 bytes, signed
+Integer, 8 bytes, unsigned
+Integer, 4 bytes, signed
+Integer, 4 bytes, unsigned
+Integer, 2 bytes, signed
+Integer, 2 bytes, unsigned
+Integer, 1 bytes, signed
+Integer, 1 bytes, unsigned
+true
+true
+true
+true
+true
+true
+true
+true
+Real, 8 bytes
+Real, 4 bytes
+true
+true
+bool, 1 bytes
+Pointer: (to: void), 8 bytes
+Pointer: (to: Vec2), 8 bytes
+true
+true
+Struct: String, members: { data: *u8, length: s64 }, 16 bytes
+Struct: Vec2, members: { x: r64, y: r64 }, 16 bytes
+Struct: AABB, members: { pos: Vec2, size: Vec2 }, 32 bytes
+Struct: Node, members: { value: s64, next: *Node }, 16 bytes
+true
+true
+true
+true
+Enum: Day base: s64, members { MONDAY = 0, TUESDAY = 1, WEDNESDAY = 2, THURSDAY = 3, FRIDAY = 4, SATURDAY = 5, SUNDAY = 6 }, 8 bytes
+Enum: Mode base: s64, members { INVALID = 0, READ = 11, WRITE = 22, DRY_RUN = 23, SECRET = 42, UNIMPORTANT = 43 }, 8 bytes
+Enum: Token_Kind base: s64, members { SECOND_NON_ASCII = 257, FIRST_NON_ASCII = 256, NAME = 256, INT = 257, PLUS = 43, STAR = 44 }, 8 bytes
+Enum: Token_Kind2 base: s64, members { STAR = 42, PLUS = 43, FIRST_NON_ASCII = 256, NAME = 256, INT = 257 }, 8 bytes
+true
+true
+true
+true
+Static array: element_type: s64, length: 2, 16 bytes
+Static array: element_type: [4]r32, length: 4, 64 bytes
+true
+true
+Slice: element_type: s64, 16 bytes
+Slice: element_type: []s64, 16 bytes
+true
+true
+Function: params: ( ) return_type: void, 8 bytes
+Function: params: (r64, r64 ) return_type: Vec2, 8 bytes
+true
+true)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef DAY_ENUM_DECL
 #undef RESOLVE_ERR
 

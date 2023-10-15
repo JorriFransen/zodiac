@@ -654,6 +654,11 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             assert(bc_inst.dest.kind == Bytecode_Register_Kind::ALLOC);
 
             llvm::Type *llvm_type = llvm_type_from_ast_type(builder, bc_inst.a.type);
+
+            if (bc_inst.a.type->kind == Type_Kind::FUNCTION) {
+                llvm_type = llvm_type->getPointerTo();
+            }
+
             llvm::Twine alloc_name = bc_inst.dest.alloc_name ? bc_inst.dest.alloc_name : "";
             llvm::AllocaInst *llvm_alloca = irb->CreateAlloca(llvm_type, nullptr, alloc_name);
 
@@ -1428,7 +1433,12 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
                     return llvm::ConstantExpr::getIntToPtr(intval, type);
                 }
 
-                case Type_Kind::FUNCTION: { assert(false); break; }
+                case Type_Kind::FUNCTION: {
+                    llvm::Type *type = llvm_type_from_ast_type(builder, bc_reg.type)->getPointerTo();
+                    llvm::Type *inttype = llvm_type_from_ast_type(builder, &builtin_type_u64);
+                    llvm::Constant *intval = llvm::ConstantInt::get(inttype, (u64)bc_reg.value.pointer);
+                    return llvm::ConstantExpr::getIntToPtr(intval, type);
+                }
 
                 case Type_Kind::BOOLEAN: {
                     return llvm_builder_emit_bool_literal(builder, bc_reg.type, bc_reg.value.boolean);

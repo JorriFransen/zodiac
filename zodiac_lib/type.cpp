@@ -751,7 +751,14 @@ void type_to_string(Type *type, String_Builder *sb)
         }
 
         case Type_Kind::FUNCTION: {
-            string_builder_append(sb, "fn_type");
+            string_builder_append(sb, "\"(");
+            for (s64 i = 0; i < type->function.parameter_types.count; i++) {
+                if (i > 0) string_builder_append(sb, ", ");
+                type_to_string(type->function.parameter_types[i], sb);
+            }
+            string_builder_append(sb, ") -> ");
+            type_to_string(type->function.return_type, sb);
+            string_builder_append(sb, "\"");
             break;
         }
     }

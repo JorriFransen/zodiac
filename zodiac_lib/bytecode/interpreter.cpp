@@ -1597,7 +1597,11 @@ void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source,
             break;
         }
 
-        case Type_Kind::FUNCTION: assert(false); break;
+        case Type_Kind::FUNCTION: {
+            // @Cleanup: @TODO: @FIXME: alignment?
+            *((u8 **)dest) = source.value.pointer;
+            break;
+        }
 
         case Type_Kind::BOOLEAN: {
             // @Cleanup: @TODO: @FIXME: alignment?

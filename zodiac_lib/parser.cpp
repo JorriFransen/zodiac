@@ -245,7 +245,8 @@ AST_Expression *_parse_expr_unary(Parser *parser)
     } else if (is_token(parser, '#')) {
 
         Parsed_Directive pd = parse_directive(parser, false);
-        assert(pd.data);
+        return_if_null(pd.data);
+
         auto directive = pd.data;
 
         if (directive->kind == AST_Directive_Kind::RUN) {
@@ -984,7 +985,17 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
             auto pts = temp_array_finalize(&parser->context->ast_allocator, &params);
 
             return ast_function_ts_new(parser->context, {t.range.start, return_ts->sr.end}, pts, return_ts);
-            break;
+        }
+
+        case '#': {
+
+            Parsed_Directive pd = parse_directive(parser);
+            assert(pd.kind == Parsed_Directive_Kind::DATA);
+            assert(pd.data);
+
+            assert(pd.data->kind == AST_Directive_Kind::TYPE_OF);
+
+            return ast_type_of_ts_new(parser->context, {t.range.start, pd.data->sr.end}, pd.data);
         }
 
         case TOK_NAME: {
@@ -1077,6 +1088,7 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
         result.data = ast_falltrough_directive_new(parser->context, { start_pos, directive_name_tok.range.end});
         if (eat_semicolon) match_token(parser, ';');
         return result;
+
     } else if (directive_name_tok.atom == directive_type_info) {
         result.kind = Parsed_Directive_Kind::DATA;
 
@@ -1087,6 +1099,20 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
         expect_token(parser, ')');
 
         result.data = ast_type_info_directive_new(parser->context, { start_pos, end_pos }, ts);
+        if (eat_semicolon) match_token(parser, ';');
+        return result;
+
+    } else if (directive_name_tok.atom == directive_type_of) {
+        result.kind = Parsed_Directive_Kind::DATA;
+
+        expect_token(parser, '(');
+        AST_Expression *expr = parse_expression(parser);
+
+        auto end_pos = cur_tok(parser).range.end;
+        expect_token(parser, ')');
+
+        result.data = ast_type_of_directive_new(parser->context, { start_pos, end_pos }, expr);
+
         if (eat_semicolon) match_token(parser, ';');
         return result;
 

@@ -505,6 +505,8 @@ enum class AST_Type_Spec_Kind
     STATIC_ARRAY,
     SLICE,
     FUNCTION,
+
+    TYPE_OF,
 };
 
 struct AST_Type_Spec
@@ -533,6 +535,8 @@ struct AST_Type_Spec
             Dynamic_Array<AST_Type_Spec *> parameters;
             AST_Type_Spec *return_ts;
         } function;
+
+        AST_Directive *directive;
     };
 };
 
@@ -544,6 +548,7 @@ enum class AST_Directive_Kind
     IMPORT,
     FALLTROUGH,
     TYPE_INFO,
+    TYPE_OF,
 };
 
 enum class AST_Run_Directive_Kind
@@ -580,6 +585,10 @@ struct AST_Directive
         struct {
             AST_Type_Spec *ts;
         } type_info;
+
+        struct {
+            AST_Expression *expr;
+        } type_of;
     };
 };
 
@@ -646,6 +655,7 @@ ZAPI void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts);
 ZAPI void ast_static_array_ts_create(AST_Expression *length_expr, AST_Type_Spec *element_ts, AST_Type_Spec *out_ts);
 ZAPI void ast_slice_ts_create(AST_Type_Spec *element_ts, AST_Type_Spec *out_ts);
 ZAPI void ast_function_ts_create(Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts, AST_Type_Spec *out_ts);
+ZAPI void ast_type_of_ts_create(AST_Directive *type_of_directive, AST_Type_Spec *out_ts);
 ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
 
 ZAPI void ast_run_directive_create(AST_Expression *expr, AST_Directive *out_dir);
@@ -653,6 +663,7 @@ ZAPI void ast_run_directive_create(AST_Statement *stmt, AST_Directive *out_dir);
 ZAPI void ast_import_directive_create(Atom path, AST_Directive *out_dir);
 ZAPI void ast_falltrough_directive_create(AST_Directive *out_dir);
 ZAPI void ast_type_info_directive_create(AST_Type_Spec *ts, AST_Directive *out_dir);
+ZAPI void ast_type_of_directive_create(AST_Expression *expr, AST_Directive *out_dir);
 ZAPI void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir);
 
 ZAPI void ast_file_create(Atom name, Dynamic_Array<AST_Declaration *> decls, AST_File *out_file);
@@ -710,6 +721,7 @@ ZAPI AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range sr, AST
 ZAPI AST_Type_Spec *ast_static_array_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *length_expr, AST_Type_Spec *element_ts);
 ZAPI AST_Type_Spec *ast_slice_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_Spec *element_ts);
 ZAPI AST_Type_Spec *ast_function_ts_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts);
+ZAPI AST_Type_Spec *ast_type_of_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Directive *type_of_directive);
 ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range sr);
 
 ZAPI AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *expr);
@@ -717,6 +729,7 @@ ZAPI AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range sr, 
 ZAPI AST_Directive *ast_import_directive_new(Zodiac_Context *ctx, Source_Range sr, Atom path);
 ZAPI AST_Directive *ast_falltrough_directive_new(Zodiac_Context *ctx, Source_Range sr);
 ZAPI AST_Directive *ast_type_info_directive_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_Spec *ts);
+ZAPI AST_Directive *ast_type_of_directive_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *expr);
 ZAPI AST_Directive *ast_directive_new(Zodiac_Context *ctx, Source_Range sr);
 
 ZAPI AST_File *ast_file_new(Zodiac_Context *ctx, Atom name, Dynamic_Array<AST_Declaration *> decls);

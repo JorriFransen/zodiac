@@ -14,10 +14,11 @@ enum Token_Kind
     TOK_INVALID = 0,
 
     // Ascii range (mostly here so the character literals can be used in switch statements)
+    TOK_HASH   = '#', // 35
     TOK_LPAREN = '(', // 40
     TOK_RPAREN = ')', // 41
-    TOK_STAR = '*',   // 42
-    TOK_DOT = '.',    // 46
+    TOK_STAR   = '*', // 42
+    TOK_DOT    = '.', // 46
     TOK_LBRACK = '[', // 91
     TOK_RBRACK = ']', // 93
 
@@ -97,12 +98,13 @@ struct Lexer
 ALL_ZODIAC_KEYWORDS
 #undef ZODIAC_KEYWORD
 
-#define ALL_ZODIAC_DIRECTIVES \
-    ZODIAC_DIRECTIVE(run) \
-    ZODIAC_DIRECTIVE(foreign) \
-    ZODIAC_DIRECTIVE(import) \
+#define ALL_ZODIAC_DIRECTIVES    \
+    ZODIAC_DIRECTIVE(run)        \
+    ZODIAC_DIRECTIVE(foreign)    \
+    ZODIAC_DIRECTIVE(import)     \
     ZODIAC_DIRECTIVE(falltrough) \
-    ZODIAC_DIRECTIVE(type_info) \
+    ZODIAC_DIRECTIVE(type_info)  \
+    ZODIAC_DIRECTIVE(type_of)    \
 
 // Emit atom declarations for all directives
 #define ZODIAC_DIRECTIVE(n) ZAPI extern Atom directive_##n;

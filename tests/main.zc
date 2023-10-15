@@ -53,78 +53,148 @@ Token_Kind2 :: enum {
 main :: () {
     println("Type info test!");
 
-    print_ti(#type_info(void));
+    s_64 : s64;
+    u_64 : u64;
+    s_32 : s32;
+    u_32 : u32;
+    s_16 : s16;
+    u_16 : u16;
+    s_8 : s8;
+    u_8 : u8;
 
     println();
 
-    print_ti(#type_info(s64));
-    print_ti(#type_info(u64));
-    print_ti(#type_info(s32));
-    print_ti(#type_info(u32));
-    print_ti(#type_info(s16));
-    print_ti(#type_info(u16));
-    print_ti(#type_info(s8));
-    print_ti(#type_info(u8));
+    print_ti(#type_info(#type_of(s_64)));
+    print_ti(#type_info(#type_of(u_64)));
+    print_ti(#type_info(#type_of(s_32)));
+    print_ti(#type_info(#type_of(u_32)));
+    print_ti(#type_info(#type_of(s_16)));
+    print_ti(#type_info(#type_of(u_16)));
+    print_ti(#type_info(#type_of(s_8)));
+    print_ti(#type_info(#type_of(u_8)));
 
     println();
 
-    print_ti(#type_info(r64));
-    print_ti(#type_info(r32));
+    println(#type_info(#type_of(s_64)) == #type_info(s64));
+    println(#type_info(#type_of(u_64)) == #type_info(u64));
+    println(#type_info(#type_of(s_32)) == #type_info(s32));
+    println(#type_info(#type_of(u_32)) == #type_info(u32));
+    println(#type_info(#type_of(s_16)) == #type_info(s16));
+    println(#type_info(#type_of(u_16)) == #type_info(u16));
+    println(#type_info(#type_of(s_8)) == #type_info(s8));
+    println(#type_info(#type_of(u_8)) == #type_info(u8));
 
     println();
+
+    r_64 : r64;
+    r_32 : r32;
+
+    print_ti(#type_info(#type_of(r_64)));
+    print_ti(#type_info(#type_of(r_32)));
+
+    println();
+
+    println(#type_info(#type_of(r_64)) == #type_info(r64));
+    println(#type_info(#type_of(r_32)) == #type_info(r32));
+
+    println();
+
+    b : bool;
 
     print_ti(#type_info(bool));
 
     println();
     pointers();
+    println();
 
-    print_ti(#type_info(String));
-    print_ti(#type_info(Vec2));
-    print_ti(#type_info(AABB));
-    print_ti(#type_info(*Vec2));
+    str : String;
+    vec : Vec2;
+    rect : AABB;
+    node : Node;
 
-    print_ti(#type_info(Node));
+    print_ti(#type_info(#type_of(str)));
+    print_ti(#type_info(#type_of(vec)));
+    print_ti(#type_info(#type_of(rect)));
+    print_ti(#type_info(#type_of(node)));
 
-    print_ti(#type_info(Day));
-    print_ti(#type_info(*Day));
-    print_ti(#type_info(Mode));
-    print_ti(#type_info(Token_Kind));
-    print_ti(#type_info(Token_Kind2));
+    println();
 
-    print_ti(#type_info([2]s64));
-    print_ti(#type_info([4][4]r32));
-    print_ti(#type_info(*[4][4]r32));
+    println(#type_info(#type_of(str)) == #type_info(String));
+    println(#type_info(#type_of(vec)) == #type_info(Vec2));
+    println(#type_info(#type_of(rect)) == #type_info(AABB));
+    println(#type_info(#type_of(node)) == #type_info(Node));
 
-    print_ti(#type_info([]s64));
-    print_ti(#type_info([][]Vec2));
-    print_ti(#type_info(*[][]Vec2));
+    println();
 
-    print_ti(#type_info( *() -> void ));
-    print_ti(#type_info( *(r64, r64) -> Vec2 ));
-    print_ti(#type_info( () -> void ));
-    print_ti(#type_info( (r64, r64) -> Vec2 ));
+    day: Day;
+    mode: Mode;
+    tok1: Token_Kind;
+    tok2: Token_Kind2;
+
+    print_ti(#type_info(#type_of(day)));
+    print_ti(#type_info(#type_of(mode)));
+    print_ti(#type_info(#type_of(tok1)));
+    print_ti(#type_info(#type_of(tok2)));
+
+    println();
+
+    println(#type_info(#type_of(day)) == #type_info(Day));
+    println(#type_info(#type_of(mode)) == #type_info(Mode));
+    println(#type_info(#type_of(tok1)) == #type_info(Token_Kind));
+    println(#type_info(#type_of(tok2)) == #type_info(Token_Kind2));
+
+    println();
+
+    a1 : [2]s64;
+    a2 : [4][4]r32;
+
+    print_ti(#type_info(#type_of(a1)));
+    print_ti(#type_info(#type_of(a2)));
+
+    println();
+
+    println(#type_info(#type_of(a1 )) == #type_info([2]s64));
+    println(#type_info(#type_of(a2 )) == #type_info([4][4]r32));
+
+    s1 : []s64;
+    s2 : [][]s64;
+
+    print_ti(#type_info(#type_of(s1)));
+    print_ti(#type_info(#type_of(s2)));
+
+    println();
+
+    println(#type_info(#type_of(s1)) == #type_info([]s64));
+    println(#type_info(#type_of(s2)) == #type_info([][]s64));
+
+    println();
+
+    f1 : () -> void;
+    f2 : (r64, r64) -> Vec2;
+
+    print_ti(#type_info(#type_of(f1)));
+    print_ti(#type_info(#type_of(f2)));
+
+    println();
+
+    println(#type_info(#type_of(f1)) == #type_info( ()-> void));
+    println(#type_info(#type_of(f2)) == #type_info( (r64, r64) -> Vec2));
 
     return 0;
 }
 
 pointers :: () {
-    print_ti(#type_info(*void));
-    print_ti(#type_info(*s64));
-    print_ti(#type_info(*u64));
-    print_ti(#type_info(*s32));
-    print_ti(#type_info(*u32));
-    print_ti(#type_info(*s16));
-    print_ti(#type_info(*u16));
-    print_ti(#type_info(*s8));
-    print_ti(#type_info(*u8));
-    print_ti(#type_info(*r64));
-    print_ti(#type_info(*r32));
-    print_ti(#type_info(*bool));
+    vptr : *void;
+    vecptr : *Vec2;
 
-    print_ti(#type_info(**void));
-    print_ti(#type_info(**s32));
-    print_ti(#type_info(***void));
-    print_ti(#type_info(***s32));
+    print_ti(#type_info(#type_of(vptr)));
+    print_ti(#type_info(#type_of(vecptr)));
+
+    println();
+
+    println(#type_info(#type_of(vptr)) == #type_info(*void));
+    println(#type_info(#type_of(vecptr)) == #type_info(*Vec2));
+
 }
 
 print_ti :: (ti: *Type_Info) -> void {

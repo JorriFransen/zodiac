@@ -1070,6 +1070,10 @@ void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dyna
             flatten_type_spec(resolver, ts->function.return_ts, scope, dest);
             break;
         }
+
+        case AST_Type_Spec_Kind::TYPE_OF: {
+            flatten_directive(resolver, ts->directive, scope, dest);
+        }
     }
 
     Flat_Node flat_ts = to_flat_node(ts, scope, via_pointer);
@@ -1079,21 +1083,26 @@ void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dyna
 void flatten_directive(Resolver *resolver, AST_Directive *directive, Scope *scope, Dynamic_Array<Flat_Node> *dest)
 {
     debug_assert(resolver && directive && scope && dest);
-    debug_assert(directive->kind == AST_Directive_Kind::RUN);
 
-    switch (directive->run.kind) {
+    if (directive->kind == AST_Directive_Kind::RUN) {
 
-        case AST_Run_Directive_Kind::INVALID: assert(false); break;
+        switch (directive->run.kind) {
 
-        case AST_Run_Directive_Kind::EXPR: {
-            flatten_expression(resolver, directive->run.expr, scope, dest);
-            break;
+            case AST_Run_Directive_Kind::INVALID: assert(false); break;
+
+            case AST_Run_Directive_Kind::EXPR: {
+                flatten_expression(resolver, directive->run.expr, scope, dest);
+                break;
+            }
+
+            case AST_Run_Directive_Kind::STMT: {
+                flatten_statement(resolver, directive->run.stmt, scope, dest);
+                break;
+            }
         }
-
-        case AST_Run_Directive_Kind::STMT: {
-            flatten_statement(resolver, directive->run.stmt, scope, dest);
-            break;
-        }
+    } else {
+        assert(directive->kind == AST_Directive_Kind::TYPE_OF);
+        flatten_expression(resolver, directive->type_of.expr, scope, dest);
     }
 }
 
@@ -1621,7 +1630,8 @@ bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
         case AST_Type_Spec_Kind::POINTER:
         case AST_Type_Spec_Kind::STATIC_ARRAY:
         case AST_Type_Spec_Kind::SLICE:
-        case AST_Type_Spec_Kind::FUNCTION: {
+        case AST_Type_Spec_Kind::FUNCTION:
+        case AST_Type_Spec_Kind::TYPE_OF: {
             // Leaf
             break;
         }
@@ -3274,6 +3284,14 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
             ts->resolved_type = get_function_type(return_type, Array_Ref(param_types), &ctx->ast_allocator);
 
 
+            return true;
+        }
+
+        case AST_Type_Spec_Kind::TYPE_OF: {
+            assert(ts->directive->kind == AST_Directive_Kind::TYPE_OF);
+            assert(ts->directive->type_of.expr->resolved_type);
+
+            ts->resolved_type = ts->directive->type_of.expr->resolved_type;
             return true;
         }
     }
