@@ -632,6 +632,7 @@ bool valid_static_type_conversion(Type *from, Type *to)
             // TODO: Pass in the size of the literal, and take it into account
             if (to->kind == Type_Kind::INTEGER) return true;
             if (to->kind == Type_Kind::FLOAT) return true;
+            if (to->kind == Type_Kind::BOOLEAN) return true;
             assert(false);
             break;
         }

@@ -2957,6 +2957,8 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     case Type_Kind::FUNCTION: assert(false); break;
                 }
 
+            } else if (target_type->kind == Type_Kind::BOOLEAN) {
+                valid_conversion = valid_static_type_conversion(operand_type, target_type);
             } else if (target_type->kind == Type_Kind::ENUM) {
                 valid_conversion = valid_static_type_conversion(operand_type, target_type);
             } else if (target_type->kind == Type_Kind::POINTER && operand_type->kind == Type_Kind::POINTER) {

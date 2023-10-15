@@ -1847,6 +1847,15 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
                 assert(result.type == value_expr->resolved_type);
                 return bytecode_pointer_literal(bc->builder, expr->resolved_type, result.pointer);
 
+            } else if (type->kind == Type_Kind::BOOLEAN) {
+
+                assert(value_expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER);
+
+                auto result = resolve_constant_integer_expr(value_expr, &builtin_type_u64);
+                assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                assert(result.type == &builtin_type_u64);
+
+                return bytecode_boolean_literal(bc->builder, type, result.integer.u64 != 0);
             } else {
                 assert(false);
             }
