@@ -1171,6 +1171,18 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                 return bytecode_real_literal(bc->builder, literal_type, { .r32 = (float)value, .r64 = (double)value });
             }
 
+            if (literal_type->kind == Type_Kind::BOOLEAN) {
+                u64 value = expr->integer_literal.value.u64;
+                return bytecode_boolean_literal(bc->builder, literal_type, value != 0);
+            }
+
+            if (enforce_type && enforce_type->kind == Type_Kind::BOOLEAN) {
+                assert(literal_type->kind == Type_Kind::INTEGER);
+
+                u64 value = expr->integer_literal.value.u64;
+                return bytecode_boolean_literal(bc->builder, enforce_type, value != 0);
+            }
+
             assert(literal_type->kind == Type_Kind::INTEGER);
             return bytecode_integer_literal(bc->builder, literal_type, expr->integer_literal.value);
         }
@@ -1303,6 +1315,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             bool found = hash_table_find(&bc->functions, sym->decl, &fn_handle);
             assert(found);
 
+            auto fn = bc->builder->functions[fn_handle];
+
             auto arg_count = expr->call.args.count;
 
             for (s64 i = 0; i < expr->call.args.count; i++) {
@@ -1335,7 +1349,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     arg_reg = bytecode_emit_insert_value(bc->builder, arg_reg, length_reg, slice_type->slice.struct_type, 1);
 
                 } else {
-                    arg_reg = ast_expr_to_bytecode(bc, arg_expr);
+                    arg_reg = ast_expr_to_bytecode(bc, arg_expr, fn.type->function.parameter_types[i]);
                 }
 
                 bytecode_emit_push_arg(bc->builder, arg_reg);
@@ -1658,6 +1672,8 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
             if (enforce_type && enforce_type->kind == Type_Kind::FLOAT) {
                 auto iv = expr->integer_literal.value;
                 return bytecode_real_literal(bc->builder, enforce_type, { .r32 = (float)iv.s64, .r64 = (double)iv.s64});
+            } else if (enforce_type && enforce_type->kind == Type_Kind::BOOLEAN) {
+                assert(false);
             } else {
                 assert(!enforce_type || enforce_type->kind == Type_Kind::INTEGER);
             }
@@ -1793,7 +1809,13 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
                     auto result = resolve_constant_integer_expr(expr, type);
                     assert(result.kind == Constant_Resolve_Result_Kind::OK);
                     assert(result.type == type);
-                    return bytecode_integer_literal(bc->builder, type, result.integer);
+
+                    if (enforce_type && enforce_type->kind == Type_Kind::BOOLEAN) {
+                        return bytecode_boolean_literal(bc->builder, enforce_type, result.integer.u64 != 0);
+                    } else {
+                        assert(!enforce_type || enforce_type == type);
+                        return bytecode_integer_literal(bc->builder, type, result.integer);
+                    }
                 }
 
                 case AST_Unary_Operator::ADDRESS_OF: assert(false); break;

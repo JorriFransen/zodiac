@@ -2375,7 +2375,10 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
 
-                if (inferred_type) {
+                if (inferred_type && inferred_type->kind == Type_Kind::BOOLEAN) {
+                    // Ok, but we can't change the actual type here, this is done when emitting bytecode
+                    expr->resolved_type = &builtin_type_s64;
+                } else if (inferred_type) {
 
                     if (inferred_type->kind == Type_Kind::UNSIZED_INTEGER) {
                         inferred_type = &builtin_type_s64;
@@ -2390,6 +2393,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     // TODO: Make sure the literal fits in this type
 
                     expr->resolved_type = inferred_type;
+
                 } else {
                     expr->resolved_type = &builtin_type_unsized_integer;
                 }

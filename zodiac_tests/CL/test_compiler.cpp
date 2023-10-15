@@ -3382,7 +3382,7 @@ R"OUT_STR(1.000000, 2.000000
     return MUNIT_OK;
 }
 
-MunitResult Implicit_Cast_To_Bool(const MunitParameter params[], void* user_data_or_fixture) {
+MunitResult Implicit_Pointer_To_Bool(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
         main :: () {
@@ -3439,6 +3439,47 @@ b == false
 b == false
 b == true
 b == true)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Implicit_Integer_To_Bool(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        test :: (b: bool) {
+            if b println("true");
+            else println("false");
+        }
+
+        main :: () {
+
+            if 0 println("UNREACHABLE");
+            else println("0 casts to false");
+
+            if 1 println("1 casts to true");
+            else println("UNREACHABLE");
+
+           if -1 println("-1 casts to true");
+            else println("UNREACHABLE");
+
+            test(0);
+            test(1);
+            test(-1);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(0 casts to false
+1 casts to true
+-1 casts to true
+false
+true
+true)OUT_STR" };
 
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };

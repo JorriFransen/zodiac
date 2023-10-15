@@ -649,6 +649,8 @@ bool valid_static_type_conversion(Type *from, Type *to)
                     return false;
                 }
 
+            } else if (to->kind == Type_Kind::BOOLEAN) {
+                return true;
             } else if (to->kind == Type_Kind::POINTER) {
                 assert(!from->integer.sign);
                 assert(from->bit_size <= to->bit_size);
