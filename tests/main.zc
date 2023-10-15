@@ -1,25 +1,45 @@
 
-test :: (b: bool) {
-    if b println("true");
-    else println("false");
-}
-
 #run main();
+
 main :: () {
 
-    if 0 println("UNREACHABLE");
-    else println("0 casts to false");
 
-    if 1 println("1 casts to true");
-    else println("UNREACHABLE");
 
-    if -1 println("-1 casts to true");
-    else println("UNREACHABLE");
+    y := 1;
 
-    test(0);
-    test(1);
-    test(-1);
+    for x := 0; x < 4; x += 1 {
+        do_thing(x, y);
+    }
 
     return 0;
 }
 
+do_thing :: (x: s64, y: s64) {
+
+    switch (x) {
+        case 1:
+            if (y != 0) {
+                println("x is one");
+                if (y == x) {
+                    println("y == x");
+                } else {
+                    println("y != x");
+                }
+            }
+
+        case 2:
+            println("x is two");
+        //     if (y > x) {
+        //         println("y > x");
+        //     } else if (y == x) {
+        //         println("y == x");
+        //     } else {
+        //         println("y <= x");
+        //     }
+        //
+        // default:
+        //     println("Default option for x");
+    }
+
+    // println();
+}
