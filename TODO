@@ -1,5 +1,5 @@
 
-- First class types? (Use the index from type info).
+- Nested switches don't seem to work..
 
 - Logical && and ||
 
@@ -25,6 +25,8 @@
 
 - Assert
 - Slice/Static array bounds checking
+- First class types? (Use the index from type info).
+
 
 - When emitting non constant compound expressions some of it's members/elements might be constant. Constant members should be emitted to a value first, which we can then use to insert the non const values into.
 

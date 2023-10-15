@@ -88,3 +88,8 @@ Type_Info_Function :: struct {
 }
 
 _type_info_pointers : []*Type_Info;
+
+Any :: struct {
+    type: *Type_Info;
+    value: *void;
+}
