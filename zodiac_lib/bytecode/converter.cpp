@@ -761,7 +761,6 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                 bytecode_append_block(bc->builder, cfn, else_block);
                 bytecode_set_insert_point(bc->builder, cfn, else_block);
                 ast_stmt_to_bytecode(bc, stmt->if_stmt.else_stmt);
-                bytecode_set_insert_point(bc->builder, cfn, else_block);
 
                 if (!bytecode_block_is_terminated(bytecode_get_insert_block(bc->builder))) {
                     bytecode_emit_jmp(bc->builder, post_if_block_handle);
@@ -846,7 +845,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             auto blocks = temp_array_create<Bytecode_Block_Handle>(temp_allocator_allocator(), stmt->switch_stmt.cases.count);
 
             for (s64 i = 0; i < stmt->switch_stmt.cases.count; i++) {
-                auto block_handle = bytecode_append_block(bc->builder, cfn, "switch.case");
+                auto block_handle = bytecode_create_block(bc->builder, cfn, "switch.case");
                 dynamic_array_append(&blocks, block_handle);
             }
 
@@ -855,6 +854,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
                 auto case_stmt = stmt->switch_stmt.cases[case_index];
 
                 auto case_block = blocks[case_index];
+                bytecode_append_block(bc->builder, cfn, case_block);
                 bytecode_set_insert_point(bc->builder, cfn, case_block);
 
                 if (case_stmt->switch_case_stmt.is_default) {
