@@ -1157,6 +1157,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
         return ast_const_expr_to_bytecode(bc, expr, enforce_type);
     }
 
+    Bytecode_Register result = { .kind = Bytecode_Register_Kind::INVALID };
+
     switch (expr->kind) {
         case AST_Expression_Kind::INVALID: assert(false); break;
 
@@ -1168,41 +1170,41 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
             if (literal_type->kind == Type_Kind::FLOAT) {
                 s64 value = expr->integer_literal.value.s64;
-                return bytecode_real_literal(bc->builder, literal_type, { .r32 = (float)value, .r64 = (double)value });
+                result =  bytecode_real_literal(bc->builder, literal_type, { .r32 = (float)value, .r64 = (double)value });
+                break;
             }
 
             if (literal_type->kind == Type_Kind::BOOLEAN) {
                 u64 value = expr->integer_literal.value.u64;
-                return bytecode_boolean_literal(bc->builder, literal_type, value != 0);
-            }
-
-            if (enforce_type && enforce_type->kind == Type_Kind::BOOLEAN) {
-                assert(literal_type->kind == Type_Kind::INTEGER);
-
-                u64 value = expr->integer_literal.value.u64;
-                return bytecode_boolean_literal(bc->builder, enforce_type, value != 0);
+                result =  bytecode_boolean_literal(bc->builder, literal_type, value != 0);
+                break;
             }
 
             assert(literal_type->kind == Type_Kind::INTEGER);
-            return bytecode_integer_literal(bc->builder, literal_type, expr->integer_literal.value);
+            result = bytecode_integer_literal(bc->builder, literal_type, expr->integer_literal.value);
+            break;
         }
 
         case AST_Expression_Kind::REAL_LITERAL: {
             Type *literal_type = expr->resolved_type;
             assert(literal_type->kind == Type_Kind::FLOAT);
-            return bytecode_real_literal(bc->builder, literal_type, expr->real_literal.value);
+            result = bytecode_real_literal(bc->builder, literal_type, expr->real_literal.value);
+            break;
         }
 
         case AST_Expression_Kind::STRING_LITERAL: {
-            return bytecode_string_literal(bc->builder, expr->string_literal.atom);
+            result = bytecode_string_literal(bc->builder, expr->string_literal.atom);
+            break;
         }
 
         case AST_Expression_Kind::CHAR_LITERAL: {
-            return bytecode_integer_literal(bc->builder, &builtin_type_u8, expr->character_literal);
+            result = bytecode_integer_literal(bc->builder, &builtin_type_u8, expr->character_literal);
+            break;
         }
 
         case AST_Expression_Kind::NULL_LITERAL: {
-            return bytecode_pointer_literal(bc->builder, expr->resolved_type, nullptr);
+            result = bytecode_pointer_literal(bc->builder, expr->resolved_type, nullptr);
+            break;
         }
 
         case AST_Expression_Kind::BOOL_LITERAL: assert(false); break;
@@ -1227,20 +1229,23 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                         bool found = hash_table_find(&bc->globals, ident_decl, &global_handle);
                         assert(found);
 
-                        return bytecode_emit_load_global(bc->builder, global_handle);
+                        result = bytecode_emit_load_global(bc->builder, global_handle);
 
                     } else {
                         Bytecode_Register alloc_reg;
                         bool found = hash_table_find(&bc->allocations, ident_decl, &alloc_reg);
                         assert(found);
 
-                        return bytecode_emit_load_alloc(bc->builder, alloc_reg);
+                        result = bytecode_emit_load_alloc(bc->builder, alloc_reg);
                     }
+
+                    break;
                 }
 
                 case AST_Declaration_Kind::CONSTANT_VARIABLE: {
                     assert(ident_decl->variable.value);
-                    return ast_expr_to_bytecode(bc, ident_decl->variable.value);
+                    result = ast_expr_to_bytecode(bc, ident_decl->variable.value);
+                    break;
                 }
 
                 case Zodiac::AST_Declaration_Kind::PARAMETER: {
@@ -1250,7 +1255,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     bool found = hash_table_find(&bc->allocations, ident_decl, &alloc_reg);
                     assert(found);
 
-                    return bytecode_emit_load_alloc(bc->builder, alloc_reg);
+                    result = bytecode_emit_load_alloc(bc->builder, alloc_reg);
+                    break;
                 }
 
                 case Zodiac::AST_Declaration_Kind::FIELD: assert(false); break;
@@ -1278,9 +1284,10 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
                 s64 value_index = expr->member.index_in_parent;
                 assert(value_index >= 0 && value_index < base_type->enumeration.members.count);
-                auto result = bytecode_integer_literal(bc->builder, base_type->enumeration.integer_type, base_type->enumeration.members[value_index].value);
-                result.type = base_type;
-                return result;
+                auto res = bytecode_integer_literal(bc->builder, base_type->enumeration.integer_type, base_type->enumeration.members[value_index].value);
+                res.type = base_type;
+                result = res;
+                break;
             }
 
             assert(expr->member.index_in_parent >= 0);
@@ -1291,14 +1298,16 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                 base_reg = ast_lvalue_to_bytecode(bc, expr->member.base);
             }
             Bytecode_Register addr_reg = bytecode_emit_aggregate_offset_pointer(bc->builder, base_reg, expr->member.index_in_parent);
-            return bytecode_emit_load_pointer(bc->builder, addr_reg);
+            result = bytecode_emit_load_pointer(bc->builder, addr_reg);
+            break;
         }
 
         case AST_Expression_Kind::INDEX: {
             Bytecode_Register addr_reg = ast_lvalue_to_bytecode(bc, expr);
             assert(addr_reg.kind == Bytecode_Register_Kind::TEMPORARY);
             assert(addr_reg.type->kind == Type_Kind::POINTER);
-            return bytecode_emit_load_pointer(bc->builder, addr_reg);
+            result = bytecode_emit_load_pointer(bc->builder, addr_reg);
+            break;
         }
 
         case AST_Expression_Kind::CALL: {
@@ -1355,7 +1364,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                 bytecode_emit_push_arg(bc->builder, arg_reg);
             }
 
-            return bytecode_emit_call(bc->builder, fn_handle, arg_count);
+            result = bytecode_emit_call(bc->builder, fn_handle, arg_count);
             break;
         }
 
@@ -1380,7 +1389,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                         bool found = hash_table_find(&bc->implicit_lvalues, operand, &alloc_reg);
                         assert(found);
 
-                        return bytecode_emit_address_of(bc->builder, alloc_reg);
+                        result = bytecode_emit_address_of(bc->builder, alloc_reg);
 
                     } else {
                         Bytecode_Register lvalue_reg = ast_lvalue_to_bytecode(bc, expr->unary.operand);
@@ -1388,11 +1397,11 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                         if (lvalue_reg.kind == Bytecode_Register_Kind::ALLOC ||
                             lvalue_reg.kind == Bytecode_Register_Kind::GLOBAL) {
 
-                            return bytecode_emit_address_of(bc->builder, lvalue_reg);
+                            result = bytecode_emit_address_of(bc->builder, lvalue_reg);
 
                         } else {
                             assert(lvalue_reg.kind == Bytecode_Register_Kind::TEMPORARY);
-                            return lvalue_reg;
+                            result = lvalue_reg;
                         }
                     }
                     break;
@@ -1403,7 +1412,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     assert(operand->resolved_type->kind == Type_Kind::POINTER);
 
                     Bytecode_Register ptr_reg = ast_expr_to_bytecode(bc, operand);
-                    return bytecode_emit_load_pointer(bc->builder, ptr_reg);
+                    result = bytecode_emit_load_pointer(bc->builder, ptr_reg);
                     break;
                 }
 
@@ -1413,13 +1422,13 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     auto op_reg = ast_expr_to_bytecode(bc, operand);
 
                     if (operand->resolved_type->kind == Type_Kind::BOOLEAN) {
-                        return bytecode_emit_xor(bc->builder, op_reg, bytecode_boolean_literal(bc->builder, &builtin_type_bool, true));
+                        result = bytecode_emit_xor(bc->builder, op_reg, bytecode_boolean_literal(bc->builder, &builtin_type_bool, true));
 
                     } else if (operand->resolved_type->kind == Type_Kind::POINTER) {
 
                         assert(builtin_type_s64.bit_size == pointer_size);
                         Bytecode_Register as_int = bytecode_emit_bitcast(bc->builder, &builtin_type_s64, op_reg);
-                        return bytecode_emit_eq(bc->builder, as_int, bytecode_zero_value(bc->builder, &builtin_type_s64));
+                        result = bytecode_emit_eq(bc->builder, as_int, bytecode_zero_value(bc->builder, &builtin_type_s64));
 
                     } else {
                         assert(false);
@@ -1428,7 +1437,6 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                 }
             }
 
-            assert(false); // should have returned
             break;
         }
 
@@ -1451,46 +1459,58 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                 case AST_Binary_Operator::INVALID: assert(false); break;
 
                 case AST_Binary_Operator::ADD: {
-                    return bytecode_emit_add(bc->builder, lhs_reg, rhs_reg);
+                    result = bytecode_emit_add(bc->builder, lhs_reg, rhs_reg);
+                    break;
                 }
 
                 case AST_Binary_Operator::SUB: {
-                    return bytecode_emit_sub(bc->builder, lhs_reg, rhs_reg);
+                    result = bytecode_emit_sub(bc->builder, lhs_reg, rhs_reg);
+                    break;
                 }
 
                 case AST_Binary_Operator::MUL: {
-                    return bytecode_emit_mul(bc->builder, lhs_reg, rhs_reg);
+                    result = bytecode_emit_mul(bc->builder, lhs_reg, rhs_reg);
+                    break;
                 }
 
                 case AST_Binary_Operator::DIV: {
-                    return bytecode_emit_div(bc->builder, lhs_reg, rhs_reg);
+                    result = bytecode_emit_div(bc->builder, lhs_reg, rhs_reg);
+                    break;
                 }
 
                 case AST_Binary_Operator::MOD: {
-                    return bytecode_emit_mod(bc->builder, lhs_reg, rhs_reg);
+                    result = bytecode_emit_mod(bc->builder, lhs_reg, rhs_reg);
+                    break;
                 }
 
                 case AST_Binary_Operator::EQ: {
-                    return bytecode_emit_eq(bc->builder, lhs_reg, rhs_reg);
+                    result = bytecode_emit_eq(bc->builder, lhs_reg, rhs_reg);
+                    break;
                 }
 
                 case AST_Binary_Operator::NEQ: {
-                    return bytecode_emit_neq(bc->builder, lhs_reg, rhs_reg);
+                    result = bytecode_emit_neq(bc->builder, lhs_reg, rhs_reg);
+                    break;
                 }
 
                 case AST_Binary_Operator::LT: {
-                    return bytecode_emit_lt(bc->builder, lhs_reg, rhs_reg);
+                    result = bytecode_emit_lt(bc->builder, lhs_reg, rhs_reg);
+                    break;
                 }
 
                 case AST_Binary_Operator::GT: {
-                    return bytecode_emit_gt(bc->builder, lhs_reg, rhs_reg);
+                    result = bytecode_emit_gt(bc->builder, lhs_reg, rhs_reg);
+                    break;
                 }
 
                 case AST_Binary_Operator::LTEQ: {
-                    return bytecode_emit_lteq(bc->builder, lhs_reg, rhs_reg);
+                    result = bytecode_emit_lteq(bc->builder, lhs_reg, rhs_reg);
+                    break;
                 }
+
                 case AST_Binary_Operator::GTEQ: {
-                    return bytecode_emit_gteq(bc->builder, lhs_reg, rhs_reg);
+                    result = bytecode_emit_gteq(bc->builder, lhs_reg, rhs_reg);
+                    break;
                 }
             }
             break;
@@ -1502,7 +1522,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             debug_assert(expr->resolved_type);
 
             Bytecode_Register value_reg = ast_expr_to_bytecode(bc, expr->cast.value);
-            return bytecode_emit_cast(bc->builder, expr->resolved_type, value_reg);
+            result = bytecode_emit_cast(bc->builder, expr->resolved_type, value_reg);
+            break;
         }
 
         case AST_Expression_Kind::RUN_DIRECTIVE: {
@@ -1519,11 +1540,13 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             bool found = hash_table_find(&bc->run_results, directive->directive, &value_reg);
             assert(found);
 
-            return value_reg;
+            result = value_reg;
+            break;
         }
 
         case AST_Expression_Kind::COMPOUND: {
-            return ast_compound_expr_to_bytecode(bc, expr);
+            result = ast_compound_expr_to_bytecode(bc, expr);
+            break;
         }
 
         case AST_Expression_Kind::TYPE_INFO: {
@@ -1543,12 +1566,37 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             auto arr_ptr = bytecode_emit_aggregate_offset_pointer(bc->builder, global_reg, 0);
             auto arr = bytecode_emit_load(bc->builder, arr_ptr);
             auto elem_ptr = bytecode_emit_ptr_offset_pointer(bc->builder, arr, target_type->info_index);
-            return bytecode_emit_load(bc->builder, elem_ptr);
+            result = bytecode_emit_load(bc->builder, elem_ptr);
+            break;
         }
     }
 
-    assert(false);
-    return {};
+    assert(result.kind != Bytecode_Register_Kind::INVALID ||
+           expr->kind == AST_Expression_Kind::CALL && expr->resolved_type->kind == Type_Kind::VOID);
+
+    auto check_type = expr->resolved_type;
+    if (check_type->kind == Type_Kind::UNSIZED_INTEGER) {
+        check_type = result.type;
+    }
+
+    if (enforce_type && check_type != enforce_type) {
+
+        if (enforce_type->kind == Type_Kind::BOOLEAN) {
+            assert(check_type->kind == Type_Kind::INTEGER);
+
+            if (EXPR_IS_CONST(expr)) {
+                u64 value = expr->integer_literal.value.u64;
+                result = bytecode_boolean_literal(bc->builder, enforce_type, value != 0);
+            } else {
+                result = bytecode_emit_neq(bc->builder, result, bytecode_integer_literal(bc->builder, expr->resolved_type, 0));
+            }
+
+
+        } else {
+            assert(false);
+        }
+    }
+    return result;
 }
 
 Bytecode_Register ast_compound_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *compound_expr) {

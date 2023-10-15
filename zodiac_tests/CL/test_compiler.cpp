@@ -3462,12 +3462,19 @@ MunitResult Implicit_Integer_To_Bool(const MunitParameter params[], void* user_d
             if 1 println("1 casts to true");
             else println("UNREACHABLE");
 
-           if -1 println("-1 casts to true");
+            if -1 println("-1 casts to true");
             else println("UNREACHABLE");
 
             test(0);
             test(1);
             test(-1);
+
+            x := 0;
+            test(x);
+            x = 1;
+            test(x);
+            x = -1;
+            test(x);
 
             return 0;
         }
@@ -3477,6 +3484,9 @@ MunitResult Implicit_Integer_To_Bool(const MunitParameter params[], void* user_d
 R"OUT_STR(0 casts to false
 1 casts to true
 -1 casts to true
+false
+true
+true
 false
 true
 true)OUT_STR" };
