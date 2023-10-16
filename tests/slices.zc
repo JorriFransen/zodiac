@@ -18,7 +18,7 @@ main :: () {
     local_copy := a.slice;
     println(local_copy);
 
-    slice_ptr := *lo al_copy;
+    slice_ptr := *local_copy;
     println(<slice_ptr);
 
     local_copy = { 11, 22 };
