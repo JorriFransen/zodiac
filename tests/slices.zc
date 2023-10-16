@@ -1,0 +1,28 @@
+
+#run main();
+
+Struct_With_Slice_Member :: struct
+{
+    slice: []s64;
+}
+
+main :: () {
+
+    a: Struct_With_Slice_Member;
+
+    println(a);
+
+    a.slice = { 1, 2, 3, 4 };
+    println(a);
+
+    local_copy := a.slice;
+    println(local_copy);
+
+    slice_ptr := *lo al_copy;
+    println(<slice_ptr);
+
+    local_copy = { 11, 22 };
+    println(<slice_ptr);
+    println(local_copy);
+    return 0;
+}

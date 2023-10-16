@@ -1575,7 +1575,8 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
            expr->kind == AST_Expression_Kind::CALL && expr->resolved_type->kind == Type_Kind::VOID);
 
     auto check_type = expr->resolved_type;
-    if (check_type->kind == Type_Kind::UNSIZED_INTEGER) {
+    if (check_type->kind == Type_Kind::UNSIZED_INTEGER ||
+        check_type->kind == Type_Kind::SLICE) {
         check_type = result.type;
     }
 
