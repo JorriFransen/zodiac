@@ -3,6 +3,16 @@ Vec2 :: struct {
     x, y: r64;
 }
 
+Day :: enum {
+    Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday,
+    Sunday,
+}
+
 #run main();
 main :: () {
 
@@ -61,6 +71,25 @@ main :: () {
     print_any(avec);
     println();
 
+    d := Day.Tuesday;
+    ad : Any = { #type_info(#type_of(d)), cast(*u8, *d) };
+    print_any(ad);
+    println();
+
+    d2 := Day.Friday;
+    ad2 : Any = { #type_info(#type_of(d2)), cast(*u8, *d2) };
+    print_any(ad2);
+    println();
+
+    ints : [3]s64 = { 42, 43, -44 };
+    aints : Any = { #type_info(#type_of(ints)), cast(*u8, *ints) };
+    print_any(aints);
+    println();
+
+    vecs : [4]Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } };
+    avecs : Any = { #type_info(#type_of(vecs)), cast(*u8, *vecs) };
+    print_any(avecs);
+    println();
 
     return 0;
 }
@@ -102,15 +131,14 @@ print_any :: (any: Any) -> void {
             print(<cast(*bool, any.value));
 
         case Type_Info_Kind.Pointer:
-            value := cast(**void, any.value);
-            print(<value, " :");
-            value_any : Any;
-            value_any.value = cast(*u8, <value);
-
             pi := cast(*Type_Info_Pointer, any.type);
-            value_any.type = pi.pointer_to;
 
+            value := cast(**void, any.value);
+            print(<value, ": ");
+
+            value_any : Any = {  pi.pointer_to, cast(*u8, <value) };
             print_any(value_any);
+
 
         case Type_Info_Kind.Struct:
             si := cast(*Type_Info_Struct, any.type);
@@ -136,7 +164,44 @@ print_any :: (any: Any) -> void {
                 print(" }");
             }
 
+        case Type_Info_Kind.Enum:
+            ei := cast(*Type_Info_Enum, any.type);
+
+            name: String = "Invalid enum value";
+            for i := 0; i < ei.members.length; i += 1 {
+                if ei.members[i].value == <cast(*s64, any.value) {
+                    name = ei.members[i].name;
+
+                    // Hack because we don't have break yet
+                    i = ei.members.length;
+                }
+            }
+
+            print(name, "(");
+            int_any : Any = { ei.integer_type, any.value };
+            print_any(int_any);
+            print(")");
+
+        case Type_Info_Kind.Static_Array:
+            ai := cast(*Type_Info_Static_Array, any.type);
+
+            arr_mem : []u8;
+            arr_mem.data = any.value;
+            arr_mem.length = ai.length * ai.element_type.size;
+
+            offset := 0;
+
+            print("{ ");
+            for i := 0; i < ai.length; i += 1 {
+                if i > 0 print(", ");
+
+                elem_any : Any = { ai.element_type, *arr_mem[offset] };
+                print_any(elem_any);
+
+                offset += ai.element_type.size;
+            }
+            print(" }");
+
         default: println("!!! Unhandled type in print_any !!!");
     }
 }
-

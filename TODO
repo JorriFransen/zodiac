@@ -1,4 +1,6 @@
 
+- String equality
+- Allow pointer math?
 - Initialize slices with data and length somehow ( specify types for compound expressions?) ( builtin slice() function?)
 
 - Logical && and ||
