@@ -928,8 +928,6 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
             flatten_expression(resolver, expr->index.base, scope, dest);
 
             auto index_expr = expr->index.index;
-            assert(index_expr->kind == AST_Expression_Kind::INTEGER_LITERAL ||
-                   index_expr->kind == AST_Expression_Kind::IDENTIFIER);
 
             Infer_Node *index_infer_node = nullptr;
             if (index_expr->kind == AST_Expression_Kind::INTEGER_LITERAL) {

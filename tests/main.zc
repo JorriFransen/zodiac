@@ -1,4 +1,8 @@
 
+Vec2 :: struct {
+    x, y: r64;
+}
+
 #run main();
 main :: () {
 
@@ -51,6 +55,12 @@ main :: () {
     astr : Any = { #type_info(#type_of(str)), cast(*void, *str) };
     print_any(astr);
     println();
+
+    vec : Vec2 = { 1.2, 5.4 };
+    avec : Any = { #type_info(#type_of(vec)), cast(*void, *vec) };
+    print_any(avec);
+    println();
+
 
     return 0;
 }
@@ -105,15 +115,26 @@ print_any :: (any: Any) -> void {
         case Type_Info_Kind.Struct:
             si := cast(*Type_Info_Struct, any.type);
 
-            print("{ ");
+            if any.type == #type_info(String) {
+                strp := cast(*String, any.value);
+                print(<strp);
+            } else {
+                print("{ ");
 
-            print("STRUCT, ", si.members.length, " members");
+                struct_mem : []u8;
+                struct_mem.data = cast(*u8, any.value);
+                struct_mem.length = any.type.size;
 
-            // for i := 0; i < si.members.length; i += 1 {
-            //
-            // }
+                for i := 0; i < si.members.length; i += 1 {
+                    if i > 0 print(", ");
 
-            print(" }");
+                    member := si.members[i];
+                    member_any : Any = { member.type, cast(*void, *struct_mem[member.offset]) };
+                    print_any(member_any);
+                }
+
+                print(" }");
+            }
 
         default: println("!!! Unhandled type in print_any !!!");
     }

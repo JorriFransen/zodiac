@@ -1,5 +1,5 @@
 
-- Nested switches don't seem to work..
+- Initialize slices with data and length somehow ( specify types for compound expressions?) ( builtin slice() function?)
 
 - Logical && and ||
 
