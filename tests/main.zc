@@ -7,64 +7,63 @@ Vec2 :: struct {
 main :: () {
 
     x := 42;
-    ax : Any = { #type_info(#type_of(x)), cast(*void, *x) };
+    ax : Any = { #type_info(#type_of(x)), cast(*u8, *x) };
     print_any(ax);
     println();
 
     x2 : u32 = 41;
-    ax2 : Any = { #type_info(#type_of(x2)), cast(*void, *x2) };
+    ax2 : Any = { #type_info(#type_of(x2)), cast(*u8, *x2) };
     print_any(ax2);
     println();
 
     y := 4.2;
-    ay : Any = { #type_info(#type_of(y)), cast(*void, *y) };
+    ay : Any = { #type_info(#type_of(y)), cast(*u8, *y) };
     print_any(ay);
     println();
 
     y2 : r64 = 4.3;
-    ay2 : Any = { #type_info(#type_of(y2)), cast(*void, *y2) };
+    ay2 : Any = { #type_info(#type_of(y2)), cast(*u8, *y2) };
     print_any(ay2);
     println();
 
     b := true;
-    ab : Any = { #type_info(#type_of(b)), cast(*void, *b) };
+    ab : Any = { #type_info(#type_of(b)), cast(*u8, *b) };
     print_any(ab);
     println();
 
     b2 := false;
-    ab2 : Any = { #type_info(#type_of(b2)), cast(*void, *b2) };
+    ab2 : Any = { #type_info(#type_of(b2)), cast(*u8, *b2) };
     print_any(ab2);
     println();
 
     px := *x;
-    apx : Any = { #type_info(#type_of(px)), cast(*void, *px) };
+    apx : Any = { #type_info(#type_of(px)), cast(*u8, *px) };
     print_any(apx);
     println();
 
     py := *y;
-    apy : Any = { #type_info(#type_of(py)), cast(*void, *py) };
+    apy : Any = { #type_info(#type_of(py)), cast(*u8, *py) };
     print_any(apy);
     println();
 
     ppx := *px;
-    appx : Any = { #type_info(#type_of(ppx)), cast(*void, *ppx) };
+    appx : Any = { #type_info(#type_of(ppx)), cast(*u8, *ppx) };
     print_any(appx);
     println();
 
     str := "Hello!";
-    astr : Any = { #type_info(#type_of(str)), cast(*void, *str) };
+    astr : Any = { #type_info(#type_of(str)), cast(*u8, *str) };
     print_any(astr);
     println();
 
     vec : Vec2 = { 1.2, 5.4 };
-    avec : Any = { #type_info(#type_of(vec)), cast(*void, *vec) };
+    avec : Any = { #type_info(#type_of(vec)), cast(*u8, *vec) };
     print_any(avec);
     println();
 
 
     return 0;
 }
-
 
 print_any :: (any: Any) -> void {
     switch (any.type.kind) {
@@ -103,9 +102,10 @@ print_any :: (any: Any) -> void {
             print(<cast(*bool, any.value));
 
         case Type_Info_Kind.Pointer:
-            print(<cast(**void, any.value), " :");
+            value := cast(**void, any.value);
+            print(<value, " :");
             value_any : Any;
-            value_any.value = <cast(**void, any.value);
+            value_any.value = cast(*u8, <value);
 
             pi := cast(*Type_Info_Pointer, any.type);
             value_any.type = pi.pointer_to;
@@ -122,14 +122,14 @@ print_any :: (any: Any) -> void {
                 print("{ ");
 
                 struct_mem : []u8;
-                struct_mem.data = cast(*u8, any.value);
+                struct_mem.data = any.value;
                 struct_mem.length = any.type.size;
 
                 for i := 0; i < si.members.length; i += 1 {
                     if i > 0 print(", ");
 
                     member := si.members[i];
-                    member_any : Any = { member.type, cast(*void, *struct_mem[member.offset]) };
+                    member_any : Any = { member.type, *struct_mem[member.offset] };
                     print_any(member_any);
                 }
 

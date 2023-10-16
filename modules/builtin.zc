@@ -92,5 +92,5 @@ _type_info_pointers : []*Type_Info;
 
 Any :: struct {
     type: *Type_Info;
-    value: *void;
+    value: *u8;
 }
