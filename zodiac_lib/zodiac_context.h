@@ -113,6 +113,7 @@ struct Zodiac_Context
     Type *builtin_type_info_function_type;
 
     Dynamic_Array<Type_Info *> type_infos;
+    Dynamic_Array<Type *> type_info_types;
 };
 
 ZAPI void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context);

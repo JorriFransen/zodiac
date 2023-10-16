@@ -44,6 +44,7 @@ Type_Info_Pointer :: struct {
 Type_Info_Struct_Member :: struct {
     name: String;
     type: *Type_Info;
+    offset: s64;
 }
 
 Type_Info_Struct :: struct {

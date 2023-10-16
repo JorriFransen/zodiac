@@ -68,14 +68,20 @@ Type_Info *add_type_info(Zodiac_Context *ctx, Type *type)
 
             auto index = ctx->type_infos.count;
             dynamic_array_append(&ctx->type_infos, result);
+            dynamic_array_append(&ctx->type_info_types, type);
             assert(type->info_index == -1);
             type->info_index = index;
 
             auto members = alloc_array<Type_Info_Struct_Member>(allocator, type->structure.member_types.count);
 
+            s64 offset = 0;
+
             for (s64 i = 0; i < type->structure.member_types.count; i++) {
                 members[i].name = string_copy(allocator, type->structure.member_names[i]);
                 members[i].type = add_type_info(ctx, type->structure.member_types[i]);
+                members[i].offset = offset;
+
+                offset += members[i].type->byte_size;
             }
 
             structure_info->name = string_copy(&ctx->bytecode_allocator, type->structure.name);
@@ -153,6 +159,7 @@ Type_Info *add_type_info(Zodiac_Context *ctx, Type *type)
     if (type->kind != Type_Kind::STRUCTURE) {
         auto index = ctx->type_infos.count;
         dynamic_array_append(&ctx->type_infos, result);
+        dynamic_array_append(&ctx->type_info_types, type);
         assert(type->info_index == -1);
         type->info_index = index;
     } else {

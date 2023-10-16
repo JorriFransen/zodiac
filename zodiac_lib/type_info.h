@@ -49,6 +49,7 @@ struct Type_Info_Struct_Member
 {
     String name;
     Type_Info *type;
+    s64 offset;
 };
 
 struct Type_Info_Struct

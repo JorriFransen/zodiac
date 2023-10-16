@@ -133,6 +133,7 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
     out_context->builtin_type_info_function_type = nullptr;
 
     dynamic_array_create(&dynamic_allocator, &out_context->type_infos);
+    dynamic_array_create(&dynamic_allocator, &out_context->type_info_types);
 
     if (!out_context->options.output_filename_specified && out_context->options.input_file_name.length > 0) {
 

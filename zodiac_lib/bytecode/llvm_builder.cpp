@@ -102,6 +102,7 @@ void llvm_builder_init(LLVM_Builder *builder, Allocator *allocator, Bytecode_Bui
     builder->llvm_context = new llvm::LLVMContext();
     builder->llvm_module = new llvm::Module("root_module", *builder->llvm_context);
     builder->ir_builder = new llvm::IRBuilder<>(*builder->llvm_context);
+    builder->llvm_datalayout = (llvm::DataLayout *)&builder->llvm_module->getDataLayout();
 
     bool platform_info_found = platform_info(allocator, &builder->platform_info);
     if (!platform_info_found) {
@@ -1735,7 +1736,7 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
                     llvm::Type *llvm_mem_type = llvm_type_from_ast_type(builder, ast_type->structure.member_types[i]);
                     dynamic_array_append(&mem_types, llvm_mem_type);
                 }
-                result->setBody( { mem_types.data, (size_t)mem_types.count }, false);
+                result->setBody( { mem_types.data, (size_t)mem_types.count }, true);
             }
 
             assert(result);
@@ -1807,9 +1808,10 @@ llvm::Constant *llvm_type_info_array_pointer(LLVM_Builder *builder)
     for (s64 i = 0; i < type_infos.count; i++) {
 
         auto ti = type_infos[i];
+        auto type = builder->zodiac_context->type_info_types[i];
 
         // Create a constant for the type info
-        llvm::Constant *type_info_value = llvm_emit_type_info(builder, ti);
+        llvm::Constant *type_info_value = llvm_emit_type_info(builder, ti, type);
         dynamic_array_append(&llvm_infos, type_info_value);
     }
 
@@ -1821,13 +1823,13 @@ llvm::Constant *llvm_type_info_array_pointer(LLVM_Builder *builder)
     return static_cast<llvm::Constant *>(array_glob_var);
 }
 
-llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
+llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti, Type *type)
 {
     llvm::Constant *result = nullptr;
     bool found = hash_table_find(&builder->type_infos, ti, &result);
     if (found) return result;
 
-    auto base = llvm_emit_type_info_base(builder, ti);
+    auto base = llvm_emit_type_info_base(builder, ti, type);
 
     switch (ti->kind) {
         case Type_Info_Kind::INVALID: assert(false); break;
@@ -1864,7 +1866,7 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
 
             llvm::Constant *members[2] = {
                 base,
-                llvm_emit_type_info(builder, pi->pointer_to)
+                llvm_emit_type_info(builder, pi->pointer_to, type->pointer.base)
             };
             assert(pi);
 
@@ -1892,11 +1894,22 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
             defer { temp_array_destroy(&members); };
             members.array.count = si->member_count;
 
+            auto llvm_type = llvm_type_from_ast_type(builder, type);
+            auto layout = builder->llvm_datalayout->getStructLayout(static_cast<llvm::StructType *>(llvm_type));
+
             for (s64 i = 0; i < si->member_count; i++) {
                 auto member_name = llvm_builder_emit_string_literal(builder, String_Ref(si->members[i].name));
-                llvm::Constant *member_info_members[2] = {
+
+                auto offset = (s64)layout->getElementOffset(i);
+
+                assert(offset == si->members[i].offset);
+
+                auto member_type = type->structure.member_types[i];
+
+                llvm::Constant *member_info_members[3] = {
                     member_name,
-                    llvm_emit_type_info(builder, si->members[i].type),
+                    llvm_emit_type_info(builder, si->members[i].type, member_type),
+                    llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { offset })
                 };
 
                 members[i] = llvm::ConstantStruct::get(type_info_struct_member_type, member_info_members);
@@ -1939,7 +1952,7 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
             auto ei = (Type_Info_Enum *)ti;
 
             auto name = llvm_builder_emit_string_literal(builder, ei->name);
-            auto integer_type = llvm_emit_type_info(builder, ei->integer_type);
+            auto integer_type = llvm_emit_type_info(builder, ei->integer_type, type->enumeration.integer_type);
 
             auto members_array_type = llvm::ArrayType::get(type_info_enum_member_type, ei->member_count);
 
@@ -1987,7 +2000,7 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
 
             llvm::Constant *result_members[3] = {
                 base,
-                llvm_emit_type_info(builder, sai->element_type),
+                llvm_emit_type_info(builder, sai->element_type, type->static_array.element_type),
                 llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { .s64 = sai->length })
             };
 
@@ -2003,7 +2016,7 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
 
             llvm::Constant *result_members[2] = {
                 base,
-                llvm_emit_type_info(builder, si->element_type)
+                llvm_emit_type_info(builder, si->element_type, type->slice.element_type)
             };
 
             result = llvm::ConstantStruct::get(type_info_slice_type, result_members);
@@ -2031,7 +2044,7 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
                 members.array.count = fi->param_count;
 
                 for (s64 i = 0; i < fi->param_count; i++) {
-                    members[i] = llvm_emit_type_info(builder, fi->param_types[i]);
+                    members[i] = llvm_emit_type_info(builder, fi->param_types[i], type->function.parameter_types[i]);
                 }
 
                 members_array = llvm::ConstantArray::get(members_array_type, { members.array.data, (size_t)fi->param_count });
@@ -2050,7 +2063,7 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
             llvm::Constant *result_members[3] = {
                 base,
                 parameters_slice,
-                llvm_emit_type_info(builder, fi->return_type),
+                llvm_emit_type_info(builder, fi->return_type, type->function.return_type),
             };
 
             result = llvm::ConstantStruct::get(type_info_func_type, result_members);
@@ -2070,16 +2083,29 @@ llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti)
 
 }
 
-llvm::Constant *llvm_emit_type_info_base(LLVM_Builder *builder, Type_Info *ti)
+llvm::Constant *llvm_emit_type_info_base(LLVM_Builder *builder, Type_Info *ti, Type *type)
 {
     auto type_info_type = static_cast<llvm::StructType *>(llvm_type_from_ast_type(builder, get_type_info_type(builder->zodiac_context)));
     auto type_info_kind_type = static_cast<llvm::IntegerType *>(llvm_type_from_ast_type(builder, get_type_info_kind_type(builder->zodiac_context)));
     auto size_type = static_cast<llvm::IntegerType *>(llvm_type_from_ast_type(builder, &builtin_type_s64));
 
+    auto llvm_type = llvm_type_from_ast_type(builder, type);
+
+    s64 size;
+
+    if (type->kind == Type_Kind::VOID) {
+        size = 0;
+    } else if (type->kind == Type_Kind::FUNCTION) {
+        size = builder->llvm_datalayout->getTypeAllocSize(llvm_type->getPointerTo());
+    } else {
+        size = builder->llvm_datalayout->getTypeAllocSize(llvm_type);
+    }
+
+    assert(size == ti->byte_size);
 
     llvm::Constant *members[2] = {
         llvm::ConstantInt::get(type_info_kind_type, (s64)ti->kind),
-        llvm::ConstantInt::get(size_type, (s64)ti->byte_size)
+        llvm::ConstantInt::get(size_type, size)
     };
 
     return llvm::ConstantStruct::get(type_info_type, members);

@@ -49,6 +49,7 @@ namespace llvm {
 
 class BasicBlock;
 class Constant;
+class DataLayout;
 class Function;
 class GlobalVariable;
 class LLVMContext;
@@ -105,6 +106,7 @@ struct LLVM_Builder
     llvm::LLVMContext *llvm_context = nullptr;
     llvm::Module *llvm_module = nullptr;
     llvm::IRBuilder<llvm::ConstantFolder, llvm::IRBuilderDefaultInserter> *ir_builder = nullptr;
+    llvm::DataLayout *llvm_datalayout = nullptr;
     String target_triple = {};
 
     Platform_Info platform_info = {};
@@ -161,8 +163,8 @@ ZAPI llvm::BasicBlock *get_llvm_block(LLVM_Builder *builder, Array_Ref<LLVM_Bloc
 ZAPI llvm::Function *llvm_get_intrinsic(LLVM_Builder *builder, Type *fn_type, const char *name);
 
 ZAPI llvm::Constant *llvm_type_info_array_pointer(LLVM_Builder *builder);
-ZAPI llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti);
-ZAPI llvm::Constant *llvm_emit_type_info_base(LLVM_Builder *builder, Type_Info *ti);
+ZAPI llvm::Constant *llvm_emit_type_info(LLVM_Builder *builder, Type_Info *ti, Type *type);
+ZAPI llvm::Constant *llvm_emit_type_info_base(LLVM_Builder *builder, Type_Info *ti, Type *type);
 
 ZAPI void llvm_builder_emit_binary(LLVM_Builder *builder);
 ZAPI bool llvm_builder_run_linker(LLVM_Builder *builder);
