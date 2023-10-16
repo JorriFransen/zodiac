@@ -91,6 +91,9 @@ struct Type
 
     Type *pointer_to;
 
+    // Temporary
+    Type *clean_type;
+
     s64 info_index;
 
     union {
@@ -200,6 +203,8 @@ ZAPI Type *get_type_info_slice_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_function_type(Zodiac_Context *ctx);
 
 ZAPI Type *sym_decl_type(Symbol *sym);
+
+ZAPI Type *cleanup_slice_pointers(Zodiac_Context *ctx, Type *type);
 
 ZAPI bool valid_static_type_conversion(Type *from, Type *to);
 

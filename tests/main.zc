@@ -91,6 +91,16 @@ main :: () {
     print_any(avecs);
     println();
 
+    slice : []s64 = { 11, 22, 33 };
+    aslice : Any = { #type_info(#type_of(slice)), cast(*u8, *slice) };
+    print_any(aslice);
+    println();
+
+    slice2 : []Vec2 = vecs;
+    aslice2 : Any = { #type_info(#type_of(slice2)), cast(*u8, *slice2) };
+    print_any(aslice2);
+    println();
+
     return 0;
 }
 
@@ -201,6 +211,13 @@ print_any :: (any: Any) -> void {
                 offset += ai.element_type.size;
             }
             print(" }");
+
+        case Type_Info_Kind.Slice:
+            si := cast(*Type_Info_Slice, any.type);
+
+            slice := <cast(*[]s64, any.value);
+            print(slice);
+
 
         default: println("!!! Unhandled type in print_any !!!");
     }

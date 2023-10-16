@@ -373,6 +373,8 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             assert(var_decl->variable.resolved_type);
 
             Type *alloc_type = var_decl->variable.resolved_type;
+            alloc_type = cleanup_slice_pointers(bc->context, alloc_type);
+
             auto alloc_name = String_Ref(var_decl->identifier.name);
             alloc_name = bytecode_unique_register_name_in_function(bc->builder, fn_handle, alloc_name);
             auto alloc_reg = bytecode_emit_alloc(bc->builder, alloc_type, alloc_name.data);
@@ -1575,8 +1577,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
            expr->kind == AST_Expression_Kind::CALL && expr->resolved_type->kind == Type_Kind::VOID);
 
     auto check_type = expr->resolved_type;
-    if (check_type->kind == Type_Kind::UNSIZED_INTEGER ||
-        check_type->kind == Type_Kind::SLICE) {
+    if (check_type->kind == Type_Kind::UNSIZED_INTEGER) {
         check_type = result.type;
     }
 
@@ -1593,6 +1594,11 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             }
 
 
+        } else if (TYPE_IS_SLICE_STRUCT(enforce_type) && check_type->kind == Type_Kind::SLICE) {
+            assert(result.type == enforce_type);
+            // ok
+        } else if (cleanup_slice_pointers(bc->context, check_type) == enforce_type) {
+            // ok
         } else {
             assert(false);
         }
@@ -2023,6 +2029,7 @@ void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, 
 
     } else {
         value_reg = ast_expr_to_bytecode(bc, value_expr, lvalue_type);
+        value_reg.type = cleanup_slice_pointers(bc->context, value_reg.type);
     }
 
     assert(value_reg.type == lvalue_type);

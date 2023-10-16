@@ -104,6 +104,7 @@ void create_type(Type *type, Type_Kind kind, u64 bit_size, Type_Flags flags/*=TY
     type->bit_size = bit_size;
     type->flags = flags;
     type->pointer_to = nullptr;
+    type->clean_type = nullptr;
     type->info_index = -1;
 }
 
@@ -612,6 +613,80 @@ Type *sym_decl_type(Symbol *sym)
 
     assert(false);
     return nullptr;
+}
+
+Type *cleanup_slice_pointers(Zodiac_Context *ctx, Type *type)
+{
+
+    if (type->clean_type) return type->clean_type;
+
+    Type *result = nullptr;
+
+    switch (type->kind) {
+        case Type_Kind::INVALID: assert(false); break;
+
+        case Type_Kind::VOID:
+        case Type_Kind::UNSIZED_INTEGER:
+        case Type_Kind::INTEGER:
+        case Type_Kind::FLOAT:
+        case Type_Kind::BOOLEAN:
+        case Type_Kind::ENUM: {
+            result = type;
+            break;
+        }
+
+        case Type_Kind::POINTER: {
+            auto new_base = cleanup_slice_pointers(ctx, type->pointer.base);
+            result = get_pointer_type(new_base, &ctx->ast_allocator);
+            break;
+        }
+
+        case Type_Kind::STRUCTURE: {
+            // type->clean_type = type;
+            // for (s64 i = 0; i < type->structure.member_types.count; i++) {
+            //     auto member_type = type->structure.member_types[i];
+            //     auto clean_type = cleanup_slice_pointers(ctx, member_type);
+            //
+            //     assert(clean_type == member_type);
+            // }
+
+            result = type;
+            break;
+        }
+
+        case Type_Kind::STATIC_ARRAY: {
+            auto element_type = type->static_array.element_type;
+            auto clean_type = cleanup_slice_pointers(ctx, element_type);
+            assert(clean_type == element_type);
+
+            result = type;
+            break;
+        }
+
+        case Type_Kind::SLICE: {
+            result = type->slice.struct_type;
+            break;
+        }
+
+        case Type_Kind::FUNCTION: {
+            auto return_type = type->function.return_type;
+            auto clean_ret_type = cleanup_slice_pointers(ctx, return_type);
+
+            assert(clean_ret_type == return_type);
+
+            for (s64 i = 0; i < type->function.parameter_types.count; i++) {
+                auto param_type = type->function.parameter_types[i];
+                auto clean_param_type = cleanup_slice_pointers(ctx, param_type);
+                assert(clean_param_type == param_type);
+            }
+
+            result = type;
+            break;
+        }
+    }
+
+    type->clean_type = result;
+    return result;
 }
 
 bool valid_static_type_conversion(Type *from, Type *to)

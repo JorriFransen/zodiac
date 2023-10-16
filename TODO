@@ -1,4 +1,5 @@
 
+- Slice should be builtin like string, this should solve the problem with pointers to slice and pointer to the slices struct type.
 - String equality
 - Allow pointer math?
 - Initialize slices with data and length somehow ( specify types for compound expressions?) ( builtin slice() function?)

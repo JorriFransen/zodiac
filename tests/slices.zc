@@ -23,6 +23,6 @@ main :: () {
 
     local_copy = { 11, 22 };
     println(<slice_ptr);
-    println(local_copy);
     return 0;
 }
+

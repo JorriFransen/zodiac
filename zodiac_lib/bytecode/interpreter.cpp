@@ -777,7 +777,7 @@ switch (operand.type->bit_size) { \
             Interpreter_Register new_value = interpreter_load_register(interp, instruction.a);
             Interpreter_Register alloc_register = interpreter_load_register(interp, instruction.b);
 
-            assert(new_value.type == alloc_register.type);
+            debug_assert(cleanup_slice_pointers(interp->context, new_value.type) == alloc_register.type);
             assert(alloc_register.pointer);
 
             interpreter_store_pointer(interp, new_value, alloc_register.pointer);
@@ -1399,7 +1399,7 @@ Interpreter_Register interpreter_load_register(Interpreter *interp, Bytecode_Reg
 
             assert(bc_reg.index < frame->register_count);
             auto interp_reg_ptr = &interp->registers[frame->register_start + bc_reg.index];
-            assert(interp_reg_ptr->type == bc_reg.type);
+            debug_assert(cleanup_slice_pointers(interp->context, interp_reg_ptr->type) == bc_reg.type);
             return *interp_reg_ptr;
         }
 
