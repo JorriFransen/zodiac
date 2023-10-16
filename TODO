@@ -1,5 +1,8 @@
 
+- Cleanup the temporary fix for checking if dependencies have been emitted before running bytecode, since it is causing compile errors to not show up.
+
 - Slice should be builtin like string, this should solve the problem with pointers to slice and pointer to the slices struct type.
+
 - String equality
 - Allow pointer math?
 - Initialize slices with data and length somehow ( specify types for compound expressions?) ( builtin slice() function?)
@@ -33,7 +36,7 @@
 
 - When emitting non constant compound expressions some of it's members/elements might be constant. Constant members should be emitted to a value first, which we can then use to insert the non const values into.
 
-- Allow casting enum members to the enum type they are a part of?
+- Allow casting enum member values to the enum type they are a part of?
     This will require creating the enum type before adding the members, and finalizing it when all members have been added.
 
 - Try to report (fatal) errors before executing run directives
