@@ -4460,6 +4460,12 @@ MunitResult Type_Info(const MunitParameter params[], void* user_data_or_fixture)
         Vec2 :: struct { x, y: r64; }
         AABB :: struct { pos, size: Vec2; }
 
+        AABB2 :: struct {
+            pos: Vec2;
+            b: bool;
+            size: Vec2;
+        }
+
         Node :: struct {
             value: s64;
             next: *Node;
@@ -4500,9 +4506,6 @@ MunitResult Type_Info(const MunitParameter params[], void* user_data_or_fixture)
             println("Type info test!");
 
             print_ti(#type_info(void));
-
-            println();
-
             print_ti(#type_info(s64));
             print_ti(#type_info(u64));
             print_ti(#type_info(s32));
@@ -4511,40 +4514,27 @@ MunitResult Type_Info(const MunitParameter params[], void* user_data_or_fixture)
             print_ti(#type_info(u16));
             print_ti(#type_info(s8));
             print_ti(#type_info(u8));
-
-            println();
-
             print_ti(#type_info(r64));
             print_ti(#type_info(r32));
-
-            println();
-
             print_ti(#type_info(bool));
-
-            println();
             pointers();
-
             print_ti(#type_info(String));
             print_ti(#type_info(Vec2));
             print_ti(#type_info(AABB));
+            print_ti(#type_info(AABB2));
             print_ti(#type_info(*Vec2));
-
             print_ti(#type_info(Node));
-
             print_ti(#type_info(Day));
             print_ti(#type_info(*Day));
             print_ti(#type_info(Mode));
             print_ti(#type_info(Token_Kind));
             print_ti(#type_info(Token_Kind2));
-
             print_ti(#type_info([2]s64));
             print_ti(#type_info([4][4]r32));
             print_ti(#type_info(*[4][4]r32));
-
             print_ti(#type_info([]s64));
             print_ti(#type_info([][]Vec2));
             print_ti(#type_info(*[][]Vec2));
-
             print_ti(#type_info( *() -> void ));
             print_ti(#type_info( *(r64, r64) -> Vec2 ));
             print_ti(#type_info( () -> void ));
@@ -4609,8 +4599,11 @@ MunitResult Type_Info(const MunitParameter params[], void* user_data_or_fixture)
                     for i := 0; i < si.members.length; i += 1 {
                         member := si.members[i];
                         if i > 0 print(", ");
-                        if member.name.length != 0 print(member.name, ": ");
+                        print("(");
+                        if member.name.length != 0 print("name: ", member.name, ", ");
+                        print("type: ");
                         print_short_type(member.type);
+                        print(", offset: ", member.offset, ")");
                     }
                     print(" }, ", ti.size, " bytes");
 
@@ -4712,7 +4705,6 @@ MunitResult Type_Info(const MunitParameter params[], void* user_data_or_fixture)
     Expected_Results expected = { .std_out =
 R"OUT_STR(Type info test!
 void, 0 bytes
-
 Integer, 8 bytes, signed
 Integer, 8 bytes, unsigned
 Integer, 4 bytes, signed
@@ -4721,12 +4713,9 @@ Integer, 2 bytes, signed
 Integer, 2 bytes, unsigned
 Integer, 1 bytes, signed
 Integer, 1 bytes, unsigned
-
 Real, 8 bytes
 Real, 4 bytes
-
 bool, 1 bytes
-
 Pointer: (to: void), 8 bytes
 Pointer: (to: s64), 8 bytes
 Pointer: (to: u64), 8 bytes
@@ -4743,11 +4732,12 @@ Pointer: (to: *void), 8 bytes
 Pointer: (to: *s32), 8 bytes
 Pointer: (to: **void), 8 bytes
 Pointer: (to: **s32), 8 bytes
-Struct: String, members: { data: *u8, length: s64 }, 16 bytes
-Struct: Vec2, members: { x: r64, y: r64 }, 16 bytes
-Struct: AABB, members: { pos: Vec2, size: Vec2 }, 32 bytes
+Struct: String, members: { (name: data, type: *u8, offset: 0), (name: length, type: s64, offset: 8) }, 16 bytes
+Struct: Vec2, members: { (name: x, type: r64, offset: 0), (name: y, type: r64, offset: 8) }, 16 bytes
+Struct: AABB, members: { (name: pos, type: Vec2, offset: 0), (name: size, type: Vec2, offset: 16) }, 32 bytes
+Struct: AABB2, members: { (name: pos, type: Vec2, offset: 0), (name: b, type: bool, offset: 16), (name: size, type: Vec2, offset: 17) }, 33 bytes
 Pointer: (to: Vec2), 8 bytes
-Struct: Node, members: { value: s64, next: *Node }, 16 bytes
+Struct: Node, members: { (name: value, type: s64, offset: 0), (name: next, type: *Node, offset: 8) }, 16 bytes
 Enum: Day base: s64, members { MONDAY = 0, TUESDAY = 1, WEDNESDAY = 2, THURSDAY = 3, FRIDAY = 4, SATURDAY = 5, SUNDAY = 6 }, 8 bytes
 Pointer: (to: Day), 8 bytes
 Enum: Mode base: s64, members { INVALID = 0, READ = 11, WRITE = 22, DRY_RUN = 23, SECRET = 42, UNIMPORTANT = 43 }, 8 bytes
