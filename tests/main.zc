@@ -216,7 +216,23 @@ print_any :: (any: Any) -> void {
             si := cast(*Type_Info_Slice, any.type);
 
             slice := <cast(*[]s64, any.value);
-            print(slice);
+
+            arr_mem : []u8;
+            arr_mem.data = cast(*u8, slice.data);
+            arr_mem.length = slice.length * si.element_type.size;
+
+            offset := 0;
+
+            print("{ ");
+            for i := 0; i < slice.length; i += 1 {
+                if i > 0 print(", ");
+
+                elem_any : Any = { si.element_type, *arr_mem[offset] };
+                print_any(elem_any);
+
+                offset += si.element_type.size;
+            }
+            print(" }");
 
 
         default: println("!!! Unhandled type in print_any !!!");
