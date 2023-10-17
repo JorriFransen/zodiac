@@ -586,7 +586,6 @@ void ast_run_directive_create(AST_Statement *stmt, AST_Directive *out_dir)
     out_dir->run.expr = nullptr;
     out_dir->run.stmt = stmt;
     out_dir->run.scope = nullptr;
-    out_dir->run.called_functions = {};
 }
 
 void ast_import_directive_create(Atom path, AST_Directive *out_dir)

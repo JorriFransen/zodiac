@@ -464,11 +464,13 @@ typedef u32 AST_Declaration_Flags;
 
 enum AST_Declaration_Flag : AST_Declaration_Flags
 {
-    AST_DECL_FLAG_NONE       = 0x00,
-    AST_DECL_FLAG_GLOBAL     = 0x01,
-    AST_DECL_FLAG_TYPED      = 0x02,
-    AST_DECL_FLAG_FOREIGN    = 0x04,
-    AST_DECL_FLAG_PROTO_DONE = 0x08,
+    AST_DECL_FLAG_NONE                  = 0x000,
+    AST_DECL_FLAG_GLOBAL                = 0x001,
+    AST_DECL_FLAG_TYPED                 = 0x002,
+    AST_DECL_FLAG_FOREIGN               = 0x004,
+    AST_DECL_FLAG_PROTO_DONE            = 0x008,
+    AST_DECL_FLAG_BYTECODE_EMITTED      = 0x010,
+    AST_DECL_FLAG_BYTECODE_DEPS_EMITTED = 0x020,
 };
 
 #define DECL_IS_GLOBAL(d) ((d)->flags & AST_DECL_FLAG_GLOBAL)
@@ -574,8 +576,6 @@ struct AST_Directive
 
             AST_Expression *expr;
             AST_Statement *stmt;
-
-            Dynamic_Array<AST_Declaration *> called_functions;
         } run;
 
         struct {

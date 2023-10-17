@@ -8,11 +8,13 @@
 #include "bytecode/printer.h"
 #include "bytecode/validator.h"
 #include "containers/hash_table.h"
+#include "error.h"
 #include "lexer.h"
 #include "memory/zmemory.h"
 #include "parser.h"
 #include "platform/filesystem.h"
 #include "resolve.h"
+#include "scope.h"
 #include "source_pos.h"
 #include "type.h"
 #include "util/asserts.h"
@@ -211,7 +213,10 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
 
     Resolve_Results resolve_result = RESOLVE_RESULT_NONE;
 
+    int cycle = 0;
+
     while (!parser_done || !(resolve_result & RESOLVE_RESULT_DONE) || ctx->resolver->nodes_to_run_bytecode.count) {
+
         parser_done = do_parse_jobs(ctx);
         if (ctx->parse_error) {
             // do_parse_jobs() should have reported any errors
@@ -227,29 +232,6 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
 
         resolve_result = resolver_cycle(ctx->resolver);
 
-        bool ran_bytecode_jobs = false;
-
-        // TODO: FIXME:
-        // This is a temporary fix, we need to check if all called functions are emitted before running,
-        // right now we only check calls directly in the run directive.
-        if (!(resolve_result & RESOLVE_RESULT_PROGRESS)) {
-
-            for (s64 i = 0; i < ctx->resolver->nodes_to_run_bytecode.count; i++) {
-                auto node = ctx->resolver->nodes_to_run_bytecode[i];
-
-                if (do_run_job(ctx, node)) {
-                    dynamic_array_remove_ordered(&ctx->resolver->nodes_to_run_bytecode, i);
-                    i--;
-                    ran_bytecode_jobs = true;
-                }
-            }
-        }
-
-        if (ran_bytecode_jobs) {
-            ctx->errors.count = 0;
-            temporary_allocator_reset(&ctx->error_allocator_state);
-        }
-
         if (ctx->options.report_errors) {
             if (resolver_report_errors(ctx->resolver)) {
                 return false;
@@ -259,7 +241,42 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
         assert(ctx->errors.count == 0);
         emit_bytecode(ctx->resolver, ctx->bytecode_converter);
         if (ctx->errors.count) return false;
+
+        auto old_run_count = ctx->resolver->nodes_to_run_bytecode.count;
+
+        bool bytecode_error = false;
+        for (s64 i = 0; i < ctx->resolver->nodes_to_run_bytecode.count; i++) {
+            auto node = ctx->resolver->nodes_to_run_bytecode[i];
+
+            if (do_run_job(ctx, node)) {
+                dynamic_array_remove_ordered(&ctx->resolver->nodes_to_run_bytecode, i);
+                i--;
+            } else {
+                bytecode_error = true;
+            }
+        }
+
+        if (bytecode_error && (resolve_result & RESOLVE_RESULT_PROGRESS)) {
+            ctx->errors.count = 0;
+            temporary_allocator_reset(&ctx->error_allocator_state);
+        } else {
+
+            if (ctx->options.report_errors) {
+                if (resolver_report_errors(ctx->resolver)) {
+                    return false;
+                }
+            } else if (ctx->errors.count) return false;
+        }
+
+        if ((!(resolve_result & RESOLVE_RESULT_PROGRESS)) && ctx->resolver->nodes_to_run_bytecode.count == old_run_count) {
+            ZERROR("Exitting compile loop, there was no resolve progress, and no bytecode ran (cycle %i)", cycle);
+            return false;
+        }
+
+        cycle++;
     }
+
+    ZTRACE("Done after %i cycles");
 
     if (ctx->options.print_ast) {
         for (s64 i = 0; i < ctx->parsed_files.count; i++) {
@@ -420,22 +437,9 @@ bool do_run_job(Zodiac_Context *ctx, Flat_Root_Node *root_node)
     bool found = hash_table_find(&ctx->bytecode_converter->run_directives, directive, &wrapper_handle);
     assert(found);
 
-    auto wrapper_fn = &ctx->bytecode_converter->builder->functions[wrapper_handle];
 
-    for (s64 i = 0; i < directive->run.called_functions.count; i++) {
-        AST_Declaration *called_fn_decl = directive->run.called_functions[i];
-
-        Bytecode_Function_Handle called_fn_handle;
-        bool found = hash_table_find(&ctx->bytecode_converter->functions,  called_fn_decl, &called_fn_handle);
-        assert(found);
-
-        auto called_fn = ctx->bytecode_converter->builder->functions[called_fn_handle];
-
-        // No block means not emitted yet
-        if (called_fn.blocks.count == 0) {
-            ZTRACE("Waiting for '%s' to be emitted before executing run job '%s'", called_fn.name.data, wrapper_fn->name.data);
-            return false;
-        }
+    if (!check_run_dependencies(ctx, directive)) {
+        return false;
     }
 
     File_Handle std_out_handle;
@@ -466,6 +470,316 @@ bool do_run_job(Zodiac_Context *ctx, Flat_Root_Node *root_node)
     free_run_wrapper_result(&run_res);
 
     return true;
+}
+
+bool check_run_dependencies(Zodiac_Context *ctx, AST_Directive *directive)
+{
+    assert(directive->kind == AST_Directive_Kind::RUN);
+
+    if (directive->run.kind == AST_Run_Directive_Kind::EXPR) {
+
+        return check_run_dependencies(ctx, directive->run.expr);
+
+    } else if (directive->run.kind == AST_Run_Directive_Kind::STMT) {
+
+        return check_run_dependencies(ctx, directive->run.stmt);
+
+    } else {
+        assert(false);
+    }
+    return true;
+}
+
+bool check_run_dependencies(Zodiac_Context *ctx, AST_Expression *expr)
+{
+    switch (expr->kind) {
+        case AST_Expression_Kind::INVALID: assert(false); break;
+
+        case AST_Expression_Kind::INTEGER_LITERAL:
+        case AST_Expression_Kind::REAL_LITERAL:
+        case AST_Expression_Kind::STRING_LITERAL:
+        case AST_Expression_Kind::CHAR_LITERAL:
+        case AST_Expression_Kind::NULL_LITERAL:
+        case AST_Expression_Kind::BOOL_LITERAL:
+        case AST_Expression_Kind::TYPE_INFO:
+        case AST_Expression_Kind::IDENTIFIER: {
+            return true;
+        }
+
+        case AST_Expression_Kind::MEMBER: {
+            return check_run_dependencies(ctx, expr->member.base);
+        }
+
+        case AST_Expression_Kind::INDEX: {
+            return check_run_dependencies(ctx, expr->index.base);
+        }
+
+        case AST_Expression_Kind::CALL: {
+
+            if (!check_run_dependencies(ctx, expr->call.base)) {
+                return false;
+            }
+
+            AST_Expression *base = expr->call.base;
+            assert(base->kind == AST_Expression_Kind::IDENTIFIER);
+
+            Symbol *sym = scope_get_symbol(base->identifier.scope, base->identifier.name);
+            assert(sym && sym->kind == Symbol_Kind::FUNC);
+            assert(sym->decl && sym->decl->kind == AST_Declaration_Kind::FUNCTION);
+
+            auto fn_decl = sym->decl;
+
+            if (fn_decl->flags & AST_DECL_FLAG_BYTECODE_EMITTED) {
+                // Check this function as well.
+                return check_run_dependencies(ctx, fn_decl);
+            } else {
+                resolve_error(ctx, expr, "Waiting for '%s' to emitted before executing run job '%s'", fn_decl->identifier.name.data, fn_decl->identifier.name.data);
+                return false;
+            }
+
+            assert(false);
+            break;
+        }
+
+        case AST_Expression_Kind::UNARY: {
+            return check_run_dependencies(ctx, expr->unary.operand);
+        }
+
+        case AST_Expression_Kind::BINARY: {
+            if (!check_run_dependencies(ctx, expr->binary.lhs)) {
+                return false;
+            }
+
+            if (!check_run_dependencies(ctx, expr->binary.rhs)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        case AST_Expression_Kind::RANGE: assert(false); break;
+
+        case AST_Expression_Kind::CAST: {
+            return check_run_dependencies(ctx, expr->cast.value);
+        }
+
+        case AST_Expression_Kind::RUN_DIRECTIVE: {
+            if (expr->directive.generated_expression) {
+                return true;
+            }
+
+            return false;
+        }
+
+        case AST_Expression_Kind::COMPOUND: {
+
+            for (s64 i = 0; i < expr->compound.expressions.count; i++) {
+                if (!check_run_dependencies(ctx, expr->compound.expressions[i])) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+}
+
+bool check_run_dependencies(Zodiac_Context *ctx, AST_Declaration *decl)
+{
+    if (decl->flags & AST_DECL_FLAG_BYTECODE_DEPS_EMITTED) {
+        // Recursive call, or checked before
+        return true;
+    }
+
+    bool result = true;
+
+    switch (decl->kind) {
+        case AST_Declaration_Kind::INVALID: assert(false); break;
+
+        case AST_Declaration_Kind::VARIABLE: {
+
+            if (decl->variable.value) {
+                result = check_run_dependencies(ctx, decl->variable.value);
+            }
+
+            break;
+        }
+
+        case AST_Declaration_Kind::CONSTANT_VARIABLE: {
+            return true;
+        }
+
+        case AST_Declaration_Kind::PARAMETER: assert(false); break;
+        case AST_Declaration_Kind::FIELD: assert(false); break;
+
+        case AST_Declaration_Kind::FUNCTION: {
+            // We already know bytecode for this function has been emitted
+
+            // Set this before the body to make recursive calls return true
+            decl->flags |= AST_DECL_FLAG_BYTECODE_DEPS_EMITTED;
+
+            bool fn_result = true;
+
+            for (s64 i = 0; i < decl->function.body.count; i++) {
+                auto stmt = decl->function.body[i];
+
+                if (!check_run_dependencies(ctx, stmt)) {
+                    fn_result = false;
+                    break;
+                }
+            }
+
+            if (!fn_result) {
+                decl->flags &= ~AST_DECL_FLAG_BYTECODE_DEPS_EMITTED;
+            }
+
+            result = fn_result;
+            break;
+        }
+
+        case AST_Declaration_Kind::STRUCT: assert(false); break;
+        case AST_Declaration_Kind::UNION: assert(false); break;
+        case AST_Declaration_Kind::ENUM_MEMBER: assert(false); break;
+        case AST_Declaration_Kind::ENUM: assert(false); break;
+        case AST_Declaration_Kind::RUN_DIRECTIVE: assert(false); break;
+        case AST_Declaration_Kind::IMPORT_DIRECTIVE: assert(false); break;
+    }
+
+    if (result) {
+        decl->flags |= AST_DECL_FLAG_BYTECODE_DEPS_EMITTED;
+    }
+
+    return result;
+}
+
+bool check_run_dependencies(Zodiac_Context *ctx, AST_Statement *stmt)
+{
+    switch (stmt->kind) {
+        case AST_Statement_Kind::INVALID: assert(false); break;
+
+        case AST_Statement_Kind::BLOCK: {
+            for (s64 i = 0; i < stmt->block.statements.count; i++) {
+                if (!check_run_dependencies(ctx, stmt->block.statements[i])) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        case AST_Statement_Kind::DECLARATION: {
+            return check_run_dependencies(ctx, stmt->decl.decl);
+        }
+
+        case AST_Statement_Kind::ASSIGN: {
+            if (!check_run_dependencies(ctx, stmt->assign.dest)) {
+                return false;
+            }
+
+            if (!check_run_dependencies(ctx, stmt->assign.value)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        case AST_Statement_Kind::CALL: {
+            return check_run_dependencies(ctx, stmt->call.call);
+        }
+
+        case AST_Statement_Kind::IF: {
+            for (s64 i = 0; i < stmt->if_stmt.blocks.count; i++) {
+                auto &block = stmt->if_stmt.blocks[i];
+
+                if (!check_run_dependencies(ctx, block.cond)) {
+                    return false;
+                }
+
+                if (!check_run_dependencies(ctx, block.then)) {
+                    return false;
+                }
+            }
+
+            if (stmt->if_stmt.else_stmt && !check_run_dependencies(ctx, stmt->if_stmt.else_stmt)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        case AST_Statement_Kind::WHILE: assert(false); break;
+
+        case AST_Statement_Kind::FOR: {
+            if (!check_run_dependencies(ctx, stmt->for_stmt.init_decl)) {
+                return false;
+            }
+
+            if (!check_run_dependencies(ctx, stmt->for_stmt.cond_expr)) {
+                return false;
+            }
+
+            if (!check_run_dependencies(ctx, stmt->for_stmt.inc_stmt)) {
+                return false;
+            }
+
+            if (!check_run_dependencies(ctx, stmt->for_stmt.body_stmt)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        case AST_Statement_Kind::SWITCH: {
+            if (!check_run_dependencies(ctx, stmt->switch_stmt.value)) {
+                return false;
+            }
+
+            for (s64 i = 0; i < stmt->switch_stmt.cases.count; i++) {
+                if (!check_run_dependencies(ctx, stmt->switch_stmt.cases[i])) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        case AST_Statement_Kind::SWITCH_CASE: {
+            if (!stmt->switch_case_stmt.is_default) {
+                for (s64 i = 0; i < stmt->switch_case_stmt.case_values.count; i++) {
+                    if (!check_run_dependencies(ctx, stmt->switch_case_stmt.case_values[i])) {
+                        return false;
+                    }
+                }
+            }
+
+            if (!check_run_dependencies(ctx, stmt->switch_case_stmt.case_stmt)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        case AST_Statement_Kind::FALLTROUGH: assert(false); break;
+        case AST_Statement_Kind::DEFER: assert(false); break;
+
+        case AST_Statement_Kind::RETURN: {
+            if (stmt->return_stmt.value && !check_run_dependencies(ctx, stmt->return_stmt.value)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        case AST_Statement_Kind::PRINT: {
+            for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
+                if (!check_run_dependencies(ctx, stmt->print_expr.expressions[i])) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
 }
 
 }

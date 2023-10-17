@@ -11,6 +11,10 @@
 namespace Zodiac
 {
 
+struct AST_Declaration;
+struct AST_Directive;
+struct AST_Expression;
+struct AST_Statement;
 struct AST_File;
 struct File_Handle;
 struct Flat_Root_Node;
@@ -126,5 +130,10 @@ ZAPI bool zodiac_context_compile(Zodiac_Context *ctx);
 
 ZAPI bool do_parse_jobs(Zodiac_Context *ctx);
 ZAPI bool do_run_job(Zodiac_Context *ctx, Flat_Root_Node *root_node);
+
+ZAPI bool check_run_dependencies(Zodiac_Context *ctx, AST_Directive *directive);
+ZAPI bool check_run_dependencies(Zodiac_Context *ctx, AST_Expression *expr);
+ZAPI bool check_run_dependencies(Zodiac_Context *ctx, AST_Declaration *decl);
+ZAPI bool check_run_dependencies(Zodiac_Context *ctx, AST_Statement *stmt);
 
 }

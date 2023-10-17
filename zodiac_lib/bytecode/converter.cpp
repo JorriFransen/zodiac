@@ -608,6 +608,8 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             bytecode_emit_return(bc->builder);
         }
     }
+
+    decl->flags |= AST_DECL_FLAG_BYTECODE_EMITTED;
 }
 
 bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
@@ -2108,29 +2110,6 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
         bytecode_emit_return(bc->builder, result_register);
     } else {
         bytecode_emit_return(bc->builder);
-    }
-
-    assert(run_directive->run.called_functions.data == nullptr);
-    assert(run_directive->run.called_functions.count == 0);
-    dynamic_array_create(&bc->context->ast_allocator, &run_directive->run.called_functions, 1);
-
-    auto wrapper_fn = &bc->builder->functions[wrapper_handle];
-    for (s64 bi = 0; bi < wrapper_fn->blocks.count; bi++) {
-        auto block = &wrapper_fn->blocks[bi];
-        for (s64 ii = 0; ii < block->instructions.count; ii++) {
-            auto inst = &block->instructions[ii];
-
-            if (inst->op == Bytecode_Opcode::CALL) {
-                assert(inst->a.kind == Bytecode_Register_Kind::FUNCTION);
-                auto fn_handle = inst->a.value.function_handle;
-
-                AST_Declaration *fn_decl;
-                bool found = hash_table_find_key(&bc->functions, fn_handle, &fn_decl);
-                assert(found);
-
-                dynamic_array_append(&run_directive->run.called_functions, fn_decl);
-            }
-        }
     }
 
     Bytecode_Validator validator = {};
