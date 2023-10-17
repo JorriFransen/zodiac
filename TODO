@@ -1,6 +1,4 @@
 
-- Cleanup the temporary fix for checking if dependencies have been emitted before running bytecode, since it is causing compile errors to not show up.
-
 - Slice should be builtin like string, this should solve the problem with pointers to slice and pointer to the slices struct type.
 
 - String equality
