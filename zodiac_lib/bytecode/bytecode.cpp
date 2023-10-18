@@ -844,7 +844,6 @@ Bytecode_Register bytecode_emit_sqrt(Bytecode_Builder *builder, Bytecode_Registe
 
 Bytecode_Register bytecode_emit_cast(Bytecode_Builder *builder, Type *target_type, Bytecode_Register operand_register)
 {
-    // target_type = cleanup_slice_pointers(builder->zodiac_context, target_type);
     auto op_type = operand_register.type;
 
     if (op_type == target_type) {
