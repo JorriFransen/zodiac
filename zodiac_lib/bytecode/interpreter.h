@@ -107,6 +107,7 @@ ZAPI Interpreter_Stack_Frame interpreter_pop_stack_frame(Interpreter *interp);
 ZAPI void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest, Interpreter_Register source);
 
 ZAPI void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type, bool quote_strings = false);
+ZAPI void interpreter_print_slice_from_memory(Interpreter *interp, u8* mem, Type *element_type, bool quote_strings = false);
 ZAPI void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, bool quote_strings = false);
 
 }}

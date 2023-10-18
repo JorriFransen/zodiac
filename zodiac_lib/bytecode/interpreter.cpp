@@ -1734,6 +1734,12 @@ void interpreter_push_stack_frame(Interpreter *interp, Bytecode_Function_Handle 
             .type = arg_source.type,
         };
 
+        if (TYPE_IS_SLICE_STRUCT(arg_source.type) && fn->param_types[i]->kind == Type_Kind::SLICE) {
+            assert(arg_source.type == fn->param_types[i]->slice.struct_type);
+            arg_source.type = fn->param_types[i];
+            arg_dest.type = fn->param_types[i];
+        }
+
         interpreter_store_register(interp, arg_source, arg_dest);
     }
 
@@ -1971,29 +1977,11 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type, boo
             }
 
             if (type->flags & TYPE_FLAG_SLICE_STRUCT) {
-
                 assert(type->structure.member_types.count == 2);
                 assert(type->structure.member_types[0]->kind == Type_Kind::POINTER);
                 auto element_type = type->structure.member_types[0]->pointer.base;
-
-                u8 *data = *(u8 **)mem;
-                mem += builtin_type_s64.bit_size / 8;
-                s64 length = *(s64 *)mem;
-
-                fprintf(out_handle, "{ ");
-
-                auto cur = data;
-                for (s64 i = 0; i < length; i++) {
-                    if (i > 0) fprintf(out_handle, ", ");
-                    interpreter_print_from_memory(interp, cur, element_type, quote_strings);
-
-                    // TODO: FIXME: Alignment
-                    cur += element_type->bit_size / 8;
-                }
-
-                fprintf(out_handle, " }");
-
-                break;
+                interpreter_print_slice_from_memory(interp, mem, element_type, quote_strings);
+                return;
             };
 
             fprintf(out_handle, "{ ");
@@ -2042,10 +2030,38 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type, boo
             break;
         }
 
-        case Type_Kind::SLICE: assert(false); break;
+        case Type_Kind::SLICE: {
+
+            auto element_type = type->slice.element_type;
+
+            interpreter_print_slice_from_memory(interp, mem, element_type);
+            break;
+        }
 
         case Type_Kind::FUNCTION: assert(false); break;
     }
+}
+
+void interpreter_print_slice_from_memory(Interpreter *interp, u8* mem, Type *element_type, bool quote_strings/*=false*/)
+{
+    auto out_handle = (FILE *)interp->std_out.handle;
+
+    u8 *data = *(u8 **)mem;
+    mem += builtin_type_s64.bit_size / 8;
+    s64 length = *(s64 *)mem;
+
+    fprintf(out_handle, "{ ");
+
+    auto cur = data;
+    for (s64 i = 0; i < length; i++) {
+        if (i > 0) fprintf(out_handle, ", ");
+        interpreter_print_from_memory(interp, cur, element_type, quote_strings);
+
+        // TODO: FIXME: Alignment
+        cur += element_type->bit_size / 8;
+    }
+
+    fprintf(out_handle, " }");
 }
 
 void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, bool quote_strings/*=false*/)

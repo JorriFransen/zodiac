@@ -824,7 +824,15 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             bool arg_match = true;
             for (s64 i = 0; i < fn_arg_count; i++) {
                 auto arg_reg = stack_peek_ptr(&visitor->arg_stack, (fn_arg_count - 1) - i);
-                if (arg_reg->type != fn->param_types[i]) {
+
+                bool arg_match = arg_reg->type == fn->param_types[i];
+
+                if (!arg_match && TYPE_IS_SLICE_STRUCT(arg_reg->type) && fn->param_types[i]->kind == Type_Kind::SLICE) {
+                    assert(fn->param_types[i]->slice.struct_type == arg_reg->type);
+                    arg_match = true;
+                }
+
+                if (!arg_match) {
                     bytecode_validator_report_error(validator, "Mismatching type for argument %lli", i);
                     bytecode_validator_report_error(validator, "Expected: '%s'", temp_type_string(fn->param_types[i]));
                     bytecode_validator_report_error(validator, "Got: '%s'", temp_type_string(arg_reg->type));
@@ -1440,7 +1448,8 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            if (aggregate_type->kind != Type_Kind::STRUCTURE) {
+            if (aggregate_type->kind != Type_Kind::STRUCTURE &&
+                aggregate_type->kind != Type_Kind::SLICE) {
                 bytecode_validator_report_error(validator, "The 'a' register of AGG_OFFSET_POINTER' must be a struct");
                 return false;
             }
@@ -1462,6 +1471,10 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
 
             auto index = instruction->b.value.integer.s32;
             assert(aggregate_type);
+
+            if (aggregate_type->kind == Type_Kind::SLICE) {
+                aggregate_type = aggregate_type->slice.struct_type;
+            }
 
             assert(aggregate_type->kind == Type_Kind::STRUCTURE);
             if (index < 0 || index > aggregate_type->structure.member_types.count) {

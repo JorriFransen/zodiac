@@ -22,7 +22,7 @@ zodiac_disable_msvc_llvm_warnings()
 #include <llvm/ADT/Twine.h>
 #include <llvm/IR/Argument.h>
 
-// iwyu complains about this on some platforms, constantfolder us used by the Create*Cast functions from llvm.
+// iwyu complains about this on some platforms, constantfolder is used by the Create*Cast functions from llvm.
 #include <llvm/IR/ConstantFolder.h> // IWYU pragma: keep
 
 #include <llvm/IR/BasicBlock.h>
@@ -843,6 +843,11 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             }
 
             assert(struct_type);
+
+            if (struct_type->kind == Type_Kind::SLICE) {
+                struct_type = struct_type->slice.struct_type;
+            }
+
             assert(struct_type->flags & TYPE_FLAG_AGGREGATE);
             assert(struct_type->kind == Type_Kind::STRUCTURE);
 
@@ -1129,84 +1134,6 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Array_Ref<LLVM_B
                 dynamic_array_append(llvm_print_args, length_val);
                 dynamic_array_append(llvm_print_args, ptr_val);
 
-            } else if (type->flags & TYPE_FLAG_SLICE_STRUCT) {
-
-                use_printf = false;
-
-                llvm::Value *zero_val = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { 0 });
-                llvm::Value *one_val = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { 1 });
-
-                Type *element_type = type->structure.member_types[0]->pointer.base;
-                auto llvm_element_type = llvm_type_from_ast_type(builder, element_type);
-
-                llvm::Value *preamble = llvm_builder_emit_cstring_literal(builder, "{ ");
-                irb->CreateCall(printf_func, { &preamble, 1 });
-
-                auto current_bc_block = &builder->current_bytecode_function->blocks[builder->current_block.bc_block_handle];
-                auto nbh = current_bc_block->next;
-                auto current_llvm_block = irb->GetInsertBlock();
-
-                llvm::BasicBlock *slice_cond_block;
-                llvm::BasicBlock *slice_print_comma_cond_block;
-                llvm::BasicBlock *slice_print_comma_block;
-                llvm::BasicBlock *slice_print_block;
-                llvm::BasicBlock *slice_post_print_block;
-                if (nbh == -1) {
-
-                    slice_cond_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.cond", builder->current_function);
-                    slice_print_comma_cond_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.comma.cond", builder->current_function);
-                    slice_print_comma_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.comma", builder->current_function);
-                    slice_print_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.body", builder->current_function);
-                    slice_post_print_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.post", builder->current_function);
-                } else {
-
-                    auto next_llvm_block = get_llvm_block(builder, blocks, nbh);
-                    slice_cond_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.cond", builder->current_function, next_llvm_block);
-                    slice_print_comma_cond_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.comma.cond", builder->current_function, next_llvm_block);
-                    slice_print_comma_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.comma", builder->current_function, next_llvm_block);
-                    slice_print_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.body", builder->current_function, next_llvm_block);
-                    slice_post_print_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.post", builder->current_function, next_llvm_block);
-                }
-
-                llvm::Value *data_val = irb->CreateExtractValue(llvm_val, { 0 });
-                llvm::Value *length_val = irb->CreateExtractValue(llvm_val, { 1 });
-                llvm::Value *initial_index_reg = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { 0 });
-
-                irb->CreateBr(slice_cond_block);
-
-                irb->SetInsertPoint(slice_cond_block);
-                auto index_val = irb->CreatePHI(initial_index_reg->getType(), 2);
-                index_val->addIncoming(initial_index_reg, current_llvm_block);
-
-                llvm::Value *cond = irb->CreateICmpSLT(index_val, length_val);
-                irb->CreateCondBr(cond, slice_print_comma_cond_block, slice_post_print_block);
-
-                irb->SetInsertPoint(slice_print_comma_cond_block);
-                llvm::Value *comma_cond = irb->CreateICmpSGT(index_val, zero_val);
-                irb->CreateCondBr(comma_cond, slice_print_comma_block, slice_print_block);
-
-                irb->SetInsertPoint(slice_print_comma_block);
-                llvm::Value *comma = llvm_builder_emit_cstring_literal(builder, ", ");
-                irb->CreateCall(printf_func, { &comma, 1 });
-                irb->CreateBr(slice_print_block);
-
-                irb->SetInsertPoint(slice_print_block);
-
-                llvm::Value *elem_ptr_val = irb->CreateGEP(llvm_element_type, data_val, { index_val });
-                llvm::Value *elem_val = irb->CreateLoad(llvm_element_type, elem_ptr_val);
-
-                llvm_builder_emit_print_instruction(builder, blocks, element_type, elem_val, quote_strings);
-
-                llvm::Value *new_index_val = irb->CreateAdd(index_val, one_val);
-                irb->CreateBr(slice_cond_block);
-
-                index_val->addIncoming(new_index_val, slice_print_block);
-
-                irb->SetInsertPoint(slice_post_print_block);
-
-                llvm::Value *postamble = llvm_builder_emit_cstring_literal(builder, " }");
-                irb->CreateCall(printf_func, { &postamble, 1 });
-
             } else {
                 use_printf = false;
 
@@ -1259,6 +1186,87 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Array_Ref<LLVM_B
             irb->CreateCall(printf_func, { &postamble, 1 });
             break;
         }
+
+        case Type_Kind::SLICE: {
+
+            use_printf = false;
+
+            llvm::Value *zero_val = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { 0 });
+            llvm::Value *one_val = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { 1 });
+
+            Type *element_type = type->slice.element_type;
+            auto llvm_element_type = llvm_type_from_ast_type(builder, element_type);
+
+            llvm::Value *preamble = llvm_builder_emit_cstring_literal(builder, "{ ");
+            irb->CreateCall(printf_func, { &preamble, 1 });
+
+            auto current_bc_block = &builder->current_bytecode_function->blocks[builder->current_block.bc_block_handle];
+            auto nbh = current_bc_block->next;
+            auto current_llvm_block = irb->GetInsertBlock();
+
+            llvm::BasicBlock *slice_cond_block;
+            llvm::BasicBlock *slice_print_comma_cond_block;
+            llvm::BasicBlock *slice_print_comma_block;
+            llvm::BasicBlock *slice_print_block;
+            llvm::BasicBlock *slice_post_print_block;
+            if (nbh == -1) {
+
+                slice_cond_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.cond", builder->current_function);
+                slice_print_comma_cond_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.comma.cond", builder->current_function);
+                slice_print_comma_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.comma", builder->current_function);
+                slice_print_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.body", builder->current_function);
+                slice_post_print_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.post", builder->current_function);
+            } else {
+
+                auto next_llvm_block = get_llvm_block(builder, blocks, nbh);
+                slice_cond_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.cond", builder->current_function, next_llvm_block);
+                slice_print_comma_cond_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.comma.cond", builder->current_function, next_llvm_block);
+                slice_print_comma_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.comma", builder->current_function, next_llvm_block);
+                slice_print_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.loop.body", builder->current_function, next_llvm_block);
+                slice_post_print_block = llvm::BasicBlock::Create(*builder->llvm_context, "print.slice.post", builder->current_function, next_llvm_block);
+            }
+
+            llvm::Value *data_val = irb->CreateExtractValue(llvm_val, { 0 });
+            llvm::Value *length_val = irb->CreateExtractValue(llvm_val, { 1 });
+            llvm::Value *initial_index_reg = llvm_builder_emit_integer_literal(builder, &builtin_type_s64, { 0 });
+
+            irb->CreateBr(slice_cond_block);
+
+            irb->SetInsertPoint(slice_cond_block);
+            auto index_val = irb->CreatePHI(initial_index_reg->getType(), 2);
+            index_val->addIncoming(initial_index_reg, current_llvm_block);
+
+            llvm::Value *cond = irb->CreateICmpSLT(index_val, length_val);
+            irb->CreateCondBr(cond, slice_print_comma_cond_block, slice_post_print_block);
+
+            irb->SetInsertPoint(slice_print_comma_cond_block);
+            llvm::Value *comma_cond = irb->CreateICmpSGT(index_val, zero_val);
+            irb->CreateCondBr(comma_cond, slice_print_comma_block, slice_print_block);
+
+            irb->SetInsertPoint(slice_print_comma_block);
+            llvm::Value *comma = llvm_builder_emit_cstring_literal(builder, ", ");
+            irb->CreateCall(printf_func, { &comma, 1 });
+            irb->CreateBr(slice_print_block);
+
+            irb->SetInsertPoint(slice_print_block);
+
+            llvm::Value *elem_ptr_val = irb->CreateGEP(llvm_element_type, data_val, { index_val });
+            llvm::Value *elem_val = irb->CreateLoad(llvm_element_type, elem_ptr_val);
+
+            llvm_builder_emit_print_instruction(builder, blocks, element_type, elem_val, quote_strings);
+
+            llvm::Value *new_index_val = irb->CreateAdd(index_val, one_val);
+            irb->CreateBr(slice_cond_block);
+
+            index_val->addIncoming(new_index_val, slice_print_block);
+
+            irb->SetInsertPoint(slice_post_print_block);
+
+            llvm::Value *postamble = llvm_builder_emit_cstring_literal(builder, " }");
+            irb->CreateCall(printf_func, { &postamble, 1 });
+
+        break;
+        }
     }
 
     if (use_printf) {
@@ -1275,8 +1283,7 @@ llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Re
     }
 
     // Literals should always be constant?
-    assert(!(bc_reg.flags & BC_REGISTER_FLAG_LITERAL) ||
-           (bc_reg.type->kind == Type_Kind::STRUCTURE && bc_reg.type->flags & TYPE_FLAG_SLICE_STRUCT));
+    assert(!(bc_reg.flags & BC_REGISTER_FLAG_LITERAL) || bc_reg.type->kind == Type_Kind::SLICE);
 
 
     switch (bc_reg.kind) {
@@ -1457,7 +1464,9 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
                     return llvm_builder_emit_array_literal(builder, bc_reg.type, bc_reg.value.compound);
                 }
 
-                case Type_Kind::SLICE: assert(false); break;
+                case Type_Kind::SLICE: {
+                    return llvm_builder_emit_struct_literal(builder, bc_reg.type->slice.struct_type, bc_reg.value.compound);
+                }
             }
             break;
         }

@@ -3049,7 +3049,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             bool all_literal = true;
             bool all_const = true;
 
-            if (inferred_type->flags & TYPE_FLAG_AGGREGATE) {
+            if (inferred_type->flags & TYPE_FLAG_AGGREGATE && inferred_type->kind != Type_Kind::SLICE) {
                 auto aggregate_type = inferred_type;
                 assert(aggregate_type->kind == Type_Kind::STRUCTURE);
 

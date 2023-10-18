@@ -1,5 +1,6 @@
-#include "bytecode.h"
+// #include "bytecode.h"
 
+#include "bytecode/bytecode.h"
 #include "memory/temporary_allocator.h"
 #include "type.h"
 #include "util/asserts.h"
@@ -198,9 +199,6 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
             auto arg_index = result.registers.count;
 
             auto param_type = fn_type->function.parameter_types[i];
-            if (param_type->kind == Type_Kind::SLICE) {
-                param_type = param_type->slice.struct_type;
-            }
 
             dynamic_array_append(&result.param_types, param_type);
 
@@ -434,7 +432,7 @@ Bytecode_Register bytecode_zero_value(Bytecode_Builder *builder, Type *type)
         }
 
         case Type_Kind::SLICE: {
-            auto result = bytecode_zero_value(builder, type->slice.struct_type);
+            auto result = bytecode_zeroinitializer(builder, type->slice.struct_type);
             result.type = type;
             return result;
         }
@@ -1354,7 +1352,6 @@ Bytecode_Register bytecode_emit_aggregate_offset_pointer(Bytecode_Builder *build
 
     if (agg_type->kind == Type_Kind::SLICE) {
         agg_type = agg_type->slice.struct_type;
-        agg_register.type = agg_type;
     }
 
     assert(agg_type->flags & TYPE_FLAG_AGGREGATE);

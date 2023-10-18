@@ -240,7 +240,11 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
 
         assert(ctx->errors.count == 0);
         emit_bytecode(ctx->resolver, ctx->bytecode_converter);
-        if (ctx->errors.count) return false;
+        if (ctx->options.report_errors) {
+            if (resolver_report_errors(ctx->resolver)) {
+                return false;
+            }
+        } else if (ctx->errors.count) return false;
 
         auto old_run_count = ctx->resolver->nodes_to_run_bytecode.count;
 

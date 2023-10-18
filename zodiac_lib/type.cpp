@@ -183,9 +183,7 @@ void create_slice_type(Type *type, Type *element_type, Type *struct_type)
     assert(struct_type->structure.member_types[0]->kind == Type_Kind::POINTER);
     assert(struct_type->structure.member_types[0]->pointer.base == element_type);
 
-
-
-    create_type(type, Type_Kind::SLICE, struct_type->bit_size, TYPE_FLAG_NONE);
+    create_type(type, Type_Kind::SLICE, struct_type->bit_size, TYPE_FLAG_AGGREGATE);
 
     type->slice.element_type = element_type;
     type->slice.struct_type = struct_type;
