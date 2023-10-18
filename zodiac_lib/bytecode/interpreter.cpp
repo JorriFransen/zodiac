@@ -1976,14 +1976,6 @@ void interpreter_print_from_memory(Interpreter *interp, u8* mem, Type *type, boo
                 break;
             }
 
-            if (type->flags & TYPE_FLAG_SLICE_STRUCT) {
-                assert(type->structure.member_types.count == 2);
-                assert(type->structure.member_types[0]->kind == Type_Kind::POINTER);
-                auto element_type = type->structure.member_types[0]->pointer.base;
-                interpreter_print_slice_from_memory(interp, mem, element_type, quote_strings);
-                return;
-            };
-
             fprintf(out_handle, "{ ");
 
             u8 *cursor = mem;
@@ -2149,34 +2141,6 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
                 break;
             }
 
-            if (type->flags & TYPE_FLAG_SLICE_STRUCT) {
-                if (reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
-                    assert(reg.value.compound.count == 2);
-
-                    auto ptr_reg = interpreter_load_register(interp, reg.value.compound[0]);
-                    auto length_reg = interpreter_load_register(interp, reg.value.compound[1]);
-
-                    auto element_type = ptr_reg.type->pointer.base;
-
-                    fprintf(out_handle, "{ ");
-
-                    auto cur = ptr_reg.pointer;
-                    for (s64 i = 0; i < length_reg.value.integer.s64; i++) {
-                        if (i > 0) fprintf(out_handle, ", ");
-                        interpreter_print_from_memory(interp, cur, element_type, true);
-
-                        // TODO: FIXME: Alignment
-                        cur += element_type->bit_size / 8;
-                    }
-
-                    fprintf(out_handle, " }");
-
-                } else {
-                    interpreter_print_from_memory(interp, reg.value.pointer, type, quote_strings);
-                }
-                break;
-            }
-
             fprintf(out_handle, "{ ");
 
             if (reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
@@ -2237,8 +2201,29 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
         }
 
         case Type_Kind::SLICE: {
-            reg.type = reg.type->slice.struct_type;
-            interpreter_print_register(interp, reg);
+            if (reg.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
+                assert(reg.value.compound.count == 2);
+
+                auto ptr_reg = interpreter_load_register(interp, reg.value.compound[0]);
+                auto length_reg = interpreter_load_register(interp, reg.value.compound[1]);
+
+                auto element_type = ptr_reg.type->pointer.base;
+
+                fprintf(out_handle, "{ ");
+
+                auto cur = ptr_reg.pointer;
+                for (s64 i = 0; i < length_reg.value.integer.s64; i++) {
+                    if (i > 0) fprintf(out_handle, ", ");
+                    interpreter_print_from_memory(interp, cur, element_type, true);
+
+                    // TODO: FIXME: Alignment
+                    cur += element_type->bit_size / 8;
+                }
+
+                fprintf(out_handle, " }");
+            } else {
+                interpreter_print_from_memory(interp, reg.value.pointer, type, quote_strings);
+            }
             break;
         }
     }
