@@ -266,6 +266,7 @@ bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
                 Bytecode_Register members[2] = { pointer_reg, length_reg };
                 Bytecode_Register slice_reg = bytecode_aggregate_literal(bc->builder, members, type->slice.struct_type);
+                slice_reg.type = type;
 
                 Bytecode_Global_Handle global_handle = bytecode_create_global(bc->builder, name, slice_reg.type, true, slice_reg);
 

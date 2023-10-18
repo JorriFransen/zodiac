@@ -1,264 +1,232 @@
 
-// global_arr : [4]s64 = { 1, 2, 3, 4 };
-global_slice : []s64 = { 11, 22, 33, 44, 55 };
-// global_const_arr : [5]s64 : { 5, 4, 3, 2, 1 };
-// global_slice_from_global_const_arr : []s64 = global_const_arr;
+Vec2 :: struct {
+    x, y: r64;
+}
+
+Day :: enum {
+    Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday,
+    Sunday,
+}
 
 #run main();
 main :: () {
-    // loc_slice : []s64 = { 1, 2, 3};
-    // println("global_arr: ", global_arr);
-    // local_slice : []s64 = global_arr;
-    // println("local_slice: ", local_slice);
-    // local_slice[1] = global_arr[1] * local_slice[1];
-    // println("global_arr: ", global_arr);
-    // println("local_slice: ", local_slice);
-    println("global_slice: ", global_slice);
-    // println("global_slice.length: ", global_slice.length);
-    // println("global_const_arr: ", global_const_arr);
-    // local_slice_from_global_const : []s64 = global_const_arr;
-    // println("local_slice_from_global_const: ", local_slice_from_global_const);
-    // local_slice_from_global_const[2] = 33;
-    // println("global_const_arr: ", global_const_arr);
-    // println("local_slice_from_global_const: ", local_slice_from_global_const);
-    // println("global_const_arr: ", global_const_arr);
-    // println("global_slice_from_global_const_arr: ", global_slice_from_global_const_arr);
-    // global_slice_from_global_const_arr[3] = 42;
-    // println("global_const_arr: ", global_const_arr);
-    // println("global_slice_from_global_const_arr: ", global_slice_from_global_const_arr);
-    // global_slice_from_global_const_arr = global_const_arr;
-    // println("global_slice_from_global_const_arr: ", global_slice_from_global_const_arr);
+
+    x := 42;
+    ax : Any = { #type_info(#type_of(x)), cast(*u8, *x) };
+    print_any(ax);
+    println();
+
+    x2 : u32 = 41;
+    ax2 : Any = { #type_info(#type_of(x2)), cast(*u8, *x2) };
+    print_any(ax2);
+    println();
+
+    y := 4.2;
+    ay : Any = { #type_info(#type_of(y)), cast(*u8, *y) };
+    print_any(ay);
+    println();
+
+    y2 : r64 = 4.3;
+    ay2 : Any = { #type_info(#type_of(y2)), cast(*u8, *y2) };
+    print_any(ay2);
+    println();
+
+    b := true;
+    ab : Any = { #type_info(#type_of(b)), cast(*u8, *b) };
+    print_any(ab);
+    println();
+
+    b2 := false;
+    ab2 : Any = { #type_info(#type_of(b2)), cast(*u8, *b2) };
+    print_any(ab2);
+    println();
+
+    px := *x;
+    apx : Any = { #type_info(#type_of(px)), cast(*u8, *px) };
+    print_any(apx);
+    println();
+
+    py := *y;
+    apy : Any = { #type_info(#type_of(py)), cast(*u8, *py) };
+    print_any(apy);
+    println();
+
+    ppx := *px;
+    appx : Any = { #type_info(#type_of(ppx)), cast(*u8, *ppx) };
+    print_any(appx);
+    println();
+
+    str := "Hello!";
+    astr : Any = { #type_info(#type_of(str)), cast(*u8, *str) };
+    print_any(astr);
+    println();
+
+    vec : Vec2 = { 1.2, 5.4 };
+    avec : Any = { #type_info(#type_of(vec)), cast(*u8, *vec) };
+    print_any(avec);
+    println();
+
+    d := Day.Tuesday;
+    ad : Any = { #type_info(#type_of(d)), cast(*u8, *d) };
+    print_any(ad);
+    println();
+
+    d2 := Day.Friday;
+    ad2 : Any = { #type_info(#type_of(d2)), cast(*u8, *d2) };
+    print_any(ad2);
+    println();
+
+    ints : [3]s64 = { 42, 43, -44 };
+    aints : Any = { #type_info(#type_of(ints)), cast(*u8, *ints) };
+    print_any(aints);
+    println();
+
+    vecs : [4]Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } };
+    avecs : Any = { #type_info(#type_of(vecs)), cast(*u8, *vecs) };
+    print_any(avecs);
+    println();
+
+    slice : []s64 = { 11, 22, 33 };
+    aslice : Any = { #type_info(#type_of(slice)), cast(*u8, *slice) };
+    print_any(aslice);
+    println();
+
+    slice2 : []Vec2 = vecs;
+    aslice2 : Any = { #type_info(#type_of(slice2)), cast(*u8, *slice2) };
+    print_any(aslice2);
+    println();
+
     return 0;
 }
 
-// Vec2 :: struct {
-//     x, y: r64;
-// }
-//
-// Day :: enum {
-//     Monday,
-//     Tuesday,
-//     Wednesday,
-//     Thursday,
-//     Friday,
-//     Saturday,
-//     Sunday,
-// }
-//
-// #run main();
-// main :: () {
-//
-//     x := 42;
-//     ax : Any = { #type_info(#type_of(x)), cast(*u8, *x) };
-//     print_any(ax);
-//     println();
-//
-//     x2 : u32 = 41;
-//     ax2 : Any = { #type_info(#type_of(x2)), cast(*u8, *x2) };
-//     print_any(ax2);
-//     println();
-//
-//     y := 4.2;
-//     ay : Any = { #type_info(#type_of(y)), cast(*u8, *y) };
-//     print_any(ay);
-//     println();
-//
-//     y2 : r64 = 4.3;
-//     ay2 : Any = { #type_info(#type_of(y2)), cast(*u8, *y2) };
-//     print_any(ay2);
-//     println();
-//
-//     b := true;
-//     ab : Any = { #type_info(#type_of(b)), cast(*u8, *b) };
-//     print_any(ab);
-//     println();
-//
-//     b2 := false;
-//     ab2 : Any = { #type_info(#type_of(b2)), cast(*u8, *b2) };
-//     print_any(ab2);
-//     println();
-//
-//     px := *x;
-//     apx : Any = { #type_info(#type_of(px)), cast(*u8, *px) };
-//     print_any(apx);
-//     println();
-//
-//     py := *y;
-//     apy : Any = { #type_info(#type_of(py)), cast(*u8, *py) };
-//     print_any(apy);
-//     println();
-//
-//     ppx := *px;
-//     appx : Any = { #type_info(#type_of(ppx)), cast(*u8, *ppx) };
-//     print_any(appx);
-//     println();
-//
-//     str := "Hello!";
-//     astr : Any = { #type_info(#type_of(str)), cast(*u8, *str) };
-//     print_any(astr);
-//     println();
-//
-//     vec : Vec2 = { 1.2, 5.4 };
-//     avec : Any = { #type_info(#type_of(vec)), cast(*u8, *vec) };
-//     print_any(avec);
-//     println();
-//
-//     d := Day.Tuesday;
-//     ad : Any = { #type_info(#type_of(d)), cast(*u8, *d) };
-//     print_any(ad);
-//     println();
-//
-//     d2 := Day.Friday;
-//     ad2 : Any = { #type_info(#type_of(d2)), cast(*u8, *d2) };
-//     print_any(ad2);
-//     println();
-//
-//     ints : [3]s64 = { 42, 43, -44 };
-//     aints : Any = { #type_info(#type_of(ints)), cast(*u8, *ints) };
-//     print_any(aints);
-//     println();
-//
-//     vecs : [4]Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } };
-//     avecs : Any = { #type_info(#type_of(vecs)), cast(*u8, *vecs) };
-//     print_any(avecs);
-//     println();
-//
-//     slice : []s64 = { 11, 22, 33 };
-//     aslice : Any = { #type_info(#type_of(slice)), cast(*u8, *slice) };
-//     print_any(aslice);
-//     println();
-//
-//     slice2 : []Vec2 = vecs;
-//     aslice2 : Any = { #type_info(#type_of(slice2)), cast(*u8, *slice2) };
-//     print_any(aslice2);
-//     println();
-//
-//     return 0;
-// }
-//
-// print_any :: (any: Any) -> void {
-//     switch (any.type.kind) {
-//
-//         case Type_Info_Kind.Integer:
-//             ii := cast(*Type_Info_Int, any.type);
-//
-//             if (ii.sign) {
-//                 switch (any.type.size) {
-//                     case 8: print(<cast(*s64, any.value));
-//                     case 4: print(<cast(*s32, any.value));
-//                     case 2: print(<cast(*s16, any.value));
-//                     case 1: print(<cast(*s8, any.value));
-//                     default: println("Unhandled integer size in print_any");
-//                 }
-//             } else {
-//                 switch (any.type.size) {
-//                     case 8: print(<cast(*u64, any.value));
-//                     case 4: print(<cast(*u32, any.value));
-//                     case 2: print(<cast(*u16, any.value));
-//                     case 1: print(<cast(*u8, any.value));
-//                     default: println("Unhandled integer size in print_any");
-//                 }
-//             }
-//
-//         case Type_Info_Kind.Real:
-//             if any.type.size == 4 {
-//                 print(<cast(*r32, any.value));
-//             } else if any.type.size == 8 {
-//                 print(<cast(*r64, any.value));
-//             } else {
-//                 println("Unhandled real size in print_any");
-//             }
-//
-//         case Type_Info_Kind.Bool:
-//             print(<cast(*bool, any.value));
-//
-//         case Type_Info_Kind.Pointer:
-//             pi := cast(*Type_Info_Pointer, any.type);
-//
-//             value := cast(**void, any.value);
-//             print(<value, ": ");
-//
-//             value_any : Any = {  pi.pointer_to, cast(*u8, <value) };
-//             print_any(value_any);
-//
-//
-//         case Type_Info_Kind.Struct:
-//             si := cast(*Type_Info_Struct, any.type);
-//
-//             if any.type == #type_info(String) {
-//                 strp := cast(*String, any.value);
-//                 print(<strp);
-//             } else {
-//                 print("{ ");
-//
-//                 struct_mem : []u8;
-//                 struct_mem.data = any.value;
-//                 struct_mem.length = any.type.size;
-//
-//                 for i := 0; i < si.members.length; i += 1 {
-//                     if i > 0 print(", ");
-//
-//                     member := si.members[i];
-//                     member_any : Any = { member.type, *struct_mem[member.offset] };
-//                     print_any(member_any);
-//                 }
-//
-//                 print(" }");
-//             }
-//
-//         case Type_Info_Kind.Enum:
-//             ei := cast(*Type_Info_Enum, any.type);
-//
-//             name: String = "Invalid enum value";
-//             for i := 0; i < ei.members.length; i += 1 {
-//                 if ei.members[i].value == <cast(*s64, any.value) {
-//                     name = ei.members[i].name;
-//
-//                     // Hack because we don't have break yet
-//                     i = ei.members.length;
-//                 }
-//             }
-//
-//             print(name, "(");
-//             int_any : Any = { ei.integer_type, any.value };
-//             print_any(int_any);
-//             print(")");
-//
-//         case Type_Info_Kind.Static_Array:
-//             ai := cast(*Type_Info_Static_Array, any.type);
-//
-//             arr_mem : []u8;
-//             arr_mem.data = any.value;
-//             arr_mem.length = ai.length * ai.element_type.size;
-//
-//             print("{ ");
-//             for i := 0; i < ai.length; i += 1 {
-//                 if i > 0 print(", ");
-//
-//                 elem_any : Any = { ai.element_type, *arr_mem[ai.element_type.size * i] };
-//                 print_any(elem_any);
-//             }
-//             print(" }");
-//
-//         case Type_Info_Kind.Slice:
-//             si := cast(*Type_Info_Slice, any.type);
-//
-//             slice := <cast(*[]s64, any.value);
-//
-//             arr_mem : []u8;
-//             arr_mem.data = cast(*u8, slice.data);
-//             arr_mem.length = slice.length * si.element_type.size;
-//
-//             print("{ ");
-//             for i := 0; i < slice.length; i += 1 {
-//                 if i > 0 print(", ");
-//
-//                 elem_any : Any = { si.element_type, *arr_mem[si.element_type.size * i] };
-//                 print_any(elem_any);
-//             }
-//             print(" }");
-//
-//
-//         default: println("!!! Unhandled type in print_any !!!");
-//     }
-// }
+print_any :: (any: Any) -> void {
+    switch (any.type.kind) {
+
+        case Type_Info_Kind.Integer:
+            ii := cast(*Type_Info_Int, any.type);
+
+            if (ii.sign) {
+                switch (any.type.size) {
+                    case 8: print(<cast(*s64, any.value));
+                    case 4: print(<cast(*s32, any.value));
+                    case 2: print(<cast(*s16, any.value));
+                    case 1: print(<cast(*s8, any.value));
+                    default: println("Unhandled integer size in print_any");
+                }
+            } else {
+                switch (any.type.size) {
+                    case 8: print(<cast(*u64, any.value));
+                    case 4: print(<cast(*u32, any.value));
+                    case 2: print(<cast(*u16, any.value));
+                    case 1: print(<cast(*u8, any.value));
+                    default: println("Unhandled integer size in print_any");
+                }
+            }
+
+        case Type_Info_Kind.Real:
+            if any.type.size == 4 {
+                print(<cast(*r32, any.value));
+            } else if any.type.size == 8 {
+                print(<cast(*r64, any.value));
+            } else {
+                println("Unhandled real size in print_any");
+            }
+
+        case Type_Info_Kind.Bool:
+            print(<cast(*bool, any.value));
+
+        case Type_Info_Kind.Pointer:
+            pi := cast(*Type_Info_Pointer, any.type);
+
+            value := cast(**void, any.value);
+            print(<value, ": ");
+
+            value_any : Any = {  pi.pointer_to, cast(*u8, <value) };
+            print_any(value_any);
+
+
+        case Type_Info_Kind.Struct:
+            si := cast(*Type_Info_Struct, any.type);
+
+            if any.type == #type_info(String) {
+                strp := cast(*String, any.value);
+                print(<strp);
+            } else {
+                print("{ ");
+
+                struct_mem : []u8;
+                struct_mem.data = any.value;
+                struct_mem.length = any.type.size;
+
+                for i := 0; i < si.members.length; i += 1 {
+                    if i > 0 print(", ");
+
+                    member := si.members[i];
+                    member_any : Any = { member.type, *struct_mem[member.offset] };
+                    print_any(member_any);
+                }
+
+                print(" }");
+            }
+
+        case Type_Info_Kind.Enum:
+            ei := cast(*Type_Info_Enum, any.type);
+
+            name: String = "Invalid enum value";
+            for i := 0; i < ei.members.length; i += 1 {
+                if ei.members[i].value == <cast(*s64, any.value) {
+                    name = ei.members[i].name;
+
+                    // Hack because we don't have break yet
+                    i = ei.members.length;
+                }
+            }
+
+            print(name, "(");
+            int_any : Any = { ei.integer_type, any.value };
+            print_any(int_any);
+            print(")");
+
+        case Type_Info_Kind.Static_Array:
+            ai := cast(*Type_Info_Static_Array, any.type);
+
+            arr_mem : []u8;
+            arr_mem.data = any.value;
+            arr_mem.length = ai.length * ai.element_type.size;
+
+            print("{ ");
+            for i := 0; i < ai.length; i += 1 {
+                if i > 0 print(", ");
+
+                elem_any : Any = { ai.element_type, *arr_mem[ai.element_type.size * i] };
+                print_any(elem_any);
+            }
+            print(" }");
+
+        case Type_Info_Kind.Slice:
+            si := cast(*Type_Info_Slice, any.type);
+
+            slice := <cast(*[]s64, any.value);
+
+            arr_mem : []u8;
+            arr_mem.data = cast(*u8, slice.data);
+            arr_mem.length = slice.length * si.element_type.size;
+
+            print("{ ");
+            for i := 0; i < slice.length; i += 1 {
+                if i > 0 print(", ");
+
+                elem_any : Any = { si.element_type, *arr_mem[si.element_type.size * i] };
+                print_any(elem_any);
+            }
+            print(" }");
+
+
+        default: println("!!! Unhandled type in print_any !!!");
+    }
+}
