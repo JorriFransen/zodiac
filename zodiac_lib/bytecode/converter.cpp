@@ -200,10 +200,7 @@ bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             if (DECL_IS_GLOBAL(decl)) {
 
                 Type *global_type = decl->variable.resolved_type;
-                if (global_type->kind == Type_Kind::SLICE) {
-                    global_type = global_type->slice.struct_type;
-                }
-                assert(global_type);
+
                 auto global_name = decl->identifier.name;
                 global_name = bytecode_unique_global_name(bc->builder, global_name);
 
@@ -373,7 +370,6 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
             assert(var_decl->variable.resolved_type);
 
             Type *alloc_type = var_decl->variable.resolved_type;
-            alloc_type = cleanup_slice_pointers(bc->context, alloc_type);
 
             auto alloc_name = String_Ref(var_decl->identifier.name);
             alloc_name = bytecode_unique_register_name_in_function(bc->builder, fn_handle, alloc_name);
@@ -1079,8 +1075,8 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
 
                 return bytecode_emit_array_offset_pointer(bc->builder, base_reg, index_reg);
 
-            } else if (TYPE_IS_SLICE_STRUCT(base_reg.type) ||
-                       (base_reg.type->kind == Type_Kind::POINTER && TYPE_IS_SLICE_STRUCT(base_reg.type->pointer.base))) {
+            } else if (base_reg.type->kind == Type_Kind::SLICE ||
+                       (base_reg.type->kind == Type_Kind::POINTER && base_reg.type->pointer.base->kind == Type_Kind::SLICE)) {
 
                 Bytecode_Register ptr_reg = bytecode_emit_aggregate_offset_pointer(bc->builder, base_reg, 0);
                 ptr_reg = bytecode_emit_load_pointer(bc->builder, ptr_reg);
@@ -1137,6 +1133,8 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
 
 Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr, Type * enforce_type/*=nullptr*/)
 {
+    if (enforce_type) assert(!TYPE_IS_SLICE_STRUCT(enforce_type));
+
     assert(bc);
     assert(expr);
 
@@ -1597,7 +1595,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
 
         } else if (TYPE_IS_SLICE_STRUCT(enforce_type) && check_type->kind == Type_Kind::SLICE) {
-            assert(result.type == enforce_type);
+            // assert(result.type == enforce_type);
             // ok
         } else if (cleanup_slice_pointers(bc->context, check_type) == enforce_type) {
             // ok
@@ -2012,8 +2010,7 @@ void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, 
     }
 
     Bytecode_Register value_reg;
-    if (value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && lvalue_type->flags & TYPE_FLAG_SLICE_STRUCT) {
-        assert(lvalue_type->kind == Type_Kind::STRUCTURE);
+    if (value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && lvalue_type->kind == Type_Kind::SLICE) {
 
         Bytecode_Register array_reg;
 
@@ -2027,11 +2024,12 @@ void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, 
         Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, array_reg.type->static_array.count);
 
         Bytecode_Register members[2] = { array_reg, length_reg };
-        value_reg = bytecode_aggregate_literal(bc->builder, members, lvalue_type);
+        value_reg = bytecode_aggregate_literal(bc->builder, members, lvalue_type->slice.struct_type);
+        value_reg.type = lvalue_type;
 
     } else {
         value_reg = ast_expr_to_bytecode(bc, value_expr, lvalue_type);
-        value_reg.type = cleanup_slice_pointers(bc->context, value_reg.type);
+        // value_reg.type = cleanup_slice_pointers(bc->context, value_reg.type);
     }
 
     assert(value_reg.type == lvalue_type);

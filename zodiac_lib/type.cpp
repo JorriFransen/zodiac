@@ -145,10 +145,6 @@ void create_struct_type(Type *type, Atom name, Dynamic_Array<Type *> member_type
     u64 bit_size = 0;
     for (u64 i = 0; i < member_types.count; i++) {
 
-        if (member_types[i]->kind == Type_Kind::SLICE) {
-            member_types[i] = member_types[i]->slice.struct_type;
-        }
-
         //TODO: Alignment
         bit_size += member_types[i]->bit_size;
 

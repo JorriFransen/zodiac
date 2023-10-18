@@ -93,12 +93,15 @@ Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytecode_F
         for (s64 i = 0; i < bb->globals.count; i++) {
             auto global = &bb->globals[i];
 
+            assert(global->type->kind == Type_Kind::SLICE);
+
             if (global->atom == "_type_info_pointers") {
                 Bytecode_Register members[2] = {
                     arr_ptr_val,
                     bytecode_integer_literal(bb, &builtin_type_s64, interp->context->type_infos.count)
                 };
-                global->initial_value = bytecode_aggregate_literal(bb, members, global->type);
+                global->initial_value = bytecode_aggregate_literal(bb, members, global->type->slice.struct_type);
+                global->initial_value.type = global->type;
                 found = true;
                 break;
             }
@@ -777,7 +780,6 @@ switch (operand.type->bit_size) { \
             Interpreter_Register new_value = interpreter_load_register(interp, instruction.a);
             Interpreter_Register alloc_register = interpreter_load_register(interp, instruction.b);
 
-            debug_assert(cleanup_slice_pointers(interp->context, new_value.type) == alloc_register.type);
             assert(alloc_register.pointer);
 
             interpreter_store_pointer(interp, new_value, alloc_register.pointer);
@@ -999,6 +1001,10 @@ switch (operand.type->bit_size) { \
             if (instruction.a.kind == Bytecode_Register_Kind::TEMPORARY) {
                 assert(instruction.a.type->kind == Type_Kind::POINTER);
                 agg_type = agg_type->pointer.base;
+            }
+
+            if (agg_type->kind == Type_Kind::SLICE) {
+                agg_type = agg_type->slice.struct_type;
             }
 
             assert(agg_type->flags & TYPE_FLAG_AGGREGATE);
@@ -1386,7 +1392,8 @@ Interpreter_Register interpreter_load_register(Interpreter *interp, Bytecode_Reg
             Interpreter_Register_Flags flags = INTERP_REG_FLAG_NONE;
 
             if ((bc_reg.type->flags & TYPE_FLAG_AGGREGATE) ||
-                bc_reg.type->kind == Type_Kind::STATIC_ARRAY) {
+                bc_reg.type->kind == Type_Kind::STATIC_ARRAY ||
+                bc_reg.type->kind == Type_Kind::SLICE) {
                 flags |= INTERP_REG_FLAG_AGGREGATE_LITERAL;
             }
 
@@ -1399,7 +1406,6 @@ Interpreter_Register interpreter_load_register(Interpreter *interp, Bytecode_Reg
 
             assert(bc_reg.index < frame->register_count);
             auto interp_reg_ptr = &interp->registers[frame->register_start + bc_reg.index];
-            debug_assert(cleanup_slice_pointers(interp->context, interp_reg_ptr->type) == bc_reg.type);
             return *interp_reg_ptr;
         }
 
@@ -1495,7 +1501,10 @@ void interpreter_load_pointer(Interpreter *interp, u8 *source, Interpreter_Regis
             break;
         }
 
-        case Type_Kind::SLICE: assert(false); break;
+        case Type_Kind::SLICE: {
+            interpreter_load_pointer(interp, source, dest, type->slice.struct_type);
+            break;
+        }
     }
 }
 
@@ -1611,7 +1620,12 @@ void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source,
         }
 
         case Type_Kind::STRUCTURE:
-        case Type_Kind::STATIC_ARRAY: {
+        case Type_Kind::STATIC_ARRAY:
+        case Type_Kind::SLICE: {
+
+            if (source.type->kind == Type_Kind::SLICE) {
+                source.type = source.type->slice.struct_type;
+            }
 
             if (source.flags & INTERP_REG_FLAG_AGGREGATE_LITERAL) {
                 interpreter_copy_compound_literal_into_memory(interp, dest, source);
@@ -1624,8 +1638,6 @@ void interpreter_store_pointer(Interpreter* interp, Interpreter_Register source,
             }
             break;
         }
-
-        case Type_Kind::SLICE: assert(false); break;
     }
 }
 
@@ -2205,6 +2217,12 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
             }
 
             fprintf(out_handle, " }");
+            break;
+        }
+
+        case Type_Kind::SLICE: {
+            reg.type = reg.type->slice.struct_type;
+            interpreter_print_register(interp, reg);
             break;
         }
     }

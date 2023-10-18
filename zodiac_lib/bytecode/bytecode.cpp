@@ -434,7 +434,9 @@ Bytecode_Register bytecode_zero_value(Bytecode_Builder *builder, Type *type)
         }
 
         case Type_Kind::SLICE: {
-            return bytecode_zero_value(builder, type->slice.struct_type);
+            auto result = bytecode_zero_value(builder, type->slice.struct_type);
+            result.type = type;
+            return result;
         }
 
         case Type_Kind::FUNCTION: {
@@ -844,7 +846,7 @@ Bytecode_Register bytecode_emit_sqrt(Bytecode_Builder *builder, Bytecode_Registe
 
 Bytecode_Register bytecode_emit_cast(Bytecode_Builder *builder, Type *target_type, Bytecode_Register operand_register)
 {
-    target_type = cleanup_slice_pointers(builder->zodiac_context, target_type);
+    // target_type = cleanup_slice_pointers(builder->zodiac_context, target_type);
     auto op_type = operand_register.type;
 
     if (op_type == target_type) {
@@ -1113,10 +1115,6 @@ void bytecode_emit_return(Bytecode_Builder *builder, Bytecode_Register return_va
 
 Bytecode_Register bytecode_emit_alloc(Bytecode_Builder *builder, Type *type, const char *name)
 {
-    if (type->kind == Type_Kind::SLICE) {
-        type = type->slice.struct_type;
-    }
-
     Bytecode_Register type_register = bytecode_type_value(builder, type);
     Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::ALLOC, type, BC_REGISTER_FLAG_NONE, name);
     bytecode_emit_instruction(builder, Bytecode_Opcode::ALLOC, type_register, {}, result_register);
@@ -1354,6 +1352,11 @@ Bytecode_Register bytecode_emit_aggregate_offset_pointer(Bytecode_Builder *build
         assert_msg(agg_type, "Aggregate register is not a TEMPORARY or ALLOC.");
     }
 
+    if (agg_type->kind == Type_Kind::SLICE) {
+        agg_type = agg_type->slice.struct_type;
+        agg_register.type = agg_type;
+    }
+
     assert(agg_type->flags & TYPE_FLAG_AGGREGATE);
     assert(agg_type->kind == Type_Kind::STRUCTURE);
 
@@ -1510,6 +1513,7 @@ Bytecode_Instruction_Handle bytecode_emit_instruction(Bytecode_Builder *builder,
             &&
         ((result.type->flags & TYPE_FLAG_AGGREGATE) ||
          result.type->kind == Type_Kind::STATIC_ARRAY ||
+         result.type->kind == Type_Kind::SLICE ||
          op == Bytecode_Opcode::ALLOC)) {
 
         // These should be all the instructions that require stack size for their result
