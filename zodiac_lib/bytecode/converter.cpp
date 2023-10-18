@@ -207,7 +207,7 @@ bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                 Bytecode_Register initial_value_reg = {};
                 auto value_expr = decl->variable.value;
                 if (value_expr) {
-                    if (value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && global_type->flags & TYPE_FLAG_SLICE_STRUCT) {
+                    if (value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && global_type->kind == Type_Kind::SLICE) {
 
                         bool found = hash_table_find(&bc->implicit_lvalues, value_expr, &initial_value_reg);
                         assert(found);
