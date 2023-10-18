@@ -204,8 +204,6 @@ ZAPI Type *get_type_info_function_type(Zodiac_Context *ctx);
 
 ZAPI Type *sym_decl_type(Symbol *sym);
 
-ZAPI Type *cleanup_slice_pointers(Zodiac_Context *ctx, Type *type);
-
 ZAPI bool valid_static_type_conversion(Type *from, Type *to);
 
 ZAPI void type_to_string(Type *type, String_Builder *sb);

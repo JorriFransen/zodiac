@@ -1593,13 +1593,6 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             } else {
                 result = bytecode_emit_neq(bc->builder, result, bytecode_integer_literal(bc->builder, expr->resolved_type, 0));
             }
-
-
-        } else if (TYPE_IS_SLICE_STRUCT(enforce_type) && check_type->kind == Type_Kind::SLICE) {
-            // assert(result.type == enforce_type);
-            // ok
-        } else if (cleanup_slice_pointers(bc->context, check_type) == enforce_type) {
-            // ok
         } else {
             assert(false);
         }
@@ -2030,7 +2023,6 @@ void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, 
 
     } else {
         value_reg = ast_expr_to_bytecode(bc, value_expr, lvalue_type);
-        // value_reg.type = cleanup_slice_pointers(bc->context, value_reg.type);
     }
 
     assert(value_reg.type == lvalue_type);
