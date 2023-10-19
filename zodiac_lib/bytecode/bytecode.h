@@ -354,8 +354,8 @@ ZAPI void bytecode_emit_push_arg(Bytecode_Builder *builder, Bytecode_Register ar
 ZAPI Bytecode_Register bytecode_emit_call(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, Bytecode_Register arg_count_register);
 ZAPI Bytecode_Register bytecode_emit_call(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle, s64 arg_count);
 
-ZAPI Bytecode_Register bytecode_emit_call_pointer(Bytecode_Builder *builder, Bytecode_Register fn_ptr_reg, Bytecode_Register arg_count_register);
-ZAPI Bytecode_Register bytecode_emit_call_pointer(Bytecode_Builder *builder, Bytecode_Register fn_ptr_reg, s64 arg_count);
+ZAPI Bytecode_Register bytecode_emit_call_pointer(Bytecode_Builder *builder, Bytecode_Register fn_reg, Bytecode_Register arg_count_register);
+ZAPI Bytecode_Register bytecode_emit_call_pointer(Bytecode_Builder *builder, Bytecode_Register fn_reg, s64 arg_count);
 
 ZAPI void bytecode_emit_return(Bytecode_Builder *builder);
 ZAPI void bytecode_emit_return(Bytecode_Builder *builder, Bytecode_Register return_value);

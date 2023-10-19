@@ -608,8 +608,7 @@ switch (operand.type->bit_size) { \
 
         case Bytecode_Opcode::CALL_PTR: {
             assert(instruction.a.kind == Bytecode_Register_Kind::TEMPORARY);
-            assert(instruction.a.type->kind == Type_Kind::POINTER);
-            assert(instruction.a.type->pointer.base->kind == Type_Kind::FUNCTION);
+            assert(instruction.a.type->kind == Type_Kind::FUNCTION);
 
             Interpreter_Register arg_count_reg = interpreter_load_register(interp, instruction.b);
             assert(arg_count_reg.type == &builtin_type_s64);
@@ -1245,23 +1244,21 @@ void interpreter_call_foreign_function(Interpreter *interp, Bytecode_Function_Ha
     interpreter_call_ffi(interp, foreign_fn->ffi_handle, arg_count, dest_index, foreign_fn->type->function.return_type);
 }
 
-void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_ptr_reg_, s64 arg_count, s64 dest_index)
+void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_reg, s64 arg_count, s64 dest_index)
 {
-    assert(fn_ptr_reg_.kind == Bytecode_Register_Kind::TEMPORARY);
-    assert(fn_ptr_reg_.type->kind == Type_Kind::POINTER);
-    assert(fn_ptr_reg_.type->pointer.base->kind == Type_Kind::FUNCTION);
-    auto fn_ptr_reg = interpreter_load_register(interp, fn_ptr_reg_);
-    assert(fn_ptr_reg.type->kind == Type_Kind::POINTER);
-    assert(fn_ptr_reg.type->pointer.base->kind == Type_Kind::FUNCTION);
+    assert(fn_reg.kind == Bytecode_Register_Kind::TEMPORARY);
+    assert(fn_reg.type->kind == Type_Kind::FUNCTION);
 
+    fn_reg.type = get_pointer_type(fn_reg.type, &interp->context->ast_allocator);
+    auto interp_fn_reg = interpreter_load_register(interp, fn_reg);
 
-    FFI_Handle ffi_handle = fn_ptr_reg.value.pointer;
+    FFI_Handle ffi_handle = interp_fn_reg.value.pointer;
 
     Bytecode_Function_Handle bc_fn_handle = ffi_find_callback(&interp->ffi, ffi_handle);
     if (bc_fn_handle !=  -1) {
         interpreter_push_stack_frame(interp, bc_fn_handle, arg_count, dest_index);
     } else {
-        auto return_type = fn_ptr_reg.type->pointer.base->function.return_type;
+        auto return_type = fn_reg.type->pointer.base->function.return_type;
         interpreter_call_ffi(interp, ffi_handle, arg_count, dest_index, return_type);
     }
 
@@ -1284,12 +1281,12 @@ void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_co
 
             case Type_Kind::INTEGER:
             case Type_Kind::FLOAT:
-            case Type_Kind::POINTER: {
+            case Type_Kind::POINTER:
+            case Type_Kind::FUNCTION: {
                 arg_ptr = &arg_reg.value;
                 break;
             }
 
-            case Type_Kind::FUNCTION: assert(false); break;
             case Type_Kind::BOOLEAN: assert(false); break;
             case Type_Kind::STRUCTURE: assert(false); break;
             case Type_Kind::ENUM: assert(false); break;

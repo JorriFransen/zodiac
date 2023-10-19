@@ -91,7 +91,7 @@ ZAPI Bytecode_Instruction interpreter_fetch_instruction(Interpreter *interp);
 ZAPI void interpreter_execute_instruction(Interpreter *interp, Bytecode_Instruction instruction);
 
 ZAPI void interpreter_call_foreign_function(Interpreter *interp, Bytecode_Function_Handle fn_handle, s64 arg_count, s64 dest_index);
-ZAPI void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_ptr_reg, s64 arg_count, s64 dest_index);
+ZAPI void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_reg, s64 arg_count, s64 dest_index);
 ZAPI void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_count, s64 dest_index, Type *return_type);
 ZAPI Interpreter_Register *interpreter_handle_ffi_callback(Interpreter *interp, Bytecode_Function_Handle fn_handle);
 

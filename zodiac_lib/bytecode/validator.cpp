@@ -862,15 +862,14 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
 
         case Bytecode_Opcode::CALL_PTR: {
             if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
-                bytecode_validator_report_error(validator, "The 'a' register for 'CALL_PTR' must be a function");
+                bytecode_validator_report_error(validator, "The 'a' register for 'CALL_PTR' must be a temporary");
                 return false;
             }
 
-            if (instruction->a.type->kind != Type_Kind::POINTER) {// ||
-                // instruction->a.type->pointer.base->kind != Type_Kind::FUNCTION) {
+            if (instruction->a.type->kind != Type_Kind::FUNCTION) {
                 assert(false);
 
-                bytecode_validator_report_error(validator, "The 'a' register for 'CALL_PTR' must be a of function pointer type");
+                bytecode_validator_report_error(validator, "The 'a' register for 'CALL_PTR' must be a of function type");
                 return false;
             }
 
@@ -884,7 +883,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            auto fn_type = instruction->a.type->pointer.base;
+            auto fn_type = instruction->a.type;
             assert(fn_type->kind == Type_Kind::FUNCTION);
 
             const auto &args = fn_type->function.parameter_types;
@@ -1038,9 +1037,8 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            if (!(instruction->dest.type->kind == Type_Kind::POINTER &&
-                  instruction->dest.type->pointer.base->kind == Type_Kind::FUNCTION)) {
-                bytecode_validator_report_error(validator, "The 'dest' register for 'ADDROF_FUNC' must be of function pointer type");
+            if (instruction->dest.type->kind != Type_Kind::FUNCTION) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'ADDROF_FUNC' must be of function type");
                 return false;
             }
 

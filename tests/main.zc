@@ -4,18 +4,19 @@ add_s64 :: (a: s64, b: s64) -> s64 {
     return a + b;
 }
 
+#run main();
 main :: () {
 
-    {
-        add := add_s64;
-        // r := add(1, 2);
-        // add_ptr := *add_s64;
-        // r2 := add_ptr(1, 2);
-    }
+    // {
+    //     add := add_s64;
+    //     // r := add(1, 2);
+    //     // add_ptr := *add_s64;
+    //     // r2 := add_ptr(1, 2);
+    // }
     {
 
         add : (s64, s64) -> s64 = add_s64;
-        // add_ptr :*(s64, s64) -> s64 = *add_s64;
+        // println(add(2, 3));
     }
 
     return 0;

@@ -1264,7 +1264,16 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
                 case Zodiac::AST_Declaration_Kind::FIELD: assert(false); break;
 
-                case AST_Declaration_Kind::FUNCTION: assert(false); break;
+                case AST_Declaration_Kind::FUNCTION: {
+                    Bytecode_Function_Handle fn_handle;
+                    bool found = hash_table_find(&bc->functions, ident_decl, &fn_handle);
+                    assert(found);
+
+                    result = bytecode_emit_address_of_function(bc->builder, fn_handle);
+                    assert(result.type->kind == Type_Kind::FUNCTION);
+                    break;
+                }
+
                 case AST_Declaration_Kind::STRUCT: assert(false); break;
                 case AST_Declaration_Kind::ENUM_MEMBER: assert(false); break;
                 case AST_Declaration_Kind::ENUM: assert(false); break;

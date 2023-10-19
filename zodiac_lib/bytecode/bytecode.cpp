@@ -1048,11 +1048,10 @@ Bytecode_Register bytecode_emit_call(Bytecode_Builder *builder, Bytecode_Functio
     return bytecode_emit_call(builder, fn_handle, arg_count_register);
 }
 
-Bytecode_Register bytecode_emit_call_pointer(Bytecode_Builder *builder, Bytecode_Register fn_ptr_reg, Bytecode_Register arg_count_register)
+Bytecode_Register bytecode_emit_call_pointer(Bytecode_Builder *builder, Bytecode_Register fn_reg, Bytecode_Register arg_count_register)
 {
-    assert(fn_ptr_reg.kind == Bytecode_Register_Kind::TEMPORARY);
-    assert(fn_ptr_reg.type->kind == Type_Kind::POINTER);
-    assert(fn_ptr_reg.type->pointer.base->kind == Type_Kind::FUNCTION);
+    assert(fn_reg.kind == Bytecode_Register_Kind::TEMPORARY);
+    assert(fn_reg.type->kind == Type_Kind::FUNCTION);
 
     assert(arg_count_register.kind == Bytecode_Register_Kind::TEMPORARY);
     assert(arg_count_register.flags & BC_REGISTER_FLAG_LITERAL);
@@ -1060,33 +1059,31 @@ Bytecode_Register bytecode_emit_call_pointer(Bytecode_Builder *builder, Bytecode
     assert(arg_count_register.type->integer.sign);
     assert(arg_count_register.type->bit_size == 64);
 
-    auto fn_type = fn_ptr_reg.type->pointer.base;
-    assert(arg_count_register.value.integer.s64 == fn_type->function.parameter_types.count);
+    assert(arg_count_register.value.integer.s64 == fn_reg.type->function.parameter_types.count);
 
     Bytecode_Register result_register = {};
-    if (fn_type->function.return_type->kind != Type_Kind::VOID) {
+    if (fn_reg.type->function.return_type->kind != Type_Kind::VOID) {
         result_register = bytecode_register_create(builder,
                                                    Bytecode_Register_Kind::TEMPORARY,
-                                                   fn_type->function.return_type);
+                                                   fn_reg.type->function.return_type);
     }
 
 
-    bytecode_emit_instruction(builder, Bytecode_Opcode::CALL_PTR, fn_ptr_reg, arg_count_register, result_register);
+    bytecode_emit_instruction(builder, Bytecode_Opcode::CALL_PTR, fn_reg, arg_count_register, result_register);
 
     return result_register;
 
 }
 
-Bytecode_Register bytecode_emit_call_pointer(Bytecode_Builder *builder, Bytecode_Register fn_ptr_reg, s64 arg_count)
+Bytecode_Register bytecode_emit_call_pointer(Bytecode_Builder *builder, Bytecode_Register fn_reg, s64 arg_count)
 {
-    assert(fn_ptr_reg.kind == Bytecode_Register_Kind::TEMPORARY);
-    assert(fn_ptr_reg.type->kind == Type_Kind::POINTER);
-    assert(fn_ptr_reg.type->pointer.base->kind == Type_Kind::FUNCTION);
+    assert(fn_reg.kind == Bytecode_Register_Kind::TEMPORARY);
+    assert(fn_reg.type->kind == Type_Kind::FUNCTION);
 
     assert(arg_count >= 0);
     auto arg_count_register = bytecode_integer_literal(builder, &builtin_type_s64, arg_count);
 
-    return bytecode_emit_call_pointer(builder, fn_ptr_reg, arg_count_register);
+    return bytecode_emit_call_pointer(builder, fn_reg, arg_count_register);
 }
 
 void bytecode_emit_return(Bytecode_Builder *builder)
@@ -1145,7 +1142,7 @@ Bytecode_Register bytecode_emit_address_of_function(Bytecode_Builder *builder, B
 
     assert(fn->type->pointer_to);
 
-    Bytecode_Register result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, fn->type->pointer_to);
+    Bytecode_Register result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, fn->type);
 
     Bytecode_Register fn_register = {
         .kind = Bytecode_Register_Kind::FUNCTION,

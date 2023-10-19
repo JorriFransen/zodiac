@@ -28,6 +28,7 @@ zodiac_disable_msvc_llvm_warnings()
 #include <llvm/IR/BasicBlock.h>
 #include <llvm/IR/Constant.h>
 #include <llvm/IR/Constants.h>
+#include <llvm/IR/DataLayout.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/GlobalObject.h>
@@ -48,6 +49,7 @@ zodiac_disable_msvc_llvm_warnings()
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/TypeSize.h>
 #include <llvm/TargetParser/Host.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
@@ -610,8 +612,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
                 }
             } else {
                 assert(bc_inst.a.kind == Bytecode_Register_Kind::TEMPORARY);
-                assert(bc_inst.a.type->kind == Type_Kind::POINTER);
-                assert(bc_inst.a.type->pointer.base->kind == Type_Kind::FUNCTION);
+                assert(bc_inst.a.type->kind == Type_Kind::FUNCTION);
 
                 llvm_func = llvm::dyn_cast<llvm::Function>(llvm_builder_emit_register(builder, bc_inst.a));
             }

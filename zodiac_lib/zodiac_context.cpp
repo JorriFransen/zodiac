@@ -32,8 +32,6 @@
 namespace Zodiac
 {
 
-struct Scope;
-
 using namespace Bytecode;
 
 void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)

@@ -222,7 +222,8 @@ void ffi_push_arg(FFI_Context *ffi, void *arg_ptr, Type *type)
             break;
         }
 
-        case Type_Kind::POINTER: {
+        case Type_Kind::POINTER:
+        case Type_Kind::FUNCTION: {
             dcArgPointer(ffi->dc_vm, *(void**)arg_ptr);
             break;
         }
