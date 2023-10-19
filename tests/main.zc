@@ -4,20 +4,30 @@ add_s64 :: (a: s64, b: s64) -> s64 {
     return a + b;
 }
 
+S :: struct {
+    binop_fn : (s64, s64) -> s64;
+}
+
 #run main();
 main :: () {
 
-    // {
-    //     add := add_s64;
-    //     // r := add(1, 2);
-    //     // add_ptr := *add_s64;
-    //     // r2 := add_ptr(1, 2);
-    // }
-    {
+    first : (s64, s64) -> s64;
 
-        add : (s64, s64) -> s64 = add_s64;
-        // println(add(2, 3));
+    {
+        add := add_s64;
+        println(add(1, 2));
     }
+
+    {
+        add : (s64, s64) -> s64 = add_s64;
+        println(add(2, 3));
+        first = add;
+    }
+
+    println(first(3, 4));
+
+    s : S = { add_s64 };
+    // s.binop_fn(4, 5);
 
     return 0;
 }

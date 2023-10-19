@@ -600,9 +600,12 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
             s64 arg_count = bc_inst.b.value.integer.s64;
 
-            llvm::Function *llvm_func = nullptr;
+            llvm::FunctionType *func_type = nullptr;
+            llvm::Value *llvm_func_val = nullptr;
 
             if (bc_inst.a.kind == Bytecode_Register_Kind::FUNCTION) {
+
+                llvm::Function *llvm_func = nullptr;
                 bool found = hash_table_find(&builder->functions, bc_inst.a.value.function_handle, &llvm_func);
                 assert(found);
                 if (!found) {
@@ -610,14 +613,20 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
                             bc_inst.a.value.function_handle);
                     return false;
                 }
+
+                func_type = static_cast<llvm::FunctionType *>(llvm_type_from_ast_type(builder, bc_inst.a.type));
+                llvm_func_val = llvm_func;
+
             } else {
                 assert(bc_inst.a.kind == Bytecode_Register_Kind::TEMPORARY);
                 assert(bc_inst.a.type->kind == Type_Kind::FUNCTION);
 
-                llvm_func = llvm::dyn_cast<llvm::Function>(llvm_builder_emit_register(builder, bc_inst.a));
+                llvm_func_val = llvm_builder_emit_register(builder, bc_inst.a);
+                func_type = static_cast<llvm::FunctionType *>(llvm_type_from_ast_type(builder, bc_inst.a.type));
             }
 
-            assert(llvm_func);
+            assert(llvm_func_val);
+            assert(func_type);
 
             Dynamic_Array<llvm::Value *> llvm_args;
             dynamic_array_create(temp_allocator_allocator(), &llvm_args, arg_count);
@@ -628,7 +637,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
             stack_pop(&builder->arg_stack, arg_count);
 
-            llvm::Value *result = irb->CreateCall(llvm_func, { llvm_args.data, (size_t)llvm_args.count });
+            llvm::Value *result = irb->CreateCall(func_type, llvm_func_val, { llvm_args.data, (size_t)llvm_args.count });
 
             if (bc_inst.dest.index >= 0) {
                 assert(bc_inst.dest.kind == Bytecode_Register_Kind::TEMPORARY);
@@ -737,6 +746,10 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
             llvm::Value *llvm_alloc = llvm_builder_emit_register(builder, bc_inst.a);
             llvm::Type *llvm_type = llvm_type_from_ast_type(builder, bc_inst.a.type);
+
+            if (bc_inst.a.type->kind == Type_Kind::FUNCTION) {
+                llvm_type = llvm_type->getPointerTo();
+            }
 
             llvm::Value *llvm_result = irb->CreateLoad(llvm_type, llvm_alloc);
             llvm_builder_store_result(builder, bc_inst.dest, llvm_result);
@@ -1743,7 +1756,12 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
                 dynamic_array_create(temp_allocator_allocator(), &mem_types, ast_type->structure.member_types.count);
 
                 for (s64 i = 0; i < ast_type->structure.member_types.count; i++) {
+
                     llvm::Type *llvm_mem_type = llvm_type_from_ast_type(builder, ast_type->structure.member_types[i]);
+                    if (llvm_mem_type->isFunctionTy()) {
+                        llvm_mem_type = llvm_mem_type->getPointerTo();
+                    }
+
                     dynamic_array_append(&mem_types, llvm_mem_type);
                 }
                 result->setBody( { mem_types.data, (size_t)mem_types.count }, true);

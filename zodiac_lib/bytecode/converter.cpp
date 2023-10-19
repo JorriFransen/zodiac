@@ -1328,17 +1328,31 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             assert(base->kind == AST_Expression_Kind::IDENTIFIER);
 
             Symbol *sym = scope_get_symbol(base->identifier.scope, base->identifier.name);
-            assert(sym && sym->kind == Symbol_Kind::FUNC);
-            assert(sym->decl && sym->decl->kind == AST_Declaration_Kind::FUNCTION);
+            assert(sym);
+
+            Type *fn_type = nullptr;
+            Bytecode_Function_Handle fn_handle = -1;
+            bool ptr_call = false;
+
+            if (sym->kind == Symbol_Kind::FUNC) {
+                assert(sym->decl && sym->decl->kind == AST_Declaration_Kind::FUNCTION);
 
 
-            Bytecode_Function_Handle fn_handle;
-            bool found = hash_table_find(&bc->functions, sym->decl, &fn_handle);
-            assert(found);
+                bool found = hash_table_find(&bc->functions, sym->decl, &fn_handle);
+                assert(found);
 
-            auto fn = bc->builder->functions[fn_handle];
+                auto fn = bc->builder->functions[fn_handle];
+                fn_type = fn.type;
+
+            } else {
+                assert(sym->kind == Symbol_Kind::VAR);
+                assert(sym->decl->variable.resolved_type->kind == Type_Kind::FUNCTION);
+                fn_type = sym->decl->variable.resolved_type;
+                ptr_call = true;
+            }
 
             auto arg_count = expr->call.args.count;
+            assert(ptr_call || fn_handle >= 0);
 
             for (s64 i = 0; i < expr->call.args.count; i++) {
 
@@ -1370,13 +1384,18 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     arg_reg = bytecode_emit_insert_value(bc->builder, arg_reg, length_reg, slice_type->slice.struct_type, 1);
 
                 } else {
-                    arg_reg = ast_expr_to_bytecode(bc, arg_expr, fn.type->function.parameter_types[i]);
+                    arg_reg = ast_expr_to_bytecode(bc, arg_expr, fn_type->function.parameter_types[i]);
                 }
 
                 bytecode_emit_push_arg(bc->builder, arg_reg);
             }
 
-            result = bytecode_emit_call(bc->builder, fn_handle, arg_count);
+            if (ptr_call) {
+                auto fn_ptr_reg = ast_expr_to_bytecode(bc, base);
+                result = bytecode_emit_call_pointer(bc->builder, fn_ptr_reg, arg_count);
+            } else {
+                result = bytecode_emit_call(bc->builder, fn_handle, arg_count);
+            }
             break;
         }
 

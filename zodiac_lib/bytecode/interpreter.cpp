@@ -1461,16 +1461,14 @@ void interpreter_load_pointer(Interpreter *interp, u8 *source, Interpreter_Regis
             break;
         }
 
-        case Type_Kind::POINTER: {
-            // @TODO: @CLEANUP: Remove the magic number, should probably be in compile_unit
-            assert(type->bit_size == 64);
+        case Type_Kind::POINTER:
+        case Type_Kind::FUNCTION: {
+            assert(type->bit_size == pointer_size);
 
             // @Cleanup: @TODO: @FIXME: alignment?
             dest->value.pointer = *((u8 **)source); break;
             break;
         }
-
-        case Type_Kind::FUNCTION: assert(false); break;
 
         case Type_Kind::BOOLEAN: {
             // @Cleanup: @TODO: @FIXME: alignment?

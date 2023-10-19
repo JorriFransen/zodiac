@@ -1428,13 +1428,14 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 
             Symbol *sym = scope_get_symbol(scope, base->identifier);
             assert(sym);
-            if (sym->kind != Symbol_Kind::FUNC) {
+
+            if (sym->kind != Symbol_Kind::FUNC && sym->kind != Symbol_Kind::VAR) {
                 resolve_error(ctx, base, "Not a function '%s'", sym->name.data);
                 result = false;
                 break;
             }
 
-            assert(sym->kind == Symbol_Kind::FUNC);
+            assert(sym->kind == Symbol_Kind::FUNC || sym->kind == Symbol_Kind::VAR);
             AST_Declaration *decl = sym->decl;
             assert(decl);
             break;
@@ -2582,7 +2583,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             auto ident_expr = expr->call.base;
 
             auto func_sym = scope_get_symbol(ident_expr->identifier.scope, ident_expr->identifier.name);
-            assert(func_sym && func_sym->kind == Symbol_Kind::FUNC);
+            assert(func_sym);
             assert(func_sym->state == Symbol_State::TYPED);
 
             if (!DECL_IS_TYPED(func_sym->decl)) {
@@ -2590,12 +2591,29 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 return false;
             }
 
-            auto func_decl = func_sym->decl;
-            assert(func_decl && func_decl->kind == AST_Declaration_Kind::FUNCTION);
-            assert(func_decl->function.type && func_decl->function.type->kind == Type_Kind::FUNCTION);
+            Type *func_type = nullptr;
 
-            if (expr->call.args.count != func_decl->function.params.count) {
-                resolve_error(ctx, expr, "Expected %i arguments, got %i", func_decl->function.params.count, expr->call.args.count);
+            if (func_sym->kind == Symbol_Kind::FUNC) {
+
+                auto func_decl = func_sym->decl;
+                assert(func_decl);
+                assert(func_decl->kind == AST_Declaration_Kind::FUNCTION);
+                assert(func_decl->function.type && func_decl->function.type->kind == Type_Kind::FUNCTION);
+
+                func_type = func_decl->function.type;
+
+            } else {
+                assert(func_sym->kind == Symbol_Kind::VAR);
+                auto sym_decl = func_sym->decl;
+                assert(sym_decl->variable.resolved_type->kind == Type_Kind::FUNCTION);
+
+                func_type = sym_decl->variable.resolved_type;
+            }
+
+            assert(func_type);
+
+            if (expr->call.args.count != func_type->function.parameter_types.count) {
+                resolve_error(ctx, expr, "Expected %i arguments, got %i", func_type->function.parameter_types.count, expr->call.args.count);
                 return false;
             }
 
@@ -2603,7 +2621,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 AST_Expression *arg_expr = expr->call.args[i];
                 Type *arg_type = arg_expr->resolved_type;
 
-                Type *param_type = func_decl->function.params[i]->parameter.resolved_type;
+                Type *param_type = func_type->function.parameter_types[i];
 
                 bool match = true;
 
@@ -2653,7 +2671,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 }
             }
 
-            auto return_type = func_decl->function.type->function.return_type;
+            auto return_type = func_type->function.return_type;
             assert(return_type);
 
             expr->resolved_type = return_type;
