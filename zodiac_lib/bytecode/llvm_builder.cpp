@@ -718,7 +718,12 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             llvm::GlobalVariable *llvm_global = llvm::dyn_cast<llvm::GlobalVariable>(llvm_global_);
             assert(llvm_global);
 
-            llvm::Value *llvm_result = irb->CreateLoad(llvm_global->getValueType(), llvm_global);
+            auto llvm_type = llvm_global->getValueType();
+            if (llvm_type->isFunctionTy()) {
+                assert(false); // probably change this to the pointer type
+            }
+
+            llvm::Value *llvm_result = irb->CreateLoad(llvm_type, llvm_global);
             llvm_builder_store_result(builder, bc_inst.dest, llvm_result);
             break;
         }
@@ -771,7 +776,13 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
             llvm::Value *llvm_ptr = llvm_builder_emit_register(builder, bc_inst.a);
             llvm::Type *llvm_type = llvm_type_from_ast_type(builder, bc_inst.dest.type);
+
+            if (llvm_type->isFunctionTy()) {
+                llvm_type = llvm_type->getPointerTo();
+            }
+
             llvm::Value *llvm_result = irb->CreateLoad(llvm_type, llvm_ptr);
+
             llvm_builder_store_result(builder, bc_inst.dest, llvm_result);
             break;
         }

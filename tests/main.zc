@@ -16,6 +16,8 @@ main :: () {
     {
         add := add_s64;
         println(add(1, 2));
+        lc := add;
+        println(lc(1, 2));
     }
 
     {
@@ -28,6 +30,8 @@ main :: () {
 
     s : S = { add_s64 };
     // s.binop_fn(4, 5);
+    lc := s.binop_fn;
+    println(lc(4, 5));
 
     return 0;
 }
