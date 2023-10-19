@@ -1423,21 +1423,27 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
         case AST_Expression_Kind::CALL: {
             AST_Expression *base = expr->call.base;
 
-            // TODO: Support arbitrary expressions here
-            assert(base->kind == AST_Expression_Kind::IDENTIFIER);
+            Symbol *sym = nullptr;
 
-            Symbol *sym = scope_get_symbol(scope, base->identifier);
-            assert(sym);
-
-            if (sym->kind != Symbol_Kind::FUNC && sym->kind != Symbol_Kind::VAR) {
-                resolve_error(ctx, base, "Not a function '%s'", sym->name.data);
-                result = false;
-                break;
+            if (base->kind == AST_Expression_Kind::IDENTIFIER) {
+                sym = scope_get_symbol(scope, base->identifier);
+                assert(sym);
+            } else {
+                // Ok, checked when typed
             }
 
-            assert(sym->kind == Symbol_Kind::FUNC || sym->kind == Symbol_Kind::VAR);
-            AST_Declaration *decl = sym->decl;
-            assert(decl);
+            if (sym) {
+
+                if (sym->kind != Symbol_Kind::FUNC &&
+                    sym->kind != Symbol_Kind::VAR &&
+                    sym->kind != Symbol_Kind::PARAM) {
+                    resolve_error(ctx, base, "Not a function '%s'", sym->name.data);
+                    result = false;
+                    break;
+                }
+
+                assert(sym->decl);
+            }
             break;
         }
 
@@ -2579,35 +2585,43 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
         case AST_Expression_Kind::CALL: {
 
-            assert(expr->call.base->kind == AST_Expression_Kind::IDENTIFIER);
-            auto ident_expr = expr->call.base;
-
-            auto func_sym = scope_get_symbol(ident_expr->identifier.scope, ident_expr->identifier.name);
-            assert(func_sym);
-            assert(func_sym->state == Symbol_State::TYPED);
-
-            if (!DECL_IS_TYPED(func_sym->decl)) {
-                resolve_error(ctx, ident_expr, "Waiting for declaration to be typed");
-                return false;
-            }
-
             Type *func_type = nullptr;
+            Symbol *func_sym = nullptr;
 
-            if (func_sym->kind == Symbol_Kind::FUNC) {
+            if (expr->call.base->kind == AST_Expression_Kind::IDENTIFIER) {
+                auto ident_expr = expr->call.base;
+                func_sym = scope_get_symbol(ident_expr->identifier.scope, ident_expr->identifier.name);
+                assert(func_sym);
 
-                auto func_decl = func_sym->decl;
-                assert(func_decl);
-                assert(func_decl->kind == AST_Declaration_Kind::FUNCTION);
-                assert(func_decl->function.type && func_decl->function.type->kind == Type_Kind::FUNCTION);
+                if (!DECL_IS_TYPED(func_sym->decl)) {
+                    resolve_error(ctx, ident_expr, "Waiting for declaration to be typed");
+                    return false;
+                }
 
-                func_type = func_decl->function.type;
+                assert(func_sym->state == Symbol_State::TYPED);
+
+                if (func_sym->kind == Symbol_Kind::FUNC) {
+
+                    auto func_decl = func_sym->decl;
+                    assert(func_decl);
+                    assert(func_decl->kind == AST_Declaration_Kind::FUNCTION);
+                    assert(func_decl->function.type && func_decl->function.type->kind == Type_Kind::FUNCTION);
+
+                    func_type = func_decl->function.type;
+
+                } else {
+                    assert(func_sym->kind == Symbol_Kind::VAR ||
+                           func_sym->kind == Symbol_Kind::PARAM);
+
+                    auto sym_decl = func_sym->decl;
+                    assert(sym_decl->variable.resolved_type->kind == Type_Kind::FUNCTION);
+
+                    func_type = sym_decl->variable.resolved_type;
+                }
 
             } else {
-                assert(func_sym->kind == Symbol_Kind::VAR);
-                auto sym_decl = func_sym->decl;
-                assert(sym_decl->variable.resolved_type->kind == Type_Kind::FUNCTION);
-
-                func_type = sym_decl->variable.resolved_type;
+                assert(expr->call.base->resolved_type->kind == Type_Kind::FUNCTION);
+                func_type = expr->call.base->resolved_type;
             }
 
             assert(func_type);

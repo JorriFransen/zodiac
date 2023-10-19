@@ -926,6 +926,10 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
             llvm::Type *llvm_gep_base_type = llvm_type_from_ast_type(builder, bc_inst.a.type->pointer.base);
 
+            if (llvm_gep_base_type->isFunctionTy()) {
+                llvm_gep_base_type = llvm_gep_base_type->getPointerTo();
+            }
+
             llvm::Value *indexes[] = { index };
 
             llvm::Value *result = irb->CreateGEP(llvm_gep_base_type, llvm_ptr, indexes);
@@ -1726,6 +1730,9 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
 
         case Type_Kind::FUNCTION: {
             llvm::Type  *llvm_return_type = llvm_type_from_ast_type(builder, ast_type->function.return_type);
+            if (llvm_return_type->isFunctionTy()) {
+                llvm_return_type = llvm_return_type->getPointerTo();
+            }
 
             Dynamic_Array<llvm::Type *> llvm_param_types;
             if (ast_type->function.parameter_types.count) {
@@ -1734,6 +1741,10 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
 
             for (s64 i = 0; i < ast_type->function.parameter_types.count; i++) {
                 llvm::Type *param_type = llvm_type_from_ast_type(builder, ast_type->function.parameter_types[i]);
+
+                if (param_type->isFunctionTy()) {
+                    param_type = param_type->getPointerTo();
+                }
                 dynamic_array_append(&llvm_param_types, param_type);
             }
 
@@ -1784,6 +1795,10 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
 
         case Type_Kind::STATIC_ARRAY: {
             llvm::Type *elem_type = llvm_type_from_ast_type(builder, ast_type->static_array.element_type);
+
+            if (elem_type->isFunctionTy()) {
+                elem_type = elem_type->getPointerTo();
+            }
             return llvm::ArrayType::get(elem_type, ast_type->static_array.count);
         }
 

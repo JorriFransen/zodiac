@@ -5117,6 +5117,105 @@ true)OUT_STR" };
     return MUNIT_OK;
 }
 
+MunitResult Function_Pointers(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        add_s64 :: (a: s64, b: s64) -> s64 {
+            return a + b;
+        }
+
+        sub_s64 :: (a: s64, b: s64) -> s64 {
+            return a - b;
+        }
+
+        mul_s64 :: (a: s64, b: s64) -> s64 {
+            return a * b;
+        }
+
+        S :: struct {
+            binop_fn : (s64, s64) -> s64;
+        }
+
+        return_binop_fn :: () {
+            return add_s64;
+        }
+
+        both :: ( f1: (s64, s64) -> s64,
+                  f2: (s64, s64) -> s64,
+                  a: s64, b: s64) {
+
+            println(f1(a, b));
+            println(f2(a, b));
+
+        }
+
+        main :: () {
+
+            first : (s64, s64) -> s64;
+
+            {
+                add := add_s64;
+                println(add(1, 2));
+                lc := add;
+                println(lc(1, 2));
+            }
+
+            {
+                add : (s64, s64) -> s64 = add_s64;
+                println(add(2, 3));
+                first = add;
+            }
+
+            println(first(3, 4));
+
+            s : S = { add_s64 };
+            println(s.binop_fn(4, 5));
+            lc := s.binop_fn;
+            println(lc(4, 5));
+
+            println(return_binop_fn()(5, 6));
+
+            funcs : [2](s64, s64) -> s64 = { add_s64, sub_s64 };
+            println(funcs[0](6, 7));
+            println(funcs[1](6, 7));
+
+            func_slice : [](s64, s64) -> s64 = funcs;
+            println(func_slice[0](7, 8));
+            func_slice[1] = mul_s64;
+            println(func_slice[1](7, 8));
+
+            println(funcs[0](6, 7));
+            println(funcs[1](6, 7));
+
+            both(funcs[1], sub_s64, 42, 24);
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(3
+3
+5
+7
+9
+9
+11
+13
+-1
+15
+56
+13
+42
+1008
+18)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef DAY_ENUM_DECL
 #undef RESOLVE_ERR
 

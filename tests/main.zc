@@ -4,8 +4,29 @@ add_s64 :: (a: s64, b: s64) -> s64 {
     return a + b;
 }
 
+sub_s64 :: (a: s64, b: s64) -> s64 {
+    return a - b;
+}
+
+mul_s64 :: (a: s64, b: s64) -> s64 {
+    return a * b;
+}
+
 S :: struct {
     binop_fn : (s64, s64) -> s64;
+}
+
+return_binop_fn :: () {
+    return add_s64;
+}
+
+both :: ( f1: (s64, s64) -> s64,
+          f2: (s64, s64) -> s64,
+          a: s64, b: s64) {
+
+    println(f1(a, b));
+    println(f2(a, b));
+
 }
 
 #run main();
@@ -29,9 +50,25 @@ main :: () {
     println(first(3, 4));
 
     s : S = { add_s64 };
-    // s.binop_fn(4, 5);
+    println(s.binop_fn(4, 5));
     lc := s.binop_fn;
     println(lc(4, 5));
+
+    println(return_binop_fn()(5, 6));
+
+    funcs : [2](s64, s64) -> s64 = { add_s64, sub_s64 };
+    println(funcs[0](6, 7));
+    println(funcs[1](6, 7));
+
+    func_slice : [](s64, s64) -> s64 = funcs;
+    println(func_slice[0](7, 8));
+    func_slice[1] = mul_s64;
+    println(func_slice[1](7, 8));
+
+    println(funcs[0](6, 7));
+    println(funcs[1](6, 7));
+
+    both(funcs[1], sub_s64, 42, 24);
 
     return 0;
 }

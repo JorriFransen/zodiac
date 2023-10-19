@@ -1324,32 +1324,40 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
         case AST_Expression_Kind::CALL: {
 
-            AST_Expression *base = expr->call.base;
-            assert(base->kind == AST_Expression_Kind::IDENTIFIER);
-
-            Symbol *sym = scope_get_symbol(base->identifier.scope, base->identifier.name);
-            assert(sym);
-
             Type *fn_type = nullptr;
-            Bytecode_Function_Handle fn_handle = -1;
             bool ptr_call = false;
+            Bytecode_Function_Handle fn_handle = -1;
 
-            if (sym->kind == Symbol_Kind::FUNC) {
-                assert(sym->decl && sym->decl->kind == AST_Declaration_Kind::FUNCTION);
+            AST_Expression *base = expr->call.base;
+            if (base->kind == AST_Expression_Kind::IDENTIFIER) {
 
+                Symbol *sym = scope_get_symbol(base->identifier.scope, base->identifier.name);
+                assert(sym);
 
-                bool found = hash_table_find(&bc->functions, sym->decl, &fn_handle);
-                assert(found);
+                if (sym->kind == Symbol_Kind::FUNC) {
+                    assert(sym->decl && sym->decl->kind == AST_Declaration_Kind::FUNCTION);
 
-                auto fn = bc->builder->functions[fn_handle];
-                fn_type = fn.type;
+                    bool found = hash_table_find(&bc->functions, sym->decl, &fn_handle);
+                    assert(found);
 
+                    auto fn = bc->builder->functions[fn_handle];
+                    fn_type = fn.type;
+
+                } else {
+                    assert(sym->kind == Symbol_Kind::VAR ||
+                           sym->kind == Symbol_Kind::PARAM);
+
+                    assert(sym->decl->variable.resolved_type->kind == Type_Kind::FUNCTION);
+                    fn_type = sym->decl->variable.resolved_type;
+                    ptr_call = true;
+                }
             } else {
-                assert(sym->kind == Symbol_Kind::VAR);
-                assert(sym->decl->variable.resolved_type->kind == Type_Kind::FUNCTION);
-                fn_type = sym->decl->variable.resolved_type;
+                assert(base->resolved_type->kind == Type_Kind::FUNCTION);
+                fn_type = base->resolved_type;
                 ptr_call = true;
             }
+
+            assert(fn_type);
 
             auto arg_count = expr->call.args.count;
             assert(ptr_call || fn_handle >= 0);
@@ -1377,7 +1385,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     Bytecode_Register ptr_reg = bytecode_emit_array_offset_pointer(bc->builder, array_alloc, 0);
                     Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, array_type->static_array.count);
 
-                    auto slice_type = sym->decl->function.type->function.parameter_types[i];
+                    auto slice_type = fn_type->function.parameter_types[i];
                     assert(slice_type->kind == Type_Kind::SLICE);
 
                     arg_reg = bytecode_emit_insert_value(bc->builder, {}, ptr_reg, slice_type->slice.struct_type, 0);

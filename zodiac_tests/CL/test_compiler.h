@@ -146,6 +146,7 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Recurse_Indirect) \
     X(Type_Info) \
     X(Type_Of) \
+    X(Function_Pointers) \
 
 
 // Function declarations
