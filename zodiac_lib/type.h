@@ -140,6 +140,7 @@ struct Type
 };
 
 #define TYPE_IS_SLICE_STRUCT(t) ((t)->kind == Type_Kind::STRUCTURE && (t)->flags & TYPE_FLAG_SLICE_STRUCT)
+#define TYPE_IS_FN_PTR(t) ((t)->kind == Type_Kind::POINTER && (t)->pointer.base->kind == Type_Kind::FUNCTION)
 
 ZAPI extern bool type_system_initialized;
 

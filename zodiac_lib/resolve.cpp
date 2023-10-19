@@ -420,6 +420,10 @@ Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error
         case Infer_Target::DEFAULT: break;
 
         case Infer_Target::ARGUMENT: {
+
+            if (TYPE_IS_FN_PTR(inferred_type)) {
+                inferred_type = inferred_type->pointer.base;
+            }
             assert(inferred_type->kind == Type_Kind::FUNCTION);
 
             auto index = infer_node->target.index;
@@ -1428,13 +1432,13 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 
             Symbol *sym = scope_get_symbol(scope, base->identifier);
             assert(sym);
-            if (sym->kind != Symbol_Kind::FUNC) {
+            if (sym->kind != Symbol_Kind::FUNC && sym->kind != Symbol_Kind::VAR) {
                 resolve_error(ctx, base, "Not a function '%s'", sym->name.data);
                 result = false;
                 break;
             }
 
-            assert(sym->kind == Symbol_Kind::FUNC);
+            assert(sym->kind == Symbol_Kind::FUNC || sym->kind == Symbol_Kind::VAR);
             AST_Declaration *decl = sym->decl;
             assert(decl);
             break;
@@ -1849,6 +1853,11 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
 
             assert(decl->variable.resolved_type);
 
+            if (decl->variable.resolved_type->kind == Type_Kind::FUNCTION) {
+                fatal_resolve_error(ctx, decl, "Cannot create variable of type function, did you mean pointer to function?");
+                return false;
+            }
+
             if (decl->variable.value && scope->kind == Scope_Kind::GLOBAL) {
                 assert(EXPR_IS_CONST(decl->variable.value) || decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE);
             }
@@ -1946,6 +1955,11 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             assert(decl->field.type_spec->resolved_type);
 
             decl->field.resolved_type = decl->field.type_spec->resolved_type;
+
+            if (decl->field.resolved_type->kind == Type_Kind::FUNCTION) {
+                fatal_resolve_error(ctx, decl->field.type_spec, "Illegal type for field: 'function', did you mean to use a function pointer?");
+                return false;
+            }
 
             auto sym = scope_get_symbol(scope, decl->identifier.name);
             assert(sym && sym->state == Symbol_State::RESOLVED);
@@ -2450,7 +2464,8 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             expr->resolved_type = sym_decl_type(sym);
 
             if (sym->kind == Symbol_Kind::VAR ||
-                sym->kind == Symbol_Kind::PARAM) {
+                sym->kind == Symbol_Kind::PARAM ||
+                sym->kind == Symbol_Kind::FUNC) {
                 expr->flags |= AST_EXPR_FLAG_LVALUE;
             }
 
@@ -2581,21 +2596,40 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             assert(expr->call.base->kind == AST_Expression_Kind::IDENTIFIER);
             auto ident_expr = expr->call.base;
 
-            auto func_sym = scope_get_symbol(ident_expr->identifier.scope, ident_expr->identifier.name);
-            assert(func_sym && func_sym->kind == Symbol_Kind::FUNC);
-            assert(func_sym->state == Symbol_State::TYPED);
+            Type *func_type = nullptr;
 
-            if (!DECL_IS_TYPED(func_sym->decl)) {
-                resolve_error(ctx, ident_expr, "Waiting for declaration to be typed");
-                return false;
+            {
+                auto func_sym = scope_get_symbol(ident_expr->identifier.scope, ident_expr->identifier.name);
+                assert(func_sym);
+
+                if (!DECL_IS_TYPED(func_sym->decl)) {
+                    resolve_error(ctx, ident_expr, "Waiting for declaration to be typed");
+                    return false;
+                }
+                assert(func_sym->state == Symbol_State::TYPED);
+
+                if (func_sym->kind == Symbol_Kind::FUNC) {
+
+                    auto func_decl = func_sym->decl;
+                    assert(func_decl && func_decl->kind == AST_Declaration_Kind::FUNCTION);
+                    assert(func_decl->function.type && func_decl->function.type->kind == Type_Kind::FUNCTION);
+
+                    func_type = func_decl->function.type;
+
+                } else {
+                    assert(func_sym->kind == Symbol_Kind::VAR);
+                    auto var_decl = func_sym->decl;
+                    assert(var_decl->variable.resolved_type->kind == Type_Kind::POINTER);
+                    assert(var_decl->variable.resolved_type->pointer.base->kind == Type_Kind::FUNCTION);
+
+                    func_type = var_decl->variable.resolved_type->pointer.base;
+                }
             }
 
-            auto func_decl = func_sym->decl;
-            assert(func_decl && func_decl->kind == AST_Declaration_Kind::FUNCTION);
-            assert(func_decl->function.type && func_decl->function.type->kind == Type_Kind::FUNCTION);
+            assert(func_type);
 
-            if (expr->call.args.count != func_decl->function.params.count) {
-                resolve_error(ctx, expr, "Expected %i arguments, got %i", func_decl->function.params.count, expr->call.args.count);
+            if (expr->call.args.count != func_type->function.parameter_types.count) {
+                resolve_error(ctx, expr, "Expected %i arguments, got %i", func_type->function.parameter_types.count, expr->call.args.count);
                 return false;
             }
 
@@ -2603,7 +2637,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 AST_Expression *arg_expr = expr->call.args[i];
                 Type *arg_type = arg_expr->resolved_type;
 
-                Type *param_type = func_decl->function.params[i]->parameter.resolved_type;
+                Type *param_type = func_type->function.parameter_types[i];
 
                 bool match = true;
 
@@ -2653,7 +2687,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 }
             }
 
-            auto return_type = func_decl->function.type->function.return_type;
+            auto return_type = func_type->function.return_type;
             assert(return_type);
 
             expr->resolved_type = return_type;

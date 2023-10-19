@@ -528,17 +528,28 @@ bool check_run_dependencies(Zodiac_Context *ctx, AST_Expression *expr)
             assert(base->kind == AST_Expression_Kind::IDENTIFIER);
 
             Symbol *sym = scope_get_symbol(base->identifier.scope, base->identifier.name);
-            assert(sym && sym->kind == Symbol_Kind::FUNC);
-            assert(sym->decl && sym->decl->kind == AST_Declaration_Kind::FUNCTION);
+            assert(sym);
 
-            auto fn_decl = sym->decl;
+            if (sym->kind == Symbol_Kind::FUNC) {
+                assert(sym->decl && sym->decl->kind == AST_Declaration_Kind::FUNCTION);
 
-            if (fn_decl->flags & AST_DECL_FLAG_BYTECODE_EMITTED) {
-                // Check this function as well.
-                return check_run_dependencies(ctx, fn_decl);
+                auto fn_decl = sym->decl;
+
+                if (fn_decl->flags & AST_DECL_FLAG_BYTECODE_EMITTED) {
+                    // Check this function as well.
+                    return check_run_dependencies(ctx, fn_decl);
+                } else {
+                    resolve_error(ctx, expr, "Waiting for '%s' to emitted before executing run job '%s'", fn_decl->identifier.name.data, fn_decl->identifier.name.data);
+                    return false;
+                }
+
             } else {
-                resolve_error(ctx, expr, "Waiting for '%s' to emitted before executing run job '%s'", fn_decl->identifier.name.data, fn_decl->identifier.name.data);
-                return false;
+                // Function pointer
+                assert(sym->kind == Symbol_Kind::VAR);
+                assert(sym->decl->variable.resolved_type->kind == Type_Kind::POINTER);
+                assert(sym->decl->variable.resolved_type->pointer.base->kind == Type_Kind::FUNCTION);
+
+                return true;
             }
 
             assert(false);

@@ -4,18 +4,29 @@ add_s64 :: (a: s64, b: s64) -> s64 {
     return a + b;
 }
 
-main :: () {
+S :: struct {
+    add_fn : *(s64, s64) -> s64;
+}
+
+#run main();
+main :: () -> s64 {
 
     {
-        add := add_s64;
-        // r := add(1, 2);
-        // add_ptr := *add_s64;
-        // r2 := add_ptr(1, 2);
+        add_ptr := *add_s64;
+        r := add_ptr(1, 2);
+        println(r);
     }
-    {
 
-        add : (s64, s64) -> s64 = add_s64;
-        // add_ptr :*(s64, s64) -> s64 = *add_s64;
+
+    {
+        add_ptr :*(s64, s64) -> s64 = *add_s64;
+        println(add_ptr(2, 3));
+    }
+
+    {
+        s : S = { *add_s64 };
+        lc := s.add_fn;
+        println(lc(3, 4));
     }
 
     return 0;

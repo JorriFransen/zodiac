@@ -598,25 +598,34 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
             s64 arg_count = bc_inst.b.value.integer.s64;
 
-            llvm::Function *llvm_func = nullptr;
+            llvm::Value *callee_val = nullptr;
+            llvm::FunctionType *fn_type = nullptr;
 
             if (bc_inst.a.kind == Bytecode_Register_Kind::FUNCTION) {
-                bool found = hash_table_find(&builder->functions, bc_inst.a.value.function_handle, &llvm_func);
+                llvm::Function *llvm_fn;
+                bool found = hash_table_find(&builder->functions, bc_inst.a.value.function_handle, &llvm_fn);
                 assert(found);
+
                 if (!found) {
                     ZERROR("[llvm_builder] Unable to find function with handle '%lli' for CALL instruction\n",
                             bc_inst.a.value.function_handle);
                     return false;
                 }
+
+                callee_val = llvm_fn;
+                fn_type = llvm_fn->getFunctionType();
+
             } else {
                 assert(bc_inst.a.kind == Bytecode_Register_Kind::TEMPORARY);
                 assert(bc_inst.a.type->kind == Type_Kind::POINTER);
                 assert(bc_inst.a.type->pointer.base->kind == Type_Kind::FUNCTION);
 
-                llvm_func = llvm::dyn_cast<llvm::Function>(llvm_builder_emit_register(builder, bc_inst.a));
+                callee_val = llvm_builder_emit_register(builder, bc_inst.a);
+                fn_type = static_cast<llvm::FunctionType *>(llvm_type_from_ast_type(builder, bc_inst.a.type->pointer.base));
             }
 
-            assert(llvm_func);
+            assert(fn_type);
+            assert(callee_val);
 
             Dynamic_Array<llvm::Value *> llvm_args;
             dynamic_array_create(temp_allocator_allocator(), &llvm_args, arg_count);
@@ -627,7 +636,7 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
 
             stack_pop(&builder->arg_stack, arg_count);
 
-            llvm::Value *result = irb->CreateCall(llvm_func, { llvm_args.data, (size_t)llvm_args.count });
+            llvm::Value *result = irb->CreateCall(fn_type, callee_val, { llvm_args.data, (size_t)llvm_args.count });
 
             if (bc_inst.dest.index >= 0) {
                 assert(bc_inst.dest.kind == Bytecode_Register_Kind::TEMPORARY);

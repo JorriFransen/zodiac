@@ -4895,14 +4895,14 @@ MunitResult Type_Of(const MunitParameter params[], void* user_data_or_fixture) {
             println(#type_info(#type_of(s1)) == #type_info([]s64));
             println(#type_info(#type_of(s2)) == #type_info([][]s64));
 
-            f1 : () -> void;
-            f2 : (r64, r64) -> Vec2;
+            f1 : *() -> void;
+            f2 : *(r64, r64) -> Vec2;
 
-            print_ti(#type_info(#type_of(f1)));
-            print_ti(#type_info(#type_of(f2)));
+            print_ti(#type_info(#type_of(<f1)));
+            print_ti(#type_info(#type_of(<f2)));
 
-            println(#type_info(#type_of(f1)) == #type_info( ()-> void));
-            println(#type_info(#type_of(f2)) == #type_info( (r64, r64) -> Vec2));
+            println(#type_info(#type_of(<f1)) == #type_info( ()-> void));
+            println(#type_info(#type_of(<f2)) == #type_info( (r64, r64) -> Vec2));
 
             return 0;
         }

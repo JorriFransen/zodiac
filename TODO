@@ -1,5 +1,5 @@
 
-- Slice should be builtin like string, this should solve the problem with pointers to slice and pointer to the slices struct type.
+- Some kind of typedef
 
 - String equality
 - Allow pointer math?
