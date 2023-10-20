@@ -56,7 +56,7 @@ AST_Identifier parse_identifier(Parser *parser)
     if (!_expect_token(parser, TOK_NAME)) return {};
 
     AST_Identifier result;
-    ast_identifier_create(ident_tok.atom, ident_tok.range, &result);
+    ast_identifier_create(ident_tok.atom, ident_tok.sr, &result);
     return result;
 }
 
@@ -64,13 +64,13 @@ AST_Expression *parse_expr_compound(Parser *parser)
 {
     debug_assert(parser);
 
-    Source_Pos start_pos = cur_tok(parser).range.start;
+    Source_Pos start_pos = cur_tok(parser).sr.start;
 
     expect_token(parser, '{');
 
     auto temp_exprs = temp_array_create<AST_Expression *>(temp_allocator_allocator());
 
-    Source_Pos end_pos = cur_tok(parser).range.end;
+    Source_Pos end_pos = cur_tok(parser).sr.end;
 
     while (!match_token(parser, '}')) {
 
@@ -82,7 +82,7 @@ AST_Expression *parse_expr_compound(Parser *parser)
 
         dynamic_array_append(&temp_exprs.array, expr);
 
-        end_pos = cur_tok(parser).range.end;
+        end_pos = cur_tok(parser).sr.end;
     }
 
     auto exprs = temp_array_finalize(&parser->context->ast_allocator, &temp_exprs);
@@ -93,11 +93,11 @@ AST_Expression *parse_expr_operand(Parser *parser)
 {
     debug_assert(parser);
 
-    Source_Pos start_pos = cur_tok(parser).range.start;
+    Source_Pos start_pos = cur_tok(parser).sr.start;
 
     auto ct = cur_tok(parser);
 
-    Source_Range range = { start_pos, ct.range.end };
+    Source_Range range = { start_pos, ct.sr.end };
 
     if (is_token(parser, TOK_INT)) {
         next_token(parser);
@@ -138,7 +138,7 @@ AST_Expression *parse_expr_operand(Parser *parser)
             expect_token(parser, ',');
             AST_Expression *expr = parse_expression(parser);
 
-            auto end = cur_tok(parser).range.end;
+            auto end = cur_tok(parser).sr.end;
             expect_token(parser, ')');
 
             return ast_cast_expr_new(parser->context, {range.start, end}, ts, expr);
@@ -158,7 +158,7 @@ AST_Expression *parse_expr_operand(Parser *parser)
     }
 
     ct = cur_tok(parser);
-    report_parse_error(parser, ct.range, "Expected INT, NAME, '(' or 'null' when parsing expression, got: '%s', (%s)", ct.atom.data, tmp_token_kind_str(ct.kind).data);
+    report_parse_error(parser, ct.sr, "Expected INT, NAME, '(' or 'null' when parsing expression, got: '%s', (%s)", ct.atom.data, tmp_token_kind_str(ct.kind).data);
     return nullptr;
 }
 
@@ -177,7 +177,7 @@ AST_Expression *parse_expr_base(Parser *parser)
 
             auto temp_args = temp_array_create<AST_Expression *>(temp_allocator_allocator());
 
-            auto end_pos = cur_tok(parser).range.end;
+            auto end_pos = cur_tok(parser).sr.end;
 
             while (!match_token(parser, ')')) {
 
@@ -188,7 +188,7 @@ AST_Expression *parse_expr_base(Parser *parser)
                 AST_Expression *arg = parse_expression(parser);
                 dynamic_array_append(&temp_args.array, arg);
 
-                end_pos = cur_tok(parser).range.end;
+                end_pos = cur_tok(parser).sr.end;
             }
 
             auto args = temp_array_finalize(&parser->context->ast_allocator, &temp_args);
@@ -197,7 +197,7 @@ AST_Expression *parse_expr_base(Parser *parser)
         } else if (match_token(parser, '[')) {
 
             AST_Expression *index = parse_expression(parser);
-            auto end_pos = cur_tok(parser).range.end;
+            auto end_pos = cur_tok(parser).sr.end;
             expect_token(parser, ']');
             expr = ast_index_expr_new(parser->context, {start_pos, end_pos}, expr, index);
 
@@ -208,7 +208,7 @@ AST_Expression *parse_expr_base(Parser *parser)
 
             Token name_tok = cur_tok(parser);
             expect_token(parser, TOK_NAME);
-            expr = ast_member_expr_new(parser->context, {start_pos, name_tok.range.end}, expr, name_tok.atom);
+            expr = ast_member_expr_new(parser->context, {start_pos, name_tok.sr.end}, expr, name_tok.atom);
 
         }
     }
@@ -219,7 +219,7 @@ AST_Expression *parse_expr_base(Parser *parser)
 AST_Expression *_parse_expr_unary(Parser *parser)
 {
     debug_assert(parser);
-    Source_Pos start_pos = cur_tok(parser).range.start;
+    Source_Pos start_pos = cur_tok(parser).sr.start;
 
     if (match_token(parser, '+')) {
 
@@ -352,7 +352,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 {
     debug_assert(parser);
 
-    Source_Pos start_pos = cur_tok(parser).range.start;
+    Source_Pos start_pos = cur_tok(parser).sr.start;
 
     if (match_keyword(parser, keyword_if)) {
         AST_Expression *cond = parse_expression(parser);
@@ -408,7 +408,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
         auto end_pos = inc_stmt->sr.end;
 
         if (expect_rparen) {
-            end_pos = cur_tok(parser).range.end;
+            end_pos = cur_tok(parser).sr.end;
             expect_token(parser, ')');
         }
 
@@ -427,7 +427,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         while (!is_token(parser, '}')) {
 
-            auto case_start = cur_tok(parser).range.start;
+            auto case_start = cur_tok(parser).sr.start;
             if (match_keyword(parser, keyword_case)) {
 
                 Dynamic_Array<AST_Expression *> case_values;
@@ -469,7 +469,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
             } else {
                 auto ct = cur_tok(parser);
-                report_parse_error(parser,  ct.range.start, "Expected 'case' or 'default', got: '%s'", ct.atom.data);
+                report_parse_error(parser,  ct.sr.start, "Expected 'case' or 'default', got: '%s'", ct.atom.data);
                 return nullptr;
             }
         }
@@ -479,7 +479,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
             return nullptr;
         }
 
-        auto end_pos = cur_tok(parser).range.start;
+        auto end_pos = cur_tok(parser).sr.start;
         expect_token(parser, '}');
 
         assert(switch_value);
@@ -493,7 +493,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
             value = parse_expression(parser);
         }
 
-        auto end_pos = cur_tok(parser).range.end;
+        auto end_pos = cur_tok(parser).sr.end;
         expect_token(parser, ';');
 
         return ast_return_stmt_new(parser->context, { start_pos, end_pos }, value);
@@ -521,14 +521,14 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         }
 
-        auto end_pos = cur_tok(parser).range.start;
+        auto end_pos = cur_tok(parser).sr.start;
         expect_token(parser, ')');
 
         if (optional_semi) {
-            auto ep = cur_tok(parser).range.start;
+            auto ep = cur_tok(parser).sr.start;
             if (match_token(parser, ';')) end_pos = ep;
         } else {
-            end_pos = cur_tok(parser).range.start;
+            end_pos = cur_tok(parser).sr.start;
             expect_token(parser, ';');
         }
 
@@ -543,7 +543,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
     }
 
     Token t = cur_tok(parser);
-    report_parse_error(parser, t.range, "Unexpected keyword token when parsing statement: '%s'", tmp_token_str(t).data);
+    report_parse_error(parser, t.sr, "Unexpected keyword token when parsing statement: '%s'", tmp_token_str(t).data);
     return nullptr;
 }
 
@@ -555,7 +555,7 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
         return parse_keyword_statement(parser, optional_semi);
     }
 
-    Source_Pos start_pos = cur_tok(parser).range.start;
+    Source_Pos start_pos = cur_tok(parser).sr.start;
 
     if (match_token(parser, '{')) {
         auto temp_statements = temp_array_create<AST_Statement *>(temp_allocator_allocator());
@@ -565,7 +565,7 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
             AST_Statement *stmt = parse_statement(parser);
             dynamic_array_append(&temp_statements.array, stmt);
         }
-        auto end_pos = cur_tok(parser).range.end;
+        auto end_pos = cur_tok(parser).sr.end;
         expect_token(parser, '}');
 
         auto statements = temp_array_finalize(&parser->context->ast_allocator, &temp_statements);
@@ -600,7 +600,7 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
 
         auto ct = cur_tok(parser);
         if (!(is_token(parser, '=') || is_token(parser, ':') || is_token(parser, ';'))) {
-            report_parse_error(parser, ct.range, "Expected '=', ':' or ';' after typespec in variable or constant declaration, got '%s'", ct.atom.data);
+            report_parse_error(parser, ct.sr, "Expected '=', ':' or ';' after typespec in variable or constant declaration, got '%s'", ct.atom.data);
             return nullptr;
         }
 
@@ -612,7 +612,7 @@ AST_Statement *_parse_statement(Parser *parser, bool optional_semi/*=false*/)
             value = parse_expression(parser);
         }
 
-        auto end_pos = cur_tok(parser).range.end;
+        auto end_pos = cur_tok(parser).sr.end;
 
         Source_Range range = {start_pos, end_pos};
         if (is_constant) {
@@ -706,14 +706,14 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
         do {
 
             Token name_tok = cur_tok(parser);
-            Source_Pos start = name_tok.range.start;
+            Source_Pos start = name_tok.sr.start;
             expect_token(parser, TOK_NAME);
             expect_token(parser, ':');
             AST_Type_Spec *ts = parse_type_spec(parser);
             Source_Pos end = ts->sr.end;
 
             AST_Identifier param_ident;
-            ast_identifier_create(name_tok.atom, name_tok.range, &param_ident);
+            ast_identifier_create(name_tok.atom, name_tok.sr, &param_ident);
 
             AST_Declaration *field_decl = ast_parameter_decl_new(parser->context, {start, end}, param_ident, ts);
 
@@ -788,7 +788,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
         expect_token(parser, TOK_NAME);
 
         AST_Identifier first_ident;
-        ast_identifier_create(first_name_tok.atom, first_name_tok.range, &first_ident);
+        ast_identifier_create(first_name_tok.atom, first_name_tok.sr, &first_ident);
         dynamic_array_append(&temp_idents.array, first_ident);
 
         while (match_token(parser, ',')) {
@@ -796,7 +796,7 @@ AST_Declaration *parse_aggregate_declaration(Parser *parser, AST_Identifier iden
             expect_token(parser, TOK_NAME);
 
             AST_Identifier ident;
-            ast_identifier_create(name_tok.atom, name_tok.range, &ident);
+            ast_identifier_create(name_tok.atom, name_tok.sr, &ident);
             dynamic_array_append(&temp_idents.array, ident);
         }
 
@@ -847,14 +847,14 @@ AST_Declaration *parse_enum_declaration(Parser *parser, AST_Identifier ident)
             return nullptr;
         }
 
-        auto member_end = cur_tok(parser).range.end;
+        auto member_end = cur_tok(parser).sr.end;
         next_token(parser);
 
         AST_Declaration *member_decl = ast_enum_member_decl_new(parser->context, {ident.sr.start, member_end}, member_ident, member_value);
         dynamic_array_append(&members, member_decl);
     }
 
-    auto end_pos = cur_tok(parser).range.end;
+    auto end_pos = cur_tok(parser).sr.end;
     expect_token(parser, '}');
 
     return ast_enum_decl_new(parser->context, {ident.sr.start, end_pos}, ident, members);
@@ -874,7 +874,7 @@ AST_Declaration *parse_declaration(Parser *parser, Parsed_Directive  pd)
 
         auto ct = cur_tok(parser);
         if (!(is_token(parser, '=') || is_token(parser, ':') || is_token(parser, ';'))) {
-            report_parse_error(parser, ct.range, "Expected '=', ':' or ';' after typespec in variable or constant declaration, got '%s'", ct.atom.data);
+            report_parse_error(parser, ct.sr, "Expected '=', ':' or ';' after typespec in variable or constant declaration, got '%s'", ct.atom.data);
             return nullptr;
         }
     }
@@ -899,7 +899,24 @@ AST_Declaration *parse_declaration(Parser *parser, Parsed_Directive  pd)
             }
         }
 
-        AST_Expression *const_value = parse_expression(parser);
+        AST_Expression *const_value = nullptr;
+
+        auto peek_1 = peek_token(parser);
+        if (is_token(parser, '#') && peek_1.kind == Token_Kind::TOK_NAME && peek_1.atom == directive_type) {
+            Parsed_Directive pd = parse_directive(parser, false);
+            assert(pd.kind == Parsed_Directive_Kind::DATA);
+            assert(pd.data->kind == AST_Directive_Kind::TYPE);
+
+            AST_Type_Spec *ts = parse_type_spec(parser);
+            pd.data->type.type_spec = ts;
+            const_value = ast_type_expr_new(parser->context, { pd.data->sr.start, ts->sr.end }, pd.data);
+
+        } else {
+
+            const_value = parse_expression(parser);
+        }
+
+        assert(const_value);
 
         expect_token(parser, ';');
 
@@ -918,7 +935,7 @@ AST_Declaration *parse_declaration(Parser *parser, Parsed_Directive  pd)
 
         }
 
-        auto end = cur_tok(parser).range.end;
+        auto end = cur_tok(parser).sr.end;
 
         if (expect_semicolon) {
             expect_token(parser, ';');
@@ -941,7 +958,7 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
         case '*': {
             next_token(parser);
             AST_Type_Spec *base = parse_type_spec(parser);
-            return ast_pointer_ts_new(parser->context, { t.range.start, base->sr.end }, base);
+            return ast_pointer_ts_new(parser->context, { t.sr.start, base->sr.end }, base);
         }
 
         case '[': {
@@ -956,7 +973,7 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
 
             AST_Type_Spec *base_ts = parse_type_spec(parser);
 
-            Source_Range range = { t.range.start, base_ts->sr.end };
+            Source_Range range = { t.sr.start, base_ts->sr.end };
             if (length_expr) {
                 return ast_static_array_ts_new(parser->context, range, length_expr, base_ts);
             } else {
@@ -984,7 +1001,7 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
 
             auto pts = temp_array_finalize(&parser->context->ast_allocator, &params);
 
-            return ast_function_ts_new(parser->context, {t.range.start, return_ts->sr.end}, pts, return_ts);
+            return ast_function_ts_new(parser->context, {t.sr.start, return_ts->sr.end}, pts, return_ts);
         }
 
         case '#': {
@@ -995,20 +1012,20 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
 
             assert(pd.data->kind == AST_Directive_Kind::TYPE_OF);
 
-            return ast_type_of_ts_new(parser->context, {t.range.start, pd.data->sr.end}, pd.data);
+            return ast_type_of_ts_new(parser->context, {t.sr.start, pd.data->sr.end}, pd.data);
         }
 
         case TOK_NAME: {
             next_token(parser);
 
             AST_Identifier ident;
-            ast_identifier_create(t.atom, t.range, &ident);
+            ast_identifier_create(t.atom, t.sr, &ident);
 
-            return ast_name_ts_new(parser->context, t.range, ident);
+            return ast_name_ts_new(parser->context, t.sr, ident);
         }
 
         default: {
-            report_parse_error(parser, t.range, "Unexpected token when parsing typespec: '%s'", t.atom.data);
+            report_parse_error(parser, t.sr, "Unexpected token when parsing typespec: '%s'", t.atom.data);
             return nullptr;
         }
     }
@@ -1021,7 +1038,7 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
 {
     debug_assert(parser);
 
-    Source_Pos start_pos = cur_tok(parser).range.start;
+    Source_Pos start_pos = cur_tok(parser).sr.start;
 
     expect_token(parser, '#');
 
@@ -1073,7 +1090,7 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
         auto path = atom_get(&parser->context->atoms, str_lit_tok.atom.data + 1, str_lit_tok.atom.length - 2);
 
         result.kind = Parsed_Directive_Kind::DATA;
-        result.data = ast_import_directive_new(parser->context, { start_pos, str_lit_tok.range.end }, path);
+        result.data = ast_import_directive_new(parser->context, { start_pos, str_lit_tok.sr.end }, path);
 
         if (eat_semicolon) match_token(parser, ';');
         return result;
@@ -1085,7 +1102,7 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
         return result;
     } else if (directive_name_tok.atom == directive_falltrough) {
         result.kind = Parsed_Directive_Kind::DATA;
-        result.data = ast_falltrough_directive_new(parser->context, { start_pos, directive_name_tok.range.end});
+        result.data = ast_falltrough_directive_new(parser->context, { start_pos, directive_name_tok.sr.end});
         if (eat_semicolon) match_token(parser, ';');
         return result;
 
@@ -1095,7 +1112,7 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
         expect_token(parser, '(');
         AST_Type_Spec *ts = parse_type_spec(parser);
 
-        auto end_pos = cur_tok(parser).range.end;
+        auto end_pos = cur_tok(parser).sr.end;
         expect_token(parser, ')');
 
         result.data = ast_type_info_directive_new(parser->context, { start_pos, end_pos }, ts);
@@ -1108,7 +1125,7 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
         expect_token(parser, '(');
         AST_Expression *expr = parse_expression(parser);
 
-        auto end_pos = cur_tok(parser).range.end;
+        auto end_pos = cur_tok(parser).sr.end;
         expect_token(parser, ')');
 
         result.data = ast_type_of_directive_new(parser->context, { start_pos, end_pos }, expr);
@@ -1116,6 +1133,13 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
         if (eat_semicolon) match_token(parser, ';');
         return result;
 
+    } else if (directive_name_tok.atom == directive_type) {
+        result.kind = Parsed_Directive_Kind::DATA;
+
+        auto end_pos = directive_name_tok.sr.end;
+
+        result.data = ast_type_directive_new(parser->context, { start_pos, end_pos });
+        return result;
     } else {
         assert_msg(false, "Unknown directive");
     }
@@ -1256,7 +1280,7 @@ bool _expect_token(Parser *parser, Token_Kind kind)
 
     String_Ref kind_str = tmp_token_kind_str(kind);
     Token t = cur_tok(parser);
-    report_parse_error(parser, t.range, "Expected token: '%s', got: '%s'", kind_str.data, t.atom.data);
+    report_parse_error(parser, t.sr, "Expected token: '%s', got: '%s'", kind_str.data, t.atom.data);
     return false;
 }
 
@@ -1331,7 +1355,7 @@ void syntax_error(Parser *parser, const String_Ref fmt, va_list args)
     }
 
     Token t = cur_tok(parser);
-    Source_Pos pos = t.range.start;
+    Source_Pos pos = t.sr.start;
 
     out_length = string_format(err_msg, "%s:%i:%i: error: %s", pos.name.data, pos.line, pos.index_in_line, err_msg);
 

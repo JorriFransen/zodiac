@@ -504,6 +504,7 @@ bool check_run_dependencies(Zodiac_Context *ctx, AST_Expression *expr)
         case AST_Expression_Kind::NULL_LITERAL:
         case AST_Expression_Kind::BOOL_LITERAL:
         case AST_Expression_Kind::TYPE_INFO:
+        case AST_Expression_Kind::TYPE:
         case AST_Expression_Kind::IDENTIFIER: {
             return true;
         }

@@ -171,6 +171,7 @@ enum class AST_Expression_Kind
 
     RUN_DIRECTIVE,
     TYPE_INFO,
+    TYPE, // #type
 
     COMPOUND,
 };
@@ -471,6 +472,7 @@ enum AST_Declaration_Flag : AST_Declaration_Flags
     AST_DECL_FLAG_PROTO_DONE            = 0x008,
     AST_DECL_FLAG_BYTECODE_EMITTED      = 0x010,
     AST_DECL_FLAG_BYTECODE_DEPS_EMITTED = 0x020,
+    AST_DECL_FLAG_TYPE_DECL             = 0x040,
 };
 
 #define DECL_IS_GLOBAL(d) ((d)->flags & AST_DECL_FLAG_GLOBAL)
@@ -551,6 +553,7 @@ enum class AST_Directive_Kind
     FALLTROUGH,
     TYPE_INFO,
     TYPE_OF,
+    TYPE,
 };
 
 enum class AST_Run_Directive_Kind
@@ -583,12 +586,16 @@ struct AST_Directive
         } import;
 
         struct {
-            AST_Type_Spec *ts;
+            AST_Type_Spec *type_spec;
         } type_info;
 
         struct {
             AST_Expression *expr;
         } type_of;
+
+        struct {
+            AST_Type_Spec *type_spec;
+        } type;
     };
 };
 
@@ -619,6 +626,7 @@ ZAPI void ast_cast_expr_create(AST_Type_Spec *ts, AST_Expression *value, AST_Exp
 ZAPI void ast_cast_expr_create(Type *type, AST_Expression *value, AST_Expression *out_expr);
 ZAPI void ast_run_directive_expr_create(AST_Directive *directive, AST_Expression *out_expr);
 ZAPI void ast_type_info_expr_create(AST_Directive *directive, AST_Expression *out_expr);
+ZAPI void ast_type_expr_create(AST_Directive *directive, AST_Expression *out_expr);
 ZAPI void ast_compound_expr_create(Dynamic_Array<AST_Expression *> expressions, AST_Expression *out_expr);
 ZAPI void ast_expression_create(AST_Expression_Kind kind, AST_Expression_Flags flags, AST_Expression *out_expr);
 
@@ -664,6 +672,7 @@ ZAPI void ast_import_directive_create(Atom path, AST_Directive *out_dir);
 ZAPI void ast_falltrough_directive_create(AST_Directive *out_dir);
 ZAPI void ast_type_info_directive_create(AST_Type_Spec *ts, AST_Directive *out_dir);
 ZAPI void ast_type_of_directive_create(AST_Expression *expr, AST_Directive *out_dir);
+ZAPI void ast_type_directive_create(AST_Directive *out_dir);
 ZAPI void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir);
 
 ZAPI void ast_file_create(Atom name, Dynamic_Array<AST_Declaration *> decls, AST_File *out_file);
@@ -685,6 +694,7 @@ ZAPI AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range sr, AST
 ZAPI AST_Expression *ast_cast_expr_new(Zodiac_Context *ctx, Source_Range sr, Type *type, AST_Expression *value);
 ZAPI AST_Expression *ast_run_directive_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Directive *directive);
 ZAPI AST_Expression *ast_type_info_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Directive *directive);
+ZAPI AST_Expression *ast_type_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Directive *directive);
 ZAPI AST_Expression *ast_compound_expr_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Expression *> expressions);
 ZAPI AST_Expression *ast_expression_new(Zodiac_Context *ctx, Source_Range sr);
 
@@ -730,6 +740,7 @@ ZAPI AST_Directive *ast_import_directive_new(Zodiac_Context *ctx, Source_Range s
 ZAPI AST_Directive *ast_falltrough_directive_new(Zodiac_Context *ctx, Source_Range sr);
 ZAPI AST_Directive *ast_type_info_directive_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_Spec *ts);
 ZAPI AST_Directive *ast_type_of_directive_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *expr);
+ZAPI AST_Directive *ast_type_directive_new(Zodiac_Context *ctx, Source_Range sr);
 ZAPI AST_Directive *ast_directive_new(Zodiac_Context *ctx, Source_Range sr);
 
 ZAPI AST_File *ast_file_new(Zodiac_Context *ctx, Atom name, Dynamic_Array<AST_Declaration *> decls);

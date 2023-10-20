@@ -192,6 +192,10 @@ bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     assert(decl);
     assert(decl->kind != AST_Declaration_Kind::INVALID);
 
+    if (decl->flags & AST_DECL_FLAG_TYPE_DECL) {
+        return true;
+    }
+
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false); break;
 
@@ -1126,6 +1130,7 @@ Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression 
         case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
         case AST_Expression_Kind::COMPOUND: assert(false); break;
         case AST_Expression_Kind::TYPE_INFO: assert(false); break;
+        case AST_Expression_Kind::TYPE: assert(false); break;
     }
 
     assert(false);
@@ -1590,7 +1595,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
         case AST_Expression_Kind::TYPE_INFO: {
 
-            Type *target_type = expr->directive.directive->type_info.ts->resolved_type;
+            Type *target_type = expr->directive.directive->type_info.type_spec->resolved_type;
             assert(target_type);
 
             if (target_type->info_index == -1) {
@@ -1606,6 +1611,11 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             auto arr = bytecode_emit_load(bc->builder, arr_ptr);
             auto elem_ptr = bytecode_emit_ptr_offset_pointer(bc->builder, arr, target_type->info_index);
             result = bytecode_emit_load(bc->builder, elem_ptr);
+            break;
+        }
+
+        case Zodiac::AST_Expression_Kind::TYPE: {
+            assert(false);
             break;
         }
     }
@@ -1738,6 +1748,7 @@ Bytecode_Register ast_const_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expre
         case AST_Expression_Kind::RUN_DIRECTIVE: assert(false); break;
         case AST_Expression_Kind::COMPOUND: assert(false); break;
         case AST_Expression_Kind::TYPE_INFO: assert(false); break;
+        case AST_Expression_Kind::TYPE: assert(false); break;
     }
 }
 
@@ -1989,6 +2000,7 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
         }
 
         case AST_Expression_Kind::TYPE_INFO: assert(false); break;
+        case AST_Expression_Kind::TYPE: assert(false); break;
     }
 
     assert(false);

@@ -1,6 +1,8 @@
 
 - Typedef function types
 
+- When a typespec is supplied for a function we should check/allow it
+
 - String equality
 - Allow pointer math?
 - Initialize slices with data and length somehow ( specify types for compound expressions?) ( builtin slice() function?)

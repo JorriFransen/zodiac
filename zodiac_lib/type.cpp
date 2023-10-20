@@ -566,6 +566,11 @@ Type *sym_decl_type(Symbol *sym)
 
     auto decl = sym->decl;
 
+    if (decl->flags & AST_DECL_FLAG_TYPE_DECL) {
+        assert(decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE);
+        return decl->variable.value->resolved_type;
+    }
+
     switch (decl->kind) {
         case AST_Declaration_Kind::INVALID: assert(false);
 

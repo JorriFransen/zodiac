@@ -196,6 +196,15 @@ void ast_type_info_expr_create(AST_Directive *directive, AST_Expression *out_exp
     out_expr->directive.generated_expression = nullptr;
 }
 
+void ast_type_expr_create(AST_Directive *directive, AST_Expression *out_expr)
+{
+    debug_assert(directive->kind == AST_Directive_Kind::TYPE);
+
+    ast_expression_create(AST_Expression_Kind::TYPE, AST_EXPR_FLAG_NONE, out_expr);
+
+    out_expr->directive.directive = directive;
+}
+
 void ast_compound_expr_create(Dynamic_Array<AST_Expression *> expressions, AST_Expression *out_expr)
 {
     debug_assert(expressions.count && out_expr);
@@ -604,7 +613,7 @@ void ast_type_info_directive_create(AST_Type_Spec *ts, AST_Directive *out_dir)
 {
     ast_directive_create(AST_Directive_Kind::TYPE_INFO, out_dir);
 
-    out_dir->type_info.ts = ts;
+    out_dir->type_info.type_spec = ts;
 }
 
 void ast_type_of_directive_create(AST_Expression *expr, AST_Directive *out_dir)
@@ -612,6 +621,11 @@ void ast_type_of_directive_create(AST_Expression *expr, AST_Directive *out_dir)
     ast_directive_create(AST_Directive_Kind::TYPE_OF, out_dir);
 
     out_dir->type_of.expr = expr;
+}
+
+void ast_type_directive_create(AST_Directive *out_dir)
+{
+    ast_directive_create(AST_Directive_Kind::TYPE, out_dir);
 }
 
 void ast_directive_create(AST_Directive_Kind kind, AST_Directive *out_dir)
@@ -782,6 +796,13 @@ AST_Expression *ast_type_info_expr_new(Zodiac_Context *ctx, Source_Range sr, AST
 {
     auto expr = ast_expression_new(ctx, sr);
     ast_type_info_expr_create(directive, expr);
+    return expr;
+}
+
+AST_Expression *ast_type_expr_new(Zodiac_Context *ctx, Source_Range sr, AST_Directive *directive)
+{
+    auto expr = ast_expression_new(ctx, sr);
+    ast_type_expr_create(directive, expr);
     return expr;
 }
 
@@ -1144,6 +1165,13 @@ AST_Directive *ast_type_of_directive_new(Zodiac_Context *ctx, Source_Range sr, A
     return result;
 }
 
+AST_Directive *ast_type_directive_new(Zodiac_Context *ctx, Source_Range sr)
+{
+    auto result = ast_directive_new(ctx, sr);
+    ast_type_directive_create(result);
+    return result;
+}
+
 AST_Directive *ast_directive_new(Zodiac_Context *ctx, Source_Range sr)
 {
     debug_assert(ctx);
@@ -1291,7 +1319,18 @@ void ast_print_expression(String_Builder *sb, AST_Expression *expr)
             break;
         }
 
-        case AST_Expression_Kind::TYPE_INFO: assert(false); break;
+        case AST_Expression_Kind::TYPE_INFO: {
+            string_builder_append(sb, "#type_info(");
+            ast_print_type_spec(sb, expr->directive.directive->type_info.type_spec);
+            string_builder_append(sb, ")");
+            break;
+        }
+
+        case AST_Expression_Kind::TYPE: {
+            string_builder_append(sb, "#type ");
+            ast_print_type_spec(sb, expr->directive.directive->type.type_spec);
+            break;
+        }
     }
 }
 
@@ -1680,7 +1719,7 @@ file_local void ast__print_type_spec_internal(String_Builder *sb, AST_Type_Spec 
 
         case AST_Type_Spec_Kind::SLICE: {
             string_builder_append(sb, "[]");
-            ast__print_type_spec_internal(sb, ts->static_array.element_ts, indent);
+            ast__print_type_spec_internal(sb, ts->slice.element_ts, indent);
             break;
         }
 

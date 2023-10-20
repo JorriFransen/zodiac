@@ -47,7 +47,7 @@ struct Token
 
     Atom atom;
 
-    Source_Range range;
+    Source_Range sr;
 
     union
     {
@@ -105,6 +105,7 @@ ALL_ZODIAC_KEYWORDS
     ZODIAC_DIRECTIVE(falltrough) \
     ZODIAC_DIRECTIVE(type_info)  \
     ZODIAC_DIRECTIVE(type_of)    \
+    ZODIAC_DIRECTIVE(type)       \
 
 // Emit atom declarations for all directives
 #define ZODIAC_DIRECTIVE(n) ZAPI extern Atom directive_##n;

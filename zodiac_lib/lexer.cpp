@@ -89,9 +89,9 @@ void lexer_init_stream(Lexer *lexer, const String_Ref stream, const String_Ref s
     lexer->line_start = stream.data;
 
     lexer->token.kind = TOK_INVALID;
-    lexer->token.range.start.name = stream_name;
-    lexer->token.range.start.line = 1;
-    lexer->token.range.start.index_in_line = 0;
+    lexer->token.sr.start.name = stream_name;
+    lexer->token.sr.start.line = 1;
+    lexer->token.sr.start.index_in_line = 0;
 
     next_token(lexer);
 }
@@ -132,13 +132,13 @@ case (first_char): {                                                \
 
         case ' ': case '\n': case '\r': case '\t': {
             if (*lex->stream == '\n') {
-                lex->token.range.start.line += 1;
+                lex->token.sr.start.line += 1;
                 lex->line_start = lex->stream + 1;
             }
             lex->stream += 1;
             while (isspace(*lex->stream)) {
                 if (*lex->stream == '\n') {
-                    lex->token.range.start.line += 1;
+                    lex->token.sr.start.line += 1;
                     lex->line_start = lex->stream + 1;
                 }
                 lex->stream += 1;
@@ -165,7 +165,7 @@ case (first_char): {                                                \
             lex->stream += 1;
 
             if (*lex->stream != '\'') {
-                report_lex_error(lex, lex->token.range, "Exected \"'\" to end character literal");
+                report_lex_error(lex, lex->token.sr, "Exected \"'\" to end character literal");
                 return false;
             }
 
@@ -261,7 +261,7 @@ case (first_char): {                                                \
                 const char *err_char = nullptr;
                 String str_lit = convert_escape_characters_to_special_characters(temp_allocator_allocator(), String_Ref(start, length), &err_char);
                 if (err_char) {
-                    auto range = lex->token.range;
+                    auto range = lex->token.sr;
                     report_lex_error(lex, range, "Invalid escape sequence in string literal: '\\%c'", *err_char);
                     return false;
                 }
@@ -281,7 +281,7 @@ case (first_char): {                                                \
         lex->token.atom = {};
     }
 
-    lex->token.range.start.index_in_line = lex->stream - lex->line_start - length + 1;
+    lex->token.sr.start.index_in_line = lex->stream - lex->line_start - length + 1;
 
     return true;
 }

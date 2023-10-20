@@ -1,0 +1,11 @@
+
+add_s64 :: (a: s64, b: s64) {
+    return a + b;
+}
+
+#run main();
+main :: () {
+        
+    add :: add_s64; 
+    return 0;
+}

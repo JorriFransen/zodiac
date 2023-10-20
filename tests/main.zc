@@ -1,5 +1,7 @@
 
 
+binop_fn :: #type (s64, s64) -> s64;
+
 add_s64 :: (a: s64, b: s64) -> s64 {
     return a + b;
 }
@@ -13,15 +15,14 @@ mul_s64 :: (a: s64, b: s64) -> s64 {
 }
 
 S :: struct {
-    binop_fn : (s64, s64) -> s64;
+    fn : binop_fn;
 }
 
 return_binop_fn :: () {
     return add_s64;
 }
 
-both :: ( f1: (s64, s64) -> s64,
-          f2: (s64, s64) -> s64,
+both :: ( f1: binop_fn, f2: binop_fn,
           a: s64, b: s64) {
 
     println(f1(a, b));
@@ -32,7 +33,7 @@ both :: ( f1: (s64, s64) -> s64,
 #run main();
 main :: () {
 
-    first : (s64, s64) -> s64;
+    first : binop_fn;
 
     {
         add := add_s64;
@@ -50,13 +51,13 @@ main :: () {
     println(first(3, 4));
 
     s : S = { add_s64 };
-    println(s.binop_fn(4, 5));
-    lc := s.binop_fn;
+    println(s.fn(4, 5));
+    lc := s.fn;
     println(lc(4, 5));
 
     println(return_binop_fn()(5, 6));
 
-    funcs : [2](s64, s64) -> s64 = { add_s64, sub_s64 };
+    funcs : [2]binop_fn = { add_s64, sub_s64 };
     println(funcs[0](6, 7));
     println(funcs[1](6, 7));
 

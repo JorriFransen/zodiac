@@ -997,7 +997,13 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
         }
 
         case AST_Expression_Kind::TYPE_INFO: {
-            flatten_type_spec(resolver, expr->directive.directive->type_info.ts, scope, dest);
+            flatten_type_spec(resolver, expr->directive.directive->type_info.type_spec, scope, dest);
+            break;
+        }
+
+
+        case AST_Expression_Kind::TYPE: {
+            flatten_type_spec(resolver, expr->directive.directive->type.type_spec, scope, dest);
             break;
         }
 
@@ -1013,7 +1019,6 @@ void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *scope, 
                 flatten_expression(resolver, expr->compound.expressions[i], scope, dest, infer_from);
             }
         }
-
     }
 
     Flat_Node flat_expr = to_flat_node(expr, scope, infer_node);
@@ -1260,9 +1265,14 @@ bool name_resolve_decl(Resolver *resolver, AST_Declaration *decl, Scope *scope)
 
             assert(decl_sym);
 
+            auto init_expr = decl->variable.value;
+            if (init_expr && init_expr->kind == AST_Expression_Kind::TYPE) {
+                fatal_resolve_error(resolver->ctx, init_expr, "Cannot assign type to non constant");
+                return false;
+            }
+
             if (global) {
 
-                auto init_expr = decl->variable.value;
                 if (init_expr && !EXPR_IS_CONST(init_expr) && init_expr->kind != AST_Expression_Kind::RUN_DIRECTIVE) {
                     resolve_error(resolver->ctx, init_expr, "Global initializer must be a constant");
                     assert(decl_sym->state == Symbol_State::RESOLVING);
@@ -1572,7 +1582,8 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
         case AST_Expression_Kind::CAST:
         case AST_Expression_Kind::INDEX:
         case AST_Expression_Kind::COMPOUND:
-        case AST_Expression_Kind::TYPE_INFO: {
+        case AST_Expression_Kind::TYPE_INFO:
+        case AST_Expression_Kind::TYPE: {
             // leaf
             break;
         }
@@ -1910,6 +1921,25 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             assert(decl->variable.resolved_type == nullptr);
             assert(decl->variable.value);
             assert(EXPR_IS_CONST(decl->variable.value));
+
+            if (decl->variable.value->kind == AST_Expression_Kind::TYPE) {
+
+                if (decl->variable.type_spec) {
+                    fatal_resolve_error(ctx, decl->variable.type_spec, "Type spec not allowed in #type declaration");
+                    return false;
+                }
+
+                auto sym = scope_get_symbol(scope, decl->identifier.name);
+                assert(sym);
+
+                sym->kind = Symbol_Kind::TYPE;
+                sym->state = Symbol_State::TYPED;
+
+                decl->flags |= AST_DECL_FLAG_TYPE_DECL;
+
+                result = true;
+                break;
+            }
 
             if (decl->variable.type_spec) {
                 assert(valid_static_type_conversion(decl->variable.value->resolved_type,
@@ -3066,10 +3096,19 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
         }
 
         case AST_Expression_Kind::TYPE_INFO: {
-            auto ts = expr->directive.directive->type_info.ts;
+            auto ts = expr->directive.directive->type_info.type_spec;
             assert(ts->resolved_type);
 
             expr->resolved_type = get_pointer_type(get_type_info_type(ctx), &ctx->ast_allocator);
+            break;
+        }
+
+        case AST_Expression_Kind::TYPE: {
+            auto ts = expr->directive.directive->type.type_spec;
+            assert(ts->resolved_type);
+
+            expr->resolved_type = ts->resolved_type;
+            expr->flags |= AST_EXPR_FLAG_CONST;
             break;
         }
 
@@ -3260,7 +3299,7 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
                 return true;
 
             } else {
-                assert((sym->flags & SYM_FLAG_BUILTIN) == SYM_FLAG_BUILTIN)
+                assert(sym->flags & SYM_FLAG_BUILTIN)
                 assert(sym->builtin_type);
                 ts->resolved_type = sym->builtin_type;
                 return true;
