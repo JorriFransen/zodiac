@@ -57,8 +57,10 @@ FFI_Context ffi_create(Allocator *allocator, Zodiac_Context *zc, bool link_c, FF
     DLLib *rt_support_lib = nullptr;
 
 #ifdef ZPLATFORM_WINDOWS
+    assert(zc->support_dll_dynamic_path.data);
     rt_support_lib = dlLoadLibrary(zc->support_dll_dynamic_path.data);
 #else
+    assert(zc->support_lib_dynamic_path.data);
     rt_support_lib = dlLoadLibrary(zc->support_lib_dynamic_path.data);
 #endif
     assert(rt_support_lib);

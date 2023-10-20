@@ -2495,6 +2495,10 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 expr->flags |= AST_EXPR_FLAG_CONST;
             }
 
+            if (sym->decl->kind == AST_Declaration_Kind::FUNCTION) {
+                expr->flags |= AST_EXPR_FLAG_CONST;
+            }
+
             break;
         }
 

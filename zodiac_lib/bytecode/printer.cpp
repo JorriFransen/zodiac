@@ -430,7 +430,8 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
                     case Zodiac::Type_Kind::UNSIZED_INTEGER: assert(false); break;
 
                     case Zodiac::Type_Kind::FUNCTION: {
-                        type_to_string(type, sb);
+                        assert(reg.value.pointer == nullptr);
+                        string_builder_append(sb, "(nill)");
                         break;
                     }
 
@@ -543,7 +544,7 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
             auto fn_handle = reg.value.function_handle;
             assert(fn_handle >= 0 && fn_handle <= builder->functions.count);
             auto fn = builder->functions[fn_handle];
-            string_builder_append(sb, "%s", fn.name);
+            string_builder_append(sb, "@%s", fn.name);
             break;
         }
 

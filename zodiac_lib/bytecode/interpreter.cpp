@@ -80,6 +80,11 @@ Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytecode_F
     assert(interp);
     assert(functions.count);
 
+    interp->start_return_value = {};
+    interp->jumped_from_block = -1;
+    interp->globals.count = 0;
+    if (interp->global_mem) free(interp->allocator, interp->global_mem);
+    interp->stack_mem_used = 0;
 
     // Setup the _type_info_table
     if (interp->context->type_infos.count) {
@@ -1417,6 +1422,25 @@ Interpreter_Register interpreter_load_register(Interpreter *interp, Bytecode_Reg
         Interpreter_Register result { .flags = INTERP_REG_FLAG_ZEROINITIALIZER,
                                       .type = bc_reg.type };
         return result;
+
+    } else if (bc_reg.kind == Bytecode_Register_Kind::FUNCTION) {
+
+        assert(bc_reg.type->kind == Type_Kind::FUNCTION);
+
+        Interpreter_Register result = {
+            .type = bc_reg.type,
+        };
+
+        Bytecode_Function_Handle fn_handle = bc_reg.value.function_handle;
+        assert(fn_handle >= 0 && fn_handle < interp->functions.count);
+
+        Bytecode_Function *fn = &interp->functions[fn_handle];
+
+        assert(fn->ffi_handle);
+        result.value.pointer = (u8 *)fn->ffi_handle;
+
+        return result;
+
     } else {
         assert(false);
     }
@@ -1858,7 +1882,8 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
                 break;
             }
 
-            case Type_Kind::POINTER: {
+            case Type_Kind::POINTER:
+            case Type_Kind::FUNCTION: {
                 *((u8**)dest_cursor) = mem_reg.value.pointer;
                 break;
             }
@@ -1882,8 +1907,6 @@ void interpreter_copy_compound_literal_into_memory(Interpreter *interp, u8 *dest
 
             case Type_Kind::ENUM: assert(false); break;
             case Type_Kind::SLICE: assert(false); break;
-
-            case Type_Kind::FUNCTION: assert(false); break;
         }
 
         // @Cleanup: @TODO: @FIXME: alignment?

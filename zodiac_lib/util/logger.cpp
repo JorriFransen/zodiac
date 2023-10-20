@@ -16,7 +16,10 @@ namespace Zodiac
 struct Logging_System_State
 {
     File_Handle out_file;
+    bool out_color;
+
     File_Handle err_file;
+    bool err_color;
 };
 
 file_local bool logging_system_initialized = false;
@@ -30,8 +33,14 @@ bool logging_system_initialize(Log_Level mll/*=Log_Level::INFO*/)
 
     logging_system_set_max_level(mll);
 
-    filesystem_stdout_file(&logging_system_state.out_file);
-    filesystem_stderr_file(&logging_system_state.err_file);
+    File_Handle out_file;
+    File_Handle err_file;
+
+    filesystem_stdout_file(&out_file);
+    filesystem_stderr_file(&err_file);
+
+    logging_system_set_stdout_file(out_file);
+    logging_system_set_stderr_file(err_file);
 
     logging_system_initialized = true;
 
@@ -48,6 +57,8 @@ void logging_system_set_stdout_file(File_Handle out_file)
     assert(out_file.valid && out_file.handle);
 
     logging_system_state.out_file = out_file;
+
+    logging_system_state.out_color = isatty(fileno((FILE *)out_file.handle));
 }
 
 void logging_system_set_stderr_file(File_Handle err_file)
@@ -55,6 +66,8 @@ void logging_system_set_stderr_file(File_Handle err_file)
     assert(err_file.valid && err_file.handle);
 
     logging_system_state.err_file = err_file;
+
+    logging_system_state.err_color = isatty(fileno((FILE *)err_file.handle));
 }
 
 void log_message(Log_Level log_level, const char *file, s64 line, const String_Ref fmt, ...)
@@ -109,15 +122,20 @@ void log_message(Log_Level log_level, const char *file, s64 line, const String_R
     }
 
     if (log_level <= Log_Level::ERROR) {
-        platform_file_write(&logging_system_state.err_file, out_message, level_colors[level_index]);
+
+        if (logging_system_state.err_color) platform_file_write(&logging_system_state.err_file, out_message, level_colors[level_index]);
+        else platform_file_write(&logging_system_state.err_file, out_message);
+
     } else {
-        platform_file_write(&logging_system_state.out_file, out_message, level_colors[level_index]);
+        if (logging_system_state.out_color) platform_file_write(&logging_system_state.out_file, out_message, level_colors[level_index]);
+        else platform_file_write(&logging_system_state.out_file, out_message);
     }
 }
 
 void report_assert_fail(const char* expression, const char* message, const char *file, i64 line)
 {
     log_message(Log_Level::FATAL, file, line, "Assertion failed: '%s', message: '%s'", expression, message);
+    // fprintf(stderr, "[FATAL]%s:%lli: Assertion failed: '%s', message: '%s'\n", file, line, expression, message);
 }
 
 }

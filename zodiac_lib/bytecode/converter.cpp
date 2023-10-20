@@ -64,6 +64,8 @@ bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
     assert(resolver);
     assert(bc);
 
+    bool result = true;
+
     for (s64 i = 0; i < resolver->nodes_to_emit_bytecode.count; i++) {
 
         Flat_Root_Node *root_node = resolver->nodes_to_emit_bytecode[i];
@@ -71,12 +73,13 @@ bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
         switch (root_node->root.kind) {
 
             case Flat_Node_Kind::DECL: {
-                if (ast_decl_to_bytecode(bc, root_node->root.decl) &&
-                    root_node->root.decl->kind == AST_Declaration_Kind::RUN_DIRECTIVE) {
+                bool decl_res = ast_decl_to_bytecode(bc, root_node->root.decl);
+                if (decl_res && root_node->root.decl->kind == AST_Declaration_Kind::RUN_DIRECTIVE) {
 
                         dynamic_array_append(&resolver->nodes_to_run_bytecode, root_node);
                 }
 
+                result = decl_res;
                 break;
             }
 
@@ -181,9 +184,11 @@ bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
 
         dynamic_array_remove_ordered(&resolver->nodes_to_emit_bytecode, i);
         i -= 1;
+
+        if (!result) break;
     }
 
-    return true;
+    return result;
 }
 
 bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
@@ -1274,7 +1279,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     bool found = hash_table_find(&bc->functions, ident_decl, &fn_handle);
                     assert(found);
 
-                    result = bytecode_emit_address_of_function(bc->builder, fn_handle);
+                    result = bytecode_emit_addrof_func(bc->builder, fn_handle);
                     assert(result.type->kind == Type_Kind::FUNCTION);
                     break;
                 }
@@ -1872,7 +1877,33 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
                 case Type_Kind::ENUM: assert(false); break;
 
 
-                case Type_Kind::FUNCTION: assert(false);
+                case Type_Kind::FUNCTION: {
+                    auto sym = scope_get_symbol(expr->identifier.scope, expr->identifier);
+                    assert(sym && sym->decl);
+                    assert(sym->decl->kind == AST_Declaration_Kind::FUNCTION);
+
+                    Bytecode_Function_Handle fn_handle;
+                    bool found = hash_table_find(&bc->functions, sym->decl, &fn_handle);
+                    assert(found);
+
+
+                    Bytecode_Function *fn = &bc->builder->functions[fn_handle];
+
+                    if (!(fn->flags & BC_FUNCTION_FLAG_FOREIGN) && !fn->ffi_handle) {
+
+                        FFI_Function_User_Data func_data = { .interp = bc->context->interp, .handle = fn_handle };
+                        FFI_Handle ffi_handle = ffi_create_callback(&bc->context->interp->ffi, func_data, fn->type);
+                        assert(ffi_handle);
+                        fn->ffi_handle = ffi_handle;
+                    }
+
+                    assert(fn->ffi_handle);
+
+                    Bytecode_Register result = bytecode_register_create(bc->builder, Bytecode_Register_Kind::FUNCTION, type, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT);
+                    result.value.function_handle = fn_handle;
+
+                    return result;
+                }
             }
 
             assert(false); // should have returned
@@ -2197,21 +2228,12 @@ Run_Wrapper_Result execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function
 
     auto run_prog = bytecode_get_program(bc->builder);
 
-    Interpreter *run_interp = alloc<Interpreter>(&dynamic_allocator);
-    interpreter_init(&dynamic_allocator, bc->context, run_interp);
+    auto run_interp = bc->context->interp;
 
     run_interp->std_out = stdout_file;
     Interpreter_Register result = interpreter_start(run_interp, run_prog, fn_handle);
 
     return { &dynamic_allocator, run_interp, result };
-}
-
-void free_run_wrapper_result(Run_Wrapper_Result *result)
-{
-    debug_assert(result);
-
-    interpreter_free(result->interpreter);
-    free(result->allocator, result->interpreter);
 }
 
 AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, Interpreter_Register &reg, Scope *scope, Source_Range range)

@@ -775,7 +775,8 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
         }
 
         case Bytecode_Opcode::PUSH_ARG: {
-            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY &&
+                instruction->a.kind != Bytecode_Register_Kind::FUNCTION) {
                 bytecode_validator_report_error(validator, "The 'a' register for 'PUSH_ARG' must be a temporary");
                 return false;
             }
@@ -955,7 +956,8 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
 
         case Bytecode_Opcode::RETURN: {
 
-            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY &&
+                instruction->a.kind != Bytecode_Register_Kind::FUNCTION) {
                 bytecode_validator_report_error(validator, "The 'a' register for 'RETURN' must be a temporary");
                 return false;
             }
@@ -1088,7 +1090,9 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
         }
 
         case Bytecode_Opcode::STORE_A: {
-            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY && instruction->a.kind != Bytecode_Register_Kind::ZEROINITIALIZER) {
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY &&
+                instruction->a.kind != Bytecode_Register_Kind::ZEROINITIALIZER &&
+                instruction->a.kind != Bytecode_Register_Kind::FUNCTION) {
                 bytecode_validator_report_error(validator, "The 'a' register of 'STORE_A' must be a temporary");
                 return false;
             }
@@ -1128,7 +1132,8 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
         }
 
         case Bytecode_Opcode::STORE_PTR: {
-            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY &&
+                instruction->a.kind != Bytecode_Register_Kind::FUNCTION) {
                 bytecode_validator_report_error(validator, "The 'a' register for 'STORE_PTR' must be a temporary");
                 return false;
             }

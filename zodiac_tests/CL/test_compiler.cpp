@@ -88,16 +88,16 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
 
     result.program = bytecode_get_program(result.context.bytecode_builder);
 
-    Interpreter interp = interpreter_create(c_allocator(), &result.context);
-    defer { interpreter_free(&interp); };
-
-    interp.std_out = interp_stdout_file;
+    auto old_out_file = result.context.interp->std_out;
+    result.context.interp->std_out = interp_stdout_file;
 
     munit_assert(result.program.entry_handle == -1);
     result.program.entry_handle = bytecode_find_entry(result.program);
 
-    Interpreter_Register result_reg = interpreter_start(&interp, result.program);
+    Interpreter_Register result_reg = interpreter_start(result.context.interp, result.program);
     munit_assert(result_reg.type->kind == Type_Kind::INTEGER);
+
+    result.context.interp->std_out = old_out_file;
 
     munit_assert_int64(result_reg.value.integer.s64, ==, expected_results.exit_code);
 
@@ -5120,6 +5120,8 @@ true)OUT_STR" };
 MunitResult Function_Pointers(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        binop_fn :: #type (s64, s64) -> s64;
+
         add_s64 :: (a: s64, b: s64) -> s64 {
             return a + b;
         }
@@ -5133,15 +5135,15 @@ MunitResult Function_Pointers(const MunitParameter params[], void* user_data_or_
         }
 
         S :: struct {
-            binop_fn : (s64, s64) -> s64;
+            fn : (s64, s64) -> s64;
         }
 
-        return_binop_fn :: () {
+        return_binop_fn :: () -> binop_fn {
             return add_s64;
         }
 
-        both :: ( f1: (s64, s64) -> s64,
-                  f2: (s64, s64) -> s64,
+        both :: ( f1: binop_fn,
+                  f2: binop_fn,
                   a: s64, b: s64) {
 
             println(f1(a, b));
@@ -5151,7 +5153,7 @@ MunitResult Function_Pointers(const MunitParameter params[], void* user_data_or_
 
         main :: () {
 
-            first : (s64, s64) -> s64;
+            first : binop_fn;
 
             {
                 add := add_s64;
@@ -5168,14 +5170,22 @@ MunitResult Function_Pointers(const MunitParameter params[], void* user_data_or_
 
             println(first(3, 4));
 
-            s : S = { add_s64 };
-            println(s.binop_fn(4, 5));
-            lc := s.binop_fn;
-            println(lc(4, 5));
+            {
+                s : S = { add_s64 };
+                println(s.fn(4, 5));
+                lc := s.fn;
+                println(lc(4, 5));
+            }
+
+            {
+                s : S;
+                s.fn = sub_s64;
+                println(s.fn(4, 5));
+            }
 
             println(return_binop_fn()(5, 6));
 
-            funcs : [2](s64, s64) -> s64 = { add_s64, sub_s64 };
+            funcs : [2]binop_fn = { add_s64, sub_s64 };
             println(funcs[0](6, 7));
             println(funcs[1](6, 7));
 
@@ -5200,6 +5210,7 @@ R"OUT_STR(3
 7
 9
 9
+-1
 11
 13
 -1

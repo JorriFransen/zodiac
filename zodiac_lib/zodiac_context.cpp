@@ -119,6 +119,9 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
     out_context->support_lib_static_path = string_append(&dynamic_allocator, out_context->compiler_exe_dir, static_support_lib_name);
     assert(filesystem_exists(out_context->support_lib_static_path));
 
+    out_context->interp = alloc<Interpreter>(&dynamic_allocator);
+    interpreter_init(&dynamic_allocator, out_context, out_context->interp);
+
     out_context->builtin_string_type = nullptr;
     out_context->builtin_type_info_kind_type = nullptr;
     out_context->builtin_type_info_type = nullptr;
@@ -237,12 +240,8 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
         } else if (ctx->errors.count) return false;
 
         assert(ctx->errors.count == 0);
-        emit_bytecode(ctx->resolver, ctx->bytecode_converter);
-        if (ctx->options.report_errors) {
-            if (resolver_report_errors(ctx->resolver)) {
-                return false;
-            }
-        } else if (ctx->errors.count) return false;
+        bool bc_res = emit_bytecode(ctx->resolver, ctx->bytecode_converter);
+        if (!bc_res) return false;
 
         auto old_run_count = ctx->resolver->nodes_to_run_bytecode.count;
 
@@ -469,8 +468,6 @@ bool do_run_job(Zodiac_Context *ctx, Flat_Root_Node *root_node)
         hash_table_add(&ctx->bytecode_converter->run_results, directive, value_reg);
     }
 
-    free_run_wrapper_result(&run_res);
-
     return true;
 }
 
@@ -534,6 +531,10 @@ bool check_run_dependencies(Zodiac_Context *ctx, AST_Expression *expr)
                     assert(sym->decl && sym->decl->kind == AST_Declaration_Kind::FUNCTION);
 
                     auto fn_decl = sym->decl;
+
+                    if (fn_decl->flags & AST_DECL_FLAG_FOREIGN) {
+                        return true;
+                    }
 
                     if (fn_decl->flags & AST_DECL_FLAG_BYTECODE_EMITTED) {
                         // Check this function as well.

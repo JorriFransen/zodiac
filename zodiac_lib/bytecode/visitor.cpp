@@ -81,7 +81,7 @@ bool visit_function(Bytecode_Visitor *visitor, Bytecode_Function_Handle fn_handl
     assert(visitor->current_function == nullptr);
     visitor->current_function = bc_func;
 
-    assert(stack_count(&visitor->arg_stack) == 0);
+    visitor->arg_stack.sp = 0;
 
     bool result = true;
 
@@ -175,7 +175,9 @@ void visit_instruction_post(Bytecode_Visitor *visitor, Bytecode_Instruction *ins
 
     } else if (op == Bytecode_Opcode::PUSH_ARG) {
 
-        assert(instruction->a.kind == Bytecode_Register_Kind::TEMPORARY);
+        assert(instruction->a.kind == Bytecode_Register_Kind::TEMPORARY ||
+               instruction->a.kind == Bytecode_Register_Kind::FUNCTION);
+
         stack_push(&visitor->arg_stack, instruction->a);
 
     }

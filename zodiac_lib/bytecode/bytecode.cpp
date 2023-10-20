@@ -994,7 +994,8 @@ void bytecode_emit_print(Bytecode_Builder *builder, Bytecode_Register a)
 
 void bytecode_emit_push_arg(Bytecode_Builder *builder, Bytecode_Register arg_register)
 {
-    assert(arg_register.kind == Bytecode_Register_Kind::TEMPORARY);
+    assert(arg_register.kind == Bytecode_Register_Kind::TEMPORARY ||
+           arg_register.kind == Bytecode_Register_Kind::FUNCTION);
 
     bytecode_emit_instruction(builder, Bytecode_Opcode::PUSH_ARG, arg_register, {}, {});
 }
@@ -1131,7 +1132,7 @@ Bytecode_Register bytecode_emit_address_of(Bytecode_Builder *builder, Bytecode_R
     return result;
 }
 
-Bytecode_Register bytecode_emit_address_of_function(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle)
+Bytecode_Register bytecode_emit_addrof_func(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle)
 {
     assert(fn_handle >= 0 && fn_handle < builder->functions.count);
     auto fn = &builder->functions[fn_handle];
@@ -1198,7 +1199,10 @@ Bytecode_Register bytecode_emit_load_global(Bytecode_Builder *builder, Bytecode_
 
 void bytecode_emit_store_alloc(Bytecode_Builder *builder, Bytecode_Register source, Bytecode_Register dest)
 {
-    assert(source.kind == Bytecode_Register_Kind::TEMPORARY || source.kind == Bytecode_Register_Kind::ZEROINITIALIZER);
+    assert(source.kind == Bytecode_Register_Kind::TEMPORARY ||
+           source.kind == Bytecode_Register_Kind::ZEROINITIALIZER ||
+           source.kind == Bytecode_Register_Kind::FUNCTION);
+
     assert(dest.kind == Bytecode_Register_Kind::ALLOC);
     assert(source.type == dest.type);
 
@@ -1218,7 +1222,8 @@ Bytecode_Register bytecode_emit_load_alloc(Bytecode_Builder *builder, Bytecode_R
 
 void bytecode_emit_store_pointer(Bytecode_Builder *builder, Bytecode_Register source, Bytecode_Register dest)
 {
-    assert(source.kind == Bytecode_Register_Kind::TEMPORARY);
+    assert(source.kind == Bytecode_Register_Kind::TEMPORARY || source.kind == Bytecode_Register_Kind::FUNCTION);
+
     assert(dest.kind == Bytecode_Register_Kind::TEMPORARY);
     assert(dest.type->kind == Type_Kind::POINTER);
     assert(dest.type->pointer.base == source.type);

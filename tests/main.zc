@@ -1,5 +1,4 @@
 
-
 binop_fn :: #type (s64, s64) -> s64;
 
 add_s64 :: (a: s64, b: s64) -> s64 {
@@ -50,10 +49,18 @@ main :: () {
 
     println(first(3, 4));
 
-    s : S = { add_s64 };
-    println(s.fn(4, 5));
-    lc := s.fn;
-    println(lc(4, 5));
+    {
+        s : S;
+        s.fn = add_s64;
+        println(s.fn(4, 5));
+        lc := s.fn;
+        println(lc(4, 5));
+    }
+
+    {
+        s : S = { add_s64 };
+        println(s.fn(4, 5));
+    }
 
     println(return_binop_fn()(5, 6));
 
@@ -69,7 +76,7 @@ main :: () {
     println(funcs[0](6, 7));
     println(funcs[1](6, 7));
 
-    both(funcs[1], sub_s64, 42, 24);
+    both(mul_s64, sub_s64, 42, 24);
 
     return 0;
 }

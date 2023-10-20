@@ -14,8 +14,8 @@ namespace Zodiac
 struct AST_Declaration;
 struct AST_Directive;
 struct AST_Expression;
-struct AST_Statement;
 struct AST_File;
+struct AST_Statement;
 struct File_Handle;
 struct Flat_Root_Node;
 struct Resolver;
@@ -26,6 +26,7 @@ struct Zodiac_Error;
 namespace Bytecode {
     struct Bytecode_Builder;
     struct Bytecode_Converter;
+    struct Interpreter;
 }
 
 using namespace Bytecode;
@@ -86,6 +87,7 @@ struct Zodiac_Context
     Resolver *resolver;
     Bytecode_Builder *bytecode_builder;
     Bytecode_Converter *bytecode_converter;
+    Interpreter *interp;
     File_Handle *interp_stdout_file;
 
     Dynamic_Array<Zodiac_Error> errors;

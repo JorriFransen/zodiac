@@ -1,6 +1,4 @@
 
-- Typedef function types
-
 - When a typespec is supplied for a function we should check/allow it
 
 - String equality

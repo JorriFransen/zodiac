@@ -1337,12 +1337,11 @@ llvm::Value *llvm_builder_emit_register(LLVM_Builder *builder, const Bytecode_Re
 
                     llvm::Value *result = nullptr;
                     bool found = hash_table_find(&builder->stored_registers, bc_reg.index, &result);
-                    assert(found);
-                    assert(result);
                     if (!found) {
                         ZFATAL("[llvm_builder] Unable to find temporary register with index '%lli'\n",
                                 bc_reg.index);
                     }
+                    assert(result);
                     return result;
                 } else {
 

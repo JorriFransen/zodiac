@@ -362,7 +362,7 @@ ZAPI void bytecode_emit_return(Bytecode_Builder *builder, Bytecode_Register retu
 
 ZAPI Bytecode_Register bytecode_emit_alloc(Bytecode_Builder *builder, Type *type, const char *name);
 ZAPI Bytecode_Register bytecode_emit_address_of(Bytecode_Builder *builder, Bytecode_Register alloc);
-ZAPI Bytecode_Register bytecode_emit_address_of_function(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle);
+ZAPI Bytecode_Register bytecode_emit_addrof_func(Bytecode_Builder *builder, Bytecode_Function_Handle fn_handle);
 
 ZAPI void bytecode_emit_store_global(Bytecode_Builder *builder, Bytecode_Register source, Bytecode_Global_Handle global_handle);
 ZAPI Bytecode_Register bytecode_emit_load_global(Bytecode_Builder *builder, Bytecode_Global_Handle global_handle);

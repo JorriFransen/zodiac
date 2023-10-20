@@ -91,8 +91,6 @@ ZAPI Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Dir
 ZAPI Run_Wrapper_Result execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle);
 ZAPI Run_Wrapper_Result execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle, File_Handle stdout_file);
 
-ZAPI void free_run_wrapper_result(Run_Wrapper_Result *result);
-
 ZAPI AST_Expression *interpreter_register_to_ast_expression(Bytecode_Converter *bc, Interpreter_Register &reg, Scope *scope, Source_Range range);
 ZAPI AST_Expression *interpreter_memory_to_ast_expression(Bytecode_Converter *bc, u8* mem, Type *type, Scope *scope, Source_Range range);
 

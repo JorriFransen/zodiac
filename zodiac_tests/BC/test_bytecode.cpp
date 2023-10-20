@@ -1497,7 +1497,7 @@ MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_
         PRINT_NEWLINE;
 
         // Calling bytecode function trough pointer
-        auto add_fn_ptr = bytecode_emit_address_of_function(&bb, add_fn);
+        auto add_fn_ptr = bytecode_emit_addrof_func(&bb, add_fn);
         bytecode_emit_push_arg(&bb, a);
         bytecode_emit_push_arg(&bb, b);
         auto r4 = bytecode_emit_call_pointer(&bb, add_fn_ptr, 2);
@@ -1512,7 +1512,7 @@ MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_
         PRINT_NEWLINE;
 
          //Calling foreign function trough ffi via pointer
-        auto foreign_add_fn_ptr = bytecode_emit_address_of_function(&bb, foreign_add_fn);
+        auto foreign_add_fn_ptr = bytecode_emit_addrof_func(&bb, foreign_add_fn);
         bytecode_emit_push_arg(&bb, a);
         bytecode_emit_push_arg(&bb, b);
         auto r2 = bytecode_emit_call_pointer(&bb, foreign_add_fn_ptr, 2);
@@ -1527,7 +1527,7 @@ MunitResult Calling_Function_Pointers(const MunitParameter params[], void *user_
         PRINT_NEWLINE;
 
         // Calling add32 trough a pointer
-        auto add32_fn_ptr = bytecode_emit_address_of_function(&bb, add32_fn);
+        auto add32_fn_ptr = bytecode_emit_addrof_func(&bb, add32_fn);
         bytecode_emit_push_arg(&bb, a32);
         bytecode_emit_push_arg(&bb, b32);
         r32 = bytecode_emit_call_pointer(&bb, add32_fn_ptr, 2);
@@ -1655,11 +1655,11 @@ MunitResult BC_FN_PTR_Calls_With_Structs(const MunitParameter params[], void *us
             bytecode_emit_push_arg(&bb, x);
             bytecode_emit_push_arg(&bb, y);
 
-            auto make_vec2_fn_ptr = bytecode_emit_address_of_function(&bb, make_vec2_fn);
+            auto make_vec2_fn_ptr = bytecode_emit_addrof_func(&bb, make_vec2_fn);
 
             auto v = bytecode_emit_call_pointer(&bb, make_vec2_fn_ptr, 2);
 
-            auto print_vec2_fn_ptr = bytecode_emit_address_of_function(&bb, print_vec2_fn);
+            auto print_vec2_fn_ptr = bytecode_emit_addrof_func(&bb, print_vec2_fn);
 
             bytecode_emit_push_arg(&bb, v);
             bytecode_emit_call_pointer(&bb, print_vec2_fn_ptr, 1);
@@ -1777,7 +1777,7 @@ MunitResult BC_Callback_From_C(const MunitParameter params[], void *user_data_or
         auto b = bytecode_integer_literal(&bb, &builtin_type_s64, 24);
 
         // Passing and calling a foreign function to a c function
-        auto foreign_add_addr = bytecode_emit_address_of_function(&bb, foreign_add_fn);
+        auto foreign_add_addr = bytecode_emit_addrof_func(&bb, foreign_add_fn);
         bytecode_emit_push_arg(&bb, foreign_add_addr);
         bytecode_emit_push_arg(&bb, a);
         bytecode_emit_push_arg(&bb, b);
@@ -1786,7 +1786,7 @@ MunitResult BC_Callback_From_C(const MunitParameter params[], void *user_data_or
         PRINT_NEWLINE;
 
         // Passing and calling a bytecode function to a c function
-        auto bc_add_addr = bytecode_emit_address_of_function(&bb, add_fn);
+        auto bc_add_addr = bytecode_emit_addrof_func(&bb, add_fn);
         bytecode_emit_push_arg(&bb, bc_add_addr);
         bytecode_emit_push_arg(&bb, a);
         bytecode_emit_push_arg(&bb, b);
