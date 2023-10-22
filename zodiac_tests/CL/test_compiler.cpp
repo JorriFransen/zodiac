@@ -5151,6 +5151,8 @@ MunitResult Function_Pointers(const MunitParameter params[], void* user_data_or_
 
         }
 
+        sub :: sub_s64;
+
         main :: () {
 
             first : binop_fn;
@@ -5199,6 +5201,10 @@ MunitResult Function_Pointers(const MunitParameter params[], void* user_data_or_
 
             both(funcs[1], sub_s64, 42, 24);
 
+            add :: add_s64;
+            println(add(11, 22));
+            println(sub(11, 22));
+
             return 0;
         }
     )CODE_STR";
@@ -5219,7 +5225,9 @@ R"OUT_STR(3
 13
 42
 1008
-18)OUT_STR" };
+18
+33
+-11)OUT_STR" };
 
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };

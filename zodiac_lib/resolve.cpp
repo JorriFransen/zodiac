@@ -1446,6 +1446,7 @@ bool name_resolve_expr(Zodiac_Context *ctx, AST_Expression *expr, Scope *scope)
 
                 if (sym->kind != Symbol_Kind::FUNC &&
                     sym->kind != Symbol_Kind::VAR &&
+                    sym->kind != Symbol_Kind::CONST &&
                     sym->kind != Symbol_Kind::PARAM) {
                     resolve_error(ctx, base, "Not a function '%s'", sym->name.data);
                     result = false;
@@ -2645,6 +2646,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                 } else {
                     assert(func_sym->kind == Symbol_Kind::VAR ||
+                           func_sym->kind == Symbol_Kind::CONST ||
                            func_sym->kind == Symbol_Kind::PARAM);
 
                     auto sym_decl = func_sym->decl;

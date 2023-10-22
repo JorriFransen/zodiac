@@ -546,7 +546,9 @@ bool check_run_dependencies(Zodiac_Context *ctx, AST_Expression *expr)
                 } else {
 
                     // Calling function pointer
-                    assert(sym->kind == Symbol_Kind::VAR || sym->kind == Symbol_Kind::PARAM);
+                    assert(sym->kind == Symbol_Kind::VAR ||
+                           sym->kind == Symbol_Kind::CONST ||
+                           sym->kind == Symbol_Kind::PARAM);
                     assert(sym->decl->variable.resolved_type->kind == Type_Kind::FUNCTION);
                     return true;
                 }

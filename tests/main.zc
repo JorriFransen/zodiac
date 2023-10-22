@@ -29,6 +29,8 @@ both :: ( f1: binop_fn, f2: binop_fn,
 
 }
 
+sub :: sub_s64;
+
 #run main();
 main :: () {
 
@@ -77,6 +79,12 @@ main :: () {
     println(funcs[1](6, 7));
 
     both(mul_s64, sub_s64, 42, 24);
+
+    add :: add_s64;
+
+    println(add(11, 22));
+    println(sub(11, 22));
+
 
     return 0;
 }

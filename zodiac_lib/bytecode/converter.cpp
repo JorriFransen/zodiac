@@ -1355,11 +1355,25 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
 
                 } else {
                     assert(sym->kind == Symbol_Kind::VAR ||
+                           sym->kind == Symbol_Kind::CONST ||
                            sym->kind == Symbol_Kind::PARAM);
+
+                    if (sym->kind == Symbol_Kind::CONST) {
+                        auto init_expr = sym->decl->variable.value;
+                        assert(init_expr->kind == AST_Expression_Kind::IDENTIFIER);
+
+                        auto val_sym = scope_get_symbol(init_expr->identifier.scope, init_expr->identifier);
+                        assert(val_sym->decl && val_sym->decl->kind == AST_Declaration_Kind::FUNCTION);
+
+                        bool found = hash_table_find(&bc->functions, val_sym->decl, &fn_handle);
+                        assert(found);
+
+                    } else {
+                        ptr_call = true;
+                    }
 
                     assert(sym->decl->variable.resolved_type->kind == Type_Kind::FUNCTION);
                     fn_type = sym->decl->variable.resolved_type;
-                    ptr_call = true;
                 }
             } else {
                 assert(base->resolved_type->kind == Type_Kind::FUNCTION);
@@ -1880,27 +1894,37 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
                 case Type_Kind::FUNCTION: {
                     auto sym = scope_get_symbol(expr->identifier.scope, expr->identifier);
                     assert(sym && sym->decl);
-                    assert(sym->decl->kind == AST_Declaration_Kind::FUNCTION);
 
-                    Bytecode_Function_Handle fn_handle;
-                    bool found = hash_table_find(&bc->functions, sym->decl, &fn_handle);
-                    assert(found);
+                    Bytecode_Register result;
+
+                    if (sym->decl->kind == AST_Declaration_Kind::CONSTANT_VARIABLE) {
+
+                        result = ast_const_expr_to_bytecode(bc, sym->decl->variable.value);
+
+                    } else if (sym->decl->kind == AST_Declaration_Kind::FUNCTION) {
+
+                        Bytecode_Function_Handle fn_handle;
+                        bool found = hash_table_find(&bc->functions, sym->decl, &fn_handle);
+                        assert(found);
 
 
-                    Bytecode_Function *fn = &bc->builder->functions[fn_handle];
+                        Bytecode_Function *fn = &bc->builder->functions[fn_handle];
 
-                    if (!(fn->flags & BC_FUNCTION_FLAG_FOREIGN) && !fn->ffi_handle) {
+                        if (!(fn->flags & BC_FUNCTION_FLAG_FOREIGN) && !fn->ffi_handle) {
 
-                        FFI_Function_User_Data func_data = { .interp = bc->context->interp, .handle = fn_handle };
-                        FFI_Handle ffi_handle = ffi_create_callback(&bc->context->interp->ffi, func_data, fn->type);
-                        assert(ffi_handle);
-                        fn->ffi_handle = ffi_handle;
+                            FFI_Function_User_Data func_data = { .interp = bc->context->interp, .handle = fn_handle };
+                            FFI_Handle ffi_handle = ffi_create_callback(&bc->context->interp->ffi, func_data, fn->type);
+                            assert(ffi_handle);
+                            fn->ffi_handle = ffi_handle;
+                        }
+
+                        assert(fn->ffi_handle);
+
+                        result = bytecode_register_create(bc->builder, Bytecode_Register_Kind::FUNCTION, type, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT);
+                        result.value.function_handle = fn_handle;
                     }
 
-                    assert(fn->ffi_handle);
-
-                    Bytecode_Register result = bytecode_register_create(bc->builder, Bytecode_Register_Kind::FUNCTION, type, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT);
-                    result.value.function_handle = fn_handle;
+                    assert(result.kind != Bytecode_Register_Kind::INVALID);
 
                     return result;
                 }

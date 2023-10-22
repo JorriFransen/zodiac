@@ -150,6 +150,11 @@ void llvm_builder_free(LLVM_Builder *builder)
 void llvm_builder_emit_program(LLVM_Builder *builder, Bytecode_Program *program)
 {
     for (s64 i = 0; i < program->globals.count; i++) {
+        auto &glob = program->globals[i];
+
+        if (glob.constant && glob.type->kind == Type_Kind::FUNCTION) {
+            continue;
+        }
         llvm_builder_emit_global(builder, i);
     }
 

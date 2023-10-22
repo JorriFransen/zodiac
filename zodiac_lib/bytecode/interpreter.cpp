@@ -156,7 +156,10 @@ Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytecode_F
 
             if (globals[i].initial_value.kind != Bytecode_Register_Kind::INVALID) {
 
-                assert(global.initial_value.kind == Bytecode_Register_Kind::TEMPORARY || global.initial_value.kind == Bytecode_Register_Kind::ZEROINITIALIZER);
+                assert(global.initial_value.kind == Bytecode_Register_Kind::TEMPORARY ||
+                       global.initial_value.kind == Bytecode_Register_Kind::FUNCTION ||
+                       global.initial_value.kind == Bytecode_Register_Kind::ZEROINITIALIZER);
+
                 Interpreter_Register initial_value = interpreter_load_register(interp, globals[i].initial_value);
                 interpreter_store_pointer(interp, initial_value, glob_reg.pointer);
 
