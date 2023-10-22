@@ -2247,6 +2247,17 @@ void interpreter_print_register(Interpreter *interp, Interpreter_Register reg, b
             }
             break;
         }
+
+        case Type_Kind::FUNCTION: {
+
+            if (reg.value.pointer) {
+                fprintf(out_handle, "0x%llx", (unsigned long long)reg.value.pointer);
+            } else {
+                fprintf(out_handle, "(nil)");
+            }
+
+            break;
+        }
     }
 }
 

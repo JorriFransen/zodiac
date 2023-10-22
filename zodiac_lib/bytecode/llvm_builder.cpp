@@ -1299,7 +1299,23 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Array_Ref<LLVM_B
             llvm::Value *postamble = llvm_builder_emit_cstring_literal(builder, " }");
             irb->CreateCall(printf_func, { &postamble, 1 });
 
-        break;
+            break;
+        }
+
+        case Type_Kind::FUNCTION: {
+
+            llvm::Value *fmt_str_lit = llvm_builder_emit_cstring_literal(builder, "%p");
+            llvm::Value *null_fmt_str_lit = llvm_builder_emit_cstring_literal(builder, "(nil)");
+
+
+            llvm::Type *int_type = llvm::Type::getIntNTy(*builder->llvm_context, pointer_size);
+            llvm::Value *as_int = irb->CreatePtrToInt(llvm_val, int_type);
+            llvm::Value *as_bool = irb->CreateICmpNE(as_int, llvm::Constant::getNullValue(int_type));
+            llvm::Value *fmt = irb->CreateSelect(as_bool, fmt_str_lit, null_fmt_str_lit);
+            dynamic_array_append(llvm_print_args, fmt);
+            dynamic_array_append(llvm_print_args, llvm_val);
+
+            break;
         }
     }
 
