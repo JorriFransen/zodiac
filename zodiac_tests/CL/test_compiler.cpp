@@ -5234,6 +5234,153 @@ R"OUT_STR(3
     return MUNIT_OK;
 }
 
+MunitResult Print_Any(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+
+        #import "print.zc"
+
+        Day :: enum {
+            Monday,
+            Tuesday,
+            Wednesday,
+            Thursday,
+            Friday,
+            Saturday,
+            Sunday,
+        }
+
+        Vec2 :: struct {
+            x, y: r64;
+        }
+
+        main :: () {
+            x := 42;
+            ax : Any = { #type_info(#type_of(x)), cast(*u8, *x) };
+            print_any(ax);
+            println();
+
+            x2 : u32 = 41;
+            ax2 : Any = { #type_info(#type_of(x2)), cast(*u8, *x2) };
+            print_any(ax2);
+            println();
+
+            y := 4.2;
+            ay : Any = { #type_info(#type_of(y)), cast(*u8, *y) };
+            print_any(ay);
+            println();
+
+            y2 : r64 = 4.3;
+            ay2 : Any = { #type_info(#type_of(y2)), cast(*u8, *y2) };
+            print_any(ay2);
+            println();
+
+            b := true;
+            ab : Any = { #type_info(#type_of(b)), cast(*u8, *b) };
+            print_any(ab);
+            println();
+
+            b2 := false;
+            ab2 : Any = { #type_info(#type_of(b2)), cast(*u8, *b2) };
+            print_any(ab2);
+            println();
+
+            px := *x;
+            apx : Any = { #type_info(#type_of(px)), cast(*u8, *px) };
+            print_any(apx);
+            println();
+
+            py := *y;
+            apy : Any = { #type_info(#type_of(py)), cast(*u8, *py) };
+            print_any(apy);
+            println();
+
+            ppx := *px;
+            appx : Any = { #type_info(#type_of(ppx)), cast(*u8, *ppx) };
+            print_any(appx);
+            println();
+
+            str := "Hello!";
+            astr : Any = { #type_info(#type_of(str)), cast(*u8, *str) };
+            print_any(astr);
+            println();
+
+            vec : Vec2 = { 1.2, 5.4 };
+            avec : Any = { #type_info(#type_of(vec)), cast(*u8, *vec) };
+            print_any(avec);
+            println();
+
+            d := Day.Tuesday;
+            ad : Any = { #type_info(#type_of(d)), cast(*u8, *d) };
+            print_any(ad);
+            println();
+
+            d2 := Day.Friday;
+            ad2 : Any = { #type_info(#type_of(d2)), cast(*u8, *d2) };
+            print_any(ad2);
+            println();
+
+            ints : [3]s64 = { 42, 43, -44 };
+            aints : Any = { #type_info(#type_of(ints)), cast(*u8, *ints) };
+            print_any(aints);
+            println();
+
+            vecs : [4]Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } };
+            avecs : Any = { #type_info(#type_of(vecs)), cast(*u8, *vecs) };
+            print_any(avecs);
+            println();
+
+            slice : []s64 = { 11, 22, 33 };
+            aslice : Any = { #type_info(#type_of(slice)), cast(*u8, *slice) };
+            print_any(aslice);
+            println();
+
+            slice2 : []Vec2 = vecs;
+            aslice2 : Any = { #type_info(#type_of(slice2)), cast(*u8, *slice2) };
+            print_any(aslice2);
+            println();
+
+            binop_fn : (s64, s64) -> s64 = add_s64;
+            abinop_fn : Any = { #type_info(#type_of(binop_fn)), cast(*u8, *binop_fn) };
+            print_any(abinop_fn);
+            println();
+
+
+            return 0;
+        }
+
+        add_s64 :: (a: s64, b: s64) -> s64 {
+            return a + b;
+        }
+
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(42
+41
+4.200000
+4.300000
+true
+false
+ptr: 42
+ptr: 4.200000
+ptr: ptr: 42
+Hello!
+{ 1.200000, 5.400000 }
+Tuesday(1)
+Friday(4)
+{ 42, 43, -44 }
+{ { 1.000000, 2.000000 }, { 3.000000, 4.000000 }, { 5.000000, 6.000000 }, { 7.000000, 8.000000 } }
+{ 11, 22, 33 }
+{ { 1.000000, 2.000000 }, { 3.000000, 4.000000 }, { 5.000000, 6.000000 }, { 7.000000, 8.000000 } }
+fnptr)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef DAY_ENUM_DECL
 #undef RESOLVE_ERR
 

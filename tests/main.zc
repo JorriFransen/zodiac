@@ -1,3 +1,4 @@
+#import "print.zc"
 
 Vec2 :: struct {
     x, y: r64;
@@ -102,7 +103,6 @@ main :: () {
     println();
 
     binop_fn : (s64, s64) -> s64 = add_s64;
-    println(binop_fn);
     abinop_fn : Any = { #type_info(#type_of(binop_fn)), cast(*u8, *binop_fn) };
     print_any(abinop_fn);
     println();
@@ -115,133 +115,3 @@ add_s64 :: (a: s64, b: s64) -> s64 {
     return a + b;
 }
 
-print_any :: (any: Any) -> void {
-    switch (any.type.kind) {
-
-        case Type_Info_Kind.Integer:
-            ii := cast(*Type_Info_Int, any.type);
-
-            if (ii.sign) {
-                switch (any.type.size) {
-                    case 8: print(<cast(*s64, any.value));
-                    case 4: print(<cast(*s32, any.value));
-                    case 2: print(<cast(*s16, any.value));
-                    case 1: print(<cast(*s8, any.value));
-                    default: println("Unhandled integer size in print_any");
-                }
-            } else {
-                switch (any.type.size) {
-                    case 8: print(<cast(*u64, any.value));
-                    case 4: print(<cast(*u32, any.value));
-                    case 2: print(<cast(*u16, any.value));
-                    case 1: print(<cast(*u8, any.value));
-                    default: println("Unhandled integer size in print_any");
-                }
-            }
-
-        case Type_Info_Kind.Real:
-            if any.type.size == 4 {
-                print(<cast(*r32, any.value));
-            } else if any.type.size == 8 {
-                print(<cast(*r64, any.value));
-            } else {
-                println("Unhandled real size in print_any");
-            }
-
-        case Type_Info_Kind.Bool:
-            print(<cast(*bool, any.value));
-
-        case Type_Info_Kind.Pointer:
-            pi := cast(*Type_Info_Pointer, any.type);
-
-            value := cast(**void, any.value);
-            print(<value, ": ");
-
-            value_any : Any = {  pi.pointer_to, cast(*u8, <value) };
-            print_any(value_any);
-
-
-        case Type_Info_Kind.Struct:
-            si := cast(*Type_Info_Struct, any.type);
-
-            if any.type == #type_info(String) {
-                strp := cast(*String, any.value);
-                print(<strp);
-            } else {
-                print("{ ");
-
-                struct_mem : []u8;
-                struct_mem.data = any.value;
-                struct_mem.length = any.type.size;
-
-                for i := 0; i < si.members.length; i += 1 {
-                    if i > 0 print(", ");
-
-                    member := si.members[i];
-                    member_any : Any = { member.type, *struct_mem[member.offset] };
-                    print_any(member_any);
-                }
-
-                print(" }");
-            }
-
-        case Type_Info_Kind.Enum:
-            ei := cast(*Type_Info_Enum, any.type);
-
-            name: String = "Invalid enum value";
-            for i := 0; i < ei.members.length; i += 1 {
-                if ei.members[i].value == <cast(*s64, any.value) {
-                    name = ei.members[i].name;
-
-                    // Hack because we don't have break yet
-                    i = ei.members.length;
-                }
-            }
-
-            print(name, "(");
-            int_any : Any = { ei.integer_type, any.value };
-            print_any(int_any);
-            print(")");
-
-        case Type_Info_Kind.Static_Array:
-            ai := cast(*Type_Info_Static_Array, any.type);
-
-            arr_mem : []u8;
-            arr_mem.data = any.value;
-            arr_mem.length = ai.length * ai.element_type.size;
-
-            print("{ ");
-            for i := 0; i < ai.length; i += 1 {
-                if i > 0 print(", ");
-
-                elem_any : Any = { ai.element_type, *arr_mem[ai.element_type.size * i] };
-                print_any(elem_any);
-            }
-            print(" }");
-
-        case Type_Info_Kind.Slice:
-            si := cast(*Type_Info_Slice, any.type);
-
-            slice := <cast(*[]s64, any.value);
-
-            arr_mem : []u8;
-            arr_mem.data = cast(*u8, slice.data);
-            arr_mem.length = slice.length * si.element_type.size;
-
-            print("{ ");
-            for i := 0; i < slice.length; i += 1 {
-                if i > 0 print(", ");
-
-                elem_any : Any = { si.element_type, *arr_mem[si.element_type.size * i] };
-                print_any(elem_any);
-            }
-            print(" }");
-
-        case Type_Info_Kind.Function:
-            fi := cast(*Type_Info_Pointer, any.type);
-            ptr := <cast(**void, any.value);
-            print(ptr);
-
-        default: println("!!! Unhandled type in print_any !!!");
-    }
-}
