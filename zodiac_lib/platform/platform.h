@@ -54,6 +54,8 @@ ZAPI void platform_free_process_result(Process_Result *pr);
 
 ZAPI void platform_temp_file(File_Handle *out_file);
 
+ZAPI bool platform_is_terminal(File_Handle *file);
+
 ZAPI void platform_file_write(File_Handle *file, const String_Ref message);
 ZAPI void platform_file_write(File_Handle *file, const String_Ref message, Platform_Console_Color color);
 

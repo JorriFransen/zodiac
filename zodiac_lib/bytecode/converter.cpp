@@ -2,12 +2,12 @@
 
 #include "ast.h"
 #include "atom.h"
+#include "bytecode/ffi.h"
 #include "bytecode/printer.h"
 #include "bytecode/validator.h"
 #include "common.h"
 #include "constant_resolver.h"
 #include "containers/dynamic_array.h"
-#include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 #include "platform/filesystem.h"

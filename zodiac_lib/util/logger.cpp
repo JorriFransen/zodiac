@@ -58,7 +58,7 @@ void logging_system_set_stdout_file(File_Handle out_file)
 
     logging_system_state.out_file = out_file;
 
-    logging_system_state.out_color = isatty(fileno((FILE *)out_file.handle));
+    logging_system_state.out_color = platform_is_terminal(&out_file);
 }
 
 void logging_system_set_stderr_file(File_Handle err_file)
@@ -67,7 +67,7 @@ void logging_system_set_stderr_file(File_Handle err_file)
 
     logging_system_state.err_file = err_file;
 
-    logging_system_state.err_color = isatty(fileno((FILE *)err_file.handle));
+    logging_system_state.err_color = platform_is_terminal(&err_file);
 }
 
 void log_message(Log_Level log_level, const char *file, s64 line, const String_Ref fmt, ...)

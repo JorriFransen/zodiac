@@ -432,6 +432,12 @@ void platform_temp_file(File_Handle *out_file)
     *out_file = { result, true };
 }
 
+bool platform_is_terminal(File_Handle *file)
+{
+    assert(file && file->valid);
+    return isatty(fileno((FILE *)file->handle));
+}
+
 void platform_file_write(File_Handle *file, const String_Ref message)
 {
     assert(file->valid && file->handle);

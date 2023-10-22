@@ -10,9 +10,10 @@
 #include "util/string_builder.h"
 #include "util/zstring.h"
 
-#include <windows.h>
 #include <io.h>
 #include <libloaderapi.h>
+#include <stdio.h>
+#include <windows.h>
 
 #undef ERROR // Cleanup after including windows stuf....
 
@@ -284,6 +285,12 @@ void platform_temp_file(File_Handle *out_file)
     }
 
     *out_file = { .handle = result, .valid = true };
+}
+
+bool platform_is_terminal(File_Handle *file)
+{
+    assert(file && file->valid);
+    return _isatty(_fileno((FILE *)file->handle));
 }
 
 void platform_file_write(File_Handle *file, const String_Ref message)

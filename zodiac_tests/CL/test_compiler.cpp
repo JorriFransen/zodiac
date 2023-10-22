@@ -5,7 +5,6 @@
 #include "atom.h"
 #include "bytecode/interpreter.h"
 #include "common.h"
-#include "memory/allocator.h"
 #include "memory/temporary_allocator.h"
 #include "memory/zmemory.h"
 #include "platform/filesystem.h"
