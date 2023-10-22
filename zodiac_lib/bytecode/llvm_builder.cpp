@@ -1728,8 +1728,15 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
         }
 
         case Type_Kind::POINTER: {
-            llvm::Type *base_type = llvm_type_from_ast_type(builder, ast_type->pointer.base);
-            return base_type->getPointerTo();
+            auto base = ast_type->pointer.base;
+            if (base->kind == Type_Kind::VOID) {
+                // Void pointers are invalid in llvm
+                llvm::Type *base_type = llvm_type_from_ast_type(builder, &builtin_type_u8);
+                return base_type->getPointerTo();
+            } else {
+                llvm::Type *base_type = llvm_type_from_ast_type(builder, base);
+                return base_type->getPointerTo();
+            }
         }
 
         case Type_Kind::FUNCTION: {
