@@ -10,10 +10,11 @@
 #include "util/string_builder.h"
 #include "util/zstring.h"
 
+#include <windows.h>
+
 #include <io.h>
 #include <libloaderapi.h>
 #include <stdio.h>
-#include <windows.h>
 
 #undef ERROR // Cleanup after including windows stuf....
 
