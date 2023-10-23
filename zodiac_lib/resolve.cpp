@@ -1874,8 +1874,21 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
 
             if (decl->variable.resolved_type == get_any_type(ctx) &&
                 decl->variable.value->resolved_type != get_any_type(ctx)) {
+
+                assert(scope->kind == Scope_Kind::FUNCTION_LOCAL);
+
                 // Implicit conversion to any
-                assert(EXPR_IS_LVALUE(decl->variable.value));
+                if (!EXPR_IS_LVALUE(decl->variable.value)) {
+
+                    AST_Implicit_LValue implicit_lval = {
+                        AST_Implicit_LValue_Kind::CONST_LVALUE,
+                        decl->variable.value,
+                        { .decl = decl }
+                    };
+
+                    auto cf = enclosing_function(scope);
+                    dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
+                }
 
             } else if (decl->variable.value &&
                        decl->variable.resolved_type->kind == Type_Kind::SLICE &&
@@ -2416,9 +2429,12 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
 
-                if (inferred_type && inferred_type->kind == Type_Kind::BOOLEAN) {
+                if (inferred_type && (inferred_type->kind == Type_Kind::BOOLEAN ||
+                                      inferred_type == get_any_type(ctx))) {
+
                     // Ok, but we can't change the actual type here, this is done when emitting bytecode
                     expr->resolved_type = &builtin_type_s64;
+
                 } else if (inferred_type) {
 
                     if (inferred_type->kind == Type_Kind::UNSIZED_INTEGER) {
@@ -2426,13 +2442,11 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     } if (inferred_type->kind == Type_Kind::FLOAT) {
                         // Ok
                     } else if (inferred_type->kind != Type_Kind::INTEGER) {
-                        fatal_resolve_error(ctx, expr, "Could not convert integer literal to inferred type '%s'",
-                                                       temp_type_string(inferred_type).data);
+                        fatal_resolve_error(ctx, expr, "Could not convert integer literal to inferred type '%s'", temp_type_string(inferred_type).data);
                         return false;
                     }
 
                     // TODO: Make sure the literal fits in this type
-
                     expr->resolved_type = inferred_type;
 
                 } else {
@@ -2695,7 +2709,24 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     return false;
                 }
 
-                if (param_type->kind == Type_Kind::SLICE && arg_type->kind == Type_Kind::STATIC_ARRAY) {
+                auto any_type = get_any_type(ctx);
+
+                if (param_type == any_type && arg_type != any_type) {
+
+                    // Implicit conversion to any
+                    if (!EXPR_IS_LVALUE(arg_expr)) {
+
+                        AST_Implicit_LValue implicit_lval = {
+                            AST_Implicit_LValue_Kind::CONST_LVALUE,
+                            arg_expr,
+                            { .decl = func_sym->decl->function.params[i] }
+                        };
+
+                        auto cf = enclosing_function(scope);
+                        dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
+                    }
+
+                } else if (param_type->kind == Type_Kind::SLICE && arg_type->kind == Type_Kind::STATIC_ARRAY) {
 
                     arg_expr->flags |= AST_EXPR_FLAG_SLICE_ARRAY;
                     auto current_fn = enclosing_function(scope);

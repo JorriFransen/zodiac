@@ -5234,7 +5234,7 @@ R"OUT_STR(3
     return MUNIT_OK;
 }
 
-MunitResult Print_Any(const MunitParameter params[], void* user_data_or_fixture) {
+MunitResult Any_Print_Any(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
 
@@ -5357,6 +5357,156 @@ MunitResult Print_Any(const MunitParameter params[], void* user_data_or_fixture)
 
     Expected_Results expected = { .std_out =
 R"OUT_STR(42
+41
+4.200000
+4.300000
+true
+false
+ptr: 42
+ptr: 4.200000
+ptr: ptr: 42
+Hello!
+{ 1.200000, 5.400000 }
+Tuesday(1)
+Friday(4)
+{ 42, 43, -44 }
+{ { 1.000000, 2.000000 }, { 3.000000, 4.000000 }, { 5.000000, 6.000000 }, { 7.000000, 8.000000 } }
+{ 11, 22, 33 }
+{ { 1.000000, 2.000000 }, { 3.000000, 4.000000 }, { 5.000000, 6.000000 }, { 7.000000, 8.000000 } }
+fnptr)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Any_From_Lvalue_Expr(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
+        Vec2 :: struct {
+            x, y: r64;
+        }
+
+        Day :: enum {
+            Monday,
+            Tuesday,
+            Wednesday,
+            Thursday,
+            Friday,
+            Saturday,
+            Sunday,
+        }
+
+        main :: () {
+
+            x := 42;
+            ax : Any = x;
+            print_any(ax);
+            println();
+
+            print_any(x);
+            println();
+
+            x2 : u32 = 41;
+            ax2 : Any = x2;
+            print_any(ax2);
+            println();
+
+            y := 4.2;
+            ay : Any = y;
+            print_any(ay);
+            println();
+
+            y2 : r64 = 4.3;
+            ay2 : Any = y2;
+            print_any(ay2);
+            println();
+
+            b := true;
+            ab : Any = b;
+            print_any(ab);
+            println();
+
+            b2 := false;
+            ab2 : Any = b2;
+            print_any(ab2);
+            println();
+
+            px := *x;
+            apx : Any = px;
+            print_any(apx);
+            println();
+
+            py := *y;
+            apy : Any = py;
+            print_any(apy);
+            println();
+
+            ppx := *px;
+            appx : Any = ppx;
+            print_any(appx);
+            println();
+
+            str := "Hello!";
+            astr : Any = str;
+            print_any(astr);
+            println();
+
+            vec : Vec2 = { 1.2, 5.4 };
+            avec : Any = vec;
+            print_any(avec);
+            println();
+
+            d := Day.Tuesday;
+            ad : Any = d;
+            print_any(ad);
+            println();
+
+            d2 := Day.Friday;
+            ad2 : Any = d2;
+            print_any(ad2);
+            println();
+
+            ints : [3]s64 = { 42, 43, -44 };
+            aints : Any = ints;
+            print_any(aints);
+            println();
+
+            vecs : [4]Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } };
+            avecs : Any = vecs;
+            print_any(avecs);
+            println();
+
+            slice : []s64 = { 11, 22, 33 };
+            aslice : Any = slice;
+            print_any(aslice);
+            println();
+
+            slice2 : []Vec2 = vecs;
+            aslice2 : Any = slice2;
+            print_any(aslice2);
+            println();
+
+            binop_fn : (s64, s64) -> s64 = add_s64;
+            abinop_fn : Any = binop_fn;
+            print_any(abinop_fn);
+            println();
+
+            return 0;
+        }
+
+        add_s64 :: (a: s64, b: s64) -> s64 {
+            return a + b;
+        }
+
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(42
+42
 41
 4.200000
 4.300000

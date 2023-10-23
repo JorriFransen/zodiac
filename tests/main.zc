@@ -17,96 +17,96 @@ Day :: enum {
 #run main();
 main :: () {
 
-    x := 42;
-    ax : Any = x;
+    ax : Any = 42;
     print_any(ax);
     println();
 
-    x2 : u32 = 41;
-    ax2 : Any = x2;
+    print_any(42);
+    println();
+
+    ax2 : Any = cast(u32, 41);
     print_any(ax2);
     println();
 
-    y := 4.2;
-    ay : Any = y;
-    print_any(ay);
-    println();
-
-    y2 : r64 = 4.3;
-    ay2 : Any = y2;
-    print_any(ay2);
-    println();
-
-    b := true;
-    ab : Any = b;
-    print_any(ab);
-    println();
-
-    b2 := false;
-    ab2 : Any = b2;
-    print_any(ab2);
-    println();
-
-    px := *x;
-    apx : Any = px;
-    print_any(apx);
-    println();
-
-    py := *y;
-    apy : Any = py;
-    print_any(apy);
-    println();
-
-    ppx := *px;
-    appx : Any = ppx;
-    print_any(appx);
-    println();
-
-    str := "Hello!";
-    astr : Any = str;
-    print_any(astr);
-    println();
-
-    vec : Vec2 = { 1.2, 5.4 };
-    avec : Any = vec;
-    print_any(avec);
-    println();
-
-    d := Day.Tuesday;
-    ad : Any = d;
-    print_any(ad);
-    println();
-
-    d2 := Day.Friday;
-    ad2 : Any = d2;
-    print_any(ad2);
-    println();
-
-    ints : [3]s64 = { 42, 43, -44 };
-    aints : Any = ints;
-    print_any(aints);
-    println();
-
-    vecs : [4]Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } };
-    avecs : Any = vecs;
-    print_any(avecs);
-    println();
-
-    slice : []s64 = { 11, 22, 33 };
-    aslice : Any = slice;
-    print_any(aslice);
-    println();
-
-    slice2 : []Vec2 = vecs;
-    aslice2 : Any = slice2;
-    print_any(aslice2);
-    println();
-
-    binop_fn : (s64, s64) -> s64 = add_s64;
-    abinop_fn : Any = binop_fn;
-    print_any(abinop_fn);
-    println();
-
+    // ay : Any = 4.2;
+    // print_any(ay);
+    // println();
+    //
+    // y2 : r64 = 4.3;
+    // ay2 : Any = y2;
+    // print_any(ay2);
+    // println();
+    //
+    // b := true;
+    // ab : Any = b;
+    // print_any(ab);
+    // println();
+    //
+    // b2 := false;
+    // ab2 : Any = b2;
+    // print_any(ab2);
+    // println();
+    //
+    // px := *x;
+    // apx : Any = px;
+    // print_any(apx);
+    // println();
+    //
+    // py := *y;
+    // apy : Any = py;
+    // print_any(apy);
+    // println();
+    //
+    // ppx := *px;
+    // appx : Any = ppx;
+    // print_any(appx);
+    // println();
+    //
+    // str := "Hello!";
+    // astr : Any = str;
+    // print_any(astr);
+    // println();
+    //
+    // vec : Vec2 = { 1.2, 5.4 };
+    // avec : Any = vec;
+    // print_any(avec);
+    // println();
+    //
+    // d := Day.Tuesday;
+    // ad : Any = d;
+    // print_any(ad);
+    // println();
+    //
+    // d2 := Day.Friday;
+    // ad2 : Any = d2;
+    // print_any(ad2);
+    // println();
+    //
+    // ints : [3]s64 = { 42, 43, -44 };
+    // aints : Any = ints;
+    // print_any(aints);
+    // println();
+    //
+    // vecs : [4]Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } };
+    // avecs : Any = vecs;
+    // print_any(avecs);
+    // println();
+    //
+    // slice : []s64 = { 11, 22, 33 };
+    // aslice : Any = slice;
+    // print_any(aslice);
+    // println();
+    //
+    // slice2 : []Vec2 = vecs;
+    // aslice2 : Any = slice2;
+    // print_any(aslice2);
+    // println();
+    //
+    // binop_fn : (s64, s64) -> s64 = add_s64;
+    // abinop_fn : Any = binop_fn;
+    // print_any(abinop_fn);
+    // println();
+    //
     return 0;
 }
 
