@@ -117,6 +117,7 @@ struct Zodiac_Context
     Type *builtin_type_info_static_array_type;
     Type *builtin_type_info_slice_type;
     Type *builtin_type_info_function_type;
+    Type *builtin_any_type;
 
     Dynamic_Array<Type_Info *> type_infos;
     Dynamic_Array<Type *> type_info_types;

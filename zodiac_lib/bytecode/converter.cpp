@@ -1615,21 +1615,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
         case AST_Expression_Kind::TYPE_INFO: {
 
             Type *target_type = expr->directive.directive->type_info.type_spec->resolved_type;
-            assert(target_type);
-
-            if (target_type->info_index == -1) {
-                add_type_info(bc->context, target_type);
-            }
-
-            // TODO: We don't need to do this every time!
-            Bytecode_Register global_reg;
-            bool found = hash_table_find(&bc->builder->global_registers, atom_get(&bc->context->atoms, "_type_info_pointers"), &global_reg);
-            assert(found);
-
-            auto arr_ptr = bytecode_emit_aggregate_offset_pointer(bc->builder, global_reg, 0);
-            auto arr = bytecode_emit_load(bc->builder, arr_ptr);
-            auto elem_ptr = bytecode_emit_ptr_offset_pointer(bc->builder, arr, target_type->info_index);
-            result = bytecode_emit_load(bc->builder, elem_ptr);
+            result = emit_type_info(bc, target_type);
             break;
         }
 
@@ -2107,7 +2093,28 @@ void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, 
     }
 
     Bytecode_Register value_reg;
-    if (value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && lvalue_type->kind == Type_Kind::SLICE) {
+
+    auto any_type = get_any_type(bc->context);
+    assert(any_type);
+
+    if (lvalue_type == any_type && value_expr->resolved_type != any_type) {
+        assert(EXPR_IS_LVALUE(value_expr));
+
+        auto typeinfo_reg = emit_type_info(bc, value_expr->resolved_type);
+        auto ptr_reg = ast_lvalue_to_bytecode(bc, value_expr);
+
+        if (ptr_reg.kind == Bytecode_Register_Kind::ALLOC) {
+            ptr_reg = bytecode_emit_address_of(bc->builder, ptr_reg);
+        }
+
+        if (ptr_reg.type != any_type->structure.member_types[1]) {
+            ptr_reg = bytecode_emit_cast(bc->builder, any_type->structure.member_types[1], ptr_reg);
+        }
+
+        value_reg = bytecode_emit_insert_value(bc->builder, {}, typeinfo_reg, any_type, 0);
+        value_reg = bytecode_emit_insert_value(bc->builder, value_reg, ptr_reg, any_type, 1);
+
+    } else if (value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && lvalue_type->kind == Type_Kind::SLICE) {
 
         Bytecode_Register array_reg;
 
@@ -2141,6 +2148,27 @@ void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, 
     } else {
         assert(false);
     }
+}
+
+Bytecode_Register emit_type_info(Bytecode_Converter *bc, Type *target_type)
+{
+    assert(target_type);
+    assert(bc->builder->insert_fn_index >= 0);
+
+    if (target_type->info_index == -1) {
+        add_type_info(bc->context, target_type);
+    }
+
+    // TODO: We don't need to do this every time!
+    Bytecode_Register global_reg;
+    bool found = hash_table_find(&bc->builder->global_registers, atom_get(&bc->context->atoms, "_type_info_pointers"), &global_reg);
+    assert(found);
+
+    auto arr_ptr = bytecode_emit_aggregate_offset_pointer(bc->builder, global_reg, 0);
+    auto arr = bytecode_emit_load(bc->builder, arr_ptr);
+    auto elem_ptr = bytecode_emit_ptr_offset_pointer(bc->builder, arr, target_type->info_index);
+
+    return bytecode_emit_load(bc->builder, elem_ptr);
 }
 
 Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directive *run_directive)

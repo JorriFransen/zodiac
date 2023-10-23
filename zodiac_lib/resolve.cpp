@@ -1836,8 +1836,8 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             if (decl->variable.type_spec && decl->variable.value) {
 
                 // Type and value
-                if (!(valid_static_type_conversion(decl->variable.value->resolved_type,
-                                                   decl->variable.type_spec->resolved_type))) {
+                if (!(valid_static_type_conversion(ctx, decl->variable.value->resolved_type, decl->variable.type_spec->resolved_type))) {
+
                     resolve_error(ctx, decl, "Mismatching type in assignment");
                     resolve_error(ctx, decl->variable.type_spec, "    Expected: %s", temp_type_string(decl->variable.type_spec->resolved_type).data);
                     resolve_error(ctx, decl->variable.value, "    Got: %s", temp_type_string(decl->variable.value->resolved_type).data);
@@ -1872,9 +1872,15 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                 assert(EXPR_IS_CONST(decl->variable.value) || decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE);
             }
 
-            if (decl->variable.value &&
-                decl->variable.resolved_type->kind == Type_Kind::SLICE &&
-                decl->variable.value->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
+            if (decl->variable.resolved_type == get_any_type(ctx) &&
+                decl->variable.value->resolved_type != get_any_type(ctx)) {
+                // Implicit conversion to any
+                assert(EXPR_IS_LVALUE(decl->variable.value));
+
+            } else if (decl->variable.value &&
+                       decl->variable.resolved_type->kind == Type_Kind::SLICE &&
+                       decl->variable.value->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
+                // Implicit array to slice
 
                 bool value_is_global_const = false;
 
@@ -1943,8 +1949,7 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             }
 
             if (decl->variable.type_spec) {
-                assert(valid_static_type_conversion(decl->variable.value->resolved_type,
-                                                    decl->variable.type_spec->resolved_type));
+                assert(valid_static_type_conversion(ctx, decl->variable.value->resolved_type, decl->variable.type_spec->resolved_type));
                 decl->variable.resolved_type = decl->variable.type_spec->resolved_type;
             } else {
                 decl->variable.resolved_type = decl->variable.value->resolved_type;
@@ -2160,7 +2165,7 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
             assert(value_expr->resolved_type);
 
             if (value_expr->resolved_type != lvalue_expr->resolved_type) {
-                if (valid_static_type_conversion(value_expr->resolved_type, lvalue_expr->resolved_type)) {
+                if (valid_static_type_conversion(resolver->ctx, value_expr->resolved_type, lvalue_expr->resolved_type)) {
                     // ok
                 } else {
                     resolve_error(resolver->ctx, value_expr, "Mismatching type in assignment");
@@ -2215,7 +2220,7 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
 
                 if (if_block.cond->resolved_type->kind == Type_Kind::BOOLEAN) {
                     // ok
-                } else if (valid_static_type_conversion(if_block.cond->resolved_type, &builtin_type_bool)) {
+                } else if (valid_static_type_conversion(resolver->ctx, if_block.cond->resolved_type, &builtin_type_bool)) {
                     AST_Expression *cast_expr = ast_cast_expr_new(resolver->ctx, if_block.cond->sr, &builtin_type_bool, if_block.cond);
                     if_block.cond = cast_expr;
 
@@ -2329,7 +2334,7 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
 
                     if (actual_type == expected_type) return true;
 
-                    bool valid_conversion = valid_static_type_conversion(actual_type, expected_type);
+                    bool valid_conversion = valid_static_type_conversion(resolver->ctx, actual_type, expected_type);
                     if (!valid_conversion) {
                         assert(false); // report error
                         result = false;
@@ -2676,7 +2681,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 bool match = true;
 
                 if (arg_type != param_type) {
-                    if (valid_static_type_conversion(arg_type, param_type)) {
+                    if (valid_static_type_conversion(resolver->ctx, arg_type, param_type)) {
                         // ok
                     } else {
                         match = false;
@@ -2850,7 +2855,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 if (lhs->resolved_type->kind == Type_Kind::INTEGER &&
                     rhs->resolved_type->kind == Type_Kind::UNSIZED_INTEGER) {
 
-                    if (valid_static_type_conversion(rhs->resolved_type, lhs->resolved_type)) {
+                    if (valid_static_type_conversion(resolver->ctx, rhs->resolved_type, lhs->resolved_type)) {
                         expr->resolved_type = lhs->resolved_type;
                         rhs->resolved_type = lhs->resolved_type;
                     } else {
@@ -2860,7 +2865,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 } else if (lhs->resolved_type->kind == Type_Kind::UNSIZED_INTEGER &&
                            rhs->resolved_type->kind == Type_Kind::INTEGER) {
 
-                    if (valid_static_type_conversion(lhs->resolved_type, rhs->resolved_type)) {
+                    if (valid_static_type_conversion(resolver->ctx, lhs->resolved_type, rhs->resolved_type)) {
                         expr->resolved_type = rhs->resolved_type;
                         lhs->resolved_type = rhs->resolved_type;
                     } else {
@@ -2891,7 +2896,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 if (lhs->resolved_type->kind == Type_Kind::INTEGER &&
                     rhs->resolved_type->kind == Type_Kind::UNSIZED_INTEGER) {
 
-                    assert(valid_static_type_conversion(rhs->resolved_type, lhs->resolved_type));
+                    assert(valid_static_type_conversion(resolver->ctx, rhs->resolved_type, lhs->resolved_type));
                     rhs->resolved_type = lhs->resolved_type;
                 }
 
@@ -2999,7 +3004,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     case Type_Kind::VOID: assert(false); break;
 
                     case Type_Kind::UNSIZED_INTEGER: {
-                        valid_conversion = valid_static_type_conversion(operand_type, target_type);
+                        valid_conversion = valid_static_type_conversion(resolver->ctx, operand_type, target_type);
                         break;
                     }
 
@@ -3014,7 +3019,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     case Type_Kind::STRUCTURE: assert(false); break;
 
                     case Type_Kind::ENUM: {
-                        if (!valid_static_type_conversion(operand_type, target_type)) {
+                        if (!valid_static_type_conversion(resolver->ctx, operand_type, target_type)) {
                             fatal_resolve_error(ctx, expr, "Invalid cast from enum to int (cast to underlying integer type first)");
                             return false;
                         }
@@ -3028,13 +3033,13 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 }
 
             } else if (target_type->kind == Type_Kind::BOOLEAN) {
-                valid_conversion = valid_static_type_conversion(operand_type, target_type);
+                valid_conversion = valid_static_type_conversion(resolver->ctx, operand_type, target_type);
             } else if (target_type->kind == Type_Kind::ENUM) {
-                valid_conversion = valid_static_type_conversion(operand_type, target_type);
+                valid_conversion = valid_static_type_conversion(resolver->ctx, operand_type, target_type);
             } else if (target_type->kind == Type_Kind::POINTER && operand_type->kind == Type_Kind::POINTER) {
                 valid_conversion = true;
             } else if (target_type->kind == Type_Kind::POINTER && operand_type->kind == Type_Kind::INTEGER) {
-                valid_conversion = valid_static_type_conversion(operand_type, target_type);
+                valid_conversion = valid_static_type_conversion(resolver->ctx, operand_type, target_type);
             } else if (target_type->kind == Type_Kind::BOOLEAN && operand_type->kind == Type_Kind::POINTER) {
                 valid_conversion = true;
             } else {

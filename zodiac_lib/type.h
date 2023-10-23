@@ -38,6 +38,7 @@ struct Zodiac_Context;
     ZODIAC_NAME_TYPE_DEF(Type_Info_Static_Array)  \
     ZODIAC_NAME_TYPE_DEF(Type_Info_Slice)         \
     ZODIAC_NAME_TYPE_DEF(Type_Info_Function)      \
+    ZODIAC_NAME_TYPE_DEF(Any)                     \
 
 // Builtin type atoms
 #define ZODIAC_NUMERIC_TYPE_DEF(type, size) ZAPI extern Atom atom_##type##size;
@@ -201,10 +202,11 @@ ZAPI Type *get_type_info_enum_member_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_static_array_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_slice_type(Zodiac_Context *ctx);
 ZAPI Type *get_type_info_function_type(Zodiac_Context *ctx);
+ZAPI Type *get_any_type(Zodiac_Context *ctx);
 
 ZAPI Type *sym_decl_type(Symbol *sym);
 
-ZAPI bool valid_static_type_conversion(Type *from, Type *to);
+ZAPI bool valid_static_type_conversion(Zodiac_Context *ctx, Type *from, Type *to);
 
 ZAPI void type_to_string(Type *type, String_Builder *sb);
 ZAPI String type_to_string(Allocator *allocator, Type *type);

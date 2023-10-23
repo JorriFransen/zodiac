@@ -364,7 +364,7 @@ Type *get_struct_type_by_name(Zodiac_Context *ctx, Atom name)
         }
     }
 
-    assert_msg(false, "Struct type could not be found");
+    return nullptr;
 }
 
 Type *get_string_type(Zodiac_Context *ctx)
@@ -527,6 +527,18 @@ Type *get_type_info_function_type(Zodiac_Context *ctx)
     assert_msg(false, "Builtin Type_Info_Function type could not be found");
 }
 
+Type *get_any_type(Zodiac_Context *ctx)
+{
+    if (ctx->builtin_any_type) {
+        return ctx->builtin_any_type;
+    }
+
+    auto result = get_struct_type_by_name(ctx, atom_Any);
+    ctx->builtin_any_type = result;
+
+    return result;
+}
+
 Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Allocator *allocator, bool vararg/*=false*/)
 {
     assert(return_type);
@@ -614,12 +626,16 @@ Type *sym_decl_type(Symbol *sym)
     return nullptr;
 }
 
-bool valid_static_type_conversion(Type *from, Type *to)
+bool valid_static_type_conversion(Zodiac_Context *ctx, Type *from, Type *to)
 {
     assert(from);
     assert(to);
 
     if (from == to) {
+        return true;
+    }
+
+    if (to == get_any_type(ctx)) {
         return true;
     }
 
