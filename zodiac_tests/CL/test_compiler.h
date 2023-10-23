@@ -147,7 +147,8 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Type_Info) \
     X(Type_Of) \
     X(Function_Pointers) \
-    X(Print_Any) \
+    X(Any_Print) \
+    X(Any_From_Lvalue) \
 
 
 // Function declarations

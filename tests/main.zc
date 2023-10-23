@@ -22,9 +22,15 @@ main :: () {
     print_any(ax);
     println();
 
+    print_any(x);
+    println();
+
     x2 : u32 = 41;
     ax2 : Any = x2;
     print_any(ax2);
+    println();
+
+    print_any(x2);
     println();
 
     y := 4.2;
@@ -32,9 +38,15 @@ main :: () {
     print_any(ay);
     println();
 
+    print_any(y);
+    println();
+
     y2 : r64 = 4.3;
     ay2 : Any = y2;
     print_any(ay2);
+    println();
+
+    print_any(y2);
     println();
 
     b := true;
@@ -42,9 +54,15 @@ main :: () {
     print_any(ab);
     println();
 
+    print_any(b);
+    println();
+
     b2 := false;
     ab2 : Any = b2;
     print_any(ab2);
+    println();
+
+    print_any(b2);
     println();
 
     px := *x;
@@ -52,9 +70,15 @@ main :: () {
     print_any(apx);
     println();
 
+    print_any(px);
+    println();
+
     py := *y;
     apy : Any = py;
     print_any(apy);
+    println();
+
+    print_any(py);
     println();
 
     ppx := *px;
@@ -62,9 +86,15 @@ main :: () {
     print_any(appx);
     println();
 
+    print_any(ppx);
+    println();
+
     str := "Hello!";
     astr : Any = str;
     print_any(astr);
+    println();
+
+    print_any(str);
     println();
 
     vec : Vec2 = { 1.2, 5.4 };
@@ -72,9 +102,15 @@ main :: () {
     print_any(avec);
     println();
 
+    print_any(vec);
+    println();
+
     d := Day.Tuesday;
     ad : Any = d;
     print_any(ad);
+    println();
+
+    print_any(d);
     println();
 
     d2 := Day.Friday;
@@ -82,9 +118,15 @@ main :: () {
     print_any(ad2);
     println();
 
+    print_any(d2);
+    println();
+
     ints : [3]s64 = { 42, 43, -44 };
     aints : Any = ints;
     print_any(aints);
+    println();
+
+    print_any(ints);
     println();
 
     vecs : [4]Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } };
@@ -92,9 +134,15 @@ main :: () {
     print_any(avecs);
     println();
 
+    print_any(vecs);
+    println();
+
     slice : []s64 = { 11, 22, 33 };
     aslice : Any = slice;
     print_any(aslice);
+    println();
+
+    print_any(slice);
     println();
 
     slice2 : []Vec2 = vecs;
@@ -102,9 +150,15 @@ main :: () {
     print_any(aslice2);
     println();
 
+    print_any(slice2);
+    println();
+
     binop_fn : (s64, s64) -> s64 = add_s64;
     abinop_fn : Any = binop_fn;
     print_any(abinop_fn);
+    println();
+
+    print_any(binop_fn);
     println();
 
     return 0;

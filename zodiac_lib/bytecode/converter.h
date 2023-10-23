@@ -88,6 +88,8 @@ ZAPI Bytecode_Register converter_type_info_base(Bytecode_Converter *bc, Type *ta
 
 ZAPI Bytecode_Register emit_type_info(Bytecode_Converter *bc, Type *target_type);
 
+ZAPI Bytecode_Register emit_any(Bytecode_Converter *bc, AST_Expression *expr);
+
 ZAPI Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directive *run_directive);
 
 ZAPI Run_Wrapper_Result execute_run_wrapper(Bytecode_Converter *bc, Bytecode_Function_Handle fn_handle);

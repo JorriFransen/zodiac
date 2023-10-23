@@ -1386,12 +1386,16 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             auto arg_count = expr->call.args.count;
             assert(ptr_call || fn_handle >= 0);
 
+            auto any_type = get_any_type(bc->context);
+
             for (s64 i = 0; i < expr->call.args.count; i++) {
 
                 auto arg_expr = expr->call.args[i];
                 Bytecode_Register arg_reg;
 
-                if (arg_expr->flags & AST_EXPR_FLAG_SLICE_ARRAY) {
+                if (fn_type->function.parameter_types[i] == any_type && arg_expr->resolved_type != any_type) {
+                    arg_reg = emit_any(bc, arg_expr);
+                } else if (arg_expr->flags & AST_EXPR_FLAG_SLICE_ARRAY) {
 
                     Type *array_type = arg_expr->resolved_type;
                     assert(array_type->kind == Type_Kind::STATIC_ARRAY);
@@ -2100,19 +2104,7 @@ void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, 
     if (lvalue_type == any_type && value_expr->resolved_type != any_type) {
         assert(EXPR_IS_LVALUE(value_expr));
 
-        auto typeinfo_reg = emit_type_info(bc, value_expr->resolved_type);
-        auto ptr_reg = ast_lvalue_to_bytecode(bc, value_expr);
-
-        if (ptr_reg.kind == Bytecode_Register_Kind::ALLOC) {
-            ptr_reg = bytecode_emit_address_of(bc->builder, ptr_reg);
-        }
-
-        if (ptr_reg.type != any_type->structure.member_types[1]) {
-            ptr_reg = bytecode_emit_cast(bc->builder, any_type->structure.member_types[1], ptr_reg);
-        }
-
-        value_reg = bytecode_emit_insert_value(bc->builder, {}, typeinfo_reg, any_type, 0);
-        value_reg = bytecode_emit_insert_value(bc->builder, value_reg, ptr_reg, any_type, 1);
+        value_reg = emit_any(bc, value_expr);
 
     } else if (value_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY && lvalue_type->kind == Type_Kind::SLICE) {
 
@@ -2169,6 +2161,27 @@ Bytecode_Register emit_type_info(Bytecode_Converter *bc, Type *target_type)
     auto elem_ptr = bytecode_emit_ptr_offset_pointer(bc->builder, arr, target_type->info_index);
 
     return bytecode_emit_load(bc->builder, elem_ptr);
+}
+
+Bytecode_Register emit_any(Bytecode_Converter *bc, AST_Expression *expr)
+{
+    auto any_type = get_any_type(bc->context);
+
+    auto typeinfo_reg = emit_type_info(bc, expr->resolved_type);
+    auto ptr_reg = ast_lvalue_to_bytecode(bc, expr);
+
+    if (ptr_reg.kind == Bytecode_Register_Kind::ALLOC) {
+        ptr_reg = bytecode_emit_address_of(bc->builder, ptr_reg);
+    }
+
+    if (ptr_reg.type != any_type->structure.member_types[1]) {
+        ptr_reg = bytecode_emit_cast(bc->builder, any_type->structure.member_types[1], ptr_reg);
+    }
+
+    auto result = bytecode_emit_insert_value(bc->builder, {}, typeinfo_reg, any_type, 0);
+    result = bytecode_emit_insert_value(bc->builder, result, ptr_reg, any_type, 1);
+
+    return result;
 }
 
 Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directive *run_directive)
