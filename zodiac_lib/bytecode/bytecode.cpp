@@ -1110,6 +1110,8 @@ void bytecode_emit_return(Bytecode_Builder *builder, Bytecode_Register return_va
 
 Bytecode_Register bytecode_emit_alloc(Bytecode_Builder *builder, Type *type, const char *name)
 {
+    assert(type->kind != Type_Kind::UNSIZED_INTEGER);
+
     Bytecode_Register type_register = bytecode_type_value(builder, type);
     Bytecode_Register result_register = bytecode_register_create(builder, Bytecode_Register_Kind::ALLOC, type, BC_REGISTER_FLAG_NONE, name);
     bytecode_emit_instruction(builder, Bytecode_Opcode::ALLOC, type_register, {}, result_register);

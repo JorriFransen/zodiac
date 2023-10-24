@@ -31,7 +31,7 @@ ZAPI Constant_Resolve_Result resolve_constant_integer_binary_expr(AST_Expression
 
 ZAPI Constant_Resolve_Result resolve_constant_bool_expr(AST_Expression *expr);
 
-ZAPI Constant_Resolve_Result resolve_constant_real_expr(AST_Expression *expr);
+ZAPI Constant_Resolve_Result resolve_constant_real_expr(AST_Expression *expr, Type *type = nullptr);
 
 ZAPI Constant_Resolve_Result resolve_constant_pointer_expression(AST_Expression *expr);
 }

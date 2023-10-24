@@ -1,3 +1,4 @@
+
 #import "print.zc"
 
 Vec2 :: struct {
@@ -17,148 +18,147 @@ Day :: enum {
 #run main();
 main :: () {
 
-    x := 42;
-    ax : Any = x;
+    print_any('a');
+    println();
+
+    ax : Any = 42;
     print_any(ax);
     println();
 
-    print_any(x);
+    print_any(42);
     println();
 
-    x2 : u32 = 41;
-    ax2 : Any = x2;
+    ax2 : Any = cast(u32, 41);
     print_any(ax2);
     println();
 
-    print_any(x2);
+    print_any(cast(u32, 41));
     println();
 
-    y := 4.2;
-    ay : Any = y;
+    ay : Any = 4.2;
     print_any(ay);
     println();
 
-    print_any(y);
+    print_any(4.2);
     println();
 
-    y2 : r64 = 4.3;
-    ay2 : Any = y2;
+    ay2 : Any = cast(r64, 4.3);
     print_any(ay2);
     println();
 
-    print_any(y2);
+    print_any(4.3);
     println();
 
-    b := true;
-    ab : Any = b;
+    ab : Any = true;
     print_any(ab);
     println();
 
-    print_any(b);
+    print_any(true);
     println();
 
-    b2 := false;
-    ab2 : Any = b2;
+    ab2 : Any = false;
     print_any(ab2);
     println();
 
-    print_any(b2);
+    print_any(false);
     println();
 
-    px := *x;
-    apx : Any = px;
+    x := 42;
+    apx : Any = *x;
     print_any(apx);
     println();
 
-    print_any(px);
+    print_any(*x);
     println();
 
-    py := *y;
-    apy : Any = py;
+    y := 4.2;
+    apy : Any = *y;
     print_any(apy);
     println();
 
-    print_any(py);
+    print_any(*y);
     println();
 
-    ppx := *px;
-    appx : Any = ppx;
+    px := *x;
+    appx : Any = *px;
     print_any(appx);
     println();
 
-    print_any(ppx);
+    print_any(*px);
     println();
 
-    str := "Hello!";
-    astr : Any = str;
+    astr : Any = "Hello!";
     print_any(astr);
     println();
 
-    print_any(str);
+    print_any("Hello!");
     println();
 
-    vec : Vec2 = { 1.2, 5.4 };
-    avec : Any = vec;
-    print_any(avec);
-    println();
+    // Can't test compound literals since explicit types are not supported (yet).
+    // vec : Vec2 = { 1.2, 5.4 };
+    // avec : Any = vec;
+    // print_any(avec);
+    // println();
+    //
+    // print_any(vec);
+    // println();
 
-    print_any(vec);
-    println();
-
-    d := Day.Tuesday;
-    ad : Any = d;
+    ad : Any = Day.Tuesday;
     print_any(ad);
     println();
 
-    print_any(d);
+    print_any(Day.Tuesday);
     println();
 
-    d2 := Day.Friday;
-    ad2 : Any = d2;
+    ad2 : Any = Day.Friday;
     print_any(ad2);
     println();
 
-    print_any(d2);
+    print_any(Day.Friday);
     println();
 
-    ints : [3]s64 = { 42, 43, -44 };
-    aints : Any = ints;
-    print_any(aints);
-    println();
+    // Can't test compound literals since explicit types are not supported (yet).
+    // ints : [3]s64 = { 42, 43, -44 };
+    // aints : Any = ints;
+    // print_any(aints);
+    // println();
+    //
+    // print_any(ints);
+    // println();
+    //
+    // vecs : [4]Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } };
+    // avecs : Any = vecs;
+    // print_any(avecs);
+    // println();
+    //
+    // print_any(vecs);
+    // println();
+    //
+    // slice : []s64 = { 11, 22, 33 };
+    // aslice : Any = slice;
+    // print_any(aslice);
+    // println();
+    //
+    // print_any(slice);
+    // println();
+    //
+    // slice2 : []Vec2 = vecs;
+    // aslice2 : Any = slice2;
+    // print_any(aslice2);
+    // println();
+    //
+    // print_any(slice2);
+    // println();
 
-    print_any(ints);
-    println();
-
-    vecs : [4]Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } };
-    avecs : Any = vecs;
-    print_any(avecs);
-    println();
-
-    print_any(vecs);
-    println();
-
-    slice : []s64 = { 11, 22, 33 };
-    aslice : Any = slice;
-    print_any(aslice);
-    println();
-
-    print_any(slice);
-    println();
-
-    slice2 : []Vec2 = vecs;
-    aslice2 : Any = slice2;
-    print_any(aslice2);
-    println();
-
-    print_any(slice2);
-    println();
-
-    binop_fn : (s64, s64) -> s64 = add_s64;
-    abinop_fn : Any = binop_fn;
+    abinop_fn : Any = add_s64;
     print_any(abinop_fn);
     println();
 
-    print_any(binop_fn);
+    print_any(print_any);
+    println();
+
+    v : Vec2 = { 1, 2 };
+    print_any(v.y);
     println();
 
     return 0;

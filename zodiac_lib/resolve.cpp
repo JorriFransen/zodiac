@@ -1875,7 +1875,15 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
             if (decl->variable.resolved_type == get_any_type(ctx) &&
                 decl->variable.value->resolved_type != get_any_type(ctx)) {
                 // Implicit conversion to any
-                assert(EXPR_IS_LVALUE(decl->variable.value));
+
+                if (!EXPR_HAS_STORAGE(decl->variable.value)) {
+                    AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::ANY,
+                                                          decl->variable.value, {decl} };
+                    assert(scope->kind != Scope_Kind::GLOBAL);
+
+                    auto cf = enclosing_function(scope);
+                    dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
+                }
 
             } else if (decl->variable.value &&
                        decl->variable.resolved_type->kind == Type_Kind::SLICE &&
@@ -2405,9 +2413,12 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
     bool result = true;
 
+    auto any_type = get_any_type(ctx);
+
     Type *inferred_type = nullptr;
     if (infer_type_from) {
         inferred_type = infer_type(ctx, infer_type_from, expr->sr);
+
         if (!inferred_type) return false;
     }
 
@@ -2416,7 +2427,8 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
 
-                if (inferred_type && inferred_type->kind == Type_Kind::BOOLEAN) {
+                if (inferred_type && (inferred_type->kind == Type_Kind::BOOLEAN ||
+                                      inferred_type == any_type)) {
                     // Ok, but we can't change the actual type here, this is done when emitting bytecode
                     expr->resolved_type = &builtin_type_s64;
                 } else if (inferred_type) {
@@ -2426,8 +2438,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     } if (inferred_type->kind == Type_Kind::FLOAT) {
                         // Ok
                     } else if (inferred_type->kind != Type_Kind::INTEGER) {
-                        fatal_resolve_error(ctx, expr, "Could not convert integer literal to inferred type '%s'",
-                                                       temp_type_string(inferred_type).data);
+                        fatal_resolve_error(ctx, expr, "Could not convert integer literal to inferred type '%s'", temp_type_string(inferred_type).data);
                         return false;
                     }
 
@@ -2443,8 +2454,14 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
         case AST_Expression_Kind::REAL_LITERAL: {
             if (inferred_type) {
-                assert(inferred_type->kind == Type_Kind::FLOAT);
-                expr->resolved_type = inferred_type;
+
+                if (inferred_type->kind == Type_Kind::FLOAT) {
+                    expr->resolved_type = inferred_type;
+                } else {
+                    assert(inferred_type == any_type);
+                    expr->resolved_type = &builtin_type_r32;
+                }
+
             } else {
                 expr->resolved_type = &builtin_type_r32;
             }
@@ -2454,15 +2471,19 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
         case AST_Expression_Kind::STRING_LITERAL: {
             auto string_type = get_string_type(ctx);
-            assert(!inferred_type || inferred_type == string_type);
+            assert(!inferred_type || inferred_type == string_type || inferred_type == any_type);
             expr->resolved_type = string_type;
             break;
         }
 
         case AST_Expression_Kind::CHAR_LITERAL: {
-            if (inferred_type && inferred_type != &builtin_type_u8) {
-                fatal_resolve_error(ctx, expr, "Implicit cast from character literal (u8) to '%s' is not allowed", temp_type_string(inferred_type).data);
-                return false;
+            if (inferred_type) {
+                if (inferred_type == any_type) {
+                    expr->resolved_type = &builtin_type_u8;
+                } else if (inferred_type != &builtin_type_u8) {
+                    fatal_resolve_error(ctx, expr, "Implicit cast from character literal (u8) to '%s' is not supported", temp_type_string(inferred_type).data);
+                    return false;
+                }
             }
 
             expr->resolved_type = &builtin_type_u8;
@@ -2471,13 +2492,25 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
         case AST_Expression_Kind::NULL_LITERAL: {
             assert(inferred_type);
+
+            if (inferred_type == any_type) {
+                fatal_resolve_error(ctx, expr, "Implicit cast from null literal to '%s' is not supported", temp_type_string(inferred_type).data);
+                return false;
+            }
+
             assert(inferred_type->kind == Type_Kind::POINTER);
             expr->resolved_type = inferred_type;
             break;
         }
 
         case AST_Expression_Kind::BOOL_LITERAL: {
-            if (inferred_type) assert(inferred_type->kind == Type_Kind::BOOLEAN);
+            if (inferred_type) {
+                if (inferred_type == any_type) {
+                    expr->resolved_type = &builtin_type_bool;
+                } else {
+                    assert(inferred_type->kind == Type_Kind::BOOLEAN);
+                }
+            }
             expr->resolved_type = &builtin_type_bool;
             break;
         }
@@ -2495,6 +2528,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             if (sym->kind == Symbol_Kind::VAR ||
                 sym->kind == Symbol_Kind::PARAM) {
                 expr->flags |= AST_EXPR_FLAG_LVALUE;
+                expr->flags |= AST_EXPR_FLAG_HAS_STORAGE;
             }
 
             if (sym->decl->kind == AST_Declaration_Kind::ENUM_MEMBER) {
@@ -2553,6 +2587,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 assert(sym->builtin_type);
                 expr->resolved_type = sym->builtin_type;
                 expr->flags |= AST_EXPR_FLAG_LVALUE;
+
             } else if (is_aggregate){
                 auto mem_decl = sym->decl;
                 assert(mem_decl && mem_decl->kind == AST_Declaration_Kind::FIELD);
@@ -2563,10 +2598,12 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 if (via_pointer) {
                     if (EXPR_IS_LVALUE(base_expr)) {
                         expr->flags |= AST_EXPR_FLAG_LVALUE;
+                        expr->flags |= AST_EXPR_FLAG_HAS_STORAGE;
                     }
                 } else {
                     assert(EXPR_IS_LVALUE(base_expr));
                     expr->flags |= AST_EXPR_FLAG_LVALUE;
+                    expr->flags |= AST_EXPR_FLAG_HAS_STORAGE;
                 }
             } else {
 
@@ -2620,6 +2657,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             }
 
             expr->flags |= AST_EXPR_FLAG_LVALUE;
+            expr->flags |= AST_EXPR_FLAG_HAS_STORAGE;
             break;
         }
 
@@ -2723,6 +2761,18 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                                                         };
 
                     dynamic_array_append(&current_fn->function.implicit_lvalues, implicit_lval);
+
+                } else if (param_type == any_type && arg_type != any_type) {
+
+                    if (!EXPR_HAS_STORAGE(arg_expr)) {
+
+                        AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::ANY,
+                                                              arg_expr };
+                        assert(scope->kind != Scope_Kind::GLOBAL);
+
+                        auto cf = enclosing_function(scope);
+                        dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
+                    }
                 }
             }
 
@@ -3032,16 +3082,20 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     case Type_Kind::FUNCTION: assert(false); break;
                 }
 
+            } else if (target_type->kind == Type_Kind::FLOAT) {
+
+                valid_conversion = valid_static_type_conversion(resolver->ctx, operand_type, target_type);
+
             } else if (target_type->kind == Type_Kind::BOOLEAN) {
                 valid_conversion = valid_static_type_conversion(resolver->ctx, operand_type, target_type);
+            } else if (target_type->kind == Type_Kind::BOOLEAN && operand_type->kind == Type_Kind::POINTER) {
+                valid_conversion = true;
             } else if (target_type->kind == Type_Kind::ENUM) {
                 valid_conversion = valid_static_type_conversion(resolver->ctx, operand_type, target_type);
             } else if (target_type->kind == Type_Kind::POINTER && operand_type->kind == Type_Kind::POINTER) {
                 valid_conversion = true;
             } else if (target_type->kind == Type_Kind::POINTER && operand_type->kind == Type_Kind::INTEGER) {
                 valid_conversion = valid_static_type_conversion(resolver->ctx, operand_type, target_type);
-            } else if (target_type->kind == Type_Kind::BOOLEAN && operand_type->kind == Type_Kind::POINTER) {
-                valid_conversion = true;
             } else {
                 assert(false);
             }

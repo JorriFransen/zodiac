@@ -185,6 +185,8 @@ enum AST_Expression_Flag : AST_Expression_Flags
     AST_EXPR_FLAG_LITERAL     = 0x004,
     AST_EXPR_FLAG_LVALUE      = 0x008,
     AST_EXPR_FLAG_SLICE_ARRAY = 0x010,
+
+    AST_EXPR_FLAG_HAS_STORAGE = 0x020, // Means a pointer to this expression can be emitted without extra storage (eg. any).
 };
 
 
@@ -192,6 +194,7 @@ enum AST_Expression_Flag : AST_Expression_Flags
 #define EXPR_IS_CONST(e) ((e)->flags & AST_EXPR_FLAG_CONST)
 #define EXPR_IS_LITERAL(e) ((e)->flags & AST_EXPR_FLAG_LITERAL)
 #define EXPR_IS_LVALUE(e) ((e)->flags & AST_EXPR_FLAG_LVALUE)
+#define EXPR_HAS_STORAGE(e) ((e)->flags & AST_EXPR_FLAG_HAS_STORAGE)
 
 struct AST_Expression
 {
@@ -386,6 +389,7 @@ enum class AST_Implicit_LValue_Kind
 {
     CONST_LVALUE,
     SLICE_ARRAY,
+    ANY,
 };
 
 struct AST_Implicit_LValue

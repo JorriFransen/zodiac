@@ -681,7 +681,9 @@ bool valid_static_type_conversion(Zodiac_Context *ctx, Type *from, Type *to)
             break;
         }
 
-        case Type_Kind::FLOAT: return false;
+        case Type_Kind::FLOAT: {
+            return to->kind == Type_Kind::FLOAT;
+        }
 
         case Type_Kind::BOOLEAN: assert(false);
 

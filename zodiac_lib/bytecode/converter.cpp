@@ -409,8 +409,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                 alloc_reg = bytecode_emit_alloc(bc->builder, alloc_type, alloc_name.data);
                 hash_table_add(&bc->implicit_lvalues, implicit_lval.expr, alloc_reg);
 
-            } else {
-                assert(implicit_lval.kind == AST_Implicit_LValue_Kind::SLICE_ARRAY);
+            } else if (implicit_lval.kind == AST_Implicit_LValue_Kind::SLICE_ARRAY) {
 
                 Type *array_alloc_type = implicit_lval.expr->resolved_type;
 
@@ -438,6 +437,16 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
                     hash_table_add(&bc->implicit_lvalues, implicit_lval.expr, global_reg);
                 }
+
+            } else {
+                assert(implicit_lval.kind == AST_Implicit_LValue_Kind::ANY);
+
+                Type *type = implicit_lval.expr->resolved_type;
+
+                auto name = bytecode_unique_register_name_in_function(bc->builder, fn_handle, "any_lvalue");
+                auto alloc_reg = bytecode_emit_alloc(bc->builder, type, name.data);
+
+                hash_table_add(&bc->implicit_lvalues, implicit_lval.expr, alloc_reg);
             }
 
             has_inits = true;
@@ -480,9 +489,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                     assert(const_decl->variable.value);
                     assignment_to_bytecode(bc, const_decl->variable.value, alloc_reg);
 
-                } else {
-                    assert(implicit_lvalue.kind == AST_Implicit_LValue_Kind::SLICE_ARRAY);
-
+                } else if (implicit_lvalue.kind == AST_Implicit_LValue_Kind::SLICE_ARRAY) {
 
                     if (implicit_lvalue.slice.needs_local_array_alloc && EXPR_IS_CONST(expr)) {
                         Bytecode_Register array_alloc;
@@ -529,6 +536,15 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                     assignment_to_bytecode(bc, expr, array_alloc);
                     hash_table_add(&bc->implicit_lvalues, expr, array_alloc);
                 }
+
+            } else if (implicit_lvalue.kind == AST_Implicit_LValue_Kind::ANY) {
+
+                Bytecode_Register alloc_reg;
+                bool found = hash_table_find(&bc->implicit_lvalues, expr, &alloc_reg);
+                assert(found);
+
+                auto value_reg = ast_expr_to_bytecode(bc, implicit_lvalue.expr, alloc_reg.type);
+                bytecode_emit_store(bc->builder, value_reg, alloc_reg);
             }
         }
 
@@ -2001,6 +2017,13 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
                 assert(result.type == type);
                 return bytecode_integer_literal(bc->builder, type, result.integer);
 
+            } else if (type->kind == Type_Kind::FLOAT) {
+
+                auto result = resolve_constant_real_expr(value_expr, type);
+                assert(result.kind == Constant_Resolve_Result_Kind::OK);
+                assert(result.type == type);
+                return bytecode_real_literal(bc->builder, type, result.real);
+
             } else if (type->kind == Type_Kind::POINTER) {
 
                 assert(value_expr->resolved_type == &builtin_type_u64);
@@ -2102,7 +2125,6 @@ void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, 
     assert(any_type);
 
     if (lvalue_type == any_type && value_expr->resolved_type != any_type) {
-        assert(EXPR_IS_LVALUE(value_expr));
 
         value_reg = emit_any(bc, value_expr);
 
@@ -2165,10 +2187,20 @@ Bytecode_Register emit_type_info(Bytecode_Converter *bc, Type *target_type)
 
 Bytecode_Register emit_any(Bytecode_Converter *bc, AST_Expression *expr)
 {
-    auto any_type = get_any_type(bc->context);
+    Type *type = expr->resolved_type;
 
-    auto typeinfo_reg = emit_type_info(bc, expr->resolved_type);
-    auto ptr_reg = ast_lvalue_to_bytecode(bc, expr);
+    auto any_type = get_any_type(bc->context);
+    auto typeinfo_reg = emit_type_info(bc, type);
+
+    Bytecode_Register ptr_reg = {};
+
+    if (EXPR_HAS_STORAGE(expr)) {
+        ptr_reg = ast_lvalue_to_bytecode(bc, expr);
+    } else {
+
+        bool found = hash_table_find(&bc->implicit_lvalues, expr, &ptr_reg);
+        assert(found);
+    }
 
     if (ptr_reg.kind == Bytecode_Register_Kind::ALLOC) {
         ptr_reg = bytecode_emit_address_of(bc->builder, ptr_reg);

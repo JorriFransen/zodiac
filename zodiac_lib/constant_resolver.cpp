@@ -326,12 +326,16 @@ Constant_Resolve_Result resolve_constant_bool_expr(AST_Expression *expr)
     return { Constant_Resolve_Result_Kind::UNDEFINED };
 }
 
-Constant_Resolve_Result resolve_constant_real_expr(AST_Expression *expr)
+Constant_Resolve_Result resolve_constant_real_expr(AST_Expression *expr, Type *type/*=nullptr*/)
 {
     debug_assert(expr);
 
     assert(EXPR_IS_CONST(expr));
     assert(EXPR_IS_TYPED(expr));
+
+    if (!type) {
+        type = expr->resolved_type;
+    }
 
     if (expr->resolved_type->kind == Type_Kind::UNSIZED_INTEGER) {
         auto int_res = resolve_constant_integer_expr(expr, &builtin_type_s64);
@@ -353,7 +357,7 @@ Constant_Resolve_Result resolve_constant_real_expr(AST_Expression *expr)
         case AST_Expression_Kind::BOOL_LITERAL: assert(false); break;
 
         case AST_Expression_Kind::REAL_LITERAL: {
-            return { Constant_Resolve_Result_Kind::OK, expr->resolved_type, { .real = expr->real_literal.value } };
+            return { Constant_Resolve_Result_Kind::OK, type, { .real = expr->real_literal.value } };
         }
 
         case AST_Expression_Kind::IDENTIFIER: {
@@ -374,7 +378,7 @@ Constant_Resolve_Result resolve_constant_real_expr(AST_Expression *expr)
             assert(init_expr);
             assert(init_expr->resolved_type);
             assert(init_expr->resolved_type == init_type);
-            return resolve_constant_real_expr(init_expr);
+            return resolve_constant_real_expr(init_expr, type);
         }
 
         case AST_Expression_Kind::MEMBER: assert(false); break;
@@ -387,7 +391,7 @@ Constant_Resolve_Result resolve_constant_real_expr(AST_Expression *expr)
 
         case AST_Expression_Kind::RUN_DIRECTIVE: {
             assert(expr->directive.generated_expression);
-            return resolve_constant_real_expr(expr->directive.generated_expression);
+            return resolve_constant_real_expr(expr->directive.generated_expression, type);
         }
 
         case AST_Expression_Kind::COMPOUND: assert(false); break;

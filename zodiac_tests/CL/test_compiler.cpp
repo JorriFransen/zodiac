@@ -5381,7 +5381,7 @@ fnptr)OUT_STR" };
     return MUNIT_OK;
 }
 
-MunitResult Any_From_Lvalue(const MunitParameter params[], void* user_data_or_fixture) {
+MunitResult Any_With_Storage(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
         #import "print.zc"
@@ -5490,6 +5490,13 @@ MunitResult Any_From_Lvalue(const MunitParameter params[], void* user_data_or_fi
             print_any(vec);
             println();
 
+            avecy : Any = vec.y;
+            print_any(avecy);
+            println();
+
+            print_any(vec.x);
+            println();
+
             d := Day.Tuesday;
             ad : Any = d;
             print_any(ad);
@@ -5522,12 +5529,23 @@ MunitResult Any_From_Lvalue(const MunitParameter params[], void* user_data_or_fi
             print_any(vecs);
             println();
 
+            avec2 : Any = vecs[1];
+            print_any(avec2);
+            println();
+
+            print_any(vecs[2]);
+            println();
+
             slice : []s64 = { 11, 22, 33 };
             aslice : Any = slice;
             print_any(aslice);
             println();
 
             print_any(slice);
+            println();
+
+            asm : Any = slice[1];
+            print_any(asm);
             println();
 
             slice2 : []Vec2 = vecs;
@@ -5578,6 +5596,8 @@ Hello!
 Hello!
 { 1.200000, 5.400000 }
 { 1.200000, 5.400000 }
+5.400000
+1.200000
 Tuesday(1)
 Tuesday(1)
 Friday(4)
@@ -5586,12 +5606,224 @@ Friday(4)
 { 42, 43, -44 }
 { { 1.000000, 2.000000 }, { 3.000000, 4.000000 }, { 5.000000, 6.000000 }, { 7.000000, 8.000000 } }
 { { 1.000000, 2.000000 }, { 3.000000, 4.000000 }, { 5.000000, 6.000000 }, { 7.000000, 8.000000 } }
+{ 3.000000, 4.000000 }
+{ 5.000000, 6.000000 }
 { 11, 22, 33 }
 { 11, 22, 33 }
+22
 { { 1.000000, 2.000000 }, { 3.000000, 4.000000 }, { 5.000000, 6.000000 }, { 7.000000, 8.000000 } }
 { { 1.000000, 2.000000 }, { 3.000000, 4.000000 }, { 5.000000, 6.000000 }, { 7.000000, 8.000000 } }
 fnptr
 fnptr)OUT_STR" };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Any_Without_Storage(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
+        Vec2 :: struct {
+            x, y: r64;
+        }
+
+        Day :: enum {
+            Monday,
+            Tuesday,
+            Wednesday,
+            Thursday,
+            Friday,
+            Saturday,
+            Sunday,
+        }
+
+        main :: () {
+
+            print_any('a');
+            println();
+
+            ax : Any = 42;
+            print_any(ax);
+            println();
+
+            print_any(42);
+            println();
+
+            ax2 : Any = cast(u32, 41);
+            print_any(ax2);
+            println();
+
+            print_any(cast(u32, 41));
+            println();
+
+            ay : Any = 4.2;
+            print_any(ay);
+            println();
+
+            print_any(4.2);
+            println();
+
+            ay2 : Any = cast(r64, 4.3);
+            print_any(ay2);
+            println();
+
+            print_any(4.3);
+            println();
+
+            ab : Any = true;
+            print_any(ab);
+            println();
+
+            print_any(true);
+            println();
+
+            ab2 : Any = false;
+            print_any(ab2);
+            println();
+
+            print_any(false);
+            println();
+
+            x := 42;
+            apx : Any = *x;
+            print_any(apx);
+            println();
+
+            print_any(*x);
+            println();
+
+            y := 4.2;
+            apy : Any = *y;
+            print_any(apy);
+            println();
+
+            print_any(*y);
+            println();
+
+            px := *x;
+            appx : Any = *px;
+            print_any(appx);
+            println();
+
+            print_any(*px);
+            println();
+
+            astr : Any = "Hello!";
+            print_any(astr);
+            println();
+
+            print_any("Hello!");
+            println();
+
+            // Can't test compound literals since explicit types are not supported (yet).
+            // vec : Vec2 = { 1.2, 5.4 };
+            // avec : Any = vec;
+            // print_any(avec);
+            // println();
+            //
+            // print_any(vec);
+            // println();
+
+            ad : Any = Day.Tuesday;
+            print_any(ad);
+            println();
+
+            print_any(Day.Tuesday);
+            println();
+
+            ad2 : Any = Day.Friday;
+            print_any(ad2);
+            println();
+
+            print_any(Day.Friday);
+            println();
+
+            // Can't test compound literals since explicit types are not supported (yet).
+            // ints : [3]s64 = { 42, 43, -44 };
+            // aints : Any = ints;
+            // print_any(aints);
+            // println();
+            //
+            // print_any(ints);
+            // println();
+            //
+            // vecs : [4]Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } };
+            // avecs : Any = vecs;
+            // print_any(avecs);
+            // println();
+            //
+            // print_any(vecs);
+            // println();
+            //
+            // slice : []s64 = { 11, 22, 33 };
+            // aslice : Any = slice;
+            // print_any(aslice);
+            // println();
+            //
+            // print_any(slice);
+            // println();
+            //
+            // slice2 : []Vec2 = vecs;
+            // aslice2 : Any = slice2;
+            // print_any(aslice2);
+            // println();
+            //
+            // print_any(slice2);
+            // println();
+
+            abinop_fn : Any = add_s64;
+            print_any(abinop_fn);
+            println();
+
+            print_any(print_any);
+            println();
+
+            v : Vec2 = { 1, 2 };
+            print_any(v.y);
+            println();
+
+            return 0;
+        }
+
+        add_s64 :: (a: s64, b: s64) -> s64 {
+            return a + b;
+        }
+
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(97
+42
+42
+41
+41
+4.200000
+4.200000
+4.300000
+4.300000
+true
+true
+false
+false
+ptr: 42
+ptr: 42
+ptr: 4.200000
+ptr: 4.200000
+ptr: ptr: 42
+ptr: ptr: 42
+Hello!
+Hello!
+Tuesday(1)
+Tuesday(1)
+Friday(4)
+Friday(4)
+fnptr
+fnptr
+2.000000)OUT_STR" };
 
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };
