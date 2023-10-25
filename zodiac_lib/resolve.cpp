@@ -423,9 +423,22 @@ Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error
             assert(inferred_type->kind == Type_Kind::FUNCTION);
 
             auto index = infer_node->target.index;
-            assert(inferred_type->function.parameter_types.count > infer_node->target.index);
 
-            inferred_type = inferred_type->function.parameter_types[index];
+            if (inferred_type->function.is_vararg) {
+
+                if (index >= inferred_type->function.parameter_types.count - 1) {
+                    inferred_type = get_any_type(ctx);
+                } else {
+                    inferred_type = inferred_type->function.parameter_types[index];
+                }
+
+            } else {
+
+                assert(inferred_type->function.parameter_types.count > index);
+                inferred_type = inferred_type->function.parameter_types[index];
+
+            }
+
             break;
         }
 
@@ -1796,7 +1809,8 @@ bool type_resolve_node(Resolver *resolver, Flat_Node *node)
                     return false;
                 }
 
-                func_decl->function.type = get_function_type(return_type, param_types.array, &resolver->ctx->ast_allocator);
+                bool is_vararg = func_decl->flags & AST_DECL_FLAG_VARARG;
+                func_decl->function.type = get_function_type(return_type, param_types.array, &resolver->ctx->ast_allocator, is_vararg);
 
                 temp_array_destroy(&param_types);
             }
@@ -1873,7 +1887,7 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                 assert(EXPR_IS_CONST(decl->variable.value) || decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE);
             }
 
-            if (decl->variable.value && 
+            if (decl->variable.value &&
                 decl->variable.resolved_type == get_any_type(ctx) &&
                 decl->variable.value->resolved_type != get_any_type(ctx)) {
                 // Implicit conversion to any
@@ -2022,7 +2036,9 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                         assert(param->parameter.resolved_type);
                         dynamic_array_append(&param_types.array, param->parameter.resolved_type);
                     }
-                    decl->function.type = get_function_type(&builtin_type_void, param_types.array, &ctx->ast_allocator);
+
+                    bool is_vararg = decl->flags & AST_DECL_FLAG_VARARG;
+                    decl->function.type = get_function_type(&builtin_type_void, param_types.array, &ctx->ast_allocator, is_vararg);
                     decl->function.inferred_return_type = decl->function.type->function.return_type;
 
                     temp_array_destroy(&param_types);
@@ -2720,16 +2736,32 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
             assert(func_type);
 
-            if (expr->call.args.count != func_type->function.parameter_types.count) {
-                resolve_error(ctx, expr, "Expected %i arguments, got %i", func_type->function.parameter_types.count, expr->call.args.count);
-                return false;
+            if (func_type->function.is_vararg) {
+                if (expr->call.args.count < func_type->function.parameter_types.count) {
+                    fatal_resolve_error(ctx, expr, "Expected %i or more arguments in varargs call, got %i", func_type->function.parameter_types.count, expr->call.args.count);
+                    return false;
+                }
+            } else {
+                if (expr->call.args.count != func_type->function.parameter_types.count) {
+                    fatal_resolve_error(ctx, expr, "Expected %i arguments, got %i", func_type->function.parameter_types.count, expr->call.args.count);
+                    return false;
+                }
             }
+
+            int vararg_count = 0;
 
             for (s64 i = 0; i < expr->call.args.count; i++) {
                 AST_Expression *arg_expr = expr->call.args[i];
                 Type *arg_type = arg_expr->resolved_type;
 
-                Type *param_type = func_type->function.parameter_types[i];
+                Type *param_type = nullptr;
+
+                if (func_type->function.is_vararg && i >= func_type->function.parameter_types.count - 1) {
+                    param_type = any_type;
+                    vararg_count += 1;
+                } else {
+                    param_type = func_type->function.parameter_types[i];
+                }
 
                 bool match = true;
 
@@ -2789,6 +2821,15 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                         dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
                     }
                 }
+            }
+
+            if (vararg_count) {
+                AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::VARARGS, expr, .vararg = { vararg_count } };
+
+                assert(scope->kind != Scope_Kind::GLOBAL);
+
+                auto cf = enclosing_function(scope);
+                dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
             }
 
             auto return_type = func_type->function.return_type;
@@ -3428,6 +3469,8 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
         }
 
         case AST_Type_Spec_Kind::FUNCTION: {
+
+            assert(false); // Handle vararg.
 
             auto return_type = ts->function.return_ts->resolved_type;
 

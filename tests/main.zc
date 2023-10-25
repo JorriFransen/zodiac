@@ -5,14 +5,13 @@
 main :: () {
 
     // print_func("Hello!");
-    // print_func("Hello!", "World");
+    print_func("Hello!", "World", 42);
 
-    args : [2]Any;
-    args[0] = 42;
-    args[1] = 4.2;
-
-    print_func("Numbers: ", args);
-    println();
+    // args : [2]Any;
+    // args[0] = 42;
+    // args[1] = 4.2;
+    //
+    // print_func("Numbers: ", args);
 
     return 0;
 
@@ -26,6 +25,8 @@ print_func :: (fmt: String, args: ..) -> void {
         if i > 0 print(", ");
         print_any(args[i]);
     }
+
+    println();
 }
 
 // #foreign printf :: (cstr: *u8, args: ..) -> s32;

@@ -688,7 +688,6 @@ Bytecode_Register bytecode_emit_load_argument(Bytecode_Builder *builder, s64 ind
     assert(fn_handle >= 0 && fn_handle < builder->functions.count);
     auto fn = &builder->functions[fn_handle];
 
-    assert(fn->type->function.is_vararg == false);
     assert(fn->type->function.parameter_types.count > index);
 
     auto result = fn->registers[index];
@@ -1013,7 +1012,11 @@ Bytecode_Register bytecode_emit_call(Bytecode_Builder *builder, Bytecode_Functio
     assert(arg_count_register.type->integer.sign);
     assert(arg_count_register.type->bit_size == 64);
 
-    assert(fn->type->function.parameter_types.count == arg_count_register.value.integer.s64);
+    if (fn->type->function.is_vararg) {
+        assert(arg_count_register.value.integer.s64 >= fn->type->function.parameter_types.count);
+    } else {
+        assert(arg_count_register.value.integer.s64 == fn->type->function.parameter_types.count);
+    }
 
     Bytecode_Register fn_register = {
         .kind = Bytecode_Register_Kind::FUNCTION,

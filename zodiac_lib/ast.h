@@ -390,6 +390,7 @@ enum class AST_Implicit_LValue_Kind
     CONST_LVALUE,
     SLICE_ARRAY,
     ANY,
+    VARARGS,
 };
 
 struct AST_Implicit_LValue
@@ -406,6 +407,10 @@ struct AST_Implicit_LValue
             bool needs_local_array_alloc;
             bool needs_global_array_alloc;
         } slice;
+
+        struct {
+            s32 count;
+        } vararg;
     };
 };
 
@@ -477,6 +482,7 @@ enum AST_Declaration_Flag : AST_Declaration_Flags
     AST_DECL_FLAG_BYTECODE_EMITTED      = 0x010,
     AST_DECL_FLAG_BYTECODE_DEPS_EMITTED = 0x020,
     AST_DECL_FLAG_TYPE_DECL             = 0x040,
+    AST_DECL_FLAG_VARARG                = 0x080,
 };
 
 #define DECL_IS_GLOBAL(d) ((d)->flags & AST_DECL_FLAG_GLOBAL)
