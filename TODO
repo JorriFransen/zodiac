@@ -1,4 +1,6 @@
 
+- Dont infer return types (non specified is void)
+
 - When tests don't output anything, but output is expected they succeed
 
 - "Recursive" function pointers

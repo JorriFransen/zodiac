@@ -566,6 +566,11 @@ void ast_type_of_ts_create(AST_Directive *type_of_directive, AST_Type_Spec *out_
     out_ts->directive = type_of_directive;
 }
 
+void ast_vararg_type_spec_create(AST_Type_Spec *out_ts)
+{
+    ast_type_spec_create(AST_Type_Spec_Kind::VARARG, out_ts);
+}
+
 void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts)
 {
     debug_assert(out_ts);
@@ -1104,6 +1109,13 @@ AST_Type_Spec *ast_type_of_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Dire
 {
     auto ts = ast_type_spec_new(ctx, sr);
     ast_type_of_ts_create(type_of_directive, ts);
+    return ts;
+}
+
+AST_Type_Spec *ast_vararg_type_spec_new(Zodiac_Context *ctx, Source_Range sr)
+{
+    auto ts = ast_type_spec_new(ctx, sr);
+    ast_vararg_type_spec_create(ts);
     return ts;
 }
 
@@ -1739,6 +1751,11 @@ file_local void ast__print_type_spec_internal(String_Builder *sb, AST_Type_Spec 
             string_builder_append(sb, "#type_of(");
             ast_print_expression(sb, ts->directive->type_of.expr);
             string_builder_append(sb, ")");
+            break;
+        }
+
+        case AST_Type_Spec_Kind::VARARG: {
+            string_builder_append(sb, "..");
             break;
         }
     }

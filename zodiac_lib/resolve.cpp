@@ -1035,7 +1035,8 @@ void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dyna
             assert(false);
 
         case AST_Type_Spec_Kind::TYPE:
-        case AST_Type_Spec_Kind::NAME: {
+        case AST_Type_Spec_Kind::NAME:
+        case AST_Type_Spec_Kind::VARARG: {
             // Leaf
             break;
         }
@@ -1649,10 +1650,10 @@ bool name_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
         case AST_Type_Spec_Kind::SLICE:
         case AST_Type_Spec_Kind::FUNCTION:
         case AST_Type_Spec_Kind::TYPE_OF: {
+        case AST_Type_Spec_Kind::VARARG:
             // Leaf
             break;
         }
-
     }
 
     return result;
@@ -1872,7 +1873,8 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                 assert(EXPR_IS_CONST(decl->variable.value) || decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE);
             }
 
-            if (decl->variable.resolved_type == get_any_type(ctx) &&
+            if (decl->variable.value && 
+                decl->variable.resolved_type == get_any_type(ctx) &&
                 decl->variable.value->resolved_type != get_any_type(ctx)) {
                 // Implicit conversion to any
 
@@ -2172,6 +2174,8 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
             assert(lvalue_expr->resolved_type);
             assert(value_expr->resolved_type);
 
+            auto any_type = get_any_type(resolver->ctx);
+
             if (value_expr->resolved_type != lvalue_expr->resolved_type) {
                 if (valid_static_type_conversion(resolver->ctx, value_expr->resolved_type, lvalue_expr->resolved_type)) {
                     // ok
@@ -2209,6 +2213,17 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                                                         };
 
                     dynamic_array_append(&current_function->function.implicit_lvalues, implicit_lval);
+
+                } else if (lvalue_expr->resolved_type == any_type && value_expr->resolved_type != any_type) {
+
+                    if (!EXPR_HAS_STORAGE(value_expr)) {
+
+                        AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::ANY, value_expr };
+                        assert(scope->kind != Scope_Kind::GLOBAL);
+
+                        auto cf = enclosing_function(scope);
+                        dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
+                    }
                 }
             }
 
@@ -3314,6 +3329,8 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
 {
     debug_assert(ctx && ts && scope);
 
+    Type *any_type = get_any_type(ctx);
+
     if (ts->resolved_type) return true;
 
     switch (ts->kind) {
@@ -3432,6 +3449,13 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
             assert(ts->directive->type_of.expr->resolved_type);
 
             ts->resolved_type = ts->directive->type_of.expr->resolved_type;
+            return true;
+        }
+
+        case AST_Type_Spec_Kind::VARARG: {
+            assert(any_type);
+
+            ts->resolved_type = get_slice_type(ctx, any_type, &ctx->ast_allocator);
             return true;
         }
     }

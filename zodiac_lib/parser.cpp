@@ -709,8 +709,21 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
             Source_Pos start = name_tok.sr.start;
             expect_token(parser, TOK_NAME);
             expect_token(parser, ':');
-            AST_Type_Spec *ts = parse_type_spec(parser);
-            Source_Pos end = ts->sr.end;
+
+            AST_Type_Spec *ts = nullptr;
+            Source_Pos end;
+
+            if (is_token(parser, TOK_DOT_DOT)) {
+                auto range = cur_tok(parser).sr;
+                end = range.end;
+                next_token(parser);
+
+                ts = ast_vararg_type_spec_new(parser->context, range);
+
+            } else {
+                ts = parse_type_spec(parser);
+                end = ts->sr.end;
+            }
 
             AST_Identifier param_ident;
             ast_identifier_create(name_tok.atom, name_tok.sr, &param_ident);

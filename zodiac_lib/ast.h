@@ -515,6 +515,8 @@ enum class AST_Type_Spec_Kind
     FUNCTION,
 
     TYPE_OF,
+
+    VARARG,
 };
 
 struct AST_Type_Spec
@@ -668,6 +670,7 @@ ZAPI void ast_static_array_ts_create(AST_Expression *length_expr, AST_Type_Spec 
 ZAPI void ast_slice_ts_create(AST_Type_Spec *element_ts, AST_Type_Spec *out_ts);
 ZAPI void ast_function_ts_create(Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts, AST_Type_Spec *out_ts);
 ZAPI void ast_type_of_ts_create(AST_Directive *type_of_directive, AST_Type_Spec *out_ts);
+ZAPI void ast_vararg_type_spec_create(AST_Type_Spec *out_ts);
 ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
 
 ZAPI void ast_run_directive_create(AST_Expression *expr, AST_Directive *out_dir);
@@ -736,6 +739,7 @@ ZAPI AST_Type_Spec *ast_static_array_ts_new(Zodiac_Context *ctx, Source_Range sr
 ZAPI AST_Type_Spec *ast_slice_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_Spec *element_ts);
 ZAPI AST_Type_Spec *ast_function_ts_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts);
 ZAPI AST_Type_Spec *ast_type_of_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Directive *type_of_directive);
+ZAPI AST_Type_Spec *ast_vararg_type_spec_new(Zodiac_Context *ctx, Source_Range sr);
 ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range sr);
 
 ZAPI AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *expr);
