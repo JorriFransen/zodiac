@@ -550,6 +550,7 @@ struct AST_Type_Spec
         struct {
             Dynamic_Array<AST_Type_Spec *> parameters;
             AST_Type_Spec *return_ts;
+            bool is_vararg;
         } function;
 
         AST_Directive *directive;
@@ -674,7 +675,7 @@ ZAPI void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts);
 ZAPI void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts);
 ZAPI void ast_static_array_ts_create(AST_Expression *length_expr, AST_Type_Spec *element_ts, AST_Type_Spec *out_ts);
 ZAPI void ast_slice_ts_create(AST_Type_Spec *element_ts, AST_Type_Spec *out_ts);
-ZAPI void ast_function_ts_create(Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts, AST_Type_Spec *out_ts);
+ZAPI void ast_function_ts_create(Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts, bool vararg, AST_Type_Spec *out_ts);
 ZAPI void ast_type_of_ts_create(AST_Directive *type_of_directive, AST_Type_Spec *out_ts);
 ZAPI void ast_vararg_type_spec_create(AST_Type_Spec *out_ts);
 ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
@@ -743,7 +744,7 @@ ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Id
 ZAPI AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_Spec *base);
 ZAPI AST_Type_Spec *ast_static_array_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *length_expr, AST_Type_Spec *element_ts);
 ZAPI AST_Type_Spec *ast_slice_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_Spec *element_ts);
-ZAPI AST_Type_Spec *ast_function_ts_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts);
+ZAPI AST_Type_Spec *ast_function_ts_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts, bool vararg);
 ZAPI AST_Type_Spec *ast_type_of_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Directive *type_of_directive);
 ZAPI AST_Type_Spec *ast_vararg_type_spec_new(Zodiac_Context *ctx, Source_Range sr);
 ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range sr);

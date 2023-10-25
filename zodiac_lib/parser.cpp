@@ -1013,13 +1013,22 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
 
             auto params = temp_array_create<AST_Type_Spec *>(temp_allocator_allocator());
 
+            bool vararg = false;
+
             while (!match_token(parser, ')')) {
+
+                assert(!vararg);
 
                 if (params.array.count) {
                     expect_token(parser, ',');
                 }
+
                 AST_Type_Spec *param_ts = parse_type_spec(parser);
                 dynamic_array_append(&params, param_ts);
+
+                if (param_ts->kind == AST_Type_Spec_Kind::VARARG) {
+                    vararg = true;
+                }
             }
 
             expect_token(parser, TOK_RIGHT_ARROW);
@@ -1028,7 +1037,7 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
 
             auto pts = temp_array_finalize(&parser->context->ast_allocator, &params);
 
-            return ast_function_ts_new(parser->context, {t.sr.start, return_ts->sr.end}, pts, return_ts);
+            return ast_function_ts_new(parser->context, {t.sr.start, return_ts->sr.end}, pts, return_ts, vararg);
         }
 
         case '#': {

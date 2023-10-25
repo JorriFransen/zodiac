@@ -3470,8 +3470,6 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
 
         case AST_Type_Spec_Kind::FUNCTION: {
 
-            assert(false); // Handle vararg.
-
             auto return_type = ts->function.return_ts->resolved_type;
 
             auto param_types = temp_array_create<Type *>(temp_allocator_allocator());
@@ -3481,8 +3479,7 @@ bool type_resolve_ts(Zodiac_Context *ctx, AST_Type_Spec *ts, Scope *scope, bool 
                 dynamic_array_append(&param_types, ts->function.parameters[i]->resolved_type);
             }
 
-            ts->resolved_type = get_function_type(return_type, Array_Ref(param_types), &ctx->ast_allocator);
-
+            ts->resolved_type = get_function_type(return_type, Array_Ref(param_types), &ctx->ast_allocator, ts->function.is_vararg);
 
             return true;
         }
