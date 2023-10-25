@@ -1013,7 +1013,7 @@ Bytecode_Register bytecode_emit_call(Bytecode_Builder *builder, Bytecode_Functio
     assert(arg_count_register.type->bit_size == 64);
 
     if (fn->type->function.is_vararg) {
-        assert(arg_count_register.value.integer.s64 >= fn->type->function.parameter_types.count);
+        assert(arg_count_register.value.integer.s64 >= fn->type->function.parameter_types.count - 1);
     } else {
         assert(arg_count_register.value.integer.s64 == fn->type->function.parameter_types.count);
     }

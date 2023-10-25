@@ -453,12 +453,14 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
                 assert(implicit_lval.kind == AST_Implicit_LValue_Kind::VARARGS);
 
-                auto array_type = get_static_array_type(any_type, implicit_lval.vararg.count, &bc->context->ast_allocator);
+                if (implicit_lval.vararg.count) {
+                    auto array_type = get_static_array_type(any_type, implicit_lval.vararg.count, &bc->context->ast_allocator);
 
-                auto name = bytecode_unique_register_name_in_function(bc->builder, fn_handle, "vararg_array");
-                auto alloc_reg = bytecode_emit_alloc(bc->builder, array_type, name.data);
+                    auto name = bytecode_unique_register_name_in_function(bc->builder, fn_handle, "vararg_array");
+                    auto alloc_reg = bytecode_emit_alloc(bc->builder, array_type, name.data);
 
-                hash_table_add(&bc->implicit_lvalues, implicit_lval.expr, alloc_reg);
+                    hash_table_add(&bc->implicit_lvalues, implicit_lval.expr, alloc_reg);
+                }
             }
 
             has_inits = true;
@@ -1462,23 +1464,40 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                 pushed_arg_count++;
             }
 
-            if (vararg_start_index >= 0) {
-                Bytecode_Register array_alloc;
-                bool found = hash_table_find(&bc->implicit_lvalues, expr, &array_alloc);
-                assert(found);
+            if (vararg_start_index == -1) {
+                vararg_start_index = expr->call.args.count;
+            }
 
-                Bytecode_Register vararg_reg;
-                s64 va_i = 0;
-                for (s64 i = vararg_start_index; i < expr->call.args.count; i++) {
-                    vararg_reg = bytecode_emit_insert_element(bc->builder, vararg_reg, emit_any(bc, expr->call.args[i]), array_alloc.type, va_i++);
+            if (fn_type->function.is_vararg) {
+
+                int vararg_count = expr->call.args.count - vararg_start_index;
+
+
+                Bytecode_Register ptr_reg = {};
+
+                if (vararg_count) {
+                    Bytecode_Register array_alloc;
+                    bool found = hash_table_find(&bc->implicit_lvalues, expr, &array_alloc);
+                    assert(found);
+
+                    Bytecode_Register vararg_reg;
+                    s64 va_i = 0;
+                    for (s64 i = vararg_start_index; i < expr->call.args.count; i++) {
+                        vararg_reg = bytecode_emit_insert_element(bc->builder, vararg_reg, emit_any(bc, expr->call.args[i]), array_alloc.type, va_i++);
+                    }
+
+                    bytecode_emit_store(bc->builder, vararg_reg, array_alloc);
+                    ptr_reg = bytecode_emit_array_offset_pointer(bc->builder, array_alloc, 0);
+
+                } else {
+                    ptr_reg = bytecode_zero_value(bc->builder, get_pointer_type(any_type, &bc->context->ast_allocator));
                 }
 
-                bytecode_emit_store(bc->builder, vararg_reg, array_alloc);
+                assert(ptr_reg.kind != Bytecode_Register_Kind::INVALID);
 
                 auto slice_type = get_slice_type(bc->context, any_type, &bc->context->ast_allocator);
 
-                Bytecode_Register ptr_reg = bytecode_emit_array_offset_pointer(bc->builder, array_alloc, 0);
-                Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, va_i);
+                Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, vararg_count);
                 Bytecode_Register slice_reg = bytecode_emit_insert_value(bc->builder, {}, ptr_reg, slice_type->slice.struct_type, 0);
                 slice_reg = bytecode_emit_insert_value(bc->builder, slice_reg, length_reg, slice_type->slice.struct_type, 1);
 

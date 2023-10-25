@@ -4,14 +4,9 @@
 #run main();
 main :: () {
 
-    // print_func("Hello!");
+    print_func("Hello!");
+    println();
     print_func("Hello!", "World", 42);
-
-    // args : [2]Any;
-    // args[0] = 42;
-    // args[1] = 4.2;
-    //
-    // print_func("Numbers: ", args);
 
     return 0;
 
