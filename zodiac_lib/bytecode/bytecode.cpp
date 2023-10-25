@@ -1014,6 +1014,8 @@ Bytecode_Register bytecode_emit_call(Bytecode_Builder *builder, Bytecode_Functio
 
     if (fn->type->function.is_vararg) {
         assert(arg_count_register.value.integer.s64 >= fn->type->function.parameter_types.count - 1);
+    } else if (fn->type->function.is_c_vararg) {
+        assert(arg_count_register.value.integer.s64 >= fn->type->function.parameter_types.count);
     } else {
         assert(arg_count_register.value.integer.s64 == fn->type->function.parameter_types.count);
     }

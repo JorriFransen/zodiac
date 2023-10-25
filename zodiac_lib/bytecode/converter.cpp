@@ -1430,7 +1430,15 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     break;
                 }
 
-                if (fn_type->function.parameter_types[i] == any_type && arg_expr->resolved_type != any_type) {
+                Type *param_type = nullptr;
+                if (fn_type->function.is_c_vararg && i >= fn_type->function.parameter_types.count) {
+                    param_type = arg_expr->resolved_type;
+                    if (param_type->kind == Type_Kind::UNSIZED_INTEGER) param_type = &builtin_type_s64;
+                } else {
+                    param_type = fn_type->function.parameter_types[i];
+                }
+
+                if (param_type == any_type && arg_expr->resolved_type != any_type) {
                     arg_reg = emit_any(bc, arg_expr);
                 } else if (arg_expr->flags & AST_EXPR_FLAG_SLICE_ARRAY) {
 
@@ -1457,7 +1465,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     arg_reg = bytecode_emit_insert_value(bc->builder, arg_reg, length_reg, slice_type->slice.struct_type, 1);
 
                 } else {
-                    arg_reg = ast_expr_to_bytecode(bc, arg_expr, fn_type->function.parameter_types[i]);
+                    arg_reg = ast_expr_to_bytecode(bc, arg_expr, param_type);
                 }
 
                 bytecode_emit_push_arg(bc->builder, arg_reg);

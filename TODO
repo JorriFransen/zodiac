@@ -1,4 +1,10 @@
 
+- This should be allowed
+    tests/main.zc:23:35: error: Array/Slice of any not supported in varargs
+
+- This should probably work:
+    args: []Any = { 1, 3.4, "xyz" };
+
 - Dont infer return types (non specified is void)
 
 - When tests don't output anything, but output is expected they succeed

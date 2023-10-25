@@ -33,9 +33,17 @@ void init_test_context(Zodiac_Context *zc)
 
     zodiac_context_create(options, zc);
 
-    Type *members[] = { get_pointer_type(&builtin_type_u8, &zc->ast_allocator),
+    Type *string_members[] = { get_pointer_type(&builtin_type_u8, &zc->ast_allocator),
                         &builtin_type_s64 };
-    get_struct_type(zc, "String", members, {}, &zc->ast_allocator);
+    get_struct_type(zc, "String", string_members, {}, &zc->ast_allocator);
+
+    Type *type_info_members[] = { &builtin_type_s64 /* dummy */ };
+    get_struct_type(zc, "Type_Info", type_info_members, {}, &zc->ast_allocator);
+
+    Type *any_members[] = { get_pointer_type(get_type_info_type(zc), &zc->ast_allocator),
+                            get_pointer_type(&builtin_type_void, &zc->ast_allocator) };
+
+    get_struct_type(zc, "Any", string_members, {}, &zc->ast_allocator);
 }
 
 #define PRINT_NEWLINE bytecode_emit_print(&bb, bytecode_string_literal(&bb, "\n"));

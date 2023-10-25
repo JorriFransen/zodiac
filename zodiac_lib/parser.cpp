@@ -781,7 +781,11 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
     }
 
     if (is_vararg) {
-        flags |= AST_DECL_FLAG_VARARG;
+        if (foreign) {
+            flags |= AST_DECL_C_FLAG_VARARG;
+        } else {
+            flags |= AST_DECL_FLAG_VARARG;
+        }
     }
 
     return ast_function_decl_new(parser->context, ident.sr, ident, params, return_ts, statements, flags);

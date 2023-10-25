@@ -814,7 +814,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
                 return false;
             }
 
-            auto fn_arg_count = fn->arg_count;
+            auto fn_arg_count = instruction->b.value.integer.s64;
             auto pushed_arg_count = stack_count(&visitor->arg_stack);
 
             if (fn_arg_count > pushed_arg_count) {
@@ -825,6 +825,11 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             bool arg_match = true;
             for (s64 i = 0; i < fn_arg_count; i++) {
                 auto arg_reg = stack_peek_ptr(&visitor->arg_stack, (fn_arg_count - 1) - i);
+
+                if (i >= fn->param_types.count) {
+                    // vararg
+                    continue;
+                }
 
                 bool arg_match = arg_reg->type == fn->param_types[i];
 

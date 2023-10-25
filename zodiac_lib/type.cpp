@@ -317,6 +317,8 @@ Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator)
 
 Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocator)
 {
+    assert(element_type);
+
     for (u64 i = 0; i < slice_types.count; i++) {
 
         auto sat = slice_types[i];
@@ -544,6 +546,11 @@ Type *get_function_type(Type *return_type, Array_Ref<Type *> parameter_types, Al
 {
     assert(return_type);
     assert(allocator);
+
+    if (c_vararg) {
+        assert(parameter_types.count >= 1);
+        parameter_types.count -= 1;
+    }
 
     for (u64 i = 0; i < function_types.count; i++) {
 

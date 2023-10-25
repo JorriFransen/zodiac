@@ -4,9 +4,24 @@
 #run main();
 main :: () {
 
+    str := "abc, %i\n";
+    printf(str.data, 55);
+    println();
+
     print_func("Hello!");
     println();
+
     print_func("Hello!", "World", 42);
+    println();
+
+    args_arr: [3]Any;
+    args_arr[0] = 11;
+    args_arr[1] = 2.3;
+    args_arr[2] = "xyz";
+
+    args : []Any = args_arr;
+
+    // print_func("Prepared args: ", args);
 
     return 0;
 
@@ -24,5 +39,5 @@ print_func :: (fmt: String, args: ..) -> void {
     println();
 }
 
-// #foreign printf :: (cstr: *u8, args: ..) -> s32;
+#foreign printf :: (cstr: *u8, args: ..) -> s32;
 
