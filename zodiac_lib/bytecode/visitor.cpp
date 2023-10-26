@@ -143,29 +143,10 @@ void visit_instruction_post(Bytecode_Visitor *visitor, Bytecode_Instruction *ins
         op == Bytecode_Opcode::CALL_FOREIGN ||
         op == Bytecode_Opcode::CALL_PTR) {
 
-        Type *fn_type = nullptr;
+        assert(instruction->b.type == &builtin_type_s64);
+        assert(instruction->b.kind == Bytecode_Register_Kind::TEMPORARY);
 
-        if (op == Bytecode_Opcode::CALL ||
-            op == Bytecode_Opcode::CALL_FOREIGN) {
-
-            assert(instruction->a.kind == Bytecode_Register_Kind::FUNCTION);
-            auto fn_handle = instruction->a.value.function_handle;
-            assert(fn_handle >= 0 && fn_handle < visitor->functions.count);
-            auto fn = &visitor->functions[fn_handle];
-            fn_type = fn->type;
-
-        } else {
-            assert(op == Bytecode_Opcode::CALL_PTR);
-
-            assert(instruction->a.type->kind == Type_Kind::FUNCTION);
-
-            fn_type = instruction->a.type;
-        }
-
-        assert(fn_type);
-        assert(fn_type->kind == Type_Kind::FUNCTION);
-
-        auto arg_count = fn_type->function.parameter_types.count;
+        auto arg_count = instruction->b.value.integer.s64;
 
         if (stack_count(&visitor->arg_stack) < arg_count) {
             fprintf(stderr, "WARNING: mismatching arg count detected in visit_instruction_post\n");

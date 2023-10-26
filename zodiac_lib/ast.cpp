@@ -551,12 +551,13 @@ void ast_slice_ts_create(AST_Type_Spec *element_ts, AST_Type_Spec *out_ts)
     out_ts->slice.element_ts = element_ts;
 }
 
-void ast_function_ts_create(Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts, AST_Type_Spec *out_ts)
+void ast_function_ts_create(Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts, bool vararg, AST_Type_Spec *out_ts)
 {
     ast_type_spec_create(AST_Type_Spec_Kind::FUNCTION, out_ts);
 
     out_ts->function.parameters = params;
     out_ts->function.return_ts = return_ts;
+    out_ts->function.is_vararg = vararg;
 }
 
 void ast_type_of_ts_create(AST_Directive *type_of_directive, AST_Type_Spec *out_ts)
@@ -564,6 +565,11 @@ void ast_type_of_ts_create(AST_Directive *type_of_directive, AST_Type_Spec *out_
     ast_type_spec_create(AST_Type_Spec_Kind::TYPE_OF, out_ts);
 
     out_ts->directive = type_of_directive;
+}
+
+void ast_vararg_type_spec_create(AST_Type_Spec *out_ts)
+{
+    ast_type_spec_create(AST_Type_Spec_Kind::VARARG, out_ts);
 }
 
 void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts)
@@ -1093,10 +1099,10 @@ AST_Type_Spec *ast_slice_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_S
     return ts;
 }
 
-AST_Type_Spec *ast_function_ts_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts)
+AST_Type_Spec *ast_function_ts_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts, bool vararg)
 {
     auto ts = ast_type_spec_new(ctx, sr);
-    ast_function_ts_create(params, return_ts, ts);
+    ast_function_ts_create(params, return_ts, vararg, ts);
     return ts;
 }
 
@@ -1104,6 +1110,13 @@ AST_Type_Spec *ast_type_of_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Dire
 {
     auto ts = ast_type_spec_new(ctx, sr);
     ast_type_of_ts_create(type_of_directive, ts);
+    return ts;
+}
+
+AST_Type_Spec *ast_vararg_type_spec_new(Zodiac_Context *ctx, Source_Range sr)
+{
+    auto ts = ast_type_spec_new(ctx, sr);
+    ast_vararg_type_spec_create(ts);
     return ts;
 }
 
@@ -1739,6 +1752,11 @@ file_local void ast__print_type_spec_internal(String_Builder *sb, AST_Type_Spec 
             string_builder_append(sb, "#type_of(");
             ast_print_expression(sb, ts->directive->type_of.expr);
             string_builder_append(sb, ")");
+            break;
+        }
+
+        case AST_Type_Spec_Kind::VARARG: {
+            string_builder_append(sb, "..");
             break;
         }
     }

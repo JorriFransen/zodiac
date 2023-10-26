@@ -1040,13 +1040,16 @@ void llvm_builder_emit_print_instruction(LLVM_Builder *builder, Array_Ref<LLVM_B
     auto ast_allocator = &builder->zodiac_context->ast_allocator;
     auto irb = builder->ir_builder;
 
+    auto any_type = get_any_type(builder->zodiac_context);
+
     auto temp_llvm_print_args = temp_array_create<llvm::Value *>(temp_allocator_allocator(), 2);
     auto llvm_print_args = &temp_llvm_print_args.array;
 
     bool use_printf = true;
     Type *print_func_arg_type = get_pointer_type(&builtin_type_u8, ast_allocator);
-    Type *print_func_arg_types[] = { print_func_arg_type };
-    Type *print_func_type = get_function_type(&builtin_type_s32, print_func_arg_types, ast_allocator, true);
+    Type *varargs_type = get_slice_type(builder->zodiac_context, any_type, &builder->zodiac_context->ast_allocator);
+    Type *print_func_arg_types[] = { print_func_arg_type, varargs_type };
+    Type *print_func_type = get_function_type(&builtin_type_s32, print_func_arg_types, ast_allocator, false, true);
 
     auto printf_func = llvm_get_intrinsic(builder, print_func_type, "printf");
     assert(printf_func);
@@ -1777,7 +1780,7 @@ llvm::Type *llvm_type_from_ast_type(LLVM_Builder *builder, Type *ast_type)
 
             llvm::Type *result = llvm::FunctionType::get(llvm_return_type,
                                                          { llvm_param_types.data, (size_t)llvm_param_types.count },
-                                                         ast_type->function.is_vararg);
+                                                         ast_type->function.is_c_vararg);
             if (llvm_param_types.count) {
                 dynamic_array_free(&llvm_param_types);
             }

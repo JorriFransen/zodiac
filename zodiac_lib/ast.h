@@ -77,6 +77,9 @@ enum class AST_Unary_Operator
     ADDRESS_OF = '*',
     DEREF      = '<',
     NOT        = '!',
+
+    SPREAD,    // '..'
+
 };
 
 struct AST_Unary_Expression
@@ -390,6 +393,7 @@ enum class AST_Implicit_LValue_Kind
     CONST_LVALUE,
     SLICE_ARRAY,
     ANY,
+    VARARGS,
 };
 
 struct AST_Implicit_LValue
@@ -406,6 +410,10 @@ struct AST_Implicit_LValue
             bool needs_local_array_alloc;
             bool needs_global_array_alloc;
         } slice;
+
+        struct {
+            s32 count;
+        } vararg;
     };
 };
 
@@ -469,14 +477,19 @@ typedef u32 AST_Declaration_Flags;
 
 enum AST_Declaration_Flag : AST_Declaration_Flags
 {
-    AST_DECL_FLAG_NONE                  = 0x000,
-    AST_DECL_FLAG_GLOBAL                = 0x001,
-    AST_DECL_FLAG_TYPED                 = 0x002,
-    AST_DECL_FLAG_FOREIGN               = 0x004,
-    AST_DECL_FLAG_PROTO_DONE            = 0x008,
-    AST_DECL_FLAG_BYTECODE_EMITTED      = 0x010,
-    AST_DECL_FLAG_BYTECODE_DEPS_EMITTED = 0x020,
-    AST_DECL_FLAG_TYPE_DECL             = 0x040,
+    AST_DECL_FLAG_NONE                  = 0x0000,
+
+    AST_DECL_FLAG_GLOBAL                = 0x0001,
+    AST_DECL_FLAG_TYPED                 = 0x0002,
+    AST_DECL_FLAG_FOREIGN               = 0x0004,
+    AST_DECL_FLAG_PROTO_DONE            = 0x0008,
+
+    AST_DECL_FLAG_BYTECODE_EMITTED      = 0x0010,
+    AST_DECL_FLAG_BYTECODE_DEPS_EMITTED = 0x0020,
+    AST_DECL_FLAG_TYPE_DECL             = 0x0040,
+    AST_DECL_FLAG_VARARG                = 0x0080,
+
+    AST_DECL_C_FLAG_VARARG              = 0x0100,
 };
 
 #define DECL_IS_GLOBAL(d) ((d)->flags & AST_DECL_FLAG_GLOBAL)
@@ -515,6 +528,8 @@ enum class AST_Type_Spec_Kind
     FUNCTION,
 
     TYPE_OF,
+
+    VARARG,
 };
 
 struct AST_Type_Spec
@@ -542,6 +557,7 @@ struct AST_Type_Spec
         struct {
             Dynamic_Array<AST_Type_Spec *> parameters;
             AST_Type_Spec *return_ts;
+            bool is_vararg;
         } function;
 
         AST_Directive *directive;
@@ -666,8 +682,9 @@ ZAPI void ast_name_ts_create(AST_Identifier ident, AST_Type_Spec *out_ts);
 ZAPI void ast_pointer_ts_create(AST_Type_Spec *base, AST_Type_Spec *out_ts);
 ZAPI void ast_static_array_ts_create(AST_Expression *length_expr, AST_Type_Spec *element_ts, AST_Type_Spec *out_ts);
 ZAPI void ast_slice_ts_create(AST_Type_Spec *element_ts, AST_Type_Spec *out_ts);
-ZAPI void ast_function_ts_create(Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts, AST_Type_Spec *out_ts);
+ZAPI void ast_function_ts_create(Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts, bool vararg, AST_Type_Spec *out_ts);
 ZAPI void ast_type_of_ts_create(AST_Directive *type_of_directive, AST_Type_Spec *out_ts);
+ZAPI void ast_vararg_type_spec_create(AST_Type_Spec *out_ts);
 ZAPI void ast_type_spec_create(AST_Type_Spec_Kind kind, AST_Type_Spec *out_ts);
 
 ZAPI void ast_run_directive_create(AST_Expression *expr, AST_Directive *out_dir);
@@ -734,8 +751,9 @@ ZAPI AST_Type_Spec *ast_name_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Id
 ZAPI AST_Type_Spec *ast_pointer_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_Spec *base);
 ZAPI AST_Type_Spec *ast_static_array_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *length_expr, AST_Type_Spec *element_ts);
 ZAPI AST_Type_Spec *ast_slice_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Type_Spec *element_ts);
-ZAPI AST_Type_Spec *ast_function_ts_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts);
+ZAPI AST_Type_Spec *ast_function_ts_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Type_Spec *> params, AST_Type_Spec *return_ts, bool vararg);
 ZAPI AST_Type_Spec *ast_type_of_ts_new(Zodiac_Context *ctx, Source_Range sr, AST_Directive *type_of_directive);
+ZAPI AST_Type_Spec *ast_vararg_type_spec_new(Zodiac_Context *ctx, Source_Range sr);
 ZAPI AST_Type_Spec *ast_type_spec_new(Zodiac_Context *ctx, Source_Range sr);
 
 ZAPI AST_Directive *ast_run_directive_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *expr);

@@ -93,7 +93,13 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     munit_assert(result.program.entry_handle == -1);
     result.program.entry_handle = bytecode_find_entry(result.program);
 
+    auto old_stdout = stdout;
+    stdout = (FILE *)interp_stdout_file.handle;
+
     Interpreter_Register result_reg = interpreter_start(result.context.interp, result.program);
+
+    stdout = old_stdout;
+
     munit_assert(result_reg.type->kind == Type_Kind::INTEGER);
 
     result.context.interp->std_out = old_out_file;
@@ -5830,6 +5836,88 @@ fnptr
 
     return MUNIT_OK;
 }
+
+MunitResult Varargs(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
+        Vec2 :: struct { x, y: r64; }
+
+        main :: () {
+
+            str := "abc, %i\n";
+            printf(str.data, 55);
+
+            print_func("Hello!");
+
+            print_func("Hello!", "World", 42);
+
+            v : Vec2 = { 11, 22 };
+            args_arr: [4]Any;
+            args_arr[0] = 257;
+            args_arr[1] = 2.3;
+            args_arr[2] = v;
+            args_arr[3] = 42;
+
+            print_func("Prepared args_arr: ", args_arr);
+
+            args : []Any = args_arr;
+            print_func("Prepared args: ", args_arr);
+
+            print_func("Spread args_arr: ", ..args_arr);
+
+            print_func("Spread args: ", ..args);
+
+            args.length -= 1;
+            args.data = *args[1];
+
+            print_func("Spread args (modified): ", ..args);
+
+            return 0;
+
+        }
+
+        print_func :: (fmt: String, args: ..) -> void {
+            println("fmt: \"", fmt, "\"");
+            print("args: ");
+
+            for i := 0; i < args.length; i += 1 {
+                if i > 0 print(", ");
+                print_any(args[i]);
+            }
+
+            println();
+        }
+
+        #foreign printf :: (cstr: *u8, args: ..) -> s32;
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out = 
+R"OUT_STR(abc, 55
+fmt: "Hello!"
+args: 
+fmt: "Hello!"
+args: World, 42
+fmt: "Prepared args_arr: "
+args: { { ptr: { Integer(2), 8 }, ptr: 1 }, { ptr: { Real(3), 4 }, ptr: 51 }, { ptr: { Struct(6), 16 }, ptr: 0 }, { ptr: { Integer(2), 8 }, ptr: 42 } }
+fmt: "Prepared args: "
+args: { { ptr: { Integer(2), 8 }, ptr: 1 }, { ptr: { Real(3), 4 }, ptr: 51 }, { ptr: { Struct(6), 16 }, ptr: 0 }, { ptr: { Integer(2), 8 }, ptr: 42 } }
+fmt: "Spread args_arr: "
+args: 257, 2.300000, { 11.000000, 22.000000 }, 42
+fmt: "Spread args: "
+args: 257, 2.300000, { 11.000000, 22.000000 }, 42
+fmt: "Spread args (modified): "
+args: 2.300000, { 11.000000, 22.000000 }, 42)OUT_STR",
+
+    };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef DAY_ENUM_DECL
 #undef RESOLVE_ERR
 

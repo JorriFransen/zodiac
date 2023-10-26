@@ -237,11 +237,15 @@ AST_Expression *_parse_expr_unary(Parser *parser)
         return ast_unary_expr_new(parser->context, {start_pos, operand->sr.end}, AST_Unary_Operator::ADDRESS_OF, operand);
 
     } else if (match_token(parser, '<')) {
+
         AST_Expression *operand = parse_expr_unary(parser);
         return ast_unary_expr_new(parser->context, {start_pos, operand->sr.end}, AST_Unary_Operator::DEREF, operand);
+
     } else if (match_token(parser, '!')) {
+
         AST_Expression *operand = parse_expr_unary(parser);
         return ast_unary_expr_new(parser->context, {start_pos, operand->sr.end}, AST_Unary_Operator::NOT, operand);
+
     } else if (is_token(parser, '#')) {
 
         Parsed_Directive pd = parse_directive(parser, false);
@@ -256,6 +260,12 @@ AST_Expression *_parse_expr_unary(Parser *parser)
         } else {
             assert_msg(false, "Unhandled directive expression");
         }
+
+    } else if (match_token(parser, TOK_DOT_DOT)) {
+
+        AST_Expression *operand = parse_expr_unary(parser);
+        return ast_unary_expr_new(parser->context, {start_pos, operand->sr.end}, AST_Unary_Operator::SPREAD, operand);
+
     } else {
         return parse_expr_base(parser);
     }
@@ -700,24 +710,47 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
 
     Dynamic_Array<AST_Declaration *> params = {};
 
+    bool is_vararg = false;
+
     if (is_token(parser, TOK_NAME)) {
+
 
         auto temp_params = temp_array_create<AST_Declaration *>(temp_allocator_allocator());
         do {
+
+            assert(!is_vararg); // Can only have 1 vararg param
 
             Token name_tok = cur_tok(parser);
             Source_Pos start = name_tok.sr.start;
             expect_token(parser, TOK_NAME);
             expect_token(parser, ':');
-            AST_Type_Spec *ts = parse_type_spec(parser);
-            Source_Pos end = ts->sr.end;
+
+            AST_Type_Spec *ts = nullptr;
+            Source_Pos end;
+
+            AST_Declaration_Flags field_flags = AST_DECL_FLAG_NONE;
+
+            if (is_token(parser, TOK_DOT_DOT)) {
+                auto range = cur_tok(parser).sr;
+                end = range.end;
+                next_token(parser);
+
+                ts = ast_vararg_type_spec_new(parser->context, range);
+                is_vararg = true;
+                field_flags |= AST_DECL_FLAG_VARARG;
+
+            } else {
+                ts = parse_type_spec(parser);
+                end = ts->sr.end;
+            }
 
             AST_Identifier param_ident;
             ast_identifier_create(name_tok.atom, name_tok.sr, &param_ident);
 
-            AST_Declaration *field_decl = ast_parameter_decl_new(parser->context, {start, end}, param_ident, ts);
+            AST_Declaration *param_decl = ast_parameter_decl_new(parser->context, {start, end}, param_ident, ts);
+            param_decl->flags |= field_flags;
 
-            dynamic_array_append(&temp_params.array, field_decl);
+            dynamic_array_append(&temp_params.array, param_decl);
         } while (match_token(parser, ','));
 
         params = temp_array_finalize(&parser->context->ast_allocator, &temp_params);
@@ -755,6 +788,14 @@ AST_Declaration *parse_function_declaration(Parser *parser, AST_Identifier ident
     } else {
         flags |= AST_DECL_FLAG_FOREIGN;
         expect_token(parser, ';');
+    }
+
+    if (is_vararg) {
+        if (foreign) {
+            flags |= AST_DECL_C_FLAG_VARARG;
+        } else {
+            flags |= AST_DECL_FLAG_VARARG;
+        }
     }
 
     return ast_function_decl_new(parser->context, ident.sr, ident, params, return_ts, statements, flags);
@@ -986,13 +1027,22 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
 
             auto params = temp_array_create<AST_Type_Spec *>(temp_allocator_allocator());
 
+            bool vararg = false;
+
             while (!match_token(parser, ')')) {
+
+                assert(!vararg);
 
                 if (params.array.count) {
                     expect_token(parser, ',');
                 }
+
                 AST_Type_Spec *param_ts = parse_type_spec(parser);
                 dynamic_array_append(&params, param_ts);
+
+                if (param_ts->kind == AST_Type_Spec_Kind::VARARG) {
+                    vararg = true;
+                }
             }
 
             expect_token(parser, TOK_RIGHT_ARROW);
@@ -1001,7 +1051,7 @@ AST_Type_Spec *_parse_type_spec(Parser *parser)
 
             auto pts = temp_array_finalize(&parser->context->ast_allocator, &params);
 
-            return ast_function_ts_new(parser->context, {t.sr.start, return_ts->sr.end}, pts, return_ts);
+            return ast_function_ts_new(parser->context, {t.sr.start, return_ts->sr.end}, pts, return_ts, vararg);
         }
 
         case '#': {

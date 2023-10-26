@@ -395,11 +395,13 @@ double string_to_double(const String_Ref &string)
 file_local char special_characters[] = {
     '\n',
     '\t',
+    '\"',
 };
 
 file_local char escape_characters[] = {
     'n',
     't',
+    '"',
 };
 
 file_local s64 is_special_character(char c) {
@@ -411,7 +413,7 @@ file_local s64 is_special_character(char c) {
     return -1;
 }
 
-file_local s64 is_escape_character(char c) {
+s64 is_escape_character(char c) {
     for (s64 i = 0; i < sizeof(escape_characters) / sizeof(escape_characters[0]); i++) {
         if (c == escape_characters[i]) return i;
     }

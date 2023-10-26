@@ -133,6 +133,7 @@ struct Type
             Type *return_type;
             Dynamic_Array<Type *> parameter_types;
             bool is_vararg;
+            bool is_c_vararg;
         } function;
 
     };
@@ -176,7 +177,7 @@ ZAPI void create_pointer_type(Type *type, Type *base_type);
 ZAPI void create_struct_type(Type *type, Atom name, Dynamic_Array<Type *> member_types, Dynamic_Array<String> member_names);
 ZAPI void create_static_array_type(Type *type, Type *element_type, u64 count);
 ZAPI void create_slice_type(Type *type, Type *element_type, Type *struct_type);
-ZAPI void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types, bool vararg = false);
+ZAPI void create_function_type(Type *type, Type *return_type, Dynamic_Array<Type *> param_types, bool vararg = false, bool c_vararg = false);
 
 ZAPI Type *get_pointer_type(Type *base, Allocator *allocator);
 
@@ -187,7 +188,7 @@ ZAPI Type *get_enum_type(Atom name, Dynamic_Array<Type_Enum_Member> members, Typ
 
 ZAPI Type *get_static_array_type(Type *element_type, u64 count, Allocator *allocator);
 ZAPI Type *get_slice_type(Zodiac_Context *ctx, Type *element_type, Allocator *allocator);
-ZAPI Type *get_function_type(Type *return_type, Array_Ref<Type *> param_types, Allocator *allocator, bool vararg = false);
+ZAPI Type *get_function_type(Type *return_type, Array_Ref<Type *> param_types, Allocator *allocator, bool vararg = false, bool c_vararg = false);
 
 ZAPI Type *get_struct_type_by_name(Zodiac_Context *ctx, Atom name);
 ZAPI Type *get_string_type(Zodiac_Context *ctx);

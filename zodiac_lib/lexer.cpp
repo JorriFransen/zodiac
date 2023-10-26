@@ -5,6 +5,7 @@
 #include "memory/zmemory.h"
 #include "util/asserts.h"
 #include "util/logger.h"
+#include "util/zstring.h"
 #include "zodiac_context.h"
 
 #include <cctype>
@@ -151,9 +152,18 @@ case (first_char): {                                                \
         case '"': {
             lex->token.kind = TOK_STRING;
             lex->stream += 1;
-            while (*lex->stream != '"') {
-                lex->stream += 1;
+
+            while (true) {
+
+                if (*lex->stream == '\\') {
+                    lex->stream += 2;
+                } else if (*lex->stream == '"') {
+                    break;
+                } else {
+                    lex->stream += 1;
+                }
             }
+
             lex->stream += 1;
             break;
         }
