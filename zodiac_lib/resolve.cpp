@@ -2857,6 +2857,18 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                         auto cf = enclosing_function(scope);
                         dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
                     }
+
+                } else if (param_type == any_type && arg_type != any_type) {
+
+                    if (!EXPR_HAS_STORAGE(arg_expr)) {
+
+                        AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::ANY,
+                                                              arg_expr };
+                        assert(scope->kind != Scope_Kind::GLOBAL);
+
+                        auto cf = enclosing_function(scope);
+                        dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
+                    }
                 }
             }
 
