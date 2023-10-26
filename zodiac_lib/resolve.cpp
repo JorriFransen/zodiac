@@ -240,6 +240,7 @@ Resolve_Results resolve_names(Resolver *resolver)
 
             dynamic_array_remove_ordered(&resolver->nodes_to_name_resolve, flat_index);
             flat_index -= 1;
+            progress = true;
 
             // dynamic_array_append(&resolver->nodes_to_type_resolve, node_copy);
         }
@@ -264,8 +265,13 @@ Resolve_Results resolve_types(Resolver *resolver)
         for (u64 i = node->type_index; i < node->nodes.count; i++) {
 
             if (node->type_index >= node->name_index) {
-                done = false;
-                break;
+                if (name_resolve_node(resolver, &node->nodes[i])) {
+                    progress = true;
+                    node->name_index++;
+                } else {
+                    done = false;
+                    break;
+                }
             }
 
             node->type_index = i;
