@@ -77,6 +77,9 @@ enum class AST_Unary_Operator
     ADDRESS_OF = '*',
     DEREF      = '<',
     NOT        = '!',
+
+    SPREAD,    // '..'
+
 };
 
 struct AST_Unary_Expression

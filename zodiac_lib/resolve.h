@@ -47,6 +47,15 @@ struct Infer_Node
     }target;
 };
 
+typedef u64 Infer_Flags;
+
+enum Infer_Flag : Infer_Flags
+{
+    INFER_FLAG_NONE         = 0x00,
+    INFER_FLAG_VARARG       = 0x01,
+    INFER_FLAG_FIRST_VARARG = 0x02,
+};
+
 enum class Flat_Node_Kind
 {
     DECL,
@@ -136,7 +145,7 @@ ZAPI Infer_Node *infer_node_new(Zodiac_Context *ctx, AST_Expression *expr);
 ZAPI Infer_Node *arg_infer_node_new(Zodiac_Context *ctx, Infer_Node *infer_node, s64 arg_index);
 ZAPI Infer_Node *compound_infer_node_new(Zodiac_Context *ctx, Infer_Node *infer_node, s64 member_index);
 
-ZAPI Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error_loc);
+ZAPI Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error_loc, Infer_Flags *flags = nullptr);
 
 ZAPI void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope, Dynamic_Array<Flat_Node> *dest, Infer_Node *infer_node = nullptr);
 ZAPI void flatten_enum_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope);

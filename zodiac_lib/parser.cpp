@@ -237,11 +237,15 @@ AST_Expression *_parse_expr_unary(Parser *parser)
         return ast_unary_expr_new(parser->context, {start_pos, operand->sr.end}, AST_Unary_Operator::ADDRESS_OF, operand);
 
     } else if (match_token(parser, '<')) {
+
         AST_Expression *operand = parse_expr_unary(parser);
         return ast_unary_expr_new(parser->context, {start_pos, operand->sr.end}, AST_Unary_Operator::DEREF, operand);
+
     } else if (match_token(parser, '!')) {
+
         AST_Expression *operand = parse_expr_unary(parser);
         return ast_unary_expr_new(parser->context, {start_pos, operand->sr.end}, AST_Unary_Operator::NOT, operand);
+
     } else if (is_token(parser, '#')) {
 
         Parsed_Directive pd = parse_directive(parser, false);
@@ -256,6 +260,12 @@ AST_Expression *_parse_expr_unary(Parser *parser)
         } else {
             assert_msg(false, "Unhandled directive expression");
         }
+
+    } else if (match_token(parser, TOK_DOT_DOT)) {
+
+        AST_Expression *operand = parse_expr_unary(parser);
+        return ast_unary_expr_new(parser->context, {start_pos, operand->sr.end}, AST_Unary_Operator::SPREAD, operand);
+
     } else {
         return parse_expr_base(parser);
     }

@@ -1530,7 +1530,8 @@ Bytecode_Instruction_Handle bytecode_emit_instruction(Bytecode_Builder *builder,
                op == Bytecode_Opcode::CALL ||
                op == Bytecode_Opcode::CALL_PTR ||
                op == Bytecode_Opcode::LOAD_PTR ||
-               op == Bytecode_Opcode::INSERT_ELEMENT);
+               op == Bytecode_Opcode::INSERT_ELEMENT ||
+               op == Bytecode_Opcode::EXTRACT_ELEMENT);
 
         // @cleanup: @todo: @fixme: alignment
         assert(result.type->bit_size % 8 == 0);

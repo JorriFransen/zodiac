@@ -372,7 +372,7 @@ Infer_Node *compound_infer_node_new(Zodiac_Context *ctx, Infer_Node *infer_node,
     return result;
 }
 
-Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error_loc)
+Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error_loc, Infer_Flags *flags/*=nullptr*/)
 {
     debug_assert(ctx && infer_node);
 
@@ -421,15 +421,24 @@ Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error
 
         case Infer_Target::ARGUMENT: {
             assert(inferred_type->kind == Type_Kind::FUNCTION);
+            auto fn_type = inferred_type;
 
             auto index = infer_node->target.index;
 
             if (inferred_type->function.is_vararg) {
 
-                if (index >= inferred_type->function.parameter_types.count - 1) {
+                if (index >= fn_type->function.parameter_types.count - 1) {
                     inferred_type = get_any_type(ctx);
                 } else {
-                    inferred_type = inferred_type->function.parameter_types[index];
+                    inferred_type = fn_type->function.parameter_types[index];
+                }
+
+                if (flags) {
+                    *flags |= INFER_FLAG_VARARG;
+
+                    if (index == fn_type->function.parameter_types.count - 1) {
+                        *flags |= INFER_FLAG_FIRST_VARARG;
+                    }
                 }
 
             } else if (inferred_type->function.is_c_vararg) {
@@ -2454,9 +2463,10 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
     auto any_type = get_any_type(ctx);
 
+    Infer_Flags infer_flags = INFER_FLAG_NONE;
     Type *inferred_type = nullptr;
     if (infer_type_from) {
-        inferred_type = infer_type(ctx, infer_type_from, expr->sr);
+        inferred_type = infer_type(ctx, infer_type_from, expr->sr, &infer_flags);
     }
 
     switch (expr->kind) {
@@ -2824,9 +2834,21 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                     dynamic_array_append(&current_fn->function.implicit_lvalues, implicit_lval);
 
-                } else if (param_type == any_type && arg_type != any_type) {
+                } else if (func_type->function.is_vararg && param_type == any_type && arg_type != any_type) {
 
-                    if (!EXPR_HAS_STORAGE(arg_expr)) {
+                    if (arg_expr->kind == AST_Expression_Kind::UNARY && arg_expr->unary.op == AST_Unary_Operator::SPREAD) {
+
+                        // Spread must be the only vararg
+                        assert(i == func_type->function.parameter_types.count - 1);
+                        assert(vararg_count == 1);
+
+                        if (arg_expr->unary.operand->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
+                            vararg_count = arg_expr->unary.operand->resolved_type->static_array.count;
+                        } else {
+                            assert(arg_expr->unary.operand->resolved_type->kind == Type_Kind::SLICE)
+                        }
+
+                    } else if (!EXPR_HAS_STORAGE(arg_expr)) {
 
                         AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::ANY,
                                                               arg_expr };
@@ -2942,6 +2964,23 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     }
 
                     expr->resolved_type = &builtin_type_bool;
+                    break;
+                }
+
+                case AST_Unary_Operator::SPREAD: {
+
+                    assert(inferred_type && inferred_type == any_type);
+                    assert(infer_flags & INFER_FLAG_VARARG);
+                    assert(infer_flags & INFER_FLAG_FIRST_VARARG);
+
+
+                    auto operand = expr->unary.operand;
+                    auto op_type = operand->resolved_type;
+
+                    assert(op_type->kind == Type_Kind::STATIC_ARRAY && op_type->static_array.element_type == any_type ||
+                           op_type->kind == Type_Kind::SLICE && op_type->slice.element_type == any_type);
+
+                    expr->resolved_type = op_type;
                     break;
                 }
             }
