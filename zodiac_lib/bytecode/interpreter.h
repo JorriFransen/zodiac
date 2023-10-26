@@ -35,6 +35,15 @@ struct Interpreter_Register
     };
 };
 
+struct Stack_Block
+{
+    u8 *data;
+    u32 used;
+    u32 cap;
+
+    Stack_Block *previous;
+};
+
 struct Interpreter_Stack_Frame
 {
     s64 ip = 0;
@@ -44,9 +53,8 @@ struct Interpreter_Stack_Frame
     s64 register_start;
     s64 register_count;
 
-    s64 stack_start;
-    s64 stack_count;
-    s64 sp;
+    s64 alloc_size;
+    Stack_Block *stack_block;
 
     s64 dest_index = -1;
 };
@@ -71,8 +79,9 @@ struct Interpreter
     Array_Ref<Interpreter_Register> registers = {};
     s64 used_register_count = 0;
 
-    Array_Ref<u8> stack_mem = {};
-    s64 stack_mem_used = 0;
+    Stack_Block first_stack_block;
+    Stack_Block *current_stack_block;
+    Stack_Block *free_stack_blocks;
 
     File_Handle std_out;
 
@@ -89,6 +98,8 @@ ZAPI Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytec
 
 ZAPI Bytecode_Instruction interpreter_fetch_instruction(Interpreter *interp);
 ZAPI void interpreter_execute_instruction(Interpreter *interp, Bytecode_Instruction instruction);
+
+ZAPI u8 *interpreter_stack_alloc(Interpreter *interp, u64 size);
 
 ZAPI void interpreter_call_foreign_function(Interpreter *interp, Bytecode_Function_Handle fn_handle, s64 arg_count, s64 dest_index);
 ZAPI void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_reg, s64 arg_count, s64 dest_index);
