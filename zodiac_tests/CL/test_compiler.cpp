@@ -5873,6 +5873,8 @@ MunitResult Varargs(const MunitParameter params[], void* user_data_or_fixture) {
             args.data = *args[1];
 
             print_func("Spread args (modified): ", ..args);
+    
+            call_print_func("Spread args (modified): ", ..args);
 
             return 0;
 
@@ -5888,6 +5890,10 @@ MunitResult Varargs(const MunitParameter params[], void* user_data_or_fixture) {
             }
 
             println();
+        }
+
+        call_print_func :: (fmt: String, args: ..) -> void {
+            print_func(fmt, ..args);
         }
 
         #foreign printf :: (cstr: *u8, args: ..) -> s32;
@@ -5907,6 +5913,8 @@ fmt: "Spread args_arr: "
 args: 257, 2.300000, { 11.000000, 22.000000 }, 42
 fmt: "Spread args: "
 args: 257, 2.300000, { 11.000000, 22.000000 }, 42
+fmt: "Spread args (modified): "
+args: 2.300000, { 11.000000, 22.000000 }, 42
 fmt: "Spread args (modified): "
 args: 2.300000, { 11.000000, 22.000000 }, 42)OUT_STR",
 
