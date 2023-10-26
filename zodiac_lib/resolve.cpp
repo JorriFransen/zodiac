@@ -2769,12 +2769,6 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                 if (func_type->function.is_vararg && i >= func_type->function.parameter_types.count - 1) {
 
-                    if ((arg_type->kind == Type_Kind::STATIC_ARRAY && arg_type->static_array.element_type == any_type) ||
-                        (arg_type->kind == Type_Kind::SLICE && arg_type->slice.element_type == any_type)) {
-                        fatal_resolve_error(ctx, arg_expr, "Array/Slice of any not supported in varargs");
-                        return false;
-                    }
-
                     param_type = any_type;
                     vararg_count += 1;
 

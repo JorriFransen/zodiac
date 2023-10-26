@@ -41,7 +41,7 @@ print_any :: (any: Any) -> void {
             value := cast(**void, any.value);
 
             print("ptr: ");
-            value_any : Any = {  pi.pointer_to, cast(*u8, <value) };
+            value_any : Any = { pi.pointer_to, cast(*u8, <value) };
             print_any(value_any);
 
 

@@ -4,24 +4,28 @@
 #run main();
 main :: () {
 
-    str := "abc, %i\n";
-    printf(str.data, 55);
-    println();
+    // str := "abc, %i\n";
+    // printf(str.data, 55);
+    // println();
+    //
+    // print_func("Hello!");
+    // println();
+    //
+    // print_func("Hello!", "World", 42);
+    // println();
 
-    print_func("Hello!");
-    println();
+    args_arr: [1]Any;
+    args_arr[0] = 257;
+    // args_arr[1] = 2.3;
+    // args_arr[2] = "xyz";
+    // args_arr[3] = 257;
 
-    print_func("Hello!", "World", 42);
-    println();
-
-    args_arr: [3]Any;
-    args_arr[0] = 11;
-    args_arr[1] = 2.3;
-    args_arr[2] = "xyz";
-
-    args : []Any = args_arr;
-
-    // print_func("Prepared args: ", args);
+    print_func("Prepared args_arr: ", args_arr);
+    // println();
+    //
+    // args : []Any = args_arr;
+    //
+    // print_func("Prepared args: ", args_arr);
 
     return 0;
 

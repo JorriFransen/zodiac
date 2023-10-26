@@ -1491,7 +1491,13 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
                     Bytecode_Register vararg_reg;
                     s64 va_i = 0;
                     for (s64 i = vararg_start_index; i < expr->call.args.count; i++) {
-                        vararg_reg = bytecode_emit_insert_element(bc->builder, vararg_reg, emit_any(bc, expr->call.args[i]), array_alloc.type, va_i++);
+                        Bytecode_Register any_reg;
+                        if (expr->call.args[i]->resolved_type == any_type) {
+                            any_reg = ast_expr_to_bytecode(bc, expr->call.args[i]);
+                        } else {
+                            any_reg = emit_any(bc, expr->call.args[i]);
+                        }
+                        vararg_reg = bytecode_emit_insert_element(bc->builder, vararg_reg, any_reg, array_alloc.type, va_i++);
                     }
 
                     bytecode_emit_store(bc->builder, vararg_reg, array_alloc);
