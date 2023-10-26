@@ -277,7 +277,7 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
         cycle++;
     }
 
-    ZTRACE("Done after %i cycles");
+    ZTRACE("Done after %i cycles", cycle);
 
     if (ctx->options.print_ast) {
         for (s64 i = 0; i < ctx->parsed_files.count; i++) {
