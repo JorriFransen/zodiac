@@ -1,5 +1,5 @@
 
-#import "print.zc"
+#import "test_print.zc"
 
 #run main();
 main :: () {

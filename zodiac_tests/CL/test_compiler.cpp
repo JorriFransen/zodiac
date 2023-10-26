@@ -5244,7 +5244,7 @@ MunitResult Any_Print(const MunitParameter params[], void* user_data_or_fixture)
 
     String_Ref code_string = R"CODE_STR(
 
-        #import "print.zc"
+        #import "test_print.zc"
 
         Day :: enum {
             Monday,
@@ -5390,7 +5390,7 @@ fnptr)OUT_STR" };
 MunitResult Any_With_Storage(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
-        #import "print.zc"
+        #import "test_print.zc"
 
         Vec2 :: struct {
             x, y: r64;
@@ -5631,7 +5631,7 @@ fnptr)OUT_STR" };
 MunitResult Any_Without_Storage(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
-        #import "print.zc"
+        #import "test_print.zc"
 
         Vec2 :: struct {
             x, y: r64;
@@ -5840,7 +5840,7 @@ fnptr
 MunitResult Varargs(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
-        #import "print.zc"
+        #import "test_print.zc"
 
         Vec2 :: struct { x, y: r64; }
 

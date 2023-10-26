@@ -662,7 +662,7 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
                 }
             }
 
-            if (!found) {
+            if (!found && filesystem_exists(decl->sr.start.name)) {
                 // Check relative to the file this #import is in
                 String current_file_dir = filesystem_dir_name(ta, decl->sr.start.name);
                 assert(filesystem_is_dir(current_file_dir));
