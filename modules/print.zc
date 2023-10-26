@@ -1,0 +1,47 @@
+
+print_list :: (args: ..) {
+    for i := 0; i < args.length; i += 1 {
+        print_any(args[i]);
+    }
+}
+
+print_any :: (any: Any) -> void {
+
+    switch (any.type.kind) {
+
+        case Type_Info_Kind.Real:
+            if any.type.size == 4 {
+                print(<cast(*r32, any.value));
+            } else if any.type.size == 8 {
+                print(<cast(*r64, any.value));
+            } else {
+                println("Unhandled real size in print_any");
+            }
+
+        case Type_Info_Kind.Struct:
+
+            if any.type == #type_info(String) {
+                strp := cast(*String, any.value);
+                print(<strp);
+            } else {
+                si := cast(*Type_Info_Struct, any.type);
+                print("{ ");
+
+                struct_mem : []u8;
+                struct_mem.data = any.value;
+                struct_mem.length = any.type.size;
+
+                for i := 0; i < si.members.length; i += 1 {
+                    if i > 0 print(", ");
+
+                    member := si.members[i];
+                    member_any : Any = { member.type, *struct_mem[member.offset] };
+                    print_any(member_any);
+                }
+
+                print(" }");
+            }
+
+        default: print("!!!!!  UNHANDLED TYPE IN print_any !!!!!");
+    }
+}
