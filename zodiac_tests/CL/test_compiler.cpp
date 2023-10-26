@@ -93,7 +93,13 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     munit_assert(result.program.entry_handle == -1);
     result.program.entry_handle = bytecode_find_entry(result.program);
 
+    auto old_stdout = stdout;
+    stdout = (FILE *)interp_stdout_file.handle;
+
     Interpreter_Register result_reg = interpreter_start(result.context.interp, result.program);
+
+    stdout = old_stdout;
+
     munit_assert(result_reg.type->kind == Type_Kind::INTEGER);
 
     result.context.interp->std_out = old_out_file;
@@ -5840,9 +5846,8 @@ MunitResult Varargs(const MunitParameter params[], void* user_data_or_fixture) {
 
         main :: () {
 
-            // str := "abc, %i\n";
-            // printf(str.data, 55);
-            // println();
+            str := "abc, %i\n";
+            printf(str.data, 55);
 
             print_func("Hello!");
 
@@ -5888,8 +5893,9 @@ MunitResult Varargs(const MunitParameter params[], void* user_data_or_fixture) {
         #foreign printf :: (cstr: *u8, args: ..) -> s32;
     )CODE_STR";
 
-    Expected_Results expected = { .std_out =
-R"OUT_STR(fmt: "Hello!"
+    Expected_Results expected = { .std_out = 
+R"OUT_STR(abc, 55
+fmt: "Hello!"
 args: 
 fmt: "Hello!"
 args: World, 42
@@ -5902,15 +5908,9 @@ args: 257, 2.300000, { 11.000000, 22.000000 }, 42
 fmt: "Spread args: "
 args: 257, 2.300000, { 11.000000, 22.000000 }, 42
 fmt: "Spread args (modified): "
-args: 2.300000, { 11.000000, 22.000000 }, 42)OUT_STR" };
-// fmt: "Prepared args: "
-// args: { { ptr: { Integer(2), 8 }, ptr: 1 }, { ptr: { Real(3), 4 }, ptr: 51 }, { ptr: { Struct(6), 16 }, ptr: 34 }, { ptr: { Integer(2), 8 }, ptr: 42 } }
-// fmt: "Spread args_arr: "
-// args: 257, 2.300000, xyz, 42
-// fmt: "Spread args: "
-// args: 257, 2.300000, xyz, 42
-// fmt: "Spread args (modified): "
-// args: 2.300000, xyz, 42)OUT_STR" };
+args: 2.300000, { 11.000000, 22.000000 }, 42)OUT_STR",
+
+    };
 
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };
