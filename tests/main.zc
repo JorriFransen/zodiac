@@ -1,4 +1,3 @@
-
 #import "print.zc"
 
 Vec2 :: struct { x, y: r64; }
@@ -6,10 +5,12 @@ Vec2 :: struct { x, y: r64; }
 #run main();
 main :: () {
 
-    print_list("Hello,", " World!\n");
+    println("abc");
+
+    println("Hello,", " World!");
 
     pos : Vec2 = { 1.2, 3.4 };
-    print_list("Pos: ", pos, "\n");
+    println("Pos: ", pos);
 
     return 0;
 

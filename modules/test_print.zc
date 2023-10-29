@@ -1,5 +1,5 @@
 
-print_any :: (any: Any) -> void {
+test_print_any :: (any: Any) -> void {
     switch (any.type.kind) {
 
         case Type_Info_Kind.Integer:
@@ -7,42 +7,42 @@ print_any :: (any: Any) -> void {
 
             if (ii.sign) {
                 switch (any.type.size) {
-                    case 8: print(<cast(*s64, any.value));
-                    case 4: print(<cast(*s32, any.value));
-                    case 2: print(<cast(*s16, any.value));
-                    case 1: print(<cast(*s8, any.value));
-                    default: println("Unhandled integer size in print_any");
+                    case 8: xx_print(<cast(*s64, any.value));
+                    case 4: xx_print(<cast(*s32, any.value));
+                    case 2: xx_print(<cast(*s16, any.value));
+                    case 1: xx_print(<cast(*s8, any.value));
+                    default: xx_println("Unhandled integer size in test_print_any");
                 }
             } else {
                 switch (any.type.size) {
-                    case 8: print(<cast(*u64, any.value));
-                    case 4: print(<cast(*u32, any.value));
-                    case 2: print(<cast(*u16, any.value));
-                    case 1: print(<cast(*u8, any.value));
-                    default: println("Unhandled integer size in print_any");
+                    case 8: xx_print(<cast(*u64, any.value));
+                    case 4: xx_print(<cast(*u32, any.value));
+                    case 2: xx_print(<cast(*u16, any.value));
+                    case 1: xx_print(<cast(*u8, any.value));
+                    default: xx_println("Unhandled integer size in test_print_any");
                 }
             }
 
         case Type_Info_Kind.Real:
             if any.type.size == 4 {
-                print(<cast(*r32, any.value));
+                xx_print(<cast(*r32, any.value));
             } else if any.type.size == 8 {
-                print(<cast(*r64, any.value));
+                xx_print(<cast(*r64, any.value));
             } else {
-                println("Unhandled real size in print_any");
+                xx_println("Unhandled real size in test_print_any");
             }
 
         case Type_Info_Kind.Bool:
-            print(<cast(*bool, any.value));
+            xx_print(<cast(*bool, any.value));
 
         case Type_Info_Kind.Pointer:
             pi := cast(*Type_Info_Pointer, any.type);
 
             value := cast(**void, any.value);
 
-            print("ptr: ");
+            xx_print("ptr: ");
             value_any : Any = { pi.pointer_to, cast(*u8, <value) };
-            print_any(value_any);
+            test_print_any(value_any);
 
 
         case Type_Info_Kind.Struct:
@@ -50,23 +50,23 @@ print_any :: (any: Any) -> void {
 
             if any.type == #type_info(String) {
                 strp := cast(*String, any.value);
-                print(<strp);
+                xx_print(<strp);
             } else {
-                print("{ ");
+                xx_print("{ ");
 
                 struct_mem : []u8;
                 struct_mem.data = any.value;
                 struct_mem.length = any.type.size;
 
                 for i := 0; i < si.members.length; i += 1 {
-                    if i > 0 print(", ");
+                    if i > 0 xx_print(", ");
 
                     member := si.members[i];
                     member_any : Any = { member.type, *struct_mem[member.offset] };
-                    print_any(member_any);
+                    test_print_any(member_any);
                 }
 
-                print(" }");
+                xx_print(" }");
             }
 
         case Type_Info_Kind.Enum:
@@ -82,10 +82,10 @@ print_any :: (any: Any) -> void {
                 }
             }
 
-            print(name, "(");
+            xx_print(name, "(");
             int_any : Any = { ei.integer_type, any.value };
-            print_any(int_any);
-            print(")");
+            test_print_any(int_any);
+            xx_print(")");
 
         case Type_Info_Kind.Static_Array:
             ai := cast(*Type_Info_Static_Array, any.type);
@@ -94,14 +94,14 @@ print_any :: (any: Any) -> void {
             arr_mem.data = any.value;
             arr_mem.length = ai.length * ai.element_type.size;
 
-            print("{ ");
+            xx_print("{ ");
             for i := 0; i < ai.length; i += 1 {
-                if i > 0 print(", ");
+                if i > 0 xx_print(", ");
 
                 elem_any : Any = { ai.element_type, *arr_mem[ai.element_type.size * i] };
-                print_any(elem_any);
+                test_print_any(elem_any);
             }
-            print(" }");
+            xx_print(" }");
 
         case Type_Info_Kind.Slice:
             si := cast(*Type_Info_Slice, any.type);
@@ -112,18 +112,18 @@ print_any :: (any: Any) -> void {
             arr_mem.data = cast(*u8, slice.data);
             arr_mem.length = slice.length * si.element_type.size;
 
-            print("{ ");
+            xx_print("{ ");
             for i := 0; i < slice.length; i += 1 {
-                if i > 0 print(", ");
+                if i > 0 xx_print(", ");
 
                 elem_any : Any = { si.element_type, *arr_mem[si.element_type.size * i] };
-                print_any(elem_any);
+                test_print_any(elem_any);
             }
-            print(" }");
+            xx_print(" }");
 
         case Type_Info_Kind.Function:
-            print("fnptr");
+            xx_print("fnptr");
 
-        default: println("!!! Unhandled type in print_any !!!");
+        default: xx_println("!!! Unhandled type in test_print_any !!!");
     }
 }

@@ -29,12 +29,12 @@ static MunitResult bool_to_string_Bool_Arg_LLVM(const MunitParameter params[], v
             _bool2 : bool;
         }
         main :: () -> s64 {
-            println(true);
-            println(false);
+            xx_println(true);
+            xx_println(false);
             // s : S = { 1, 2, 3, 4, 5, 6, 7, 8, 1.1, 2.2, false, true };
             s : S = { false, true };
-            println(s._bool1);
-            println(s._bool2);
+            xx_println(s._bool1);
+            xx_println(s._bool2);
             return 0;
         }
     )CODE_STR";

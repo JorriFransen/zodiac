@@ -1880,7 +1880,13 @@ Bytecode_Register ast_const_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expre
                 case AST_Declaration_Kind::CONSTANT_VARIABLE: {
                     Bytecode_Global_Handle glob_handle;
                     bool found = hash_table_find(&bc->globals, ident_sym->decl, &glob_handle);
-                    assert(found);
+
+                    if (!found) {
+                        ast_decl_to_bytecode(bc, ident_sym->decl);
+
+                        found = hash_table_find(&bc->globals, ident_sym->decl, &glob_handle);
+                        assert(found);
+                    }
 
                     debug_assert(glob_handle < bc->builder->globals.count);
                     auto global = bc->builder->globals[glob_handle];
@@ -2039,7 +2045,14 @@ Bytecode_Register ast_const_expr_to_bytecode(Bytecode_Converter *bc, AST_Express
 
                     Bytecode_Global_Handle glob_handle;
                     bool found = hash_table_find(&bc->globals, sym->decl, &glob_handle);
-                    assert(found);
+
+                    if (!found) {
+                        ast_decl_to_bytecode(bc, sym->decl);
+
+                        found = hash_table_find(&bc->globals, sym->decl, &glob_handle);
+                        assert(found);
+
+                    }
 
                     auto glob = bc->builder->globals[glob_handle];
                     return glob.initial_value;

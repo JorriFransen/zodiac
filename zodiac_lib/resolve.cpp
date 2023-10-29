@@ -3277,6 +3277,12 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     case AST_Run_Directive_Kind::INVALID: assert(false); break;
                     case AST_Run_Directive_Kind::EXPR: {
                         type = dir->run.expr->resolved_type;
+
+                        if (type == &builtin_type_void) {
+                            fatal_resolve_error(ctx, dir->run.expr, "Expected non void expression after #run in assignment");
+                            return false;
+                        }
+
                         if (type->kind == Type_Kind::UNSIZED_INTEGER) {
                             type = &builtin_type_s64;
                             dir->run.expr->resolved_type = &builtin_type_s64;
@@ -3285,7 +3291,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     }
 
                     case AST_Run_Directive_Kind::STMT: {
-                        fatal_resolve_error(ctx, dir->run.stmt, "Expected expression after #run in assignment");
+                        assert(false);
                         return false;
                     }
                 }

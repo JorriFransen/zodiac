@@ -244,6 +244,8 @@ MunitResult Invalid_Return_Type(const MunitParameter params[], void* user_data_o
 MunitResult Print(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         main :: () -> s64 {
             println(42);
             return 0;
@@ -570,6 +572,8 @@ MunitResult Args_And_Return_Val(const MunitParameter params[], void* user_data_o
 MunitResult If_Statements(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         if_test :: (x: s64) -> s64 {
             result : s64 = 0;
             if (x == 1) {
@@ -608,6 +612,8 @@ MunitResult If_Statements(const MunitParameter params[], void* user_data_or_fixt
 MunitResult Boolean_If_Statements(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         pbool1 :: (x: bool) {
             if (x == true) {
                 println("true");
@@ -737,6 +743,8 @@ MunitResult Nested_Struct_Offset_Ptr(const MunitParameter params[], void* user_d
 MunitResult Static_Array_Basics(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         global_ints : [4]s64;
 
         main :: () {
@@ -792,6 +800,8 @@ MunitResult Static_Array_Basics(const MunitParameter params[], void* user_data_o
 MunitResult Deref(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
             x := 42;
             xptr := *x;
@@ -916,6 +926,8 @@ MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void
     // Running main
     {
         String_Ref code_string = R"CODE_STR(
+            #import "print.zc"
+
             #run main();
             main :: () -> s64 {
                 println("main");
@@ -938,6 +950,8 @@ MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void
     // print
     {
         String_Ref code_string = R"CODE_STR(
+            #import "print.zc"
+
             #run println(42);
             main :: () -> s64 {
                 println("main");
@@ -960,6 +974,8 @@ MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void
     // print 2
     {
         String_Ref code_string = R"CODE_STR(
+            #import "print.zc"
+
             #run println(x);
             main :: () -> s64 {
                 println("main");
@@ -984,6 +1000,8 @@ MunitResult Global_Run_Directive_Return_Void(const MunitParameter params[], void
     // block
     {
         String_Ref code_string = R"CODE_STR(
+            #import "print.zc"
+
             #run {
                 main();
                 println(x);
@@ -1016,6 +1034,8 @@ MunitResult Global_Run_Directive_Variable(const MunitParameter params[], void* u
     // Running main depending on variable depending on return value of another run
     {
         String_Ref code_string = R"CODE_STR(
+            #import "print.zc"
+
             #run main();
             main :: () {
                 println("Hello zodiac!");
@@ -1048,6 +1068,8 @@ MunitResult Global_Run_Directive_Constant(const MunitParameter params[], void* u
     // Running main depending on constant depending on return value of another run
     {
         String_Ref code_string = R"CODE_STR(
+            #import "print.zc"
+
             #run main();
             main :: () {
                 println("Hello zodiac!");
@@ -1080,6 +1102,8 @@ MunitResult Local_Run_Directives(const MunitParameter params[], void* user_data_
     // Running main depending on constant depending on return value of another run
     {
         String_Ref code_string = R"CODE_STR(
+            #import "print.zc"
+
             #run main();
             main :: () {
                 x := #run 20 * 2;
@@ -1113,6 +1137,8 @@ MunitResult Run_Global_Var_Types(const MunitParameter params[], void* user_data_
     // Running main depending on constant depending on return value of another run
     {
         String_Ref code_string = R"CODE_STR(
+            #import "print.zc"
+
             signed_integer := #run return_signed_integer(7);
             unsigned_integer := #run return_unsigned_integer(8);
             float := #run return_float(4.2);
@@ -1200,6 +1226,8 @@ MunitResult Run_Global_Const_Types(const MunitParameter params[], void* user_dat
     // Running main depending on constant depending on return value of another run
     {
         String_Ref code_string = R"CODE_STR(
+            #import "print.zc"
+
             signed_integer :: #run return_signed_integer(7);
             unsigned_integer :: #run return_unsigned_integer(8);
             float :: #run return_float(4.2);
@@ -1284,6 +1312,8 @@ MunitResult Run_Global_Const_Types(const MunitParameter params[], void* user_dat
 MunitResult Run_Struct_Member_Types(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         S :: struct {
             _u64 : u64;
             _s64 : s64;
@@ -1368,6 +1398,8 @@ MunitResult Run_Struct_Member_Types(const MunitParameter params[], void* user_da
 MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         u8s := #run make_u8s(1, 2, 3, 4, 5);
         s8s := #run make_s8s(1, 2, 3, 4, 5);
         u16s := #run make_u16s(1, 2, 3, 4, 5);
@@ -1532,6 +1564,8 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
 MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         u8s :: #run make_u8s(1, 2, 3, 4, 5);
         s8s :: #run make_s8s(1, 2, 3, 4, 5);
         u16s :: #run make_u16s(1, 2, 3, 4, 5);
@@ -1696,6 +1730,8 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
 MunitResult Run_And_Pointer_To_Const(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         S :: struct { val : s64; }
         X : s64 : #run return_x(42);
         gcs : S : #run make_s(*X);
@@ -1808,12 +1844,13 @@ MunitResult Run_Print_Arg_Const(const MunitParameter params[], void* user_data_o
 
     {
         String_Ref code_string = R"CODE_STR(
+            #import "print.zc"
             x : s64 = 42;
             #run println(x);
         )CODE_STR";
 
         Expected_Results expected = {
-            .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Arguments to print in #run must be constant")})
+            .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Run directive expression must be constant")})
         };
 
         auto result = compile_and_run(code_string, expected);
@@ -1825,6 +1862,7 @@ MunitResult Run_Print_Arg_Const(const MunitParameter params[], void* user_data_o
 
     {
         String_Ref code_string = R"CODE_STR(
+            #import "print.zc"
             x : s64 : 42;
             #run println(x);
             main :: () { return 0; }
@@ -1848,12 +1886,13 @@ MunitResult Run_Assignment_Is_Expression(const MunitParameter params[], void* us
 
     {
         String_Ref code_string = R"CODE_STR(
+            #import "print.zc"
             x : s64 : 42;
             y := #run println(x);
         )CODE_STR";
 
         Expected_Results expected = {
-            .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Expected expression after #run in assignment")})
+            .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Expected non void expression after #run in assignment")})
         };
 
         auto result = compile_and_run(code_string, expected);
@@ -1911,12 +1950,13 @@ MunitResult Run_Print_Arg_In_Block_Const(const MunitParameter params[], void* us
 
     {
         String_Ref code_string = R"CODE_STR(
+            #import "print.zc"
             x : s64 = 42;
             #run { println(x); }
         )CODE_STR";
 
         Expected_Results expected = {
-            .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Arguments to print in #run must be constant")})
+            .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Run directive expression must be constant")})
         };
 
         auto result = compile_and_run(code_string, expected);
@@ -1928,6 +1968,7 @@ MunitResult Run_Print_Arg_In_Block_Const(const MunitParameter params[], void* us
 
     {
         String_Ref code_string = R"CODE_STR(
+            #import "print.zc"
             x : s64 : 42;
             #run { println(x); }
             main :: () { return 0; }
@@ -1968,6 +2009,7 @@ MunitResult Run_Block_Only_Print_And_Call(const MunitParameter params[], void* u
 MunitResult Run_Local_Unused(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
         main :: () {
             #run println(1);
             return 0;
@@ -1987,6 +2029,8 @@ MunitResult Run_Local_Unused(const MunitParameter params[], void* user_data_or_f
 MunitResult Non_Constant_Compound(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         Vec2 :: struct { x, y: s64; }
         AABB :: struct { pos, size: Vec2; }
 
@@ -2043,11 +2087,14 @@ MunitResult Non_Constant_Compound(const MunitParameter params[], void* user_data
 MunitResult Foreign_Function(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
-#foreign foreign_add :: (a: s64, b: s64) -> s64;
-main :: () {
-    println(foreign_add(1, 2));
-    return 0;
-}
+        #import "print.zc"
+
+        #foreign foreign_add :: (a: s64, b: s64) -> s64;
+
+        main :: () {
+            println(foreign_add(1, 2));
+            return 0;
+        }
     )CODE_STR";
 
     Expected_Results expected = { .std_out = "3" };
@@ -2061,6 +2108,8 @@ main :: () {
 MunitResult Strings(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         string_copy :: (s: String) -> String {
             result : String = { malloc(s.length), s.length };
             memcpy(result.data, s.data, s.length);
@@ -2128,6 +2177,8 @@ Hello, Zodiac!
 MunitResult While(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
             x := 0;
             while x < 11 {
@@ -2181,6 +2232,8 @@ R"OUT_STR(0
 MunitResult For(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
             for (i := 0; i < 11; i = i + 1) {
                 x := i;
@@ -2220,6 +2273,8 @@ i: 10, x: 100)OUT_STR" };
 MunitResult Slice_Array_Locals(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         Vec2 :: struct { x, y: s32; }
         main :: () {
             arr : [4]s64 = { 1, 2, 3, 4 };
@@ -2305,6 +2360,8 @@ R"OUT_STR(2
 MunitResult Slice_Array_Globals(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         global_arr : [4]s64 = { 1, 2, 3, 4 };
         global_slice : []s64 = { 11, 22, 33, 44, 55 };
         global_const_arr : [5]s64 : { 5, 4, 3, 2, 1 };
@@ -2362,6 +2419,8 @@ global_slice_from_global_const_arr: { 5, 4, 3, 2, 1 })OUT_STR" };
 MunitResult Slice_Array_Arguments(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         global_arr : [3]s64 = { 1, 2, 3 };
         c_global_arr : [3]s64 = { 11, 22, 33 };
 
@@ -2397,6 +2456,8 @@ R"OUT_STR({ 1, 2 }
 MunitResult Slice_Array_Extra(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         glob_const_arr : [4]s64 : { 1, 2, 3, 4 };
         glob_const_slice_from_arr : []s64 : glob_const_arr;
         glob_const_slice : []s64 : { 11, 22, 33 };
@@ -2493,6 +2554,8 @@ R"OUT_STR({ 1, 2, 3, 4 }
 MunitResult Slice_Aggregate_Index(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
             vec_arr : [3]Vec2 = { {1, 2}, {3, 4}, {5, 6} };
             vec_slice_from_arr : []Vec2 = vec_arr;
@@ -2549,6 +2612,8 @@ R"OUT_STR({ { 1, 2 }, { 3, 4 }, { 5, 6 } }
 MunitResult Slice_Lvalues(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
 
             vec_arr : [3]Vec2 = { {1, 2}, {3, 4}, {5, 6} };
@@ -2598,6 +2663,8 @@ R"OUT_STR({ { 1, 2 }, { 3, 4 }, { 5, 6 } }
 MunitResult Compound_Assignment(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
 
             i := 42;
@@ -2642,6 +2709,8 @@ R"OUT_STR(42
 MunitResult Pointer_Equality(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
             ptr : *s64 = null;
             ptr = null;
@@ -2717,6 +2786,8 @@ ptr == ptr2)OUT_STR" };
 MunitResult Struct_Pointer_To_Self(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         List_Node :: struct {
             value: s64;
             next: *List_Node;
@@ -2771,6 +2842,8 @@ R"OUT_STR(123456)OUT_STR" };
 MunitResult Spiderman_Struct(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         A :: struct {
             value: s64;
             ptr: *B;
@@ -2816,6 +2889,8 @@ R"OUT_STR(42
 MunitResult More_Struct_Member_Pointers(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         A :: struct {
             val: s64;
             b: B;
@@ -2859,6 +2934,8 @@ R"OUT_STR(42
 MunitResult Defer_1(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
             defer println(8);
             defer print(7);
@@ -2886,6 +2963,8 @@ R"OUT_STR(12345678)OUT_STR" };
 MunitResult Defer_2(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         // Wrap this in a function because we are expected to return an integer from main
         defer_test :: () {
             defer println(8);
@@ -2917,6 +2996,8 @@ R"OUT_STR(12345678)OUT_STR" };
 MunitResult Defer_3(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
 
             defer println(6);
@@ -2951,6 +3032,8 @@ R"OUT_STR(123456)OUT_STR" };
 MunitResult Defer_4(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         work :: (i: s64) { println(i); }
 
         main :: () {
@@ -3019,6 +3102,8 @@ R"OUT_STR(0
 MunitResult Defer_5(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         work :: (i: s64) { println(i); }
 
         main :: () {
@@ -3072,6 +3157,8 @@ R"OUT_STR(0
 MunitResult Defer_6(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         work :: (i: s64) { print(i); }
 
         main :: () {
@@ -3116,6 +3203,8 @@ R"OUT_STR(0123456)OUT_STR" };
 MunitResult Defer_7(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         work :: (i: s64) { print(i); }
 
         main :: () {
@@ -3163,6 +3252,8 @@ R"OUT_STR(012345)OUT_STR" };
 MunitResult Zero_Init_Locals(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         Test :: struct {
             m1 : s64;
             m2 : u64;
@@ -3257,6 +3348,8 @@ false
 MunitResult Zero_Init_Globals(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         Test :: struct {
             m1 : s64;
             m2 : u64;
@@ -3350,6 +3443,8 @@ false
 MunitResult Unsized_Int_To_Real(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         Z :: 3;
 
         Vec2 :: struct { x, y: s64; }
@@ -3413,6 +3508,8 @@ R"OUT_STR(1.000000, 2.000000
 MunitResult Implicit_Pointer_To_Bool(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
 
             ptr : *s64;
@@ -3477,6 +3574,8 @@ b == true)OUT_STR" };
 MunitResult Implicit_Integer_To_Bool(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         test :: (b: bool) {
             if b println("true");
             else println("false");
@@ -3539,6 +3638,7 @@ true)OUT_STR" };
 MunitResult Enum_Implicit_Values(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        #import "print.zc"
 
         print_day :: (d: Day) {
             println(d);
@@ -3580,6 +3680,8 @@ Day.SUNDAY: 6
 MunitResult Enum_Operations(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
             println(Day.MONDAY == Day.MONDAY);
             println(Day.MONDAY == Day.TUESDAY);
@@ -3618,6 +3720,8 @@ true)OUT_STR" };
 MunitResult Enum_Mixed_Values(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         Mode :: enum {
             INVALID;
             READ  :: 11,
@@ -3656,6 +3760,8 @@ Mode.UNIMPORTANT: 43)OUT_STR" };
 MunitResult Enum_Members_As_Values(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         Token_Kind :: enum {
 
             SECOND_NON_ASCII :: NAME + 1;
@@ -3715,6 +3821,8 @@ Token_Kind2.INT: 257)OUT_STR" };
 MunitResult Switch_Int(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         print_int :: (i: s64) {
 
             switch (i) {
@@ -3758,6 +3866,8 @@ i == 4)OUT_STR" };
 MunitResult Switch_Int_Default(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         print_int :: (i: s64) {
 
             switch (i) {
@@ -3805,6 +3915,8 @@ i == -1 (default))OUT_STR" };
 MunitResult Switch_Int_Falltrough(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         print_int :: (i: s64) {
 
             switch (i) {
@@ -3852,6 +3964,8 @@ default)OUT_STR" };
 MunitResult Switch_Int_Falltrough_Last(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         print_int :: (i: s64) {
 
             switch (i) {
@@ -3896,6 +4010,8 @@ four)OUT_STR" };
 MunitResult Switch_Int_Falltrough_Multi(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         print_int :: (i: s64) {
 
             switch (i) {
@@ -3943,6 +4059,8 @@ value is outside range)OUT_STR" };
 MunitResult Switch_Int_Multi_Val(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         print_i :: (i: s64) {
 
             switch i {
@@ -3983,6 +4101,8 @@ R"OUT_STR(0: 0..2
 MunitResult Switch_Int_Multi_Val_Default(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         print_i :: (i: s64) {
 
             switch i {
@@ -4027,6 +4147,8 @@ R"OUT_STR(0: 0..2
 MunitResult Switch_Int_Multi_Val_Falltrough(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         print_i :: (i: s64) {
 
             switch i {
@@ -4070,6 +4192,8 @@ R"OUT_STR(0: 0..2
 MunitResult Switch_Int_Range(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
 
             print_i(0);
@@ -4110,6 +4234,8 @@ R"OUT_STR(0: 0..2
 MunitResult Switch_Int_Range_Default(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
 
             print_i(0);
@@ -4154,6 +4280,8 @@ R"OUT_STR(0: 0..2
 MunitResult Switch_Int_Range_Multi(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
 
             print_i(0);
@@ -4198,6 +4326,8 @@ R"OUT_STR(0: 0..2 or 99
 MunitResult Switch_Enum_Incomplete(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        #import "print.zc"
+
         print_day :: (d: Day) {
 
             switch d {
@@ -4232,6 +4362,8 @@ Day.TUESDAY: 1)OUT_STR" };
 MunitResult Switch_Enum_Default(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        #import "print.zc"
+
         print_day :: (d: Day) {
 
             switch d {
@@ -4272,6 +4404,8 @@ Some other day: 6)OUT_STR" };
 MunitResult Switch_Enum_Falltrough(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
 
             print_day(Day.MONDAY);
@@ -4321,6 +4455,8 @@ Day.SUNDAY: 6)OUT_STR" };
 MunitResult Switch_Enum_Falltrough_Last(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
 
             print_day(Day.MONDAY);
@@ -4363,6 +4499,8 @@ Day.SUNDAY: 6)OUT_STR" };
 MunitResult Switch_Enum_Falltrough_Multi(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        #import "print.zc"
+
         main :: () {
 
             print_day(Day.MONDAY);
@@ -4408,6 +4546,8 @@ Day 6 is a weekend day)OUT_STR" };
 MunitResult Recurse_Self(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         recurse :: (x: s64) {
             print(x);
 
@@ -4440,6 +4580,8 @@ R"OUT_STR(1000999998997996995994993992991990989988987986985984983982981980979978
 MunitResult Recurse_Indirect(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
         func_a :: (x: s64) {
             println("a: ", x);
 
@@ -4485,6 +4627,8 @@ a: 0)OUT_STR" };
 MunitResult Type_Info(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        #import "print.zc"
+
         Vec2 :: struct { x, y: r64; }
         AABB :: struct { pos, size: Vec2; }
 
@@ -4791,6 +4935,8 @@ Function: params: (r64, r64 ) return_type: Vec2, 8 bytes)OUT_STR" };
 MunitResult Type_Of(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        #import "print.zc"
+
         Vec2 :: struct { x, y: r64; }
         AABB :: struct { pos, size: Vec2; }
 
@@ -5148,6 +5294,8 @@ true)OUT_STR" };
 MunitResult Function_Pointers(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
+        #import "print.zc"
+
         binop_fn :: #type (s64, s64) -> s64;
 
         add_s64 :: (a: s64, b: s64) -> s64 {
@@ -5268,6 +5416,7 @@ MunitResult Any_Print(const MunitParameter params[], void* user_data_or_fixture)
     String_Ref code_string = R"CODE_STR(
 
         #import "test_print.zc"
+        #import "print.zc"
 
         Day :: enum {
             Monday,
@@ -5286,92 +5435,92 @@ MunitResult Any_Print(const MunitParameter params[], void* user_data_or_fixture)
         main :: () {
             x := 42;
             ax : Any = { #type_info(#type_of(x)), cast(*u8, *x) };
-            print_any(ax);
+            test_print_any(ax);
             println();
 
             x2 : u32 = 41;
             ax2 : Any = { #type_info(#type_of(x2)), cast(*u8, *x2) };
-            print_any(ax2);
+            test_print_any(ax2);
             println();
 
             y := 4.2;
             ay : Any = { #type_info(#type_of(y)), cast(*u8, *y) };
-            print_any(ay);
+            test_print_any(ay);
             println();
 
             y2 : r64 = 4.3;
             ay2 : Any = { #type_info(#type_of(y2)), cast(*u8, *y2) };
-            print_any(ay2);
+            test_print_any(ay2);
             println();
 
             b := true;
             ab : Any = { #type_info(#type_of(b)), cast(*u8, *b) };
-            print_any(ab);
+            test_print_any(ab);
             println();
 
             b2 := false;
             ab2 : Any = { #type_info(#type_of(b2)), cast(*u8, *b2) };
-            print_any(ab2);
+            test_print_any(ab2);
             println();
 
             px := *x;
             apx : Any = { #type_info(#type_of(px)), cast(*u8, *px) };
-            print_any(apx);
+            test_print_any(apx);
             println();
 
             py := *y;
             apy : Any = { #type_info(#type_of(py)), cast(*u8, *py) };
-            print_any(apy);
+            test_print_any(apy);
             println();
 
             ppx := *px;
             appx : Any = { #type_info(#type_of(ppx)), cast(*u8, *ppx) };
-            print_any(appx);
+            test_print_any(appx);
             println();
 
             str := "Hello!";
             astr : Any = { #type_info(#type_of(str)), cast(*u8, *str) };
-            print_any(astr);
+            test_print_any(astr);
             println();
 
             vec : Vec2 = { 1.2, 5.4 };
             avec : Any = { #type_info(#type_of(vec)), cast(*u8, *vec) };
-            print_any(avec);
+            test_print_any(avec);
             println();
 
             d := Day.Tuesday;
             ad : Any = { #type_info(#type_of(d)), cast(*u8, *d) };
-            print_any(ad);
+            test_print_any(ad);
             println();
 
             d2 := Day.Friday;
             ad2 : Any = { #type_info(#type_of(d2)), cast(*u8, *d2) };
-            print_any(ad2);
+            test_print_any(ad2);
             println();
 
             ints : [3]s64 = { 42, 43, -44 };
             aints : Any = { #type_info(#type_of(ints)), cast(*u8, *ints) };
-            print_any(aints);
+            test_print_any(aints);
             println();
 
             vecs : [4]Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } };
             avecs : Any = { #type_info(#type_of(vecs)), cast(*u8, *vecs) };
-            print_any(avecs);
+            test_print_any(avecs);
             println();
 
             slice : []s64 = { 11, 22, 33 };
             aslice : Any = { #type_info(#type_of(slice)), cast(*u8, *slice) };
-            print_any(aslice);
+            test_print_any(aslice);
             println();
 
             slice2 : []Vec2 = vecs;
             aslice2 : Any = { #type_info(#type_of(slice2)), cast(*u8, *slice2) };
-            print_any(aslice2);
+            test_print_any(aslice2);
             println();
 
             binop_fn : (s64, s64) -> s64 = add_s64;
             abinop_fn : Any = { #type_info(#type_of(binop_fn)), cast(*u8, *binop_fn) };
-            print_any(abinop_fn);
+            test_print_any(abinop_fn);
             println();
 
 
@@ -5414,6 +5563,7 @@ MunitResult Any_With_Storage(const MunitParameter params[], void* user_data_or_f
 
     String_Ref code_string = R"CODE_STR(
         #import "test_print.zc"
+        #import "print.zc"
 
         Vec2 :: struct {
             x, y: r64;
@@ -5433,164 +5583,164 @@ MunitResult Any_With_Storage(const MunitParameter params[], void* user_data_or_f
 
             x := 42;
             ax : Any = x;
-            print_any(ax);
+            test_print_any(ax);
             println();
 
-            print_any(x);
+            test_print_any(x);
             println();
 
             x2 : u32 = 41;
             ax2 : Any = x2;
-            print_any(ax2);
+            test_print_any(ax2);
             println();
 
-            print_any(x2);
+            test_print_any(x2);
             println();
 
             y := 4.2;
             ay : Any = y;
-            print_any(ay);
+            test_print_any(ay);
             println();
 
-            print_any(y);
+            test_print_any(y);
             println();
 
             y2 : r64 = 4.3;
             ay2 : Any = y2;
-            print_any(ay2);
+            test_print_any(ay2);
             println();
 
-            print_any(y2);
+            test_print_any(y2);
             println();
 
             b := true;
             ab : Any = b;
-            print_any(ab);
+            test_print_any(ab);
             println();
 
-            print_any(b);
+            test_print_any(b);
             println();
 
             b2 := false;
             ab2 : Any = b2;
-            print_any(ab2);
+            test_print_any(ab2);
             println();
 
-            print_any(b2);
+            test_print_any(b2);
             println();
 
             px := *x;
             apx : Any = px;
-            print_any(apx);
+            test_print_any(apx);
             println();
 
-            print_any(px);
+            test_print_any(px);
             println();
 
             py := *y;
             apy : Any = py;
-            print_any(apy);
+            test_print_any(apy);
             println();
 
-            print_any(py);
+            test_print_any(py);
             println();
 
             ppx := *px;
             appx : Any = ppx;
-            print_any(appx);
+            test_print_any(appx);
             println();
 
-            print_any(ppx);
+            test_print_any(ppx);
             println();
 
             str := "Hello!";
             astr : Any = str;
-            print_any(astr);
+            test_print_any(astr);
             println();
 
-            print_any(str);
+            test_print_any(str);
             println();
 
             vec : Vec2 = { 1.2, 5.4 };
             avec : Any = vec;
-            print_any(avec);
+            test_print_any(avec);
             println();
 
-            print_any(vec);
+            test_print_any(vec);
             println();
 
             avecy : Any = vec.y;
-            print_any(avecy);
+            test_print_any(avecy);
             println();
 
-            print_any(vec.x);
+            test_print_any(vec.x);
             println();
 
             d := Day.Tuesday;
             ad : Any = d;
-            print_any(ad);
+            test_print_any(ad);
             println();
 
-            print_any(d);
+            test_print_any(d);
             println();
 
             d2 := Day.Friday;
             ad2 : Any = d2;
-            print_any(ad2);
+            test_print_any(ad2);
             println();
 
-            print_any(d2);
+            test_print_any(d2);
             println();
 
             ints : [3]s64 = { 42, 43, -44 };
             aints : Any = ints;
-            print_any(aints);
+            test_print_any(aints);
             println();
 
-            print_any(ints);
+            test_print_any(ints);
             println();
 
             vecs : [4]Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } };
             avecs : Any = vecs;
-            print_any(avecs);
+            test_print_any(avecs);
             println();
 
-            print_any(vecs);
+            test_print_any(vecs);
             println();
 
             avec2 : Any = vecs[1];
-            print_any(avec2);
+            test_print_any(avec2);
             println();
 
-            print_any(vecs[2]);
+            test_print_any(vecs[2]);
             println();
 
             slice : []s64 = { 11, 22, 33 };
             aslice : Any = slice;
-            print_any(aslice);
+            test_print_any(aslice);
             println();
 
-            print_any(slice);
+            test_print_any(slice);
             println();
 
             asm : Any = slice[1];
-            print_any(asm);
+            test_print_any(asm);
             println();
 
             slice2 : []Vec2 = vecs;
             aslice2 : Any = slice2;
-            print_any(aslice2);
+            test_print_any(aslice2);
             println();
 
-            print_any(slice2);
+            test_print_any(slice2);
             println();
 
             binop_fn : (s64, s64) -> s64 = add_s64;
             abinop_fn : Any = binop_fn;
-            print_any(abinop_fn);
+            test_print_any(abinop_fn);
             println();
 
-            print_any(binop_fn);
+            test_print_any(binop_fn);
             println();
 
             return 0;
@@ -5655,6 +5805,7 @@ MunitResult Any_Without_Storage(const MunitParameter params[], void* user_data_o
 
     String_Ref code_string = R"CODE_STR(
         #import "test_print.zc"
+        #import "print.zc"
 
         Vec2 :: struct {
             x, y: r64;
@@ -5672,147 +5823,147 @@ MunitResult Any_Without_Storage(const MunitParameter params[], void* user_data_o
 
         main :: () {
 
-            print_any('a');
+            test_print_any('a');
             println();
 
             ax : Any = 42;
-            print_any(ax);
+            test_print_any(ax);
             println();
 
-            print_any(42);
+            test_print_any(42);
             println();
 
             ax2 : Any = cast(u32, 41);
-            print_any(ax2);
+            test_print_any(ax2);
             println();
 
-            print_any(cast(u32, 41));
+            test_print_any(cast(u32, 41));
             println();
 
             ay : Any = 4.2;
-            print_any(ay);
+            test_print_any(ay);
             println();
 
-            print_any(4.2);
+            test_print_any(4.2);
             println();
 
             ay2 : Any = cast(r64, 4.3);
-            print_any(ay2);
+            test_print_any(ay2);
             println();
 
-            print_any(4.3);
+            test_print_any(4.3);
             println();
 
             ab : Any = true;
-            print_any(ab);
+            test_print_any(ab);
             println();
 
-            print_any(true);
+            test_print_any(true);
             println();
 
             ab2 : Any = false;
-            print_any(ab2);
+            test_print_any(ab2);
             println();
 
-            print_any(false);
+            test_print_any(false);
             println();
 
             x := 42;
             apx : Any = *x;
-            print_any(apx);
+            test_print_any(apx);
             println();
 
-            print_any(*x);
+            test_print_any(*x);
             println();
 
             y := 4.2;
             apy : Any = *y;
-            print_any(apy);
+            test_print_any(apy);
             println();
 
-            print_any(*y);
+            test_print_any(*y);
             println();
 
             px := *x;
             appx : Any = *px;
-            print_any(appx);
+            test_print_any(appx);
             println();
 
-            print_any(*px);
+            test_print_any(*px);
             println();
 
             astr : Any = "Hello!";
-            print_any(astr);
+            test_print_any(astr);
             println();
 
-            print_any("Hello!");
+            test_print_any("Hello!");
             println();
 
             // Can't test compound literals since explicit types are not supported (yet).
             // vec : Vec2 = { 1.2, 5.4 };
             // avec : Any = vec;
-            // print_any(avec);
+            // test_print_any(avec);
             // println();
             //
-            // print_any(vec);
+            // test_print_any(vec);
             // println();
 
             ad : Any = Day.Tuesday;
-            print_any(ad);
+            test_print_any(ad);
             println();
 
-            print_any(Day.Tuesday);
+            test_print_any(Day.Tuesday);
             println();
 
             ad2 : Any = Day.Friday;
-            print_any(ad2);
+            test_print_any(ad2);
             println();
 
-            print_any(Day.Friday);
+            test_print_any(Day.Friday);
             println();
 
             // Can't test compound literals since explicit types are not supported (yet).
             // ints : [3]s64 = { 42, 43, -44 };
             // aints : Any = ints;
-            // print_any(aints);
+            // test_print_any(aints);
             // println();
             //
-            // print_any(ints);
+            // test_print_any(ints);
             // println();
             //
             // vecs : [4]Vec2 = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 7, 8 } };
             // avecs : Any = vecs;
-            // print_any(avecs);
+            // test_print_any(avecs);
             // println();
             //
-            // print_any(vecs);
+            // test_print_any(vecs);
             // println();
             //
             // slice : []s64 = { 11, 22, 33 };
             // aslice : Any = slice;
-            // print_any(aslice);
+            // test_print_any(aslice);
             // println();
             //
-            // print_any(slice);
+            // test_print_any(slice);
             // println();
             //
             // slice2 : []Vec2 = vecs;
             // aslice2 : Any = slice2;
-            // print_any(aslice2);
+            // test_print_any(aslice2);
             // println();
             //
-            // print_any(slice2);
+            // test_print_any(slice2);
             // println();
 
             abinop_fn : Any = add_s64;
-            print_any(abinop_fn);
+            test_print_any(abinop_fn);
             println();
 
-            print_any(print_any);
+            test_print_any(print_any);
             println();
 
             v : Vec2 = { 1, 2 };
-            print_any(v.y);
+            test_print_any(v.y);
             println();
 
             return 0;
@@ -5864,6 +6015,7 @@ MunitResult Varargs(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
         #import "test_print.zc"
+        #import "print.zc"
 
         Vec2 :: struct { x, y: r64; }
 
@@ -5909,7 +6061,7 @@ MunitResult Varargs(const MunitParameter params[], void* user_data_or_fixture) {
 
             for i := 0; i < args.length; i += 1 {
                 if i > 0 print(", ");
-                print_any(args[i]);
+                test_print_any(args[i]);
             }
 
             println();

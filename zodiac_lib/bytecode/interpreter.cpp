@@ -105,9 +105,10 @@ Interpreter_Register interpreter_start(Interpreter *interp, Array_Ref<Bytecode_F
         for (s64 i = 0; i < bb->globals.count; i++) {
             auto global = &bb->globals[i];
 
-            assert(global->type->kind == Type_Kind::SLICE);
 
             if (global->atom == "_type_info_pointers") {
+
+                assert(global->type->kind == Type_Kind::SLICE);
                 Bytecode_Register members[2] = {
                     arr_ptr_val,
                     bytecode_integer_literal(bb, &builtin_type_s64, interp->context->type_infos.count)

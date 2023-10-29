@@ -52,7 +52,7 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
     linear_allocator_create(MEBIBYTE(1), nullptr, &out_context->ast_allocator_state);
     out_context->ast_allocator = linear_allocator_allocator(&out_context->ast_allocator_state);
 
-    linear_allocator_create(MEBIBYTE(1), nullptr, &out_context->bytecode_allocator_state);
+    linear_allocator_create(MEBIBYTE(2), nullptr, &out_context->bytecode_allocator_state);
     out_context->bytecode_allocator = linear_allocator_allocator(&out_context->bytecode_allocator_state);
 
     temporary_allocator_create(KIBIBYTE(8), nullptr, &out_context->error_allocator_state);
@@ -582,7 +582,17 @@ bool check_run_dependencies(Zodiac_Context *ctx, AST_Expression *expr)
             return true;
         }
 
-        case AST_Expression_Kind::RANGE: assert(false); break;
+        case AST_Expression_Kind::RANGE: {
+            if (!check_run_dependencies(ctx, expr->range.min_expr)) {
+                return false;
+            }
+
+            if (!check_run_dependencies(ctx, expr->range.max_expr)) {
+                return false;
+            }
+
+            return true;
+        }
 
         case AST_Expression_Kind::CAST: {
             return check_run_dependencies(ctx, expr->cast.value);
@@ -732,7 +742,17 @@ bool check_run_dependencies(Zodiac_Context *ctx, AST_Statement *stmt)
             return true;
         }
 
-        case AST_Statement_Kind::WHILE: assert(false); break;
+        case AST_Statement_Kind::WHILE: {
+            if (!check_run_dependencies(ctx, stmt->while_stmt.cond)) {
+                return false;
+            }
+
+            if (!check_run_dependencies(ctx, stmt->while_stmt.body_stmt)) {
+                return false;
+            }
+
+            return true;
+        }
 
         case AST_Statement_Kind::FOR: {
             if (!check_run_dependencies(ctx, stmt->for_stmt.init_decl)) {
@@ -784,8 +804,13 @@ bool check_run_dependencies(Zodiac_Context *ctx, AST_Statement *stmt)
             return true;
         }
 
-        case AST_Statement_Kind::FALLTROUGH: assert(false); break;
-        case AST_Statement_Kind::DEFER: assert(false); break;
+        case AST_Statement_Kind::FALLTROUGH: {
+            return true;
+        }
+
+        case AST_Statement_Kind::DEFER: {
+            return check_run_dependencies(ctx, stmt->defer_stmt.stmt);
+        }
 
         case AST_Statement_Kind::RETURN: {
             if (stmt->return_stmt.value && !check_run_dependencies(ctx, stmt->return_stmt.value)) {

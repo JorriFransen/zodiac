@@ -85,8 +85,8 @@ struct Lexer
     ZODIAC_KEYWORD(struct)  \
     ZODIAC_KEYWORD(union)   \
     ZODIAC_KEYWORD(enum)    \
-    ZODIAC_KEYWORD(print)   \
-    ZODIAC_KEYWORD(println) \
+    ZODIAC_KEYWORD(xx_print)   \
+    ZODIAC_KEYWORD(xx_println) \
     ZODIAC_KEYWORD(true)    \
     ZODIAC_KEYWORD(false)   \
     ZODIAC_KEYWORD(defer)   \
