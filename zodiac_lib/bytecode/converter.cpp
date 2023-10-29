@@ -551,7 +551,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                     hash_table_add(&bc->implicit_lvalues, expr, array_alloc);
                 }
 
-            } else if (implicit_lvalue.kind == AST_Implicit_LValue_Kind::ANY) {
+            } else if (implicit_lvalue.kind == AST_Implicit_LValue_Kind::ANY && EXPR_IS_CONST(implicit_lvalue.expr)) {
 
                 Bytecode_Register alloc_reg;
                 bool found = hash_table_find(&bc->implicit_lvalues, expr, &alloc_reg);
@@ -2309,6 +2309,11 @@ Bytecode_Register emit_any(Bytecode_Converter *bc, AST_Expression *expr)
 
         bool found = hash_table_find(&bc->implicit_lvalues, expr, &ptr_reg);
         assert(found);
+
+        if (!EXPR_IS_CONST(expr)) {
+            auto value_reg = ast_expr_to_bytecode(bc, expr, ptr_reg.type);
+            bytecode_emit_store(bc->builder, value_reg, ptr_reg);
+        }
     }
 
     if (ptr_reg.kind == Bytecode_Register_Kind::ALLOC) {

@@ -61,11 +61,14 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
         if (err.fatal) fatal_err_count += 1;
     }
 
-    if (fatal_err_count != expected_results.errors.count) {
+    int err_count = fatal_err_count;
+    if (!err_count) err_count = result.context.errors.count;
+
+    if (err_count != expected_results.errors.count) {
         resolver_report_errors(result.context.resolver);
     }
 
-    munit_assert_int64(fatal_err_count, ==, expected_results.errors.count);
+    munit_assert_int64(err_count, ==, expected_results.errors.count);
     if (expected_results.errors.count) {
 
         s64 actual_index = 0;
@@ -86,6 +89,26 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     print_bytecode(result.context.bytecode_builder);
 
     result.program = bytecode_get_program(result.context.bytecode_builder);
+
+    AST_Declaration *main_decl = nullptr;
+    // Find main decl
+    for (s64 fi = 0; fi < result.context.parsed_files.count; fi++) {
+        auto pf = result.context.parsed_files[fi];
+
+        for (s64 i = 0; i < pf->declarations.count; i++) {
+            auto decl = pf->declarations[i];
+
+            if (decl->identifier.name.data && decl->identifier.name == "main") {
+                assert(!main_decl);
+                main_decl = decl;
+            }
+        }
+    }
+
+    assert(main_decl);
+
+    auto run_deps = check_run_dependencies(&result.context, main_decl);
+    munit_assert(run_deps);
 
     auto old_out_file = result.context.interp->std_out;
     result.context.interp->std_out = interp_stdout_file;
