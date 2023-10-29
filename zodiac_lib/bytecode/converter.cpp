@@ -66,6 +66,8 @@ bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
 
     bool result = true;
 
+    auto any_type = get_any_type(bc->context);
+
     for (s64 i = 0; i < resolver->nodes_to_emit_bytecode.count; i++) {
 
         Flat_Root_Node *root_node = resolver->nodes_to_emit_bytecode[i];
@@ -119,8 +121,8 @@ bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
                     assert(found);
 
                     hash_table_add(&bc->implicit_lvalues, expr, global_reg);
-                } else {
-                    assert(implicit_lval.kind == AST_Implicit_LValue_Kind::SLICE_ARRAY);
+
+                } else if (implicit_lval.kind == AST_Implicit_LValue_Kind::SLICE_ARRAY) {
 
                     Atom array_alloc_name = atom_get(&bc->context->atoms, "scs");
                     array_alloc_name = bytecode_unique_global_name(bc->builder, array_alloc_name);
@@ -140,6 +142,45 @@ bool emit_bytecode(Resolver *resolver, Bytecode_Converter *bc)
                     Bytecode_Register slice_reg = bytecode_aggregate_literal(bc->builder, members, implicit_lval.slice.type->slice.struct_type);
 
                     hash_table_add(&bc->implicit_lvalues, expr, slice_reg);
+
+                } else if (implicit_lval.kind == AST_Implicit_LValue_Kind::ANY) {
+
+
+                    Type *type = implicit_lval.expr->resolved_type;
+
+                    if (type->kind == Type_Kind::UNSIZED_INTEGER) {
+                        type = &builtin_type_s64;
+                    }
+
+                    assert(EXPR_IS_CONST(implicit_lval.expr));
+                    auto value = ast_expr_to_bytecode(bc, implicit_lval.expr, type);
+
+                    auto name = bytecode_unique_global_name(bc->builder, "any_lvalue");
+                    bytecode_create_global(bc->builder, name, type, true, value);
+
+                    Bytecode_Register global_reg;
+                    bool found = hash_table_find(&bc->builder->global_registers, name, &global_reg);
+                    assert(found);
+
+                    hash_table_add(&bc->implicit_lvalues, implicit_lval.expr, global_reg);
+
+                } else {
+
+                    assert(implicit_lval.kind == AST_Implicit_LValue_Kind::VARARGS);
+
+                    if (implicit_lval.vararg.count) {
+                        auto array_type = get_static_array_type(any_type, implicit_lval.vararg.count, &bc->context->ast_allocator);
+
+                        auto name = bytecode_unique_global_name(bc->builder, "vararg_array");
+                        bytecode_create_global(bc->builder, name, array_type, false);
+
+                        Bytecode_Register global_reg;
+                        bool found = hash_table_find(&bc->builder->global_registers, name, &global_reg);
+                        assert(found);
+
+                        hash_table_add(&bc->implicit_lvalues, implicit_lval.expr, global_reg);
+                    }
+
                 }
                 break;
             };
@@ -660,7 +701,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
         case AST_Statement_Kind::BLOCK: {
             auto scope = stmt->block.scope;
-            assert(scope->kind == Scope_Kind::FUNCTION_LOCAL);
+            assert(scope->kind == Scope_Kind::FUNCTION_LOCAL || scope->kind == Scope_Kind::RUN);
 
             auto old_defer_sp = bc->defer_stack.sp;
 
@@ -2298,6 +2339,10 @@ Bytecode_Register emit_any(Bytecode_Converter *bc, AST_Expression *expr)
 {
     Type *type = expr->resolved_type;
 
+    if (type->kind == Type_Kind::UNSIZED_INTEGER) {
+        type = &builtin_type_s64;
+    }
+
     auto any_type = get_any_type(bc->context);
     auto typeinfo_reg = emit_type_info(bc, type);
 
@@ -2316,7 +2361,8 @@ Bytecode_Register emit_any(Bytecode_Converter *bc, AST_Expression *expr)
         }
     }
 
-    if (ptr_reg.kind == Bytecode_Register_Kind::ALLOC) {
+    if (ptr_reg.kind == Bytecode_Register_Kind::ALLOC ||
+        ptr_reg.kind == Bytecode_Register_Kind::GLOBAL) {
         ptr_reg = bytecode_emit_address_of(bc->builder, ptr_reg);
     }
 

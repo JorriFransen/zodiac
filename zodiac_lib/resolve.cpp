@@ -773,7 +773,13 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
 
         case AST_Statement_Kind::BLOCK: {
 
-            Scope *block_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+            Scope *block_scope = nullptr;
+
+            if (scope->kind == Scope_Kind::FUNCTION_LOCAL) {
+                block_scope = scope_new(&dynamic_allocator, Scope_Kind::FUNCTION_LOCAL, scope);
+            } else {
+                block_scope = scope_new(&dynamic_allocator, Scope_Kind::RUN, scope);
+            }
             stmt->block.scope = block_scope;
 
             for (u64 i = 0; i < stmt->block.statements.count; i++) {
@@ -2858,10 +2864,16 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                         AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::ANY,
                                                               arg_expr };
-                        assert(scope->kind != Scope_Kind::GLOBAL);
 
-                        auto cf = enclosing_function(scope);
-                        dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
+                        if (scope->kind != Scope_Kind::GLOBAL && scope->kind != Scope_Kind::RUN) {
+                            auto cf = enclosing_function(scope);
+                            dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
+                        } else {
+                            auto flat_node = alloc<Flat_Root_Node>(ctx->resolver->node_allocator);
+                            flat_node->root.kind = Flat_Node_Kind::IMPLICIT_LVALUE;
+                            flat_node->root.implicit_lvalue = implicit_lval;
+                            dynamic_array_append(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
+                        }
                     }
 
                 } else if (param_type == any_type && arg_type != any_type) {
@@ -2870,10 +2882,16 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                         AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::ANY,
                                                               arg_expr };
-                        assert(scope->kind != Scope_Kind::GLOBAL);
 
-                        auto cf = enclosing_function(scope);
-                        dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
+                        if (scope->kind != Scope_Kind::GLOBAL && scope->kind != Scope_Kind::RUN) {
+                            auto cf = enclosing_function(scope);
+                            dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
+                        } else {
+                            auto flat_node = alloc<Flat_Root_Node>(ctx->resolver->node_allocator);
+                            flat_node->root.kind = Flat_Node_Kind::IMPLICIT_LVALUE;
+                            flat_node->root.implicit_lvalue = implicit_lval;
+                            dynamic_array_append(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
+                        }
                     }
                 }
             }
@@ -2881,10 +2899,15 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             if (func_type->function.is_vararg) {
                 AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::VARARGS, expr, .vararg = { vararg_count } };
 
-                assert(scope->kind != Scope_Kind::GLOBAL);
-
-                auto cf = enclosing_function(scope);
-                dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
+                if (scope->kind != Scope_Kind::GLOBAL && scope->kind != Scope_Kind::RUN) {
+                    auto cf = enclosing_function(scope);
+                    dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
+                } else {
+                    auto flat_node = alloc<Flat_Root_Node>(ctx->resolver->node_allocator);
+                    flat_node->root.kind = Flat_Node_Kind::IMPLICIT_LVALUE;
+                    flat_node->root.implicit_lvalue = implicit_lval;
+                    dynamic_array_append(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
+                }
             }
 
             auto return_type = func_type->function.return_type;

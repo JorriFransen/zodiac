@@ -1499,7 +1499,12 @@ void bytecode_emit_store(Bytecode_Builder *builder, Bytecode_Register value, Byt
             break;
         }
 
-        case Bytecode_Register_Kind::GLOBAL: assert(false); break;
+        case Bytecode_Register_Kind::GLOBAL: {
+            auto glob_handle = dest.index;
+            bytecode_emit_store_global(builder, value, glob_handle);
+            break;
+        }
+
         default: assert(false); break;
     }
 }
@@ -1609,6 +1614,11 @@ Atom bytecode_unique_global_name(Bytecode_Builder *bb, Atom name)
         dup_num += 1;
 
     } while (true);
+}
+
+Atom bytecode_unique_global_name(Bytecode_Builder *bb, String_Ref name)
+{
+    return bytecode_unique_global_name(bb, atom_get(&bb->zodiac_context->atoms, name));
 }
 
 String bytecode_unique_register_name_in_function(Bytecode_Builder *bb, Bytecode_Function_Handle fn_handle, String_Ref name)

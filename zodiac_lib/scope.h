@@ -87,6 +87,8 @@ enum class Scope_Kind
     FUNCTION_LOCAL,
     AGGREGATE,
     ENUM,
+
+    RUN,
 };
 
 struct Scope

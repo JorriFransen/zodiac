@@ -396,6 +396,7 @@ ZAPI Bytecode_Instruction_Handle bytecode_emit_instruction(Bytecode_Builder *bui
 ZAPI Bytecode_Instruction *bytecode_get_instruction(Bytecode_Builder *bb, const Bytecode_Instruction_Handle &handle);
 
 ZAPI Atom bytecode_unique_global_name(Bytecode_Builder *bb, Atom name);
+ZAPI Atom bytecode_unique_global_name(Bytecode_Builder *bb, String_Ref name);
 ZAPI String bytecode_unique_register_name_in_function(Bytecode_Builder *bb, Bytecode_Function_Handle fn_handle, String_Ref name);
 
 ZAPI Bytecode_Register bytecode_retype_literal(Type *target_type, Bytecode_Register operand_register);
