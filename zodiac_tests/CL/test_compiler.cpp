@@ -6070,8 +6070,6 @@ MunitResult Varargs(const MunitParameter params[], void* user_data_or_fixture) {
         call_print_func :: (fmt: String, args: ..) -> void {
             print_func(fmt, ..args);
         }
-
-        #foreign printf :: (cstr: *u8, args: ..) -> s32;
     )CODE_STR";
 
     Expected_Results expected = { .std_out = 

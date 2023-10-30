@@ -10,6 +10,9 @@ println :: (args: ..) {
     xx_print("\n");
 }
 
+
+#foreign printf :: (fmt: *u8, args: ..) -> s32;
+
 print_any :: (any: Any) -> void {
 
     switch (any.type.kind) {
@@ -18,6 +21,7 @@ print_any :: (any: Any) -> void {
             ii := cast(*Type_Info_Int, any.type);
 
             if (ii.sign) {
+                // fmt := "%i";
                 switch (any.type.size) {
                     case 8: xx_print(<cast(*s64, any.value));
                     case 4: xx_print(<cast(*s32, any.value));

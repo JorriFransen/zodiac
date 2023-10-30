@@ -1,18 +1,32 @@
 #import "print.zc"
 
-Vec2 :: struct { x, y: r64; }
-
 #run main();
 main :: () {
 
-    println("abc");
+    // println("Hello world!");
+    // println(1);
 
-    println("Hello,", " World!");
+    // println(cstrlen("abc"));
+    // println(strlen("abc"));
 
-    pos : Vec2 = { 1.2, 3.4 };
-    println("Pos: ", pos);
+    println(cstrlen("abc"));
 
     return 0;
 
 }
 
+cstrlen :: (cstr: *u8) -> s64 {
+    slice : []u8;
+    slice.data = cstr;
+
+    length := 0;
+    while slice[length] != 0 {
+        length += 1;
+    }
+
+    return length;
+}
+
+strlen :: (str: String) -> s64 {
+    return str.length;
+}

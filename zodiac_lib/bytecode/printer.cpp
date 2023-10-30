@@ -484,7 +484,11 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
                     }
 
                     case Type_Kind::POINTER: {
-                        string_builder_append(sb, "%p", reg.value.pointer);
+                        if (reg.flags & BC_REGISTER_FLAG_CSTRING) {
+                            string_builder_append(sb, "\"%s\"", reg.value.pointer);
+                        } else {
+                            string_builder_append(sb, "%p", reg.value.pointer);
+                        }
                         break;
                     }
 

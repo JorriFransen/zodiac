@@ -1473,6 +1473,10 @@ llvm::Constant *llvm_builder_emit_constant(LLVM_Builder *builder, const Bytecode
                 return llvm_builder_emit_string_literal(builder, str_reg.value.string);
             }
 
+            if (bc_reg.flags & BC_REGISTER_FLAG_CSTRING) {
+                return llvm_builder_emit_cstring_literal(builder, bc_reg.value.string);
+            }
+
             switch (bc_reg.type->kind) {
                 case Type_Kind::INVALID: { assert(false); break; }
                 case Type_Kind::VOID: { assert(false); break; }

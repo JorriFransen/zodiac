@@ -1277,7 +1277,12 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
         }
 
         case AST_Expression_Kind::STRING_LITERAL: {
-            result = bytecode_string_literal(bc->builder, expr->string_literal.atom);
+            if (expr->resolved_type == get_string_type(bc->context)) {
+                result = bytecode_string_literal(bc->builder, expr->string_literal.atom);
+            } else {
+                assert(expr->resolved_type == get_pointer_type(&builtin_type_u8, &bc->context->ast_allocator));
+                result = bytecode_cstring_literal(bc->builder, expr->string_literal.atom);
+            }
             break;
         }
 

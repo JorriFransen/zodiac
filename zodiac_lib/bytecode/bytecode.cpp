@@ -510,15 +510,22 @@ Bytecode_Register bytecode_string_literal(Bytecode_Builder *bb, String_Ref str)
     Dynamic_Array<Bytecode_Register> values;
     dynamic_array_create<Bytecode_Register>(bb->bytecode_allocator, &values, 2);
 
-    auto u8_ptr_type = get_pointer_type(&builtin_type_u8, &bb->zodiac_context->ast_allocator);
-
-    auto string_memory_register = bytecode_register_create(bb, Bytecode_Register_Kind::TEMPORARY, u8_ptr_type, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT);
-    string_memory_register.value.string = string_create(str);
+    auto string_memory_register = bytecode_cstring_literal(bb, str);
 
     dynamic_array_append(&values, string_memory_register);
     dynamic_array_append(&values, bytecode_integer_literal(bb, &builtin_type_s64, str.length));
 
     return bytecode_aggregate_literal(bb, values, get_string_type(bb->zodiac_context));
+}
+
+Bytecode_Register bytecode_cstring_literal(Bytecode_Builder *bb, String_Ref str)
+{
+    auto u8_ptr_type = get_pointer_type(&builtin_type_u8, &bb->zodiac_context->ast_allocator);
+
+    auto string_memory_register = bytecode_register_create(bb, Bytecode_Register_Kind::TEMPORARY, u8_ptr_type, BC_REGISTER_FLAG_LITERAL | BC_REGISTER_FLAG_CONSTANT | BC_REGISTER_FLAG_CSTRING);
+    string_memory_register.value.string = string_create(str);
+
+    return string_memory_register;
 }
 
 Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Array_Ref<Bytecode_Register> members, Type *type)

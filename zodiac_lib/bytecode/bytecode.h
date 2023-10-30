@@ -111,6 +111,7 @@ enum Bytecode_Register_Flags_ : Bytecode_Register_Flags
     BC_REGISTER_FLAG_LITERAL   = 0x001,
     BC_REGISTER_FLAG_ARGUMENT  = 0x002,
     BC_REGISTER_FLAG_CONSTANT  = 0x004,
+    BC_REGISTER_FLAG_CSTRING   = 0x008,
 };
 
 typedef s64 Bytecode_Function_Handle;
@@ -315,6 +316,7 @@ ZAPI Bytecode_Register bytecode_real_literal(Bytecode_Builder *builder, Type *ty
 ZAPI Bytecode_Register bytecode_real_literal(Bytecode_Builder *builder, Type *type, Real_Value rv);
 ZAPI Bytecode_Register bytecode_boolean_literal(Bytecode_Builder *builder, Type *type, bool value);
 ZAPI Bytecode_Register bytecode_string_literal(Bytecode_Builder *bb, String_Ref str);
+ZAPI Bytecode_Register bytecode_cstring_literal(Bytecode_Builder *bb, String_Ref str);
 ZAPI Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Array_Ref<Bytecode_Register> members, Type *type);
 ZAPI Bytecode_Register bytecode_aggregate_literal(Bytecode_Builder *bb, Dynamic_Array<Bytecode_Register> members, Type *type);
 ZAPI Bytecode_Register bytecode_array_literal(Bytecode_Builder *bb, Array_Ref<Bytecode_Register> values, Type *type);

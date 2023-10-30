@@ -2530,8 +2530,14 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
         case AST_Expression_Kind::STRING_LITERAL: {
             auto string_type = get_string_type(ctx);
-            assert(!inferred_type || inferred_type == string_type || inferred_type == any_type);
-            expr->resolved_type = string_type;
+            auto cstring_type = get_pointer_type(&builtin_type_u8, &ctx->ast_allocator);
+            assert(!inferred_type || inferred_type == string_type || inferred_type == cstring_type || inferred_type == any_type);
+
+            if (inferred_type == cstring_type) {
+                expr->resolved_type = cstring_type;
+            } else {
+                expr->resolved_type = string_type;
+            }
             break;
         }
 
@@ -3013,7 +3019,6 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     assert(inferred_type && inferred_type == any_type);
                     assert(infer_flags & INFER_FLAG_VARARG);
                     assert(infer_flags & INFER_FLAG_FIRST_VARARG);
-
 
                     auto operand = expr->unary.operand;
                     auto op_type = operand->resolved_type;
