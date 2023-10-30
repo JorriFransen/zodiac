@@ -1294,6 +1294,7 @@ void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_reg, s64
     assert(fn_reg.kind == Bytecode_Register_Kind::TEMPORARY);
     assert(fn_reg.type->kind == Type_Kind::FUNCTION);
 
+    auto fn_type = fn_reg.type;
     fn_reg.type = get_pointer_type(fn_reg.type, &interp->context->ast_allocator);
     auto interp_fn_reg = interpreter_load_register(interp, fn_reg);
 
@@ -1303,8 +1304,7 @@ void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_reg, s64
     if (bc_fn_handle !=  -1) {
         interpreter_push_stack_frame(interp, bc_fn_handle, arg_count, dest_index);
     } else {
-        auto return_type = fn_reg.type->pointer.base->function.return_type;
-        interpreter_call_ffi(interp, ffi_handle, arg_count, dest_index, return_type);
+        interpreter_call_ffi(interp, ffi_handle, arg_count, dest_index, fn_type);
     }
 
 }
