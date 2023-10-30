@@ -819,16 +819,6 @@ bool check_run_dependencies(Zodiac_Context *ctx, AST_Statement *stmt)
 
             return true;
         }
-
-        case AST_Statement_Kind::PRINT: {
-            for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
-                if (!check_run_dependencies(ctx, stmt->print_expr.expressions[i])) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
     }
 }
 

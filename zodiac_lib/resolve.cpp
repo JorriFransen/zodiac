@@ -919,13 +919,6 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
             }
             break;
         }
-
-        case AST_Statement_Kind::PRINT: {
-            for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
-                flatten_expression(resolver, stmt->print_expr.expressions[i], scope, dest);
-            }
-            break;
-        }
     }
 
     Flat_Node flat_stmt = to_flat_node(stmt, scope);
@@ -1426,11 +1419,6 @@ bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
 
         case AST_Statement_Kind::RETURN: {
             // Leaf, optional value should have been resolved already
-            break;
-        }
-
-        case AST_Statement_Kind::PRINT: {
-            // Leaf, value should have been resolved already
             break;
         }
     }
@@ -2434,20 +2422,6 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                 fn_decl->function.inferred_return_type = &builtin_type_void;
             }
 
-
-            break;
-        }
-
-        case AST_Statement_Kind::PRINT: {
-            for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
-                auto type = stmt->print_expr.expressions[i]->resolved_type;
-                assert(type);
-
-                if (type->kind == Type_Kind::UNSIZED_INTEGER) {
-                    type = &builtin_type_s64;
-                    stmt->print_expr.expressions[i]->resolved_type = &builtin_type_s64;
-                }
-            }
 
             break;
         }
@@ -3657,17 +3631,6 @@ bool run_directive_stmt_is_const(Zodiac_Context *ctx, AST_Statement *stmt)
         default: {
             fatal_resolve_error(ctx, stmt, "Only print and call statements are allowed in run blocks");
             return false;
-        }
-
-        case AST_Statement_Kind::PRINT: {
-            for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
-                auto expr = stmt->print_expr.expressions[i];
-                if (!EXPR_IS_CONST(expr)) {
-                    fatal_resolve_error(ctx, expr, "Arguments to print in #run must be constant");
-                    return false;
-                }
-            }
-            return true;
         }
 
         case AST_Statement_Kind::BLOCK: {

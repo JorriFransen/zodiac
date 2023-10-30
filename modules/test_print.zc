@@ -7,40 +7,44 @@ test_print_any :: (any: Any) -> void {
 
             if (ii.sign) {
                 switch (any.type.size) {
-                    case 8: xx_print(<cast(*s64, any.value));
-                    case 4: xx_print(<cast(*s32, any.value));
-                    case 2: xx_print(<cast(*s16, any.value));
-                    case 1: xx_print(<cast(*s8, any.value));
-                    default: xx_println("Unhandled integer size in test_print_any");
+                    case 8: printf("%i", <cast(*s64, any.value));
+                    case 4: printf("%i", <cast(*s32, any.value));
+                    case 2: printf("%i", <cast(*s16, any.value));
+                    case 1: printf("%i", <cast(*s8, any.value));
+                    default: printf("Unhandled integer size in test_print_any");
                 }
             } else {
                 switch (any.type.size) {
-                    case 8: xx_print(<cast(*u64, any.value));
-                    case 4: xx_print(<cast(*u32, any.value));
-                    case 2: xx_print(<cast(*u16, any.value));
-                    case 1: xx_print(<cast(*u8, any.value));
-                    default: xx_println("Unhandled integer size in test_print_any");
+                    case 8: printf("%i", <cast(*u64, any.value));
+                    case 4: printf("%i", <cast(*u32, any.value));
+                    case 2: printf("%i", <cast(*u16, any.value));
+                    case 1: printf("%i", <cast(*u8, any.value));
+                    default: printf("Unhandled integer size in test_print_any");
                 }
             }
 
         case Type_Info_Kind.Real:
             if any.type.size == 4 {
-                xx_print(<cast(*r32, any.value));
+                printf("%f", <cast(*r32, any.value));
             } else if any.type.size == 8 {
-                xx_print(<cast(*r64, any.value));
+                printf("%f", <cast(*r64, any.value));
             } else {
-                xx_println("Unhandled real size in test_print_any");
+                printf("Unhandled real size in test_print_any");
             }
 
         case Type_Info_Kind.Bool:
-            xx_print(<cast(*bool, any.value));
+            if <cast(*bool, any.value) {
+                printf("true");
+            } else {
+                printf("false");
+            }
 
         case Type_Info_Kind.Pointer:
             pi := cast(*Type_Info_Pointer, any.type);
 
             value := cast(**void, any.value);
 
-            xx_print("ptr: ");
+            printf("ptr: ");
             value_any : Any = { pi.pointer_to, cast(*u8, <value) };
             test_print_any(value_any);
 
@@ -50,23 +54,23 @@ test_print_any :: (any: Any) -> void {
 
             if any.type == #type_info(String) {
                 strp := cast(*String, any.value);
-                xx_print(<strp);
+                printf("%.*s", strp.length, strp.data);
             } else {
-                xx_print("{ ");
+                printf("{ ");
 
                 struct_mem : []u8;
                 struct_mem.data = any.value;
                 struct_mem.length = any.type.size;
 
                 for i := 0; i < si.members.length; i += 1 {
-                    if i > 0 xx_print(", ");
+                    if i > 0 printf(", ");
 
                     member := si.members[i];
                     member_any : Any = { member.type, *struct_mem[member.offset] };
                     test_print_any(member_any);
                 }
 
-                xx_print(" }");
+                printf(" }");
             }
 
         case Type_Info_Kind.Enum:
@@ -82,10 +86,10 @@ test_print_any :: (any: Any) -> void {
                 }
             }
 
-            xx_print(name, "(");
+            printf("%.*s(", name.length, name.data);
             int_any : Any = { ei.integer_type, any.value };
             test_print_any(int_any);
-            xx_print(")");
+            printf(")");
 
         case Type_Info_Kind.Static_Array:
             ai := cast(*Type_Info_Static_Array, any.type);
@@ -94,14 +98,14 @@ test_print_any :: (any: Any) -> void {
             arr_mem.data = any.value;
             arr_mem.length = ai.length * ai.element_type.size;
 
-            xx_print("{ ");
+            printf("{ ");
             for i := 0; i < ai.length; i += 1 {
-                if i > 0 xx_print(", ");
+                if i > 0 printf(", ");
 
                 elem_any : Any = { ai.element_type, *arr_mem[ai.element_type.size * i] };
                 test_print_any(elem_any);
             }
-            xx_print(" }");
+            printf(" }");
 
         case Type_Info_Kind.Slice:
             si := cast(*Type_Info_Slice, any.type);
@@ -112,18 +116,18 @@ test_print_any :: (any: Any) -> void {
             arr_mem.data = cast(*u8, slice.data);
             arr_mem.length = slice.length * si.element_type.size;
 
-            xx_print("{ ");
+            printf("{ ");
             for i := 0; i < slice.length; i += 1 {
-                if i > 0 xx_print(", ");
+                if i > 0 printf(", ");
 
                 elem_any : Any = { si.element_type, *arr_mem[si.element_type.size * i] };
                 test_print_any(elem_any);
             }
-            xx_print(" }");
+            printf(" }");
 
         case Type_Info_Kind.Function:
-            xx_print("fnptr");
+            printf("fnptr");
 
-        default: xx_println("!!! Unhandled type in test_print_any !!!");
+        default: printf("!!! Unhandled type in test_print_any !!!");
     }
 }

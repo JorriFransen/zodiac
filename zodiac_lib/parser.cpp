@@ -508,44 +508,6 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
 
         return ast_return_stmt_new(parser->context, { start_pos, end_pos }, value);
 
-    } else if (is_keyword(parser, keyword_xx_print) || is_keyword(parser, keyword_xx_println)) {
-
-        bool newline = false;
-        if (match_keyword(parser, keyword_xx_println)) {
-            newline = true;
-        } else {
-            expect_keyword(parser, keyword_xx_print);
-        }
-
-        auto temp_print_exprs = temp_array_create<AST_Expression *>(temp_allocator_allocator());
-
-        expect_token(parser, '(');
-
-        while (!is_token(parser, ')')) {
-            if (temp_print_exprs.array.count != 0) {
-                expect_token(parser, ',');
-            }
-
-            AST_Expression *print_expr = parse_expression(parser);
-            dynamic_array_append(&temp_print_exprs.array, print_expr);
-
-        }
-
-        auto end_pos = cur_tok(parser).sr.start;
-        expect_token(parser, ')');
-
-        if (optional_semi) {
-            auto ep = cur_tok(parser).sr.start;
-            if (match_token(parser, ';')) end_pos = ep;
-        } else {
-            end_pos = cur_tok(parser).sr.start;
-            expect_token(parser, ';');
-        }
-
-        auto print_exprs = temp_array_finalize(&parser->context->ast_allocator, &temp_print_exprs);
-
-        return ast_print_statement_new(parser->context, {start_pos, end_pos}, print_exprs, newline);
-
     } else if (match_keyword(parser, keyword_defer)) {
 
         AST_Statement *stmt = parse_statement(parser);
@@ -1103,7 +1065,7 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
 
         result.kind = Parsed_Directive_Kind::DATA;
 
-        if (is_token(parser, '{') || is_keyword(parser, keyword_xx_print) || is_keyword(parser, keyword_xx_println)) {
+        if (is_token(parser, '{')) {
 
             AST_Statement *stmt = parse_statement(parser, true);
 
@@ -1112,9 +1074,8 @@ Parsed_Directive parse_directive(Parser *parser, bool eat_semicolon/*=true*/)
                 for (s64 i = 0; i < stmt->block.statements.count; i++) {
                     auto member_stmt = stmt->block.statements[i];
 
-                    if (member_stmt->kind != AST_Statement_Kind::CALL &&
-                        member_stmt->kind != AST_Statement_Kind::PRINT) {
-                        report_parse_error(parser, member_stmt->sr, "Only print and call statements are allowed in run blocks");
+                    if (member_stmt->kind != AST_Statement_Kind::CALL) {
+                        report_parse_error(parser, member_stmt->sr, "Only call statements are allowed in run blocks");
                         return {};
                     }
                 }

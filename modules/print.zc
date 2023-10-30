@@ -1,4 +1,6 @@
 
+#foreign printf :: (fmt: *u8, args: ..) -> s32;
+
 print :: (args: ..) {
     for i := 0; i < args.length; i += 1 {
         print_any(args[i]);
@@ -9,9 +11,6 @@ println :: (args: ..) {
     print(..args);
     printf("\n");
 }
-
-
-#foreign printf :: (fmt: *u8, args: ..) -> s32;
 
 print_any :: (any: Any) -> void {
 
@@ -48,22 +47,28 @@ print_any :: (any: Any) -> void {
             }
 
         case Type_Info_Kind.Bool:
-            xx_print(<cast(*bool, any.value));
+            if <cast(*bool, any.value) {
+                printf("true");
+            } else {
+                printf("false");
+            }
 
         case Type_Info_Kind.Pointer:
-            pi := cast(*Type_Info_Pointer, any.type);
-
-            value := cast(**void, any.value);
-            xx_print(<value);
+            value := <cast(*u64, any.value);
+            if value == 0 {
+                printf("(nil)");
+            } else {
+                printf("%p", value);
+            }
 
         case Type_Info_Kind.Struct:
 
             if any.type == #type_info(String) {
                 strp := cast(*String, any.value);
-                xx_print(<strp);
+                printf("%.*s", strp.length, strp.data);
             } else {
                 si := cast(*Type_Info_Struct, any.type);
-                xx_print("{ ");
+                printf("{ ");
 
                 struct_mem : []u8;
                 struct_mem.data = any.value;
@@ -72,37 +77,35 @@ print_any :: (any: Any) -> void {
                 for i := 0; i < si.members.length; i += 1 {
                     member := si.members[i];
 
-                    if i > 0 xx_print(", ");
+                    if i > 0 printf(", ");
 
                     is_string := member.type == #type_info(String);
 
                     member_any : Any = { member.type, *struct_mem[member.offset] };
 
-                    if is_string xx_print("\"");
+                    if is_string printf("\"");
                     print_any(member_any);
-                    if is_string xx_print("\"");
+                    if is_string printf("\"");
                 }
 
-                xx_print(" }");
+                printf(" }");
             }
 
         case Type_Info_Kind.Enum:
             ei := cast(*Type_Info_Enum, any.type);
 
-            name: String = "Invalid enum value";
-            for i := 0; i < ei.members.length; i += 1 {
-                if ei.members[i].value == <cast(*s64, any.value) {
-                    name = ei.members[i].name;
+            // name: String = "Invalid enum value";
+            // for i := 0; i < ei.members.length; i += 1 {
+            //     if ei.members[i].value == <cast(*s64, any.value) {
+            //         name = ei.members[i].name;
+            //
+            //         // Hack because we don't have break yet
+            //         i = ei.members.length;
+            //     }
+            // }
 
-                    // Hack because we don't have break yet
-                    i = ei.members.length;
-                }
-            }
-
-            // xx_print(name, "(");
             int_any : Any = { ei.integer_type, any.value };
             print_any(int_any);
-            // xx_print(")");
 
         case Type_Info_Kind.Static_Array:
             ai := cast(*Type_Info_Static_Array, any.type);
@@ -113,17 +116,17 @@ print_any :: (any: Any) -> void {
 
             is_string := ai.element_type == #type_info(String);
 
-            xx_print("{ ");
+            printf("{ ");
             for i := 0; i < ai.length; i += 1 {
-                if i > 0 xx_print(", ");
+                if i > 0 printf(", ");
 
                 elem_any : Any = { ai.element_type, *arr_mem[ai.element_type.size * i] };
 
-                if is_string xx_print("\"");
+                if is_string printf("\"");
                 print_any(elem_any);
-                if is_string xx_print("\"");
+                if is_string printf("\"");
             }
-            xx_print(" }");
+            printf(" }");
 
 
         case Type_Info_Kind.Slice:
@@ -135,15 +138,15 @@ print_any :: (any: Any) -> void {
             arr_mem.data = cast(*u8, slice.data);
             arr_mem.length = slice.length * si.element_type.size;
 
-            xx_print("{ ");
+            printf("{ ");
             for i := 0; i < slice.length; i += 1 {
-                if i > 0 xx_print(", ");
+                if i > 0 printf(", ");
 
                 elem_any : Any = { si.element_type, *arr_mem[si.element_type.size * i] };
                 print_any(elem_any);
             }
-            xx_print(" }");
+            printf(" }");
 
-        default: xx_print("!!!!!  UNHANDLED TYPE IN print_any !!!!!");
+        default: printf("!!!!!  UNHANDLED TYPE IN print_any !!!!!");
     }
 }

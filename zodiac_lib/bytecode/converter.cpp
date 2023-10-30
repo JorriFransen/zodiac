@@ -1045,20 +1045,6 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             }
             break;
         }
-
-        case AST_Statement_Kind::PRINT: {
-            for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
-                Bytecode_Register value_reg = ast_expr_to_bytecode(bc, stmt->print_expr.expressions[i]);
-                bytecode_emit_print(bc->builder, value_reg);
-            }
-
-            if (stmt->print_expr.newline) {
-                auto newline_value_reg = bytecode_string_literal(bc->builder, "\n");
-                bytecode_emit_print(bc->builder, newline_value_reg);
-            }
-
-            break;
-        }
     }
 
     return true;
@@ -2444,8 +2430,7 @@ Bytecode_Function_Handle create_run_wrapper(Bytecode_Converter *bc, AST_Directiv
 
         case AST_Run_Directive_Kind::STMT: {
             auto stmt = run_directive->run.stmt;
-            assert(stmt->kind == AST_Statement_Kind::BLOCK ||
-                   stmt->kind == AST_Statement_Kind::PRINT);
+            assert(stmt->kind == AST_Statement_Kind::BLOCK);
             ast_stmt_to_bytecode(bc, stmt);
             break;
         }

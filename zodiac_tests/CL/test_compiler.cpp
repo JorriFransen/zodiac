@@ -2000,7 +2000,7 @@ MunitResult Run_Block_Only_Print_And_Call(const MunitParameter params[], void* u
     )CODE_STR";
 
     Expected_Results expected = {
-        .errors = Array_Ref<Expected_Error>({ PARSE_ERR("Only print and call statements are allowed in run blocks")})
+        .errors = Array_Ref<Expected_Error>({ PARSE_ERR("Only call statements are allowed in run blocks")})
     };
 
     auto result = compile_and_run(code_string, expected);

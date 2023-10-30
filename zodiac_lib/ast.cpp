@@ -366,16 +366,6 @@ void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
     out_stmt->return_stmt.scope = nullptr;
 }
 
-void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, bool newline, AST_Statement *out_stmt)
-{
-    debug_assert(out_stmt);
-
-    ast_statement_create(AST_Statement_Kind::PRINT, out_stmt);
-
-    out_stmt->print_expr.expressions = exprs;
-    out_stmt->print_expr.newline = newline;
-}
-
 void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
 {
     debug_assert(out_stmt);
@@ -923,15 +913,6 @@ AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range sr, AST_Exp
 
     auto stmt = ast_statement_new(ctx, sr);
     ast_return_stmt_create(value, stmt);
-    return stmt;
-}
-
-AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Expression *> exprs, bool newline)
-{
-    debug_assert(ctx);
-
-    auto stmt = ast_statement_new(ctx, sr);
-    ast_print_stmt_create(exprs, newline, stmt);
     return stmt;
 }
 
@@ -1535,18 +1516,6 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
                 string_builder_append(sb, " ");
                 ast_print_expression(sb, stmt->return_stmt.value);
             }
-            break;
-        }
-
-        case AST_Statement_Kind::PRINT: {
-            string_builder_append(sb, "print(");
-            for (s64 i = 0; i < stmt->print_expr.expressions.count; i++) {
-                if (i > 0) {
-                    string_builder_append(sb, ", ");
-                }
-                ast_print_expression(sb, stmt->print_expr.expressions[i]);
-            }
-            string_builder_append(sb, ")");
             break;
         }
     }

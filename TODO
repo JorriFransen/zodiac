@@ -1,4 +1,7 @@
 
+- This causes an infinite loop
+    value := <cast(**void, any.value);
+
 - This should probably work:
     args: []Any = { 1, 3.4, "xyz" };
 

@@ -338,9 +338,6 @@ enum class AST_Statement_Kind
     DEFER,
 
     RETURN,
-
-    // Temporary stuff
-    PRINT,
 };
 
 typedef u32 AST_Statement_Flags;
@@ -662,7 +659,6 @@ ZAPI void ast_switch_case_stmt_create(Dynamic_Array<AST_Expression *> case_value
 ZAPI void ast_falltrough_stmt_create(AST_Directive *directive, AST_Statement *out_stmt);
 ZAPI void ast_defer_stmt_create(AST_Statement *stmt_to_defer, AST_Statement *out_stmt);
 ZAPI void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt);
-ZAPI void ast_print_stmt_create(Dynamic_Array<AST_Expression *> exprs, bool newline, AST_Statement *out_stmt);
 ZAPI void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt);
 
 ZAPI void ast_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl);
@@ -731,7 +727,6 @@ ZAPI AST_Statement *ast_switch_case_stmt_new(Zodiac_Context *ctx, Source_Range s
 ZAPI AST_Statement *ast_falltrough_stmt_new(Zodiac_Context *ctx, Source_Range sr, AST_Directive *directive);
 ZAPI AST_Statement *ast_defer_stmt_new(Zodiac_Context *ctx, Source_Range sr, AST_Statement *stmt_to_defer);
 ZAPI AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range sr, AST_Expression *value);
-ZAPI AST_Statement *ast_print_statement_new(Zodiac_Context *ctx, Source_Range sr, Dynamic_Array<AST_Expression *> exprs, bool newline);
 ZAPI AST_Statement *ast_statement_new(Zodiac_Context *ctx, Source_Range sr);
 
 ZAPI AST_Declaration *ast_variable_decl_new(Zodiac_Context *ctx, Source_Range sr, AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value);

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "util/zstring.h"
 #include "test_common.h"
 #include "CL/test_compiler.h"
 
@@ -8,64 +7,7 @@
 
 namespace Zodiac { namespace Bug_Tests {
 
-using namespace Compiler_Tests;
-
-static MunitResult bool_to_string_Bool_Arg_LLVM(const MunitParameter params[], void *user_data_or_fixture)
-{
-#ifndef ZPLATFORM_LINUX
-    return MUNIT_OK;
-#endif
-    // This bug(?) only happens on Linux. The register containing the boolean argument
-    //  might have a value larger than 0xFF. This overflow happens with values
-    //  originating from GEP instructions when the boolean is in the middle
-    //  of a struct.
-    //
-    // The new default way of printing booleans is actually better than
-    //  calling this foreign function, but it is a problem that should
-    //  be fixed anyway.
-    String_Ref code_string = R"CODE_STR(
-        S :: struct {
-            _bool1 : bool;
-            _bool2 : bool;
-        }
-        main :: () -> s64 {
-            xx_println(true);
-            xx_println(false);
-            // s : S = { 1, 2, 3, 4, 5, 6, 7, 8, 1.1, 2.2, false, true };
-            s : S = { false, true };
-            xx_println(s._bool1);
-            xx_println(s._bool2);
-            return 0;
-        }
-    )CODE_STR";
-
-    // The default behaviour should work fine
-    {
-        Expected_Results expected = { .std_out = "true\nfalse\nfalse\ntrue", };
-        Zodiac_Options options = {};
-
-        auto result = compile_and_run(code_string, expected, options);
-        defer { free_compile_run_results(&result); };
-
-        munit_assert(result.result == MUNIT_OK);
-    }
-
-    // Note that the third print is incorrect in the runtime stdout
-    Expected_Results expected = { .std_out = "true\nfalse\nfalse\ntrue" };
-    Zodiac_Options options = {};
-
-    // We use this to call the support lib functions, for now it's
-    //  the easiest way to call a foreign function.
-    options.use_bool_to_string_for_PRINT_in_llvm = true;
-    auto result = compile_and_run(code_string, expected, options);
-    defer { free_compile_run_results(&result); };
-
-    return result.result;
-}
-
-
 START_TESTS(bug_tests)
-    DEFINE_TEST(bool_to_string_Bool_Arg_LLVM),
 END_TESTS()
 
 }}
