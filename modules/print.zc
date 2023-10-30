@@ -7,7 +7,7 @@ print :: (args: ..) {
 
 println :: (args: ..) {
     print(..args);
-    xx_print("\n");
+    printf("\n");
 }
 
 
@@ -21,31 +21,30 @@ print_any :: (any: Any) -> void {
             ii := cast(*Type_Info_Int, any.type);
 
             if (ii.sign) {
-                // fmt := "%i";
                 switch (any.type.size) {
-                    case 8: xx_print(<cast(*s64, any.value));
-                    case 4: xx_print(<cast(*s32, any.value));
-                    case 2: xx_print(<cast(*s16, any.value));
-                    case 1: xx_print(<cast(*s8, any.value));
-                    default: xx_println("Unhandled integer size in print_any");
+                    case 8: printf("%i", <cast(*s64, any.value));
+                    case 4: printf("%i", <cast(*s32, any.value));
+                    case 2: printf("%i", <cast(*s16, any.value));
+                    case 1: printf("%i", <cast(*s8, any.value));
+                    default: printf("Unhandled integer size in print_any");
                 }
             } else {
                 switch (any.type.size) {
-                    case 8: xx_print(<cast(*u64, any.value));
-                    case 4: xx_print(<cast(*u32, any.value));
-                    case 2: xx_print(<cast(*u16, any.value));
-                    case 1: xx_print(<cast(*u8, any.value));
-                    default: xx_println("Unhandled integer size in print_any");
+                    case 8: printf("%u", <cast(*u64, any.value));
+                    case 4: printf("%u", <cast(*u32, any.value));
+                    case 2: printf("%u", <cast(*u16, any.value));
+                    case 1: printf("%u", <cast(*u8, any.value));
+                    default: printf("Unhandled integer size in print_any");
                 }
             }
 
         case Type_Info_Kind.Real:
             if any.type.size == 4 {
-                xx_print(<cast(*r32, any.value));
+                printf("%f", <cast(*r32, any.value));
             } else if any.type.size == 8 {
-                xx_print(<cast(*r64, any.value));
+                printf("%f", <cast(*r64, any.value));
             } else {
-                xx_println("Unhandled real size in print_any");
+                printf("Unhandled real size in print_any");
             }
 
         case Type_Info_Kind.Bool:

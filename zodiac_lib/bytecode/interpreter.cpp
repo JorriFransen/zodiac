@@ -581,6 +581,29 @@ switch (operand.type->bit_size) { \
             break;
         }
 
+        case Bytecode_Opcode::FCAST: {
+            Interpreter_Register operand = interpreter_load_register(interp, instruction.a);
+            Interpreter_Register result = {
+                .type = instruction.dest.type,
+            };
+
+            auto source_ptr = &operand.value;
+            auto dest_ptr = &result.value;
+
+            if (operand.type->bit_size == 32) {
+                assert(result.type->bit_size == 64);
+                dest_ptr->real.r64 = source_ptr->real.r32;
+            } else {
+                assert(operand.type->bit_size == 64);
+                assert(result.type->bit_size == 32);
+                dest_ptr->real.r32 = source_ptr->real.r64;
+            }
+
+            interpreter_store_register(interp, result, instruction.dest);
+            break;
+            break;
+        }
+
         case Bytecode_Opcode::PRINT: {
             Interpreter_Register operand = interpreter_load_register(interp, instruction.a);
             interpreter_print_register(interp, operand);
@@ -1263,7 +1286,7 @@ void interpreter_call_foreign_function(Interpreter *interp, Bytecode_Function_Ha
 
     assert(foreign_fn->ffi_handle); // This should always exist for foreign functions
 
-    interpreter_call_ffi(interp, foreign_fn->ffi_handle, arg_count, dest_index, foreign_fn->type->function.return_type);
+    interpreter_call_ffi(interp, foreign_fn->ffi_handle, arg_count, dest_index, foreign_fn->type);
 }
 
 void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_reg, s64 arg_count, s64 dest_index)
@@ -1286,11 +1309,16 @@ void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_reg, s64
 
 }
 
-void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_count, s64 dest_index, Type *return_type)
+void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_count, s64 dest_index, Type *type)
 {
+    assert(type->kind == Type_Kind::FUNCTION);
+    auto return_type = type->function.return_type;
+
     assert(stack_count(&interp->arg_stack) >= arg_count);
 
     ffi_reset(&interp->ffi);
+
+    bool is_vararg = type->function.is_c_vararg;
 
     for (s64 i = 0; i < arg_count; i++) {
         Interpreter_Register arg_reg = stack_peek(&interp->arg_stack, (arg_count - 1) - i);
@@ -1302,10 +1330,19 @@ void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_co
             case Type_Kind::UNSIZED_INTEGER: assert(false); break;
 
             case Type_Kind::INTEGER:
-            case Type_Kind::FLOAT:
             case Type_Kind::POINTER:
             case Type_Kind::FUNCTION: {
                 arg_ptr = &arg_reg.value;
+                break;
+            }
+
+            case Type_Kind::FLOAT: {
+                if (arg_reg.type->bit_size == 32) {
+                    arg_ptr = &arg_reg.value.real.r32;
+                } else {
+                    assert(arg_reg.type->bit_size == 64);
+                    arg_ptr = &arg_reg.value.real.r64;
+                }
                 break;
             }
 
@@ -1317,6 +1354,18 @@ void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_co
         }
 
         assert(arg_ptr);
+
+        double d;
+        if (is_vararg && arg_reg.type == &builtin_type_r32) {
+            arg_reg.type = &builtin_type_r64;
+            d = *(float *)arg_ptr;
+            arg_ptr = &d;
+        }
+        // else if (is_vararg && arg_reg.type == &builtin_type_r64) {
+        //     arg_reg.type = &builtin_type_r64;
+        //     d = *(double *)arg_ptr;
+        //     arg_ptr = &d;
+        // }
 
         ffi_push_arg(&interp->ffi, arg_ptr, arg_reg.type);
     }

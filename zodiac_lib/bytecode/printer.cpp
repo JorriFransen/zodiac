@@ -233,6 +233,7 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
         UNOP_CASE_(SEXT)
         UNOP_CASE_(ZEXT)
         UNOP_CASE_(BITCAST)
+        UNOP_CASE_(FCAST)
         UNOP_CASE_(PRINT)
 
         UNOP_CASE_(PUSH_ARG)
@@ -485,7 +486,8 @@ void bytecode_print_register(const Bytecode_Builder *builder, const Bytecode_Fun
 
                     case Type_Kind::POINTER: {
                         if (reg.flags & BC_REGISTER_FLAG_CSTRING) {
-                            string_builder_append(sb, "\"%s\"", reg.value.pointer);
+                            auto escaped_string = convert_special_characters_to_escape_characters(temp_allocator_allocator(), (const char *)reg.value.pointer);
+                            string_builder_append(sb, "\"%s\"", escaped_string.data);
                         } else {
                             string_builder_append(sb, "%p", reg.value.pointer);
                         }

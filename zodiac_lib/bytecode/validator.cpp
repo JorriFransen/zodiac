@@ -761,6 +761,26 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             return true;
         }
 
+        case Bytecode_Opcode::FCAST: {
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'a' register for 'FCAST' must be a temporary");
+                return false;
+            }
+
+            if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'FCAST' must be a temporary");
+                return false;
+            }
+
+            auto target_type = instruction->dest.type;
+            auto op_type = instruction->a.type;
+
+            assert(target_type->kind == Type_Kind::FLOAT);
+            assert(op_type->kind == Type_Kind::FLOAT);
+
+            return true;
+        }
+
         case Bytecode_Opcode::PRINT: {
             if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
                 bytecode_validator_report_error(validator, "The 'a' register for 'PRINT' must be a temporary");

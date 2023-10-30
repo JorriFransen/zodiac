@@ -5,28 +5,23 @@ main :: () {
 
     // println("Hello world!");
     // println(1);
+    // println(cast(u16, 257));
 
-    // println(cstrlen("abc"));
-    // println(strlen("abc"));
+    // float : r32 = 1.1;
+    // double : r64 = 2.1;
 
-    println(cstrlen("abc"));
+    // println(float);
+    // println(double);
+
+    // xx_println(float);
+    // xx_println(double);
+
+    // printf("int: %i\n", 42);
+    //
+    // printf("float: %f\n", 1.2);
+    // printf("double: %f\n", double);
+    printf("another: %f\n", cast(r64, 1.1));
 
     return 0;
 
-}
-
-cstrlen :: (cstr: *u8) -> s64 {
-    slice : []u8;
-    slice.data = cstr;
-
-    length := 0;
-    while slice[length] != 0 {
-        length += 1;
-    }
-
-    return length;
-}
-
-strlen :: (str: String) -> s64 {
-    return str.length;
 }

@@ -868,7 +868,10 @@ Bytecode_Register bytecode_emit_cast(Bytecode_Builder *builder, Type *target_typ
             return bytecode_emit_integer_cast(builder, target_type, operand_register);
         }
 
-        case Type_Kind::FLOAT: assert(false); break;
+        case Type_Kind::FLOAT: {
+            assert(op_type->kind == Type_Kind::FLOAT);
+            return bytecode_emit_float_cast(builder, target_type, operand_register);
+        }
 
         case Type_Kind::POINTER: {
             assert(op_type->kind == Type_Kind::POINTER);
@@ -945,6 +948,16 @@ Bytecode_Register bytecode_emit_integer_cast(Bytecode_Builder *builder, Type *ta
 
     assert(false);
     return { .kind = Bytecode_Register_Kind::INVALID };
+}
+
+Bytecode_Register bytecode_emit_float_cast(Bytecode_Builder *builder, Type *target_type, Bytecode_Register operand_register)
+{
+    assert(target_type->kind == Type_Kind::FLOAT);
+    assert(operand_register.type->kind == Type_Kind::FLOAT);
+
+    auto dest_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, target_type);
+    bytecode_emit_instruction(builder, Bytecode_Opcode::FCAST, operand_register, {}, dest_register);
+    return dest_register;
 }
 
 Bytecode_Register bytecode_emit_bitcast(Bytecode_Builder *builder, Type *target_type, Bytecode_Register operand_register)

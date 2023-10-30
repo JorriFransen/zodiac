@@ -209,17 +209,30 @@ void ffi_push_arg(FFI_Context *ffi, void *arg_ptr, Type *type)
         case Type_Kind::INTEGER: {
             switch (type->bit_size) {
                 default: assert(false); break;
+
+                case 8: {
+                    assert(sizeof(DCchar) == 1);
+                    dcArgChar(ffi->dc_vm, *((DCchar *)arg_ptr));
+                    break;
+                }
+
+                case 16: {
+                    assert(sizeof(DCshort) == 2);
+                    dcArgShort(ffi->dc_vm, *((DCshort *)arg_ptr));
+                    break;
+                }
+
                 case 32: {
-                     assert(sizeof(DCint) == 4);
-                     dcArgInt(ffi->dc_vm, *((DCint *)arg_ptr));
-                     break;
-                 }
+                    assert(sizeof(DCint) == 4);
+                    dcArgInt(ffi->dc_vm, *((DCint *)arg_ptr));
+                    break;
+                }
 
                 case 64: {
-                     assert(sizeof(DClonglong) == 8);
-                     dcArgLongLong(ffi->dc_vm, *((DClonglong *)arg_ptr));
-                     break;
-                 }
+                    assert(sizeof(DClonglong) == 8);
+                    dcArgLongLong(ffi->dc_vm, *((DClonglong *)arg_ptr));
+                    break;
+                }
             }
             break;
         }

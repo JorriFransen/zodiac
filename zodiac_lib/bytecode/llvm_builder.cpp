@@ -583,6 +583,14 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             break;
         }
 
+        case Bytecode_Opcode::FCAST: {
+            auto type = llvm_type_from_ast_type(builder, bc_inst.dest.type);
+            auto llvm_val = llvm_builder_emit_register(builder, bc_inst.a);
+            auto result = irb->CreateFPCast(llvm_val, type);
+            llvm_builder_store_result(builder, bc_inst.dest, result);
+            break;
+        }
+
         case Bytecode_Opcode::PRINT: {
             llvm::Value *llvm_val = llvm_builder_emit_register(builder, bc_inst.a);
             llvm_builder_emit_print_instruction(builder, blocks, bc_inst.a.type, llvm_val);
@@ -637,7 +645,14 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             dynamic_array_create(temp_allocator_allocator(), &llvm_args, arg_count);
 
             for (s64 i = 0; i < arg_count; i++) {
-                dynamic_array_append(&llvm_args, stack_peek(&builder->arg_stack, (arg_count - 1) - i));
+
+                auto arg = stack_peek(&builder->arg_stack, (arg_count - 1) - i);
+
+                if (func_type->isVarArg() && arg->getType()->isFloatTy()) {
+                    arg = irb->CreateFPExt(arg, llvm::Type::getDoubleTy(*builder->llvm_context));
+                }
+
+                dynamic_array_append(&llvm_args, arg);
             }
 
             stack_pop(&builder->arg_stack, arg_count);

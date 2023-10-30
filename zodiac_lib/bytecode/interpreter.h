@@ -103,7 +103,7 @@ ZAPI u8 *interpreter_stack_alloc(Interpreter *interp, u64 size);
 
 ZAPI void interpreter_call_foreign_function(Interpreter *interp, Bytecode_Function_Handle fn_handle, s64 arg_count, s64 dest_index);
 ZAPI void interpreter_call_pointer(Interpreter *interp, Bytecode_Register fn_reg, s64 arg_count, s64 dest_index);
-ZAPI void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_count, s64 dest_index, Type *return_type);
+ZAPI void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_count, s64 dest_index, Type *type);
 ZAPI Interpreter_Register *interpreter_handle_ffi_callback(Interpreter *interp, Bytecode_Function_Handle fn_handle);
 
 ZAPI Interpreter_Register interpreter_load_register(Interpreter *interp, Bytecode_Register bc_reg);
