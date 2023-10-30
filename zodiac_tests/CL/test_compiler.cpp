@@ -53,7 +53,10 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     zodiac_context_create(options, &result.context);
     result.context.interp_stdout_file = &interp_stdout_file;
 
+    auto old_stdout = stdout;
+    stdout = (FILE *)interp_stdout_file.handle;
     zodiac_context_compile(&result.context, code_str, "<test_code>");
+    stdout = old_stdout;
 
     int fatal_err_count = 0;
     for (s64 i = 0; i < result.context.errors.count; i++) {
@@ -116,7 +119,7 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     munit_assert(result.program.entry_handle == -1);
     result.program.entry_handle = bytecode_find_entry(result.program);
 
-    auto old_stdout = stdout;
+    old_stdout = stdout;
     stdout = (FILE *)interp_stdout_file.handle;
 
     Interpreter_Register result_reg = interpreter_start(result.context.interp, result.program);
