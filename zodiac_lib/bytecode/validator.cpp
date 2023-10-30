@@ -692,7 +692,7 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             auto op_type = instruction->a.type;
 
             if (!(target_type->bit_size > op_type->bit_size)) {
-                bytecode_validator_report_error(validator, "The 'dest' register for 'ZEXT' must have a smaller bit_size than the 'a' register");
+                bytecode_validator_report_error(validator, "The 'dest' register for 'SEXT' must have a smaller bit_size than the 'a' register");
                 return false;
             }
 
@@ -777,6 +777,25 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
 
             assert(target_type->kind == Type_Kind::FLOAT);
             assert(op_type->kind == Type_Kind::FLOAT);
+            return true;
+        }
+
+        case Bytecode_Opcode::BOOL_TO_INT: {
+            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'a' register for 'BOOL_TO_INT' must be a temporary");
+                return false;
+            }
+
+            if (instruction->dest.kind != Bytecode_Register_Kind::TEMPORARY) {
+                bytecode_validator_report_error(validator, "The 'dest' register for 'BOOL_TO_INT' must be a temporary");
+                return false;
+            }
+
+            auto target_type = instruction->dest.type;
+            auto op_type = instruction->a.type;
+
+            assert(target_type->kind == Type_Kind::INTEGER);
+            assert(op_type->kind == Type_Kind::BOOLEAN);
 
             return true;
         }

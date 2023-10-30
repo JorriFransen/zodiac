@@ -2,6 +2,7 @@
 
 #include <munit/munit.h>
 
+#include "ast.h"
 #include "atom.h"
 #include "bytecode/interpreter.h"
 #include "common.h"
@@ -11,6 +12,9 @@
 #include "platform/platform.h"
 #include "resolve.h"
 #include "type.h"
+#include "util/asserts.h"
+
+#include <stdio.h>
 
 namespace Zodiac {
 

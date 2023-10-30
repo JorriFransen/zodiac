@@ -601,6 +601,18 @@ switch (operand.type->bit_size) { \
 
             interpreter_store_register(interp, result, instruction.dest);
             break;
+        }
+
+        case Bytecode_Opcode::BOOL_TO_INT: {
+            Interpreter_Register operand = interpreter_load_register(interp, instruction.a);
+
+            Interpreter_Register result = {
+                .type = instruction.dest.type,
+            };
+
+            result.value.integer.u64 = operand.value.boolean;
+
+            interpreter_store_register(interp, result, instruction.dest);
             break;
         }
 

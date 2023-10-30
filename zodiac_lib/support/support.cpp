@@ -13,14 +13,8 @@ public s64 foreign_add(s64 a, s64 b) {
     return a + b;
 }
 
-static FILE *stdout_handle;
-public void runtime_set_stdout(FILE *file) {
-    stdout_handle = file;
-}
-
 typedef s64 (* Binop_FN_Ptr)(s64, s64);
 public s64 foreign_call_binop_ptr(Binop_FN_Ptr fn_ptr, s64 a, s64 b) {
-    fprintf(stdout_handle, "Calling pointer!\n");
     return fn_ptr(a, b);
 }
 

@@ -234,6 +234,7 @@ void bytecode_print_instruction(const Bytecode_Builder *builder, const Bytecode_
         UNOP_CASE_(ZEXT)
         UNOP_CASE_(BITCAST)
         UNOP_CASE_(FCAST)
+        UNOP_CASE_(BOOL_TO_INT)
         UNOP_CASE_(PRINT)
 
         UNOP_CASE_(PUSH_ARG)

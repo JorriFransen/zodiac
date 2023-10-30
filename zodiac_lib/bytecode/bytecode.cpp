@@ -909,9 +909,18 @@ Bytecode_Register bytecode_emit_integer_cast(Bytecode_Builder *builder, Type *ta
 {
     auto op_type = operand_register.type;
     assert(op_type != target_type);
-    assert(op_type->kind == Type_Kind::INTEGER);
 
     auto dest_register = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, target_type);
+
+    if (op_type->kind == Type_Kind::BOOLEAN) {
+        assert(op_type->bit_size == 8);
+        assert(target_type->kind == Type_Kind::INTEGER);
+
+        bytecode_emit_instruction(builder, Bytecode_Opcode::BOOL_TO_INT, operand_register, {}, dest_register);
+        return dest_register;
+    }
+
+    assert(op_type->kind == Type_Kind::INTEGER);
 
     if (target_type->kind == Type_Kind::INTEGER) {
 

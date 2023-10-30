@@ -591,6 +591,14 @@ bool llvm_builder_emit_instruction(LLVM_Builder *builder, const Bytecode_Instruc
             break;
         }
 
+        case Bytecode_Opcode::BOOL_TO_INT: {
+            auto type = llvm_type_from_ast_type(builder, bc_inst.dest.type);
+            auto llvm_val = llvm_builder_emit_register(builder, bc_inst.a);
+            auto result = irb->CreateZExt(llvm_val, type);
+            llvm_builder_store_result(builder, bc_inst.dest, result);
+            break;
+        }
+
         case Bytecode_Opcode::PRINT: {
             llvm::Value *llvm_val = llvm_builder_emit_register(builder, bc_inst.a);
             llvm_builder_emit_print_instruction(builder, blocks, bc_inst.a.type, llvm_val);

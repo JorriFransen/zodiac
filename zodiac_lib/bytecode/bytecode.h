@@ -49,6 +49,7 @@ struct Bytecode_Register;
     ZODIAC_BC_OP(ZEXT) \
     ZODIAC_BC_OP(BITCAST) \
     ZODIAC_BC_OP(FCAST) \
+    ZODIAC_BC_OP(BOOL_TO_INT) \
     ZODIAC_BC_OP(PRINT) \
     ZODIAC_BC_OP(PUSH_ARG) \
     ZODIAC_BC_OP(CALL) \
