@@ -1,4 +1,6 @@
 
+- Get rid of prints in bytecode tests, remove print instruction completely
+
 - This causes an infinite loop
     value := <cast(**void, any.value);
 
