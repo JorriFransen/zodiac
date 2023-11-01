@@ -1,7 +1,6 @@
 
 #include "defines.h"
 
-#include <cstdio>
 
 #ifdef ZPLATFORM_LINUX
 #define public extern "C" __attribute__((visibility("default")))

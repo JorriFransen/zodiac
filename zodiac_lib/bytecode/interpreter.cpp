@@ -1373,11 +1373,6 @@ void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_co
             d = *(float *)arg_ptr;
             arg_ptr = &d;
         }
-        // else if (is_vararg && arg_reg.type == &builtin_type_r64) {
-        //     arg_reg.type = &builtin_type_r64;
-        //     d = *(double *)arg_ptr;
-        //     arg_ptr = &d;
-        // }
 
         ffi_push_arg(&interp->ffi, arg_ptr, arg_reg.type);
     }
@@ -1565,7 +1560,7 @@ void interpreter_load_pointer(Interpreter *interp, u8 *source, Interpreter_Regis
             assert(type->bit_size == pointer_size);
 
             // @Cleanup: @TODO: @FIXME: alignment?
-            dest->value.pointer = *((u8 **)source); break;
+            dest->value.pointer = (u8 *) *((void **)source); break;
             break;
         }
 

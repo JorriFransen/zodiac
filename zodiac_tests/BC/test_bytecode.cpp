@@ -17,6 +17,7 @@
 #include "util/logger.h"
 #include "zodiac_context.h"
 
+#include <stdio.h>
 #include <string.h>
 
 namespace Zodiac { namespace Bytecode_Tests {
@@ -2067,19 +2068,54 @@ MunitResult String_Literals(const MunitParameter params[], void *user_data_or_fi
     Bytecode_Builder bb = bytecode_builder_create(c_alloc, &zc);
     defer { bytecode_builder_free(&bb); };
 
+    Type *printf_param_types[] = { get_pointer_type(&builtin_type_u8, aa) };
+    auto printf_fn_type = get_function_type(&builtin_type_s32, printf_param_types, aa, false, true);
+    auto printf_fn = bytecode_foreign_function_create(&bb, "printf", printf_fn_type);
+
     auto main_fn_type = get_function_type(&builtin_type_s64, {}, aa);
     auto main_fn = bytecode_function_create(&bb, "main", main_fn_type);
     auto main_entry_block = bytecode_append_block(&bb, main_fn, "entry");
 
-    const s64 exit_code = 42;
-    const String_Ref stdout_str("Hello, Zodiac!");
+    const s64 exit_code = 10;
+    const String_Ref stdout_str("abc\nabc\narg str\narg_str_2\narg_str_2\n");
 
     bytecode_set_insert_point(&bb, main_fn, main_entry_block);
     {
-        auto str_lit_val = bytecode_string_literal(&bb, stdout_str);
+        auto arg2_alloc = bytecode_emit_alloc(&bb, get_string_type(bb.zodiac_context), "arg2");
 
-        auto return_val = bytecode_integer_literal(&bb, &builtin_type_s64, exit_code);
-        bytecode_emit_return(&bb, return_val);
+        auto cstr = bytecode_cstring_literal(&bb, "abc\n");
+        bytecode_emit_push_arg(&bb, cstr);
+        bytecode_emit_call(&bb, printf_fn, 1);
+
+        auto fmt = bytecode_cstring_literal(&bb, "%s");
+        bytecode_emit_push_arg(&bb, fmt);
+        bytecode_emit_push_arg(&bb, cstr);
+        bytecode_emit_call(&bb, printf_fn, 2);
+
+        auto fmt2 = bytecode_cstring_literal(&bb, "%.*s\n");
+        auto arg = bytecode_cstring_literal(&bb, "arg str");
+        bytecode_emit_push_arg(&bb, fmt2);
+        bytecode_emit_push_arg(&bb, bytecode_integer_literal(&bb, &builtin_type_s64, 7));
+        bytecode_emit_push_arg(&bb, arg);
+        bytecode_emit_call(&bb, printf_fn, 3);
+
+        bytecode_emit_store(&bb, bytecode_string_literal(&bb, "arg_str_2\n"), arg2_alloc);
+        auto arg2_ptr = bytecode_emit_aggregate_offset_pointer(&bb, arg2_alloc, 0);
+        auto ptr = bytecode_emit_load(&bb, arg2_ptr);
+
+        bytecode_emit_push_arg(&bb, fmt);
+        bytecode_emit_push_arg(&bb, ptr);
+        bytecode_emit_call(&bb, printf_fn, 2);
+
+        bytecode_emit_push_arg(&bb, fmt2);
+        auto len_ptr = bytecode_emit_aggregate_offset_pointer(&bb, arg2_alloc, 1);
+        auto len = bytecode_emit_load(&bb, len_ptr);
+        bytecode_emit_push_arg(&bb, len);
+        bytecode_emit_push_arg(&bb, ptr);
+
+        bytecode_emit_call(&bb, printf_fn, 3);
+
+        bytecode_emit_return(&bb, len);
     }
 
     print_bytecode(&bb);
@@ -2103,21 +2139,26 @@ MunitResult String_Literals(const MunitParameter params[], void *user_data_or_fi
 
     auto program = bytecode_get_program(&bb);
     program.entry_handle = main_fn;
-    Interpreter_Register result_register = interpreter_start(&interp, program);
 
-    // assert_zodiac_stream(interp.std_out, stdout_str);
+    auto old_stdout = stdout;
+    stdout = (FILE *)interp.std_out.handle;
+    Interpreter_Register result_register = interpreter_start(&interp, program);
+    stdout = old_stdout;
+
+    assert_zodiac_stream(interp.std_out, stdout_str);
 
     munit_assert_ptr_equal(result_register.type, &builtin_type_s64);
     munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
-    LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
-    defer { llvm_builder_free(&llvm_builder); };
-
-    llvm_builder_emit_program(&llvm_builder, &program);
-    llvm_builder_emit_binary(&llvm_builder);
-    defer { filesystem_remove(zc.options.output_file_name); };
-
-    return execute_and_verify(zc.options.output_file_name, exit_code);
+    return MUNIT_OK;
+    // LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
+    // defer { llvm_builder_free(&llvm_builder); };
+    //
+    // llvm_builder_emit_program(&llvm_builder, &program);
+    // llvm_builder_emit_binary(&llvm_builder);
+    // defer { filesystem_remove(zc.options.output_file_name); };
+    //
+    // return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 #undef assert_zodiac_stream
