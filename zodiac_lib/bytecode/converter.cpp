@@ -1050,6 +1050,90 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
     return true;
 }
 
+int emit_varargs(Bytecode_Converter *bc, AST_Expression *call_expr, s64 va_start_index)
+{
+    auto any_type = get_any_type(bc->context);
+    auto va_slice_type = get_slice_type(bc->context, any_type, &bc->context->ast_allocator);
+
+    int vararg_count = call_expr->call.args.count - va_start_index;
+
+    if (vararg_count == 0) {
+        auto ptr_reg = bytecode_zero_value(bc->builder, get_pointer_type(any_type, &bc->context->ast_allocator));
+
+        auto length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, 0);
+        auto va_slice_reg = bytecode_emit_insert_value(bc->builder, {}, ptr_reg, va_slice_type->slice.struct_type, 0);
+        va_slice_reg = bytecode_emit_insert_value(bc->builder, va_slice_reg, length_reg, va_slice_type->slice.struct_type, 1);
+
+        bytecode_emit_push_arg(bc->builder, va_slice_reg);
+
+        return 1;
+    }
+
+    auto first_va = call_expr->call.args[va_start_index];
+
+    if (vararg_count == 1 &&
+        first_va->kind == AST_Expression_Kind::UNARY &&
+        first_va->unary.op == AST_Unary_Operator::SPREAD &&
+        first_va->resolved_type->kind == Type_Kind::SLICE) {
+
+        auto slice_reg = ast_expr_to_bytecode(bc, first_va->unary.operand);
+        bytecode_emit_push_arg(bc->builder, slice_reg);
+
+        return 1;
+    }
+
+    Bytecode_Register ptr_reg;
+    int va_i = 0;
+
+    Bytecode_Register array_alloc;
+    bool found = hash_table_find(&bc->implicit_lvalues, call_expr, &array_alloc);
+    assert(found);
+
+    Bytecode_Register array_reg = {};
+
+    for (s64 i = va_start_index; i < call_expr->call.args.count; i++) {
+        AST_Expression *arg_expr = call_expr->call.args[i];
+
+        bool spread = false;
+
+        Bytecode_Register any_reg;
+        if (arg_expr->kind == AST_Expression_Kind::UNARY && arg_expr->unary.op == AST_Unary_Operator::SPREAD) {
+
+            assert(arg_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY);
+            spread = true;
+
+            auto arr_reg = ast_expr_to_bytecode(bc, arg_expr->unary.operand);
+
+            for (s64 si = 0; si < arg_expr->resolved_type->static_array.count; si++) {
+                auto elem = bytecode_emit_extract_element(bc->builder, arr_reg, si);
+                array_reg = bytecode_emit_insert_element(bc->builder, array_reg, elem, array_alloc.type, va_i++);
+            }
+
+        } else if (arg_expr->resolved_type == any_type) {
+            any_reg = ast_expr_to_bytecode(bc, arg_expr);
+        } else {
+            any_reg = emit_any(bc, arg_expr);
+        }
+
+        if (!spread) {
+            array_reg = bytecode_emit_insert_element(bc->builder, array_reg, any_reg, array_alloc.type, va_i++);
+        }
+    }
+
+    bytecode_emit_store(bc->builder, array_reg, array_alloc);
+    ptr_reg = bytecode_emit_array_offset_pointer(bc->builder, array_alloc, 0);
+
+    assert(ptr_reg.kind != Bytecode_Register_Kind::INVALID);
+
+    auto length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, va_i);
+    auto va_slice_reg = bytecode_emit_insert_value(bc->builder, {}, ptr_reg, va_slice_type->slice.struct_type, 0);
+    va_slice_reg = bytecode_emit_insert_value(bc->builder, va_slice_reg, length_reg, va_slice_type->slice.struct_type, 1);
+
+    bytecode_emit_push_arg(bc->builder, va_slice_reg);
+
+    return 1;
+}
+
 Bytecode_Register ast_lvalue_to_bytecode(Bytecode_Converter *bc, AST_Expression *expr)
 {
     assert(bc);
@@ -1509,77 +1593,7 @@ Bytecode_Register ast_expr_to_bytecode(Bytecode_Converter *bc, AST_Expression *e
             }
 
             if (fn_type->function.is_vararg) {
-
-                int vararg_count = expr->call.args.count - vararg_start_index;
-
-
-                Bytecode_Register ptr_reg = {};
-                Bytecode_Register slice_reg = {};
-                bool slice_spread = false;
-
-                if (vararg_count) {
-                    Bytecode_Register array_alloc;
-                    bool found = hash_table_find(&bc->implicit_lvalues, expr, &array_alloc);
-                    assert(found);
-
-                    Bytecode_Register array_reg;
-                    bool array_spread = false;
-
-                    s64 va_i = 0;
-                    for (s64 i = vararg_start_index; i < expr->call.args.count; i++) {
-                        AST_Expression *arg_expr = expr->call.args[i];
-                        Bytecode_Register any_reg;
-
-                        if (arg_expr->kind == AST_Expression_Kind::UNARY && arg_expr->unary.op == AST_Unary_Operator::SPREAD) {
-                            assert(i == fn_type->function.parameter_types.count - 1);
-
-                            if (arg_expr->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
-
-                                auto spread_reg = ast_expr_to_bytecode(bc, arg_expr->unary.operand);
-                                bytecode_emit_store(bc->builder, spread_reg, array_alloc);
-
-                                vararg_count = arg_expr->resolved_type->static_array.count;
-                                array_spread = true;
-
-                            } else {
-                                assert(arg_expr->resolved_type->kind == Type_Kind::SLICE);
-                                slice_reg = ast_expr_to_bytecode(bc, arg_expr->unary.operand);
-                                slice_spread = true;
-                            }
-                            break;
-
-                        } else if (arg_expr->resolved_type == any_type) {
-                            any_reg = ast_expr_to_bytecode(bc, arg_expr);
-                        } else {
-                            any_reg = emit_any(bc, arg_expr);
-                        }
-
-                        array_reg = bytecode_emit_insert_element(bc->builder, array_reg, any_reg, array_alloc.type, va_i++);
-                    }
-
-                    if (!slice_spread) {
-                        if (!array_spread) {
-                            bytecode_emit_store(bc->builder, array_reg, array_alloc);
-                        }
-                        ptr_reg = bytecode_emit_array_offset_pointer(bc->builder, array_alloc, 0);
-                    }
-
-                } else {
-                    ptr_reg = bytecode_zero_value(bc->builder, get_pointer_type(any_type, &bc->context->ast_allocator));
-                }
-
-                assert(ptr_reg.kind != Bytecode_Register_Kind::INVALID || slice_spread);
-
-                auto slice_type = get_slice_type(bc->context, any_type, &bc->context->ast_allocator);
-
-                if (!slice_spread) {
-                    Bytecode_Register length_reg = bytecode_integer_literal(bc->builder, &builtin_type_s64, vararg_count);
-                    slice_reg = bytecode_emit_insert_value(bc->builder, {}, ptr_reg, slice_type->slice.struct_type, 0);
-                    slice_reg = bytecode_emit_insert_value(bc->builder, slice_reg, length_reg, slice_type->slice.struct_type, 1);
-                }
-
-                bytecode_emit_push_arg(bc->builder, slice_reg);
-                pushed_arg_count++;
+                pushed_arg_count += emit_varargs(bc, expr, vararg_start_index);
             }
 
             if (ptr_call) {

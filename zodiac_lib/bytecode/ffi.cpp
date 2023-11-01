@@ -206,7 +206,8 @@ void ffi_push_arg(FFI_Context *ffi, void *arg_ptr, Type *type)
     switch (type->kind) {
         default: assert(false); break;
 
-        case Type_Kind::INTEGER: {
+        case Type_Kind::INTEGER:
+        case Type_Kind::ENUM: {
             switch (type->bit_size) {
                 default: assert(false); break;
 

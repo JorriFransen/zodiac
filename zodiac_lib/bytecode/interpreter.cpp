@@ -1335,7 +1335,8 @@ void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_co
 
             case Type_Kind::INTEGER:
             case Type_Kind::POINTER:
-            case Type_Kind::FUNCTION: {
+            case Type_Kind::FUNCTION:
+            case Type_Kind::ENUM: {
                 arg_ptr = &arg_reg.value;
                 break;
             }
@@ -1352,7 +1353,6 @@ void interpreter_call_ffi(Interpreter *interp, FFI_Handle ffi_handle, s64 arg_co
 
             case Type_Kind::BOOLEAN: assert(false); break;
             case Type_Kind::STRUCTURE: assert(false); break;
-            case Type_Kind::ENUM: assert(false); break;
             case Type_Kind::STATIC_ARRAY: assert(false); break;
             case Type_Kind::SLICE: assert(false); break;
         }

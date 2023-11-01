@@ -53,7 +53,6 @@ enum Infer_Flag : Infer_Flags
 {
     INFER_FLAG_NONE         = 0x00,
     INFER_FLAG_VARARG       = 0x01,
-    INFER_FLAG_FIRST_VARARG = 0x02,
 };
 
 enum class Flat_Node_Kind

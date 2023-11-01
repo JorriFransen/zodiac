@@ -441,10 +441,6 @@ Type *infer_type(Zodiac_Context *ctx, Infer_Node *infer_node, Source_Range error
 
                 if (flags) {
                     *flags |= INFER_FLAG_VARARG;
-
-                    if (index == fn_type->function.parameter_types.count - 1) {
-                        *flags |= INFER_FLAG_FIRST_VARARG;
-                    }
                 }
 
             } else if (inferred_type->function.is_c_vararg) {
@@ -2830,10 +2826,6 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                     if (arg_expr->kind == AST_Expression_Kind::UNARY && arg_expr->unary.op == AST_Unary_Operator::SPREAD) {
 
-                        // Spread must be the only vararg
-                        assert(i == func_type->function.parameter_types.count - 1);
-                        assert(vararg_count == 1);
-
                         if (arg_expr->unary.operand->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
                             vararg_count = arg_expr->unary.operand->resolved_type->static_array.count;
                         } else {
@@ -2992,7 +2984,6 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                     assert(inferred_type && inferred_type == any_type);
                     assert(infer_flags & INFER_FLAG_VARARG);
-                    assert(infer_flags & INFER_FLAG_FIRST_VARARG);
 
                     auto operand = expr->unary.operand;
                     auto op_type = operand->resolved_type;
