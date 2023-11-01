@@ -2460,28 +2460,28 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
         case AST_Expression_Kind::INTEGER_LITERAL: {
 
-                if (inferred_type && (inferred_type->kind == Type_Kind::BOOLEAN ||
-                                      inferred_type == any_type)) {
-                    // Ok, but we can't change the actual type here, this is done when emitting bytecode
-                    expr->resolved_type = &builtin_type_s64;
-                } else if (inferred_type) {
+            if (inferred_type && (inferred_type->kind == Type_Kind::BOOLEAN ||
+                                  inferred_type == any_type)) {
+                // Ok, but we can't change the actual type here, this is done when emitting bytecode
+                expr->resolved_type = &builtin_type_s64;
+            } else if (inferred_type) {
 
-                    if (inferred_type->kind == Type_Kind::UNSIZED_INTEGER) {
-                        inferred_type = &builtin_type_s64;
-                    } if (inferred_type->kind == Type_Kind::FLOAT) {
-                        // Ok
-                    } else if (inferred_type->kind != Type_Kind::INTEGER) {
-                        fatal_resolve_error(ctx, expr, "Could not convert integer literal to inferred type '%s'", temp_type_string(inferred_type).data);
-                        return false;
-                    }
-
-                    // TODO: Make sure the literal fits in this type
-
-                    expr->resolved_type = inferred_type;
-
-                } else {
-                    expr->resolved_type = &builtin_type_unsized_integer;
+                if (inferred_type->kind == Type_Kind::UNSIZED_INTEGER) {
+                    inferred_type = &builtin_type_s64;
+                } if (inferred_type->kind == Type_Kind::FLOAT) {
+                    // Ok
+                } else if (inferred_type->kind != Type_Kind::INTEGER) {
+                    fatal_resolve_error(ctx, expr, "Could not convert integer literal to inferred type '%s'", temp_type_string(inferred_type).data);
+                    return false;
                 }
+
+                // TODO: Make sure the literal fits in this type
+
+                expr->resolved_type = inferred_type;
+
+            } else {
+                expr->resolved_type = &builtin_type_unsized_integer;
+            }
             break;
         }
 
@@ -3376,6 +3376,24 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     match = match || (array_element_type->kind == Type_Kind::INTEGER && compound_member_type->kind == Type_Kind::UNSIZED_INTEGER);
                     match = match || (array_element_type->kind == Type_Kind::FLOAT && compound_member_type->kind == Type_Kind::UNSIZED_INTEGER);
 
+                    bool implicit_any = false;
+
+                    if (array_element_type == any_type && compound_member_type != any_type) {
+                        match = true;
+                        implicit_any = true;
+
+                        expr->flags &= ~AST_EXPR_FLAG_CONST;
+
+                        if (!EXPR_HAS_STORAGE(compound_member_expr)) {
+                            assert(scope->kind != Scope_Kind::GLOBAL);
+                            AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::ANY, compound_member_expr };
+
+                            auto cf = enclosing_function(scope);
+                            dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
+
+                        }
+                    }
+
                     if (!match) {
                         fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
                         fatal_resolve_error(ctx, compound_member_expr, "    Expected: %s", temp_type_string(array_element_type));
@@ -3386,7 +3404,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     if (!(compound_member_expr->flags & AST_EXPR_FLAG_LITERAL)) {
                         all_literal = false;
                     }
-                    if (!(compound_member_expr->flags & AST_EXPR_FLAG_CONST)) {
+                    if (!(compound_member_expr->flags & AST_EXPR_FLAG_CONST) || implicit_any) {
                         all_const = false;
                     }
                 }
@@ -3405,6 +3423,24 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     match = match || (slice_element_type->kind == Type_Kind::INTEGER && compound_member_type->kind == Type_Kind::UNSIZED_INTEGER);
                     match = match || (slice_element_type->kind == Type_Kind::FLOAT && compound_member_type->kind == Type_Kind::UNSIZED_INTEGER);
 
+                    bool implicit_any = false;
+
+                    if (slice_element_type == any_type && compound_member_type != any_type) {
+                        match = true;
+                        implicit_any = true;
+
+                        expr->flags &= ~AST_EXPR_FLAG_CONST;
+
+                        if (!EXPR_HAS_STORAGE(compound_member_expr)) {
+                            assert(scope->kind != Scope_Kind::GLOBAL);
+                            AST_Implicit_LValue implicit_lval = { AST_Implicit_LValue_Kind::ANY, compound_member_expr };
+
+                            auto cf = enclosing_function(scope);
+                            dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
+
+                        }
+                    }
+
                     if (!match) {
                         fatal_resolve_error(ctx, compound_member_expr, "Mismatching type for compound member %i", i + 1);
                         fatal_resolve_error(ctx, compound_member_expr, "    Expected: %s", temp_type_string(slice_element_type));
@@ -3415,7 +3451,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     if (!(compound_member_expr->flags & AST_EXPR_FLAG_LITERAL)) {
                         all_literal = false;
                     }
-                    if (!(compound_member_expr->flags & AST_EXPR_FLAG_CONST)) {
+                    if (!(compound_member_expr->flags & AST_EXPR_FLAG_CONST) || implicit_any) {
                         all_const = false;
                     }
                 }

@@ -1821,6 +1821,8 @@ Bytecode_Register ast_compound_expr_to_bytecode(Bytecode_Converter *bc, AST_Expr
     bool aggregate = type->flags & TYPE_FLAG_AGGREGATE;
     assert(aggregate || type->kind == Type_Kind::STATIC_ARRAY);
 
+    auto any_type = get_any_type(bc->context);
+
     Bytecode_Register result = { .kind = Bytecode_Register_Kind::INVALID };
 
     if (aggregate) {
@@ -1830,7 +1832,13 @@ Bytecode_Register ast_compound_expr_to_bytecode(Bytecode_Converter *bc, AST_Expr
     for (s64 i = 0; i < compound_expr->compound.expressions.count; i++) {
         auto member_expr = compound_expr->compound.expressions[i];
         Type *elem_type = aggregate ? type->structure.member_types[i] : type->static_array.element_type;
-        Bytecode_Register member_reg = ast_expr_to_bytecode(bc, member_expr, elem_type);
+
+        Bytecode_Register member_reg;
+        if (elem_type == any_type && member_expr->resolved_type != any_type) {
+            member_reg = emit_any(bc, member_expr);
+        } else {
+            member_reg = ast_expr_to_bytecode(bc, member_expr, elem_type);
+        }
 
         if (aggregate) {
             result = bytecode_emit_insert_value(bc->builder, result, member_reg, type, i);
@@ -2244,7 +2252,6 @@ Bytecode_Register ast_const_compound_expr_to_bytecode(Bytecode_Converter *bc, AS
 
     Dynamic_Array<Bytecode_Register> values;
     dynamic_array_create<Bytecode_Register>(bc->allocator, &values, compound_expr->compound.expressions.count);
-
 
     for (s64 i = 0; i < compound_expr->compound.expressions.count; i++) {
         auto value_expr = compound_expr->compound.expressions[i];
