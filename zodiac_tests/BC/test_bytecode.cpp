@@ -47,8 +47,6 @@ void init_test_context(Zodiac_Context *zc)
     get_struct_type(zc, "Any", string_members, {}, &zc->ast_allocator);
 }
 
-#define PRINT_NEWLINE bytecode_emit_print(&bb, bytecode_string_literal(&bb, "\n"));
-
 MunitResult execute_and_verify(String_Ref out_file_name, s64 return_code/*=0*/, String_Ref stdout_str_/*=""*/)
 {
     auto ta = temp_allocator_allocator();
@@ -1703,8 +1701,6 @@ MunitResult Non_Return_Error_Simple(const MunitParameter params[], void *user_da
         auto b = bytecode_integer_literal(&bb, &builtin_type_s64, 24);
 
         auto r = bytecode_emit_add(&bb, a, b);
-        bytecode_emit_print(&bb, r);
-        PRINT_NEWLINE;
 
         bytecode_emit_return(&bb, r);
     }
@@ -1799,8 +1795,6 @@ MunitResult Non_Return_Error_Indirect(const MunitParameter params[], void *user_
         auto b = bytecode_integer_literal(&bb, &builtin_type_s64, 24);
 
         auto r = bytecode_emit_add(&bb, a, b);
-        bytecode_emit_print(&bb, r);
-        PRINT_NEWLINE;
 
         bytecode_emit_return(&bb, r);
     }
@@ -2150,18 +2144,16 @@ MunitResult String_Literals(const MunitParameter params[], void *user_data_or_fi
     munit_assert_ptr_equal(result_register.type, &builtin_type_s64);
     munit_assert_int64(result_register.value.integer.s64, ==, exit_code);
 
-    return MUNIT_OK;
-    // LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
-    // defer { llvm_builder_free(&llvm_builder); };
-    //
-    // llvm_builder_emit_program(&llvm_builder, &program);
-    // llvm_builder_emit_binary(&llvm_builder);
-    // defer { filesystem_remove(zc.options.output_file_name); };
-    //
-    // return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
+    LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), &bb);
+    defer { llvm_builder_free(&llvm_builder); };
+
+    llvm_builder_emit_program(&llvm_builder, &program);
+    llvm_builder_emit_binary(&llvm_builder);
+    defer { filesystem_remove(zc.options.output_file_name); };
+
+    return execute_and_verify(zc.options.output_file_name, exit_code, stdout_str);
 }
 
 #undef assert_zodiac_stream
-#undef PRINT_NEWLINE
 
 } }

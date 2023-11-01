@@ -50,7 +50,6 @@ struct Bytecode_Register;
     ZODIAC_BC_OP(BITCAST) \
     ZODIAC_BC_OP(FCAST) \
     ZODIAC_BC_OP(BOOL_TO_INT) \
-    ZODIAC_BC_OP(PRINT) \
     ZODIAC_BC_OP(PUSH_ARG) \
     ZODIAC_BC_OP(CALL) \
     ZODIAC_BC_OP(CALL_FOREIGN) \
@@ -351,8 +350,6 @@ ZAPI Bytecode_Register bytecode_emit_cast(Bytecode_Builder *builder, Type *targe
 ZAPI Bytecode_Register bytecode_emit_integer_cast(Bytecode_Builder *builder, Type *target_type, Bytecode_Register operand_register);
 ZAPI Bytecode_Register bytecode_emit_float_cast(Bytecode_Builder *builder, Type *target_type, Bytecode_Register operand_register);
 ZAPI Bytecode_Register bytecode_emit_bitcast(Bytecode_Builder *builder, Type *target_type, Bytecode_Register operand_register);
-
-ZAPI void bytecode_emit_print(Bytecode_Builder *builder, Bytecode_Register a);
 
 ZAPI void bytecode_emit_push_arg(Bytecode_Builder *builder, Bytecode_Register arg_register);
 

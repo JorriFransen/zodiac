@@ -800,19 +800,6 @@ bool validate_instruction(Bytecode_Validator *validator, Bytecode_Instruction *i
             return true;
         }
 
-        case Bytecode_Opcode::PRINT: {
-            if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY) {
-                bytecode_validator_report_error(validator, "The 'a' register for 'PRINT' must be a temporary");
-                return false;
-            }
-
-            auto t = instruction->a.type;
-            assert(t);
-
-            return true;
-            break;
-        }
-
         case Bytecode_Opcode::PUSH_ARG: {
             if (instruction->a.kind != Bytecode_Register_Kind::TEMPORARY &&
                 instruction->a.kind != Bytecode_Register_Kind::FUNCTION) {

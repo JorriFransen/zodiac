@@ -1013,13 +1013,6 @@ Bytecode_Register bytecode_emit_bitcast(Bytecode_Builder *builder, Type *target_
     }
 }
 
-void bytecode_emit_print(Bytecode_Builder *builder, Bytecode_Register a)
-{
-    assert(a.kind == Bytecode_Register_Kind::TEMPORARY);
-
-    bytecode_emit_instruction(builder, Bytecode_Opcode::PRINT, a, {}, {});
-}
-
 void bytecode_emit_push_arg(Bytecode_Builder *builder, Bytecode_Register arg_register)
 {
     assert(arg_register.kind == Bytecode_Register_Kind::TEMPORARY ||
