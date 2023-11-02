@@ -658,6 +658,8 @@ bool valid_static_type_conversion(Zodiac_Context *ctx, Type *from, Type *to)
             if (to->kind == Type_Kind::INTEGER) return true;
             if (to->kind == Type_Kind::FLOAT) return true;
             if (to->kind == Type_Kind::BOOLEAN) return true;
+
+            if (to->kind == Type_Kind::VOID) return false;
             assert(false);
             break;
         }
@@ -684,6 +686,8 @@ bool valid_static_type_conversion(Zodiac_Context *ctx, Type *from, Type *to)
                 return false;
             } else if (to->kind == Type_Kind::ENUM) {
                 return to->enumeration.integer_type == from;
+            } else if (to->kind == Type_Kind::VOID) {
+                return false;
             } else {
                 assert_msg(false, "Not implemented!");
             }

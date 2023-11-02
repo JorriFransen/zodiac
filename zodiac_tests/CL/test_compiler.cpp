@@ -754,7 +754,7 @@ MunitResult Static_Array_Basics(const MunitParameter params[], void* user_data_o
 
         global_ints : [4]s64;
 
-        main :: () {
+        main :: () -> s64 {
             ints : [5]s64;
 
             ints[0] = 1;
@@ -809,7 +809,7 @@ MunitResult Deref(const MunitParameter params[], void* user_data_or_fixture) {
     String_Ref code_string = R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
             x := 42;
             xptr := *x;
             println(x);
@@ -885,20 +885,20 @@ MunitResult Deref(const MunitParameter params[], void* user_data_or_fixture) {
             x, y: s64;
         }
 
-        int_double :: (i: s64) {
+        int_double :: (i: s64) -> s64 {
             iptr : *s64 = *i;
             <iptr = <*i * 2;
             return <iptr;
         }
 
-        vec_double :: (v: Vec2) {
+        vec_double :: (v: Vec2) -> Vec2 {
             vptr := *v;
             <*vptr.x = v.x * 2;
             vptr.y = <*v.y * 2;
             return <vptr;
         }
 
-        arr_double :: (a: [2]s64) {
+        arr_double :: (a: [2]s64) -> [2]s64 {
             a0ptr := *a[0];
             <a0ptr = a[0] * 2;
             <*a[1] = <*a[1] * 2;
@@ -1044,7 +1044,7 @@ MunitResult Global_Run_Directive_Variable(const MunitParameter params[], void* u
             #import "print.zc"
 
             #run main();
-            main :: () {
+            main :: () -> s64 {
                 println("Hello zodiac!");
                 println(x);
                 return 0;
@@ -1078,7 +1078,7 @@ MunitResult Global_Run_Directive_Constant(const MunitParameter params[], void* u
             #import "print.zc"
 
             #run main();
-            main :: () {
+            main :: () -> s64 {
                 println("Hello zodiac!");
                 println(x);
                 return 0;
@@ -1112,7 +1112,7 @@ MunitResult Local_Run_Directives(const MunitParameter params[], void* user_data_
             #import "print.zc"
 
             #run main();
-            main :: () {
+            main :: () -> s64 {
                 x := #run 20 * 2;
                 y :: #run ret_x(2);
                 println(x + y);
@@ -1158,7 +1158,7 @@ MunitResult Run_Global_Var_Types(const MunitParameter params[], void* user_data_
             test_array := #run make_test_array();
             short_array := #run make_short_array(44, 22);
 
-            main :: () {
+            main :: () -> s64 {
                 println(signed_integer);
                 println(unsigned_integer);
                 println(float);
@@ -1246,7 +1246,7 @@ MunitResult Run_Global_Const_Types(const MunitParameter params[], void* user_dat
             test_array :: #run make_test_array();
             short_array :: #run make_short_array(44, 22);
 
-            main :: () {
+            main :: () -> s64 {
                 println(signed_integer);
                 println(unsigned_integer);
                 println(float);
@@ -1343,7 +1343,7 @@ MunitResult Run_Struct_Member_Types(const MunitParameter params[], void* user_da
         v1: Vec2 : { 1.0, 2.0 };
         gs : S = #run make_s(11, 22, 33, 44, 55, 66, 77, 88, 9.9, 10.10, true, false, *v1, ss, { 1, 2, 3, 4, 5, 6, 7 });
         gcs : S : #run make_s(1, 2, 3, 4, 5, 6, 7, 8, 9.99, 10.1010, false, true, *v1, ss, { 7, 6, 5, 4, 3, 2, 1 });
-        main :: () {
+        main :: () -> s64 {
             print_s(*gs);
             print_s(*gcs);
             return 0;
@@ -1421,7 +1421,7 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
         Vec2 :: struct { x, y: s64; }
         vecs := #run make_vecs({0, 1}, {2, 3}, {4, 5}, {6, 7}, {8, 9});
         arrays := #run make_arrays({1, 2}, {3, 4}, {5, 6}, {7, 8}, {9, 10});
-        main :: () {
+        main :: () -> s64 {
             println(u8s);
             println(s8s);
             println(u16s);
@@ -1437,7 +1437,7 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
             println(arrays);
             return 0;
         }
-        make_u8s :: (a0: u8, a1: u8, a2: u8, a3: u8, a4: u8) {
+        make_u8s :: (a0: u8, a1: u8, a2: u8, a3: u8, a4: u8) -> [5]u8 {
             result : [5]u8;
             result[0] = a0;
             result[1] = a1;
@@ -1446,7 +1446,7 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
             result[4] = a4;
             return result;
         }
-        make_s8s :: (a0: s8, a1: s8, a2: s8, a3: s8, a4: s8) {
+        make_s8s :: (a0: s8, a1: s8, a2: s8, a3: s8, a4: s8) -> [5]s8{
             result : [5]s8;
             result[0] = a0;
             result[1] = a1;
@@ -1455,7 +1455,7 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
             result[4] = a4;
             return result;
         }
-        make_u16s :: (a0: u16, a1: u16, a2: u16, a3: u16, a4: u16) {
+        make_u16s :: (a0: u16, a1: u16, a2: u16, a3: u16, a4: u16) -> [5]u16{
             result : [5]u16;
             result[0] = a0;
             result[1] = a1;
@@ -1464,7 +1464,7 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
             result[4] = a4;
             return result;
         }
-        make_s16s :: (a0: s16, a1: s16, a2: s16, a3: s16, a4: s16) {
+        make_s16s :: (a0: s16, a1: s16, a2: s16, a3: s16, a4: s16) -> [5]s16 {
             result : [5]s16;
             result[0] = a0;
             result[1] = a1;
@@ -1473,7 +1473,7 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
             result[4] = a4;
             return result;
         }
-        make_u32s :: (a0: u32, a1: u32, a2: u32, a3: u32, a4: u32) {
+        make_u32s :: (a0: u32, a1: u32, a2: u32, a3: u32, a4: u32) -> [5]u32 {
             result : [5]u32;
             result[0] = a0;
             result[1] = a1;
@@ -1482,7 +1482,7 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
             result[4] = a4;
             return result;
         }
-        make_s32s :: (a0: s32, a1: s32, a2: s32, a3: s32, a4: s32) {
+        make_s32s :: (a0: s32, a1: s32, a2: s32, a3: s32, a4: s32) -> [5]s32 {
             result : [5]s32;
             result[0] = a0;
             result[1] = a1;
@@ -1491,7 +1491,7 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
             result[4] = a4;
             return result;
         }
-        make_u64s :: (a0: u64, a1: u64, a2: u64, a3: u64, a4: u64) {
+        make_u64s :: (a0: u64, a1: u64, a2: u64, a3: u64, a4: u64) -> [5]u64 {
             result : [5]u64;
             result[0] = a0;
             result[1] = a1;
@@ -1500,7 +1500,7 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
             result[4] = a4;
             return result;
         }
-        make_s64s :: (a0: s64, a1: s64, a2: s64, a3: s64, a4: s64) {
+        make_s64s :: (a0: s64, a1: s64, a2: s64, a3: s64, a4: s64) -> [5]s64 {
             result : [5]s64;
             result[0] = a0;
             result[1] = a1;
@@ -1509,7 +1509,7 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
             result[4] = a4;
             return result;
         }
-        make_bools :: (a0: bool, a1: bool, a2: bool, a3: bool, a4: bool) {
+        make_bools :: (a0: bool, a1: bool, a2: bool, a3: bool, a4: bool) -> [5]bool {
             result : [5]bool;
             result[0] = a0;
             result[1] = a1;
@@ -1518,7 +1518,7 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
             result[4] = a4;
             return result;
         }
-        make_strings :: (a0: String, a1: String, a2: String, a3: String, a4: String) {
+        make_strings :: (a0: String, a1: String, a2: String, a3: String, a4: String) -> [5]String {
             result : [5]String;
             result[0] = a0;
             result[1] = a1;
@@ -1527,7 +1527,7 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
             result[4] = a4;
             return result;
         }
-        make_vecs :: (a0: Vec2, a1: Vec2, a2: Vec2, a3: Vec2, a4: Vec2) {
+        make_vecs :: (a0: Vec2, a1: Vec2, a2: Vec2, a3: Vec2, a4: Vec2) -> [5]Vec2 {
             result : [5]Vec2;
             result[0] = a0;
             result[1] = a1;
@@ -1536,7 +1536,7 @@ MunitResult Run_Array_Element_Types(const MunitParameter params[], void* user_da
             result[4] = a4;
             return result;
         }
-        make_arrays :: (a0: [2]s64, a1: [2]s64, a2: [2]s64, a3: [2]s64, a4: [2]s64) {
+        make_arrays :: (a0: [2]s64, a1: [2]s64, a2: [2]s64, a3: [2]s64, a4: [2]s64) -> [5][2]s64 {
             result : [5][2]s64;
             result[0] = a0;
             result[1] = a1;
@@ -1587,7 +1587,7 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
         Vec2 :: struct { x, y: s64; }
         vecs :: #run make_vecs({0, 1}, {2, 3}, {4, 5}, {6, 7}, {8, 9});
         arrays :: #run make_arrays({1, 2}, {3, 4}, {5, 6}, {7, 8}, {9, 10});
-        main :: () {
+        main :: () -> s64 {
             println(u8s);
             println(s8s);
             println(u16s);
@@ -1603,7 +1603,7 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
             println(arrays);
             return 0;
         }
-        make_u8s :: (a0: u8, a1: u8, a2: u8, a3: u8, a4: u8) {
+        make_u8s :: (a0: u8, a1: u8, a2: u8, a3: u8, a4: u8) -> [5]u8 {
             result : [5]u8;
             result[0] = a0;
             result[1] = a1;
@@ -1612,7 +1612,7 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
             result[4] = a4;
             return result;
         }
-        make_s8s :: (a0: s8, a1: s8, a2: s8, a3: s8, a4: s8) {
+        make_s8s :: (a0: s8, a1: s8, a2: s8, a3: s8, a4: s8) -> [5]s8 {
             result : [5]s8;
             result[0] = a0;
             result[1] = a1;
@@ -1621,7 +1621,7 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
             result[4] = a4;
             return result;
         }
-        make_u16s :: (a0: u16, a1: u16, a2: u16, a3: u16, a4: u16) {
+        make_u16s :: (a0: u16, a1: u16, a2: u16, a3: u16, a4: u16) -> [5]u16 {
             result : [5]u16;
             result[0] = a0;
             result[1] = a1;
@@ -1630,7 +1630,7 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
             result[4] = a4;
             return result;
         }
-        make_s16s :: (a0: s16, a1: s16, a2: s16, a3: s16, a4: s16) {
+        make_s16s :: (a0: s16, a1: s16, a2: s16, a3: s16, a4: s16) -> [5]s16 {
             result : [5]s16;
             result[0] = a0;
             result[1] = a1;
@@ -1639,7 +1639,7 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
             result[4] = a4;
             return result;
         }
-        make_u32s :: (a0: u32, a1: u32, a2: u32, a3: u32, a4: u32) {
+        make_u32s :: (a0: u32, a1: u32, a2: u32, a3: u32, a4: u32) -> [5]u32 {
             result : [5]u32;
             result[0] = a0;
             result[1] = a1;
@@ -1648,7 +1648,7 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
             result[4] = a4;
             return result;
         }
-        make_s32s :: (a0: s32, a1: s32, a2: s32, a3: s32, a4: s32) {
+        make_s32s :: (a0: s32, a1: s32, a2: s32, a3: s32, a4: s32) -> [5]s32 {
             result : [5]s32;
             result[0] = a0;
             result[1] = a1;
@@ -1657,7 +1657,7 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
             result[4] = a4;
             return result;
         }
-        make_u64s :: (a0: u64, a1: u64, a2: u64, a3: u64, a4: u64) {
+        make_u64s :: (a0: u64, a1: u64, a2: u64, a3: u64, a4: u64) -> [5]u64 {
             result : [5]u64;
             result[0] = a0;
             result[1] = a1;
@@ -1666,7 +1666,7 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
             result[4] = a4;
             return result;
         }
-        make_s64s :: (a0: s64, a1: s64, a2: s64, a3: s64, a4: s64) {
+        make_s64s :: (a0: s64, a1: s64, a2: s64, a3: s64, a4: s64) -> [5]s64 {
             result : [5]s64;
             result[0] = a0;
             result[1] = a1;
@@ -1675,7 +1675,7 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
             result[4] = a4;
             return result;
         }
-        make_bools :: (a0: bool, a1: bool, a2: bool, a3: bool, a4: bool) {
+        make_bools :: (a0: bool, a1: bool, a2: bool, a3: bool, a4: bool) -> [5]bool {
             result : [5]bool;
             result[0] = a0;
             result[1] = a1;
@@ -1684,7 +1684,7 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
             result[4] = a4;
             return result;
         }
-        make_strings :: (a0: String, a1: String, a2: String, a3: String, a4: String) {
+        make_strings :: (a0: String, a1: String, a2: String, a3: String, a4: String) -> [5]String {
             result : [5]String;
             result[0] = a0;
             result[1] = a1;
@@ -1693,7 +1693,7 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
             result[4] = a4;
             return result;
         }
-        make_vecs :: (a0: Vec2, a1: Vec2, a2: Vec2, a3: Vec2, a4: Vec2) {
+        make_vecs :: (a0: Vec2, a1: Vec2, a2: Vec2, a3: Vec2, a4: Vec2) -> [5]Vec2 {
             result : [5]Vec2;
             result[0] = a0;
             result[1] = a1;
@@ -1702,7 +1702,7 @@ MunitResult Run_Const_Array_Element_Types(const MunitParameter params[], void* u
             result[4] = a4;
             return result;
         }
-        make_arrays :: (a0: [2]s64, a1: [2]s64, a2: [2]s64, a3: [2]s64, a4: [2]s64) {
+        make_arrays :: (a0: [2]s64, a1: [2]s64, a2: [2]s64, a3: [2]s64, a4: [2]s64) -> [5][2]s64 {
             result : [5][2]s64;
             result[0] = a0;
             result[1] = a1;
@@ -1742,11 +1742,11 @@ MunitResult Run_And_Pointer_To_Const(const MunitParameter params[], void* user_d
         S :: struct { val : s64; }
         X : s64 : #run return_x(42);
         gcs : S : #run make_s(*X);
-        main :: () {
+        main :: () -> s64 {
             print_s(*gcs);
             return 0;
         }
-        return_x :: (x: s64) { return x; }
+        return_x :: (x: s64) -> s64 { return x; }
         make_s :: (val_ptr: *s64) -> S {
             result: S;
             result.val = <val_ptr;
@@ -1790,7 +1790,7 @@ MunitResult Run_Expr_Const(const MunitParameter params[], void* user_data_or_fix
         String_Ref code_string = R"CODE_STR(
             X : s64 : 42;
             y := #run X;
-            main :: () { return 0; }
+            main :: () -> s64 { return 0; }
         )CODE_STR";
 
         Expected_Results expected = {
@@ -1810,7 +1810,7 @@ MunitResult Run_Call_Arg_Const(const MunitParameter params[], void* user_data_or
 
     {
         String_Ref code_string = R"CODE_STR(
-            return_x :: (x: s64) { return x; }
+            return_x :: (x: s64) -> s64 { return x; }
             x : s64 = 42;
             y := #run return_x(x);
         )CODE_STR";
@@ -1828,10 +1828,10 @@ MunitResult Run_Call_Arg_Const(const MunitParameter params[], void* user_data_or
 
     {
         String_Ref code_string = R"CODE_STR(
-            return_x :: (x: s64) { return x; }
+            return_x :: (x: s64) -> s64 { return x; }
             x : s64 : 42;
             y := #run return_x(x);
-            main :: () { return 0; }
+            main :: () -> s64 { return 0; }
         )CODE_STR";
 
         Expected_Results expected = {
@@ -1872,7 +1872,7 @@ MunitResult Run_Print_Arg_Const(const MunitParameter params[], void* user_data_o
             #import "print.zc"
             x : s64 : 42;
             #run println(x);
-            main :: () { return 0; }
+            main :: () -> s64 { return 0; }
         )CODE_STR";
 
         Expected_Results expected = {
@@ -1916,7 +1916,7 @@ MunitResult Run_Call_Arg_In_Block_Const(const MunitParameter params[], void* use
 
     {
         String_Ref code_string = R"CODE_STR(
-            return_x :: (x: s64) { return x; }
+            return_x :: (x: s64) -> s64 { return x; }
             x : s64 = 42;
             #run { return_x(x); }
         )CODE_STR";
@@ -1934,10 +1934,10 @@ MunitResult Run_Call_Arg_In_Block_Const(const MunitParameter params[], void* use
 
     {
         String_Ref code_string = R"CODE_STR(
-            return_x :: (x: s64) { return x; }
+            return_x :: (x: s64) -> s64 { return x; }
             x : s64 : 42;
             #run { return_x(x); }
-            main :: () { return 0; }
+            main :: () -> s64 { return 0; }
         )CODE_STR";
 
         Expected_Results expected = {
@@ -1978,7 +1978,7 @@ MunitResult Run_Print_Arg_In_Block_Const(const MunitParameter params[], void* us
             #import "print.zc"
             x : s64 : 42;
             #run { println(x); }
-            main :: () { return 0; }
+            main :: () -> s64 { return 0; }
         )CODE_STR";
 
         Expected_Results expected = {
@@ -2017,7 +2017,7 @@ MunitResult Run_Local_Unused(const MunitParameter params[], void* user_data_or_f
 
     String_Ref code_string = R"CODE_STR(
         #import "print.zc"
-        main :: () {
+        main :: () -> s64 {
             #run println(1);
             return 0;
         }
@@ -2044,7 +2044,7 @@ MunitResult Non_Constant_Compound(const MunitParameter params[], void* user_data
         vec2 :: (x: s64, y: s64) -> Vec2 { return { x, y }; }
         arr :: (a0: s64, a1: s64) -> [2]s64 { return { a0, a1 }; }
 
-        main :: () {
+        main :: () -> s64 {
 
             x := 4;
             y :: 2;
@@ -2098,7 +2098,7 @@ MunitResult Foreign_Function(const MunitParameter params[], void* user_data_or_f
 
         #foreign foreign_add :: (a: s64, b: s64) -> s64;
 
-        main :: () {
+        main :: () -> s64 {
             println(foreign_add(1, 2));
             return 0;
         }
@@ -2126,7 +2126,7 @@ MunitResult Strings(const MunitParameter params[], void* user_data_or_fixture) {
             name: String;
             age: u8;
         }
-        main :: () {
+        main :: () -> s64 {
 
             str := string_copy("abc");
             println(str);
@@ -2186,7 +2186,7 @@ MunitResult While(const MunitParameter params[], void* user_data_or_fixture) {
     String_Ref code_string = R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
             x := 0;
             while x < 11 {
                 println(x);
@@ -2241,7 +2241,7 @@ MunitResult For(const MunitParameter params[], void* user_data_or_fixture) {
     String_Ref code_string = R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
             for (i := 0; i < 11; i = i + 1) {
                 x := i;
 
@@ -2283,7 +2283,7 @@ MunitResult Slice_Array_Locals(const MunitParameter params[], void* user_data_or
         #import "print.zc"
 
         Vec2 :: struct { x, y: s32; }
-        main :: () {
+        main :: () -> s64 {
             arr : [4]s64 = { 1, 2, 3, 4 };
             slice : []s64 = arr;
             println(slice[1]);
@@ -2374,7 +2374,7 @@ MunitResult Slice_Array_Globals(const MunitParameter params[], void* user_data_o
         global_const_arr : [5]s64 : { 5, 4, 3, 2, 1 };
         global_slice_from_global_const_arr : []s64 = global_const_arr;
 
-        main :: () {
+        main :: () -> s64 {
             println("global_arr: ", global_arr);
             local_slice : []s64 = global_arr;
             println("local_slice: ", local_slice);
@@ -2431,7 +2431,7 @@ MunitResult Slice_Array_Arguments(const MunitParameter params[], void* user_data
         global_arr : [3]s64 = { 1, 2, 3 };
         c_global_arr : [3]s64 = { 11, 22, 33 };
 
-        main :: () {
+        main :: () -> s64 {
             arr1 : [2]s64 = { 1, 2 };
             carr : [2]s64 : { 11, 22 };
             print_slice(arr1);
@@ -2473,7 +2473,7 @@ MunitResult Slice_Array_Extra(const MunitParameter params[], void* user_data_or_
         global_slice_from_arr : []s64 = global_arr;
 
 
-        main :: () {
+        main :: () -> s64 {
             {
                 println(glob_const_slice_from_arr);
                 println(glob_const_slice);
@@ -2563,7 +2563,7 @@ MunitResult Slice_Aggregate_Index(const MunitParameter params[], void* user_data
     String_Ref code_string = R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
             vec_arr : [3]Vec2 = { {1, 2}, {3, 4}, {5, 6} };
             vec_slice_from_arr : []Vec2 = vec_arr;
             print_vec_slice(vec_slice_from_arr);
@@ -2621,7 +2621,7 @@ MunitResult Slice_Lvalues(const MunitParameter params[], void* user_data_or_fixt
     String_Ref code_string = R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
 
             vec_arr : [3]Vec2 = { {1, 2}, {3, 4}, {5, 6} };
             vec_slice_from_arr : []Vec2 = vec_arr;
@@ -2672,7 +2672,7 @@ MunitResult Compound_Assignment(const MunitParameter params[], void* user_data_o
     String_Ref code_string = R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
 
             i := 42;
             println(i);
@@ -2718,7 +2718,7 @@ MunitResult Pointer_Equality(const MunitParameter params[], void* user_data_or_f
     String_Ref code_string = R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
             ptr : *s64 = null;
             ptr = null;
 
@@ -2800,7 +2800,7 @@ MunitResult Struct_Pointer_To_Self(const MunitParameter params[], void* user_dat
             next: *List_Node;
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             a : List_Node;
             b : List_Node;
@@ -2861,7 +2861,7 @@ MunitResult Spiderman_Struct(const MunitParameter params[], void* user_data_or_f
             ptr: *A;
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             a: A;
             a.value = 42;
@@ -2908,7 +2908,7 @@ MunitResult More_Struct_Member_Pointers(const MunitParameter params[], void* use
             b: *B;
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             a : A;
             a.val = 42;
@@ -2943,7 +2943,7 @@ MunitResult Defer_1(const MunitParameter params[], void* user_data_or_fixture) {
     String_Ref code_string = R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
             defer println(8);
             defer print(7);
             print(1);
@@ -2985,7 +2985,7 @@ MunitResult Defer_2(const MunitParameter params[], void* user_data_or_fixture) {
             defer print(6);
             print(5);
         }
-        main :: () {
+        main :: () -> s64 {
             defer_test();
             return 0;
         }
@@ -3005,7 +3005,7 @@ MunitResult Defer_3(const MunitParameter params[], void* user_data_or_fixture) {
     String_Ref code_string = R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
 
             defer println(6);
             defer print(5);
@@ -3043,7 +3043,7 @@ MunitResult Defer_4(const MunitParameter params[], void* user_data_or_fixture) {
 
         work :: (i: s64) { println(i); }
 
-        main :: () {
+        main :: () -> s64 {
 
             defer println(24);
             println(0);
@@ -3113,7 +3113,7 @@ MunitResult Defer_5(const MunitParameter params[], void* user_data_or_fixture) {
 
         work :: (i: s64) { println(i); }
 
-        main :: () {
+        main :: () -> s64 {
 
             defer println(8);
             println(0);
@@ -3168,7 +3168,7 @@ MunitResult Defer_6(const MunitParameter params[], void* user_data_or_fixture) {
 
         work :: (i: s64) { print(i); }
 
-        main :: () {
+        main :: () -> s64 {
 
             defer println(6);
             print(0);
@@ -3214,7 +3214,7 @@ MunitResult Defer_7(const MunitParameter params[], void* user_data_or_fixture) {
 
         work :: (i: s64) { print(i); }
 
-        main :: () {
+        main :: () -> s64 {
 
             defer println(5);
             print(0);
@@ -3284,7 +3284,7 @@ MunitResult Zero_Init_Locals(const MunitParameter params[], void* user_data_or_f
             x, y: s64;
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             v1 : s64;
             v2 : u64;
@@ -3398,7 +3398,7 @@ MunitResult Zero_Init_Globals(const MunitParameter params[], void* user_data_or_
         g16 : []Vec2;
         g17 : Test;
 
-        main :: () {
+        main :: () -> s64 {
 
             println(g1);
             println(g2);
@@ -3457,7 +3457,7 @@ MunitResult Unsized_Int_To_Real(const MunitParameter params[], void* user_data_o
         Vec2 :: struct { x, y: s64; }
         Vec2f :: struct { x, y: r64; }
 
-        main :: () {
+        main :: () -> s64 {
 
             x : r32 = 1;
             y : r64 = 2;
@@ -3517,7 +3517,7 @@ MunitResult Implicit_Pointer_To_Bool(const MunitParameter params[], void* user_d
     String_Ref code_string = R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
 
             ptr : *s64;
             println(ptr);
@@ -3588,7 +3588,7 @@ MunitResult Implicit_Integer_To_Bool(const MunitParameter params[], void* user_d
             else println("false");
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             if 0 println("UNREACHABLE");
             else println("0 casts to false");
@@ -3651,7 +3651,7 @@ MunitResult Enum_Implicit_Values(const MunitParameter params[], void* user_data_
             println(d);
         }
 
-        main :: () {
+        main :: () -> s64 {
             println("Day.MONDAY: ", Day.MONDAY);
             println("Day.TUESDAY: ", Day.TUESDAY);
             println("Day.WEDNESDAY: ", Day.WEDNESDAY);
@@ -3689,7 +3689,7 @@ MunitResult Enum_Operations(const MunitParameter params[], void* user_data_or_fi
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
             println(Day.MONDAY == Day.MONDAY);
             println(Day.MONDAY == Day.TUESDAY);
 
@@ -3738,7 +3738,7 @@ MunitResult Enum_Mixed_Values(const MunitParameter params[], void* user_data_or_
             SECRET :: 42;
             UNIMPORTANT;
         }
-        main :: () {
+        main :: () -> s64 {
             println("Mode.INVALID: ", Mode.INVALID);
             println("Mode.READ: ", Mode.READ);
             println("Mode.WRITE: ", Mode.WRITE);
@@ -3790,7 +3790,7 @@ MunitResult Enum_Members_As_Values(const MunitParameter params[], void* user_dat
             INT;
         }
 
-        main :: () {
+        main :: () -> s64 {
             println("Token.FIRST_NON_ASCII: ", Token_Kind.FIRST_NON_ASCII);
             println("Token.SECOND_NON_ASCII: ", Token_Kind.SECOND_NON_ASCII);
             println("Token.NAME: ", Token_Kind.NAME);
@@ -3841,7 +3841,7 @@ MunitResult Switch_Int(const MunitParameter params[], void* user_data_or_fixture
             }
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             print_int(0);
             print_int(1);
@@ -3887,7 +3887,7 @@ MunitResult Switch_Int_Default(const MunitParameter params[], void* user_data_or
             }
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             print_int(0);
             print_int(1);
@@ -3936,7 +3936,7 @@ MunitResult Switch_Int_Falltrough(const MunitParameter params[], void* user_data
             }
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             print_int(0);
             print_int(1);
@@ -3985,7 +3985,7 @@ MunitResult Switch_Int_Falltrough_Last(const MunitParameter params[], void* user
             }
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             print_int(0);
             print_int(1);
@@ -4031,7 +4031,7 @@ MunitResult Switch_Int_Falltrough_Multi(const MunitParameter params[], void* use
             }
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             print_int(0);
             print_int(1);
@@ -4076,7 +4076,7 @@ MunitResult Switch_Int_Multi_Val(const MunitParameter params[], void* user_data_
             }
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             print_i(0);
             print_i(1);
@@ -4119,7 +4119,7 @@ MunitResult Switch_Int_Multi_Val_Default(const MunitParameter params[], void* us
             }
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             print_i(0);
             print_i(1);
@@ -4164,7 +4164,7 @@ MunitResult Switch_Int_Multi_Val_Falltrough(const MunitParameter params[], void*
             }
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             print_i(0);
             print_i(1);
@@ -4201,7 +4201,7 @@ MunitResult Switch_Int_Range(const MunitParameter params[], void* user_data_or_f
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
 
             print_i(0);
             print_i(1);
@@ -4243,7 +4243,7 @@ MunitResult Switch_Int_Range_Default(const MunitParameter params[], void* user_d
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
 
             print_i(0);
             print_i(1);
@@ -4289,7 +4289,7 @@ MunitResult Switch_Int_Range_Multi(const MunitParameter params[], void* user_dat
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
 
             print_i(0);
             print_i(1);
@@ -4343,7 +4343,7 @@ MunitResult Switch_Enum_Incomplete(const MunitParameter params[], void* user_dat
             }
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             print_day(Day.MONDAY);
             print_day(Day.TUESDAY);
@@ -4380,7 +4380,7 @@ MunitResult Switch_Enum_Default(const MunitParameter params[], void* user_data_o
             }
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             print_day(Day.MONDAY);
             print_day(Day.TUESDAY);
@@ -4413,7 +4413,7 @@ MunitResult Switch_Enum_Falltrough(const MunitParameter params[], void* user_dat
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
 
             print_day(Day.MONDAY);
             print_day(Day.TUESDAY);
@@ -4464,7 +4464,7 @@ MunitResult Switch_Enum_Falltrough_Last(const MunitParameter params[], void* use
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
 
             print_day(Day.MONDAY);
             print_day(Day.TUESDAY);
@@ -4508,7 +4508,7 @@ MunitResult Switch_Enum_Falltrough_Multi(const MunitParameter params[], void* us
     String_Ref code_string = DAY_ENUM_DECL R"CODE_STR(
         #import "print.zc"
 
-        main :: () {
+        main :: () -> s64 {
 
             print_day(Day.MONDAY);
             print_day(Day.TUESDAY);
@@ -4565,7 +4565,7 @@ MunitResult Recurse_Self(const MunitParameter params[], void* user_data_or_fixtu
             recurse(x - 1);
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             recurse(1000);
             println();
@@ -4605,7 +4605,7 @@ MunitResult Recurse_Indirect(const MunitParameter params[], void* user_data_or_f
             func_a(x - 1);
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             func_a(10);
             return 0;
@@ -4681,7 +4681,7 @@ MunitResult Type_Info(const MunitParameter params[], void* user_data_or_fixture)
             INT;
         }
 
-        main :: () {
+        main :: () -> s64 {
             println("Type info test!");
 
             print_ti(#type_info(void));
@@ -4983,7 +4983,7 @@ MunitResult Type_Of(const MunitParameter params[], void* user_data_or_fixture) {
             INT;
         }
 
-        main :: () {
+        main :: () -> s64 {
             println("Type info test!");
 
             s_64 : s64;
@@ -5336,7 +5336,7 @@ MunitResult Function_Pointers(const MunitParameter params[], void* user_data_or_
 
         sub :: sub_s64;
 
-        main :: () {
+        main :: () -> s64 {
 
             first : binop_fn;
 
@@ -5439,7 +5439,7 @@ MunitResult Any_Print(const MunitParameter params[], void* user_data_or_fixture)
             x, y: r64;
         }
 
-        main :: () {
+        main :: () -> s64 {
             x := 42;
             ax : Any = { #type_info(#type_of(x)), cast(*u8, *x) };
             test_print_any(ax);
@@ -5586,7 +5586,7 @@ MunitResult Any_With_Storage(const MunitParameter params[], void* user_data_or_f
             Sunday,
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             x := 42;
             ax : Any = x;
@@ -5828,7 +5828,7 @@ MunitResult Any_Without_Storage(const MunitParameter params[], void* user_data_o
             Sunday,
         }
 
-        main :: () {
+        main :: () -> s64 {
 
             test_print_any('a');
             println();
@@ -6026,7 +6026,7 @@ MunitResult Vararg(const MunitParameter params[], void* user_data_or_fixture) {
 
         Vec2 :: struct { x, y: r64; }
 
-        main :: () {
+        main :: () -> s64 {
 
             str := "abc, %i\n";
             printf(str.data, 55);
@@ -6119,7 +6119,7 @@ MunitResult Vararg_Spreads(const MunitParameter params[], void* user_data_or_fix
             }
         }
 
-        main :: () {
+        main :: () -> s64 {
             print_func("test", 1);
             print_func("test");
 
@@ -6210,7 +6210,7 @@ MunitResult Vararg_Spread_Illegal(const MunitParameter params[], void* user_data
                 }
             }
 
-            main :: () {
+            main :: () -> s64 {
                 slice_args : []Any = { 1, 2.3, "four" };
 
                 print_func("spread_slice", 1, ..slice_args);
@@ -6234,7 +6234,7 @@ MunitResult Vararg_Spread_Illegal(const MunitParameter params[], void* user_data
                 }
             }
 
-            main :: () {
+            main :: () -> s64 {
                 slice_args : []Any = { 1, 2.3, "four" };
 
                 print_func("spread_slice", ..slice_args, 1);
@@ -6258,7 +6258,7 @@ MunitResult Vararg_Spread_Illegal(const MunitParameter params[], void* user_data
                 }
             }
 
-            main :: () {
+            main :: () -> s64 {
                 slice_args : []Any = { 1, 2.3, "four" };
 
                 print_func("spread_slice", ..slice_args, ..slice_args);
@@ -6282,7 +6282,7 @@ MunitResult Vararg_Spread_Illegal(const MunitParameter params[], void* user_data
                 }
             }
 
-            main :: () {
+            main :: () -> s64 {
                 arr_args : [3]Any = { 1, 2.3, "four" };
                 slice_args : []Any = { 1, 2.3, "four" };
 
@@ -6307,7 +6307,7 @@ MunitResult Vararg_Spread_Illegal(const MunitParameter params[], void* user_data
                 }
             }
 
-            main :: () {
+            main :: () -> s64 {
                 arr_args : [3]Any = { 1, 2.3, "four" };
                 slice_args : []Any = { 1, 2.3, "four" };
 

@@ -1787,13 +1787,6 @@ bool type_resolve_node(Resolver *resolver, Flat_Node *node)
                 }
             } else {
 
-                if (!func_decl->function.return_ts &&
-                    !func_decl->function.inferred_return_type)
-                {
-                    resolve_error(resolver->ctx, node->decl, "Could not infer return type");
-                    return false;
-                }
-
                 auto param_types = temp_array_create<Type *>(temp_allocator_allocator(), func_decl->function.params.count);
 
                 for (u64 i = 0; i < func_decl->function.params.count; i++) {
@@ -1809,15 +1802,8 @@ bool type_resolve_node(Resolver *resolver, Flat_Node *node)
                 if (func_decl->function.return_ts) {
                     assert(func_decl->function.return_ts->resolved_type)
                     return_type = func_decl->function.return_ts->resolved_type;
-                }
-
-                if (func_decl->function.inferred_return_type) {
-                    return_type = func_decl->function.inferred_return_type;
-                }
-
-                if (!return_type) {
-                    fatal_resolve_error(resolver->ctx, func_decl, "Could not infer return type");
-                    return false;
+                } else {
+                    return_type = &builtin_type_void;
                 }
 
                 bool is_vararg = func_decl->flags & AST_DECL_FLAG_VARARG;
@@ -2037,8 +2023,7 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
 
         case AST_Declaration_Kind::FUNCTION: {
 
-            // Only implicitly infer a void return type from the body when there is no return type_spec
-            if (!decl->function.type && !decl->function.inferred_return_type) {
+            if (!decl->function.type) {
                 if (!decl->function.return_ts) {
                     auto param_types = temp_array_create<Type *>(temp_allocator_allocator());
 
@@ -2052,7 +2037,6 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                     bool is_vararg = decl->flags & AST_DECL_FLAG_VARARG;
                     bool is_c_vararg = decl->flags & AST_DECL_C_FLAG_VARARG;
                     decl->function.type = get_function_type(&builtin_type_void, param_types.array, &ctx->ast_allocator, is_vararg, is_c_vararg);
-                    decl->function.inferred_return_type = decl->function.type->function.return_type;
 
                     temp_array_destroy(&param_types);
                 } else {
@@ -2388,7 +2372,14 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
 
                     bool valid_conversion = valid_static_type_conversion(resolver->ctx, actual_type, expected_type);
                     if (!valid_conversion) {
-                        assert(false); // report error
+                        fatal_resolve_error(resolver->ctx, stmt, "Invalid type in return statement");
+                        fatal_resolve_error(resolver->ctx, stmt->return_stmt.value, "got: %s", temp_type_string(actual_type).data);
+
+                        auto expected_pos = stmt->return_stmt.value->sr.start;
+                        if (fn_decl->function.return_ts) {
+                            expected_pos = fn_decl->function.return_ts->sr.start;
+                        }
+                        fatal_resolve_error(resolver->ctx, expected_pos, "expected: %s", temp_type_string(expected_type).data);
                         result = false;
                         break;
                     }
@@ -2406,18 +2397,8 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
                     if (actual_type == &builtin_type_unsized_integer) {
                         actual_type = &builtin_type_s64;
                     }
-
-                    if (fn_decl->function.inferred_return_type) {
-                        assert(fn_decl->function.inferred_return_type == actual_type);
-                    } else {
-                        fn_decl->function.inferred_return_type = actual_type;
-                    }
                 }
-
-            } else {
-                fn_decl->function.inferred_return_type = &builtin_type_void;
             }
-
 
             break;
         }

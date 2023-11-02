@@ -1,5 +1,5 @@
 
-- Dont infer return types (non specified is void)
+- Allow main to return void or int
 
 - When tests don't output anything, but output is expected they succeed
 

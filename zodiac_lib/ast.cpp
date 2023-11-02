@@ -437,7 +437,6 @@ void ast_function_decl_create(Allocator *allocator, AST_Identifier ident, Dynami
     out_decl->function.return_ts = return_ts;
     out_decl->function.body = body;
     out_decl->function.type = nullptr;
-    out_decl->function.inferred_return_type = nullptr;
     out_decl->function.parameter_scope = nullptr;
     out_decl->function.local_scope = nullptr;
 }
