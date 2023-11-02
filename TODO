@@ -1,11 +1,12 @@
 
+- Try to have read only memory in the interpreter
+
 - When tests don't output anything, but output is expected they succeed
 
 - "Recursive" function pointers
 
 - When a typespec is supplied for a function we should check/allow it
 
-- String equality
 - Allow pointer math?
 - Initialize slices with data and length somehow ( specify types for compound expressions?) ( builtin slice() function?)
 
@@ -23,8 +24,6 @@
 
 - Specify enum types
 - #complete on enum types and switch statements
-
-- Calling function pointers
 
 - FFI with different return types
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "atom.h"
+#include "bytecode_handles.h"
 #include "common.h"
 #include "containers/dynamic_array.h"
 #include "containers/hash_table.h"
@@ -115,17 +116,6 @@ enum Bytecode_Register_Flags_ : Bytecode_Register_Flags
     BC_REGISTER_FLAG_CSTRING   = 0x008,
 };
 
-typedef s64 Bytecode_Function_Handle;
-typedef s64 Bytecode_Global_Handle;
-
-typedef s64 Bytecode_Block_Handle;
-typedef s64 Bytecode_Phi_Args_Handle;
-typedef s64 Bytecode_Global_Handle;
-
-struct Bytecode_Switch_Handle
-{
-    s64 index;
-};
 
 union Bytecode_Register_Value
 {
@@ -174,13 +164,6 @@ struct Bytecode_Block
     bool terminated = false;
 
     Bytecode_Block_Handle next = -1;
-};
-
-struct Bytecode_Instruction_Handle
-{
-    Bytecode_Function_Handle fn_index = -1;
-    Bytecode_Block_Handle block_index = -1;
-    s64 instruction_index = -1;
 };
 
 ZAPI const bool operator==(const Bytecode_Instruction_Handle &lhs, const Bytecode_Instruction_Handle &rhs);
@@ -277,6 +260,8 @@ struct Bytecode_Builder
 
     s64 insert_fn_index = -1;
     s32 insert_block_index = -1;
+
+    Atom atom_string_eq;
 };
 
 ZAPI Bytecode_Builder bytecode_builder_create(Allocator *bytecode_allocator, Zodiac_Context *cu);

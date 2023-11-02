@@ -56,6 +56,8 @@ void bytecode_builder_init(Allocator *bytecode_allocator, Zodiac_Context *cu, By
     dynamic_array_create(bytecode_allocator, &out_builder->globals);
 
     hash_table_create(bytecode_allocator, &out_builder->global_registers);
+
+    out_builder->atom_string_eq = atom_get(&cu->atoms, "string_eq");
 }
 
 void bytecode_builder_free(Bytecode_Builder *bb)
@@ -142,7 +144,18 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
 
     debug_assert(fn_type->kind == Type_Kind::FUNCTION);
 
-    if (fn_name == "main" && !builder->zodiac_context->renamed_main) {
+    if (fn_name == builder->atom_string_eq) {
+
+        assert(builder->zodiac_context->string_eq_fn == -1);
+        builder->zodiac_context->string_eq_fn = index;
+
+        assert(fn_type->function.parameter_types.count == 2);
+        auto string_type = get_string_type(builder->zodiac_context);
+        assert(fn_type->function.parameter_types[0] == string_type);
+        assert(fn_type->function.parameter_types[1] == string_type);
+        assert(fn_type->function.return_type == &builtin_type_bool);
+
+    } else if (fn_name == "main" && !builder->zodiac_context->renamed_main) {
         fn_name = atom_get(&builder->zodiac_context->atoms, "__zodiac_renamed_main");
         builder->zodiac_context->renamed_main = true;
     }
@@ -797,6 +810,18 @@ Bytecode_Register bytecode_emit_eq(Bytecode_Builder *builder, Bytecode_Register 
         auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, &builtin_type_bool);
         bytecode_emit_instruction(builder, Bytecode_Opcode::PTR_EQ, a, b, result);
         return result;
+
+    } else if (a.type == get_string_type(builder->zodiac_context)) {
+
+        assert(b.type == get_string_type(builder->zodiac_context));
+        auto string_eq = builder->zodiac_context->string_eq_fn;
+        assert(string_eq >= 0);
+
+        bytecode_emit_push_arg(builder, a);
+        bytecode_emit_push_arg(builder, b);
+        auto result = bytecode_emit_call(builder, string_eq, 2);
+        return result;
+
     } else {
         EMIT_CMP_BINOP_(EQ);
     }
@@ -812,6 +837,19 @@ Bytecode_Register bytecode_emit_neq(Bytecode_Builder *builder, Bytecode_Register
         auto result = bytecode_register_create(builder, Bytecode_Register_Kind::TEMPORARY, &builtin_type_bool);
         bytecode_emit_instruction(builder, Bytecode_Opcode::PTR_NEQ, a, b, result);
         return result;
+
+    } else if (a.type == get_string_type(builder->zodiac_context)) {
+
+        assert(b.type == get_string_type(builder->zodiac_context));
+        auto string_eq = builder->zodiac_context->string_eq_fn;
+        assert(string_eq >= 0);
+
+        bytecode_emit_push_arg(builder, a);
+        bytecode_emit_push_arg(builder, b);
+        auto result = bytecode_emit_call(builder, string_eq, 2);
+        result = bytecode_emit_xor(builder, result, bytecode_boolean_literal(builder, result.type, true));
+        return result;
+
     } else {
         EMIT_CMP_BINOP_(NEQ);
     }

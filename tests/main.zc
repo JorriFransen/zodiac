@@ -4,6 +4,27 @@
 #run main();
 
 main :: () {
-    println("Hello!");
+
+    a := string_copy("abc");
+    b := string_copy("abc");
+
+    println(a);
+    println(b);
+
+    println(string_eq(a, b));
+    println(a == b);
+    println(!string_eq(a, b));
+    println(a != b);
+
+    b[1] = 'B';
+
+    println(a);
+    println(b);
+
+    println(string_eq(a, b));
+    println(a == b);
+    println(!string_eq(a, b));
+    println(a != b);
 }
+
 

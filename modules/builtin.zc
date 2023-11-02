@@ -8,6 +8,23 @@ String :: struct {
     length: s64;
 }
 
+string_eq :: (a: String, b: String) -> bool {
+    if a.length != b.length return false;
+    if a.data == b.data return true;
+
+    for i := 0; i < a.length; i += 1 {
+        if a[i] != b[i] return false;
+    }
+
+    return true;
+}
+
+string_copy :: (s: String) -> String {
+    result : String = { malloc(s.length), s.length };
+    memcpy(result.data, s.data, s.length);
+    return result;
+}
+
 Type_Info_Kind :: enum {
     Invalid      ::  0,
 
@@ -94,4 +111,3 @@ Any :: struct {
     type: *Type_Info;
     value: *u8;
 }
-

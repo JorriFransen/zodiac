@@ -1,8 +1,9 @@
 #pragma once
 
 #include "atom.h"
-#include "defines.h"
+#include "bytecode/bytecode_handles.h"
 #include "containers/dynamic_array.h"
+#include "defines.h"
 #include "memory/allocator.h"
 #include "memory/linear_allocator.h"
 #include "memory/temporary_allocator.h"
@@ -123,6 +124,8 @@ struct Zodiac_Context
 
     Dynamic_Array<Type_Info *> type_infos;
     Dynamic_Array<Type *> type_info_types;
+
+    Bytecode_Function_Handle string_eq_fn;
 };
 
 ZAPI void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context);

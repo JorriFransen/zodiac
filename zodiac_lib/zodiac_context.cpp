@@ -152,6 +152,8 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
         out_context->options.output_filename_specified = true;
     }
 
+    out_context->string_eq_fn = -1;
+
     temporary_allocator_reset(temp_allocator(), temp_mark);
 }
 
