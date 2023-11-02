@@ -2,8 +2,8 @@
 #import "print.zc"
 
 #run main();
-main :: () -> s64 {
+
+main :: () {
     println("Hello!");
-    return 0;
 }
 

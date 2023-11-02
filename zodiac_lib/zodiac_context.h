@@ -84,6 +84,8 @@ struct Zodiac_Context
     Dynamic_Array<File_To_Parse> files_to_parse;
     Dynamic_Array<AST_File *> parsed_files;
 
+    bool renamed_main;
+
     Resolver *resolver;
     Bytecode_Builder *bytecode_builder;
     Bytecode_Converter *bytecode_converter;

@@ -1,6 +1,4 @@
 
-- Allow main to return void or int
-
 - When tests don't output anything, but output is expected they succeed
 
 - "Recursive" function pointers

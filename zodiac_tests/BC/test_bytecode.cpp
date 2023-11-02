@@ -33,6 +33,7 @@ void init_test_context(Zodiac_Context *zc)
 #endif // BYTECODE_TESTS_VERBOSE
 
     zodiac_context_create(options, zc);
+    zc->renamed_main = true;
 
     Type *string_members[] = { get_pointer_type(&builtin_type_u8, &zc->ast_allocator),
                         &builtin_type_s64 };

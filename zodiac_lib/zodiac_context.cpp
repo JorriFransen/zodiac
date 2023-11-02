@@ -70,6 +70,8 @@ void zodiac_context_create(Zodiac_Options options, Zodiac_Context *out_context)
     dynamic_array_create(&dynamic_allocator, &out_context->files_to_parse);
     dynamic_array_create(&dynamic_allocator, &out_context->parsed_files);
 
+    out_context->renamed_main = false;
+
     out_context->resolver = alloc<Resolver>(&dynamic_allocator);
     resolver_create(out_context->resolver, out_context);
 
@@ -303,11 +305,36 @@ bool zodiac_context_compile(Zodiac_Context *ctx, File_To_Parse ftp)
         }
     }
 
+
+    if (!ctx->options.dont_emit_binary) {
+        auto program = bytecode_get_program(ctx->bytecode_builder);
+
+        // main is renamed to __zodiac_renamed_main, insert a main function that calls the renamed main
+        auto user_main = bytecode_find_entry(program);
+        assert(user_main >= 0);
+        auto user_main_fn_type = ctx->bytecode_builder->functions[user_main].type;
+
+        auto main_fn_type = get_function_type(&builtin_type_s64, {}, &ctx->ast_allocator);
+        auto main = bytecode_function_create(ctx->bytecode_builder, "main", main_fn_type);
+        auto main_entry_block = bytecode_append_block(ctx->bytecode_builder, main, "entry");
+        bytecode_set_insert_point(ctx->bytecode_builder, main, main_entry_block);
+
+        if (user_main_fn_type->function.return_type == &builtin_type_s64) {
+            auto exit_code = bytecode_emit_call(ctx->bytecode_builder, user_main, 0);
+            bytecode_emit_return(ctx->bytecode_builder, exit_code);
+        } else {
+            assert(user_main_fn_type->function.return_type == &builtin_type_void);
+
+            bytecode_emit_call(ctx->bytecode_builder, user_main, 0);
+            bytecode_emit_return(ctx->bytecode_builder, bytecode_integer_literal(ctx->bytecode_builder, &builtin_type_s64, 0));
+        }
+    }
+
     if (ctx->options.print_bytecode) bytecode_print(ctx->bytecode_builder, temp_allocator_allocator());
 
     if (!ctx->options.dont_emit_binary) {
-
         auto program = bytecode_get_program(ctx->bytecode_builder);
+
         LLVM_Builder llvm_builder = llvm_builder_create(c_allocator(), ctx->bytecode_builder);
 
         llvm_builder_emit_program(&llvm_builder, &program);

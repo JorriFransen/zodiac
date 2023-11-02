@@ -84,7 +84,7 @@ Bytecode_Function_Handle bytecode_find_entry(Bytecode_Program program)
     for (s64 i = 0; i < program.functions.count; i++) {
 
         auto fn = &program.functions[i];
-        if (fn->name == "main") {
+        if (fn->name == "__zodiac_renamed_main") {
             return (Bytecode_Function_Handle)i;
         }
     }
@@ -141,6 +141,11 @@ Bytecode_Function_Handle bytecode_function_create(Bytecode_Builder *builder, Ato
     auto index = builder->functions.count;
 
     debug_assert(fn_type->kind == Type_Kind::FUNCTION);
+
+    if (fn_name == "main" && !builder->zodiac_context->renamed_main) {
+        fn_name = atom_get(&builder->zodiac_context->atoms, "__zodiac_renamed_main");
+        builder->zodiac_context->renamed_main = true;
+    }
 
     for (s64 i = 0; i < builder->functions.count; i++) {
         if (builder->functions[i].name == fn_name) {
