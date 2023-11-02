@@ -482,6 +482,7 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
                 report_parse_error(parser,  ct.sr.start, "Expected 'case' or 'default', got: '%s'", ct.atom.data);
                 return nullptr;
             }
+
         }
 
         if (!cases.count) {
@@ -495,6 +496,13 @@ AST_Statement *parse_keyword_statement(Parser *parser, bool optional_semi/*=fals
         assert(switch_value);
 
         return ast_switch_stmt_new(parser->context, {start_pos, end_pos}, switch_value, cases);
+
+    } else if (match_keyword(parser, keyword_break)) {
+
+        auto end_pos = cur_tok(parser).sr.end;
+        expect_token(parser, ';');
+
+        return ast_break_stmt_new(parser->context, {start_pos, end_pos});
 
     } else if (match_keyword(parser, keyword_return)) {
 

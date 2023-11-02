@@ -833,7 +833,8 @@ bool check_run_dependencies(Zodiac_Context *ctx, AST_Statement *stmt)
             return true;
         }
 
-        case AST_Statement_Kind::FALLTROUGH: {
+        case AST_Statement_Kind::FALLTROUGH:
+        case AST_Statement_Kind::BREAK: {
             return true;
         }
 

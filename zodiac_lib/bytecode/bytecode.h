@@ -1,7 +1,7 @@
 #pragma once
 
 #include "atom.h"
-#include "bytecode_handles.h"
+#include "bytecode/bytecode_handles.h" // IWYU pragma: export
 #include "common.h"
 #include "containers/dynamic_array.h"
 #include "containers/hash_table.h"

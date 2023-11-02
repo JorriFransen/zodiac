@@ -366,6 +366,11 @@ void ast_return_stmt_create(AST_Expression *value, AST_Statement *out_stmt)
     out_stmt->return_stmt.scope = nullptr;
 }
 
+void ast_break_stmt_create(AST_Statement *out_stmt)
+{
+    ast_statement_create(AST_Statement_Kind::BREAK, out_stmt);
+}
+
 void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
 {
     debug_assert(out_stmt);
@@ -912,6 +917,13 @@ AST_Statement *ast_return_stmt_new(Zodiac_Context *ctx, Source_Range sr, AST_Exp
 
     auto stmt = ast_statement_new(ctx, sr);
     ast_return_stmt_create(value, stmt);
+    return stmt;
+}
+
+AST_Statement *ast_break_stmt_new(Zodiac_Context *ctx, Source_Range sr)
+{
+    auto stmt = ast_statement_new(ctx, sr);
+    ast_break_stmt_create(stmt);
     return stmt;
 }
 
@@ -1499,6 +1511,11 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
 
         case AST_Statement_Kind::FALLTROUGH: {
             string_builder_append(sb, "#falltrough");
+            break;
+        }
+
+        case AST_Statement_Kind::BREAK: {
+            string_builder_append(sb, "break");
             break;
         }
 

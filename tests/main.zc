@@ -5,26 +5,11 @@
 
 main :: () {
 
-    a := string_copy("abc");
-    b := string_copy("abc");
+    for i := 0; i < 10; i += 1; {
+        println(i);
 
-    println(a);
-    println(b);
-
-    println(string_eq(a, b));
-    println(a == b);
-    println(!string_eq(a, b));
-    println(a != b);
-
-    b[1] = 'B';
-
-    println(a);
-    println(b);
-
-    println(string_eq(a, b));
-    println(a == b);
-    println(!string_eq(a, b));
-    println(a != b);
+        if (i == 3) break;
+    }
 }
 
 
