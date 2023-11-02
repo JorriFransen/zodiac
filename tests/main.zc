@@ -3,6 +3,16 @@
 
 #foreign printf :: (fmt: *u8, args: ..) -> s32;
 
+print_func :: (fmt: String, args: ..) {
+    printf("format: %.*s\n", fmt.length, fmt.data);
+
+    for i := 0; i < args.length; i += 1 {
+        printf("arg %i: %i\n", i, args[i].type.kind);
+    }
+
+    printf("\n");
+}
+
 #run main();
 main :: () {
     print_func("test", 1);
@@ -13,25 +23,16 @@ main :: () {
     print_func("spread_arr", ..arr_args);
     print_func("spread_arr", ..arr_args, "Five", "Six");
 
-    // // print_func("dual_spread", ..arr_args, ..arr_args);
-    //
+    print_func("dual_spread", ..arr_args, ..arr_args);
+
+    print_func("mixed_spread", "first", ..arr_args, 44, ..arr_args, 55);
+
     print_func("Only varargs", 1, 2.3, "four", '5');
 
     slice_args : []Any = { 1, 2.3, "four" };
 
     // Since the element count of a slice is not known at compile time, spread slices cannot be merged with other varargs.
     // The only reason they can be used as varargs is that all varargs are converted to []Any, so the slice is actually passed directly.
-    // TODO: Dectect this in resolver and report errors.
     print_func("spread_slice", ..slice_args);
     return 0;
-}
-
-print_func :: (fmt: String, args: ..) {
-    printf("format: %.*s\n", fmt.length, fmt.data);
-
-    for i := 0; i < args.length; i += 1 {
-        printf("arg %i: %i\n", i, args[i].type.kind);
-    }
-
-    printf("\n");
 }

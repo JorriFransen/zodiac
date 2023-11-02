@@ -2758,6 +2758,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
             }
 
             int vararg_count = 0;
+            bool slice_vararg = false;
 
             for (s64 i = 0; i < expr->call.args.count; i++) {
                 AST_Expression *arg_expr = expr->call.args[i];
@@ -2767,6 +2768,10 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                 if (func_type->function.is_vararg && i >= func_type->function.parameter_types.count - 1) {
 
+                    if (slice_vararg) {
+                        fatal_resolve_error(ctx, arg_expr, "Spread slice must be the only vararg");
+                        return false;
+                    }
                     param_type = any_type;
                     vararg_count += 1;
 
@@ -2826,10 +2831,20 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 
                     if (arg_expr->kind == AST_Expression_Kind::UNARY && arg_expr->unary.op == AST_Unary_Operator::SPREAD) {
 
+                        assert(!slice_vararg);
+
                         if (arg_expr->unary.operand->resolved_type->kind == Type_Kind::STATIC_ARRAY) {
-                            vararg_count = arg_expr->unary.operand->resolved_type->static_array.count;
+                            vararg_count += arg_expr->unary.operand->resolved_type->static_array.count;
                         } else {
-                            assert(arg_expr->unary.operand->resolved_type->kind == Type_Kind::SLICE)
+
+                            assert(arg_expr->unary.operand->resolved_type->kind == Type_Kind::SLICE);
+
+                            if (slice_vararg || vararg_count > 1) {
+                                fatal_resolve_error(ctx, arg_expr, "Spread slice must be the only vararg");
+                                return false;
+                            }
+
+                            slice_vararg = true;
                         }
 
                     } else if (!EXPR_HAS_STORAGE(arg_expr)) {

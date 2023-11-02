@@ -6018,7 +6018,7 @@ fnptr
     return MUNIT_OK;
 }
 
-MunitResult Varargs(const MunitParameter params[], void* user_data_or_fixture) {
+MunitResult Vararg(const MunitParameter params[], void* user_data_or_fixture) {
 
     String_Ref code_string = R"CODE_STR(
         #import "test_print.zc"
@@ -6102,6 +6102,223 @@ args: 2.300000, { 11.000000, 22.000000 }, 42)OUT_STR",
 
     auto result = compile_and_run(code_string, expected);
     defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Vararg_Spreads(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        #foreign printf :: (fmt: *u8, args: ..) -> s32;
+
+        print_func :: (fmt: String, args: ..) {
+            printf("format: %.*s\n", fmt.length, fmt.data);
+
+            for i := 0; i < args.length; i += 1 {
+                printf("arg %i: %i\n", i, args[i].type.kind);
+            }
+        }
+
+        main :: () {
+            print_func("test", 1);
+            print_func("test");
+
+            arr_args : [3]Any = { 1, 2.3, "four" };
+
+            print_func("spread_arr", ..arr_args);
+            print_func("spread_arr", ..arr_args, "Five", "Six");
+
+            print_func("dual_spread", ..arr_args, ..arr_args);
+
+            print_func("mixed_spread", "first", ..arr_args, 44, ..arr_args, 55);
+
+            print_func("Only varargs", 1, 2.3, "four", '5');
+
+            slice_args : []Any = { 1, 2.3, "four" };
+
+            // Since the element count of a slice is not known at compile time, spread slices cannot be merged with other varargs.
+            // The only reason they can be used as varargs is that all varargs are converted to []Any, so the slice is actually passed directly.
+            print_func("spread_slice", ..slice_args);
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out = 
+R"OUT_STR(format: test
+arg 0: 2
+format: test
+format: spread_arr
+arg 0: 2
+arg 1: 3
+arg 2: 6
+format: spread_arr
+arg 0: 2
+arg 1: 3
+arg 2: 6
+arg 3: 6
+arg 4: 6
+format: dual_spread
+arg 0: 2
+arg 1: 3
+arg 2: 6
+arg 3: 2
+arg 4: 3
+arg 5: 6
+format: mixed_spread
+arg 0: 6
+arg 1: 2
+arg 2: 3
+arg 3: 6
+arg 4: 2
+arg 5: 2
+arg 6: 3
+arg 7: 6
+arg 8: 2
+format: Only varargs
+arg 0: 2
+arg 1: 3
+arg 2: 6
+arg 3: 2
+format: spread_slice
+arg 0: 2
+arg 1: 3
+arg 2: 6)OUT_STR",
+
+    };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Vararg_Spread_Illegal(const MunitParameter params[], void* user_data_or_fixture) {
+
+    Expected_Results expected = {
+        .errors = Array_Ref<Expected_Error>({ RESOLVE_ERR(true, "Spread slice must be the only vararg")})
+    };
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            #foreign printf :: (fmt: *u8, args: ..) -> s32;
+
+            print_func :: (fmt: String, args: ..) {
+                printf("format: %.*s\n", fmt.length, fmt.data);
+
+                for i := 0; i < args.length; i += 1 {
+                    printf("arg %i: %i\n", i, args[i].type.kind);
+                }
+            }
+
+            main :: () {
+                slice_args : []Any = { 1, 2.3, "four" };
+
+                print_func("spread_slice", 1, ..slice_args);
+                return 0;
+            }
+        )CODE_STR";
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+    }
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            #foreign printf :: (fmt: *u8, args: ..) -> s32;
+
+            print_func :: (fmt: String, args: ..) {
+                printf("format: %.*s\n", fmt.length, fmt.data);
+
+                for i := 0; i < args.length; i += 1 {
+                    printf("arg %i: %i\n", i, args[i].type.kind);
+                }
+            }
+
+            main :: () {
+                slice_args : []Any = { 1, 2.3, "four" };
+
+                print_func("spread_slice", ..slice_args, 1);
+                return 0;
+            }
+        )CODE_STR";
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+    }
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            #foreign printf :: (fmt: *u8, args: ..) -> s32;
+
+            print_func :: (fmt: String, args: ..) {
+                printf("format: %.*s\n", fmt.length, fmt.data);
+
+                for i := 0; i < args.length; i += 1 {
+                    printf("arg %i: %i\n", i, args[i].type.kind);
+                }
+            }
+
+            main :: () {
+                slice_args : []Any = { 1, 2.3, "four" };
+
+                print_func("spread_slice", ..slice_args, ..slice_args);
+                return 0;
+            }
+        )CODE_STR";
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+    }
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            #foreign printf :: (fmt: *u8, args: ..) -> s32;
+
+            print_func :: (fmt: String, args: ..) {
+                printf("format: %.*s\n", fmt.length, fmt.data);
+
+                for i := 0; i < args.length; i += 1 {
+                    printf("arg %i: %i\n", i, args[i].type.kind);
+                }
+            }
+
+            main :: () {
+                arr_args : [3]Any = { 1, 2.3, "four" };
+                slice_args : []Any = { 1, 2.3, "four" };
+
+                print_func("spread_slice", ..arr_args, ..slice_args);
+                return 0;
+            }
+        )CODE_STR";
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+    }
+
+    {
+        String_Ref code_string = R"CODE_STR(
+            #foreign printf :: (fmt: *u8, args: ..) -> s32;
+
+            print_func :: (fmt: String, args: ..) {
+                printf("format: %.*s\n", fmt.length, fmt.data);
+
+                for i := 0; i < args.length; i += 1 {
+                    printf("arg %i: %i\n", i, args[i].type.kind);
+                }
+            }
+
+            main :: () {
+                arr_args : [3]Any = { 1, 2.3, "four" };
+                slice_args : []Any = { 1, 2.3, "four" };
+
+                print_func("spread_slice", ..slice_args, ..arr_args);
+                return 0;
+            }
+        )CODE_STR";
+
+        auto result = compile_and_run(code_string, expected);
+        defer { free_compile_run_results(&result); };
+    }
 
     return MUNIT_OK;
 }
