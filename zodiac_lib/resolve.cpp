@@ -165,7 +165,7 @@ void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Decla
     debug_assert(scope);
 
     auto node = alloc<Flat_Root_Node>(resolver->node_allocator);
-    node->root.kind = Flat_Node_Kind::DECL;
+    node->root = create_flat_node(Flat_Node_Kind::DECL, scope);
     node->root.decl = decl;
     node->name_index = 0;
     node->type_index = 0;
@@ -173,7 +173,7 @@ void resolver_add_declaration(Zodiac_Context *ctx, Resolver *resolver, AST_Decla
 
     if (decl->kind == AST_Declaration_Kind::FUNCTION) {
         auto proto_node = alloc<Flat_Root_Node>(resolver->node_allocator);
-        proto_node->root.kind = Flat_Node_Kind::FUNCTION_PROTO;
+        proto_node->root = create_flat_node(Flat_Node_Kind::FUNCTION_PROTO, scope);
         proto_node->root.decl = decl;
         proto_node->name_index = 0;
         proto_node->type_index = 0;
@@ -735,7 +735,7 @@ void flatten_enum_declaration(Resolver *resolver, AST_Declaration *decl, Scope *
         auto mem_decl = decl->enumeration.members[i];
 
         auto node = alloc<Flat_Root_Node>(resolver->node_allocator);
-        node->root.kind = Flat_Node_Kind::DECL;
+        node->root = create_flat_node(Flat_Node_Kind::DECL, enum_scope);
         node->root.decl = mem_decl;
         node->name_index = 0;
         node->type_index = 0;
@@ -749,7 +749,7 @@ void flatten_enum_declaration(Resolver *resolver, AST_Declaration *decl, Scope *
     }
 
     auto node = alloc<Flat_Root_Node>(resolver->node_allocator);
-    node->root.kind = Flat_Node_Kind::DECL;
+    node->root = create_flat_node(Flat_Node_Kind::DECL, scope);
     node->root.decl = decl;
     node->name_index = 0;
     node->type_index = 0;
@@ -1139,13 +1139,30 @@ void flatten_directive(Resolver *resolver, AST_Directive *directive, Scope *scop
     }
 }
 
+u64 next_flat_index = 0;
+
+Flat_Node create_flat_node(Flat_Node_Kind kind, Scope *scope/*=nullptr*/)
+{
+#ifndef NDEBUG
+    if (!scope) assert(kind == Flat_Node_Kind::IMPLICIT_LVALUE || kind == Flat_Node_Kind::RUN);
+#endif
+
+    return {
+        .kind = kind,
+        .scope = scope,
+
+#ifndef NDEBUG
+        .debug_id = next_flat_index++,
+#endif
+
+    };
+}
+
 Flat_Node to_flat_node(AST_Declaration *decl, Scope *scope)
 {
     debug_assert(decl && scope);
 
-    Flat_Node result = {};
-    result.kind = Flat_Node_Kind::DECL;
-    result.scope = scope;
+    Flat_Node result = create_flat_node(Flat_Node_Kind::DECL, scope);
     result.decl = decl;
     return result;
 }
@@ -1154,9 +1171,7 @@ Flat_Node to_flat_node(AST_Statement *stmt, Scope *scope)
 {
     debug_assert(stmt && scope);
 
-    Flat_Node result = {};
-    result.kind = Flat_Node_Kind::STMT;
-    result.scope = scope;
+    Flat_Node result = create_flat_node(Flat_Node_Kind::STMT, scope);
     result.stmt = stmt;
     return result;
 }
@@ -1165,9 +1180,7 @@ Flat_Node to_flat_node(AST_Expression *expr, Scope *scope, Infer_Node *infer_typ
 {
     debug_assert(expr && scope);
 
-    Flat_Node result = {};
-    result.scope = scope;
-    result.kind = Flat_Node_Kind::EXPR;
+    Flat_Node result = create_flat_node(Flat_Node_Kind::EXPR, scope);
     result.expr.expr = expr;
     result.expr.infer_type_from = infer_type_from;
     return result;
@@ -1177,9 +1190,7 @@ Flat_Node to_flat_node(AST_Type_Spec *ts, Scope *scope, bool via_pointer/*=false
 {
     debug_assert(ts && scope);
 
-    Flat_Node result = {};
-    result.kind = Flat_Node_Kind::TYPE_SPEC;
-    result.scope = scope;
+    Flat_Node result = create_flat_node(Flat_Node_Kind::TYPE_SPEC, scope);
     result.type_spec.ts = ts;
     result.type_spec.via_pointer = via_pointer;
     return result;
@@ -1190,10 +1201,8 @@ Flat_Node to_flat_proto(AST_Declaration *decl, Scope *scope)
     debug_assert(decl && decl->kind == AST_Declaration_Kind::FUNCTION);
     debug_assert(scope && scope->kind == Scope_Kind::GLOBAL);
 
-    Flat_Node result = {};
-    result.kind = Flat_Node_Kind::FUNCTION_PROTO;
+    Flat_Node result = create_flat_node(Flat_Node_Kind::FUNCTION_PROTO, scope);
     result.decl = decl;
-    result.scope = scope;
 
     return result;
 }
@@ -1932,7 +1941,7 @@ bool type_resolve_declaration(Zodiac_Context *ctx, AST_Declaration *decl, Scope 
                     dynamic_array_append(&current_function->function.implicit_lvalues, implicit_lval);
                 } else {
                     auto flat_node = alloc<Flat_Root_Node>(ctx->resolver->node_allocator);
-                    flat_node->root.kind = Flat_Node_Kind::IMPLICIT_LVALUE;
+                    flat_node->root = create_flat_node(Flat_Node_Kind::IMPLICIT_LVALUE);
                     flat_node->root.implicit_lvalue = implicit_lval;
                     dynamic_array_insert(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
                 }
@@ -2838,7 +2847,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                             dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
                         } else {
                             auto flat_node = alloc<Flat_Root_Node>(ctx->resolver->node_allocator);
-                            flat_node->root.kind = Flat_Node_Kind::IMPLICIT_LVALUE;
+                            flat_node->root = create_flat_node(Flat_Node_Kind::IMPLICIT_LVALUE);
                             flat_node->root.implicit_lvalue = implicit_lval;
                             dynamic_array_append(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
                         }
@@ -2856,7 +2865,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                             dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
                         } else {
                             auto flat_node = alloc<Flat_Root_Node>(ctx->resolver->node_allocator);
-                            flat_node->root.kind = Flat_Node_Kind::IMPLICIT_LVALUE;
+                            flat_node->root = create_flat_node(Flat_Node_Kind::IMPLICIT_LVALUE);
                             flat_node->root.implicit_lvalue = implicit_lval;
                             dynamic_array_append(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
                         }
@@ -2872,7 +2881,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                     dynamic_array_append(&cf->function.implicit_lvalues, implicit_lval);
                 } else {
                     auto flat_node = alloc<Flat_Root_Node>(ctx->resolver->node_allocator);
-                    flat_node->root.kind = Flat_Node_Kind::IMPLICIT_LVALUE;
+                    flat_node->root = create_flat_node(Flat_Node_Kind::IMPLICIT_LVALUE);
                     flat_node->root.implicit_lvalue = implicit_lval;
                     dynamic_array_append(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
                 }
@@ -2931,7 +2940,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                         if (scope->kind != Scope_Kind::FUNCTION_LOCAL && scope->kind != Scope_Kind::FUNCTION_PARAMETER) {
                             assert(scope->kind == Scope_Kind::GLOBAL);
                             auto flat_node = alloc<Flat_Root_Node>(resolver->node_allocator);
-                            flat_node->root.kind = Flat_Node_Kind::IMPLICIT_LVALUE;
+                            flat_node->root = create_flat_node(Flat_Node_Kind::IMPLICIT_LVALUE);
                             flat_node->root.implicit_lvalue = implicit_lvalue;
                             dynamic_array_insert(&ctx->resolver->nodes_to_emit_bytecode, flat_node);
                         } else {
@@ -3265,7 +3274,7 @@ bool type_resolve_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
                 assert(type);
 
                 auto node = alloc<Flat_Root_Node>(resolver->node_allocator);
-                node->root.kind = Flat_Node_Kind::RUN;
+                node->root = create_flat_node(Flat_Node_Kind::RUN);
                 node->root.run.expr = expr;
                 dynamic_array_append(&resolver->nodes_to_emit_bytecode, node);
 

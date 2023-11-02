@@ -91,6 +91,10 @@ struct Flat_Node
             AST_Expression *expr;
         } run;
     };
+
+#ifndef NDEBUG
+    u64 debug_id;
+#endif
 };
 
 struct Flat_Root_Node
@@ -153,6 +157,7 @@ ZAPI void flatten_expression(Resolver *resolver, AST_Expression *expr, Scope *sc
 ZAPI void flatten_type_spec(Resolver *resolver, AST_Type_Spec *ts, Scope *scope, Dynamic_Array<Flat_Node> *dest, bool via_pointer = false);
 ZAPI void flatten_directive(Resolver *resolver, AST_Directive *directive, Scope *scope, Dynamic_Array<Flat_Node> *dest);
 
+ZAPI Flat_Node create_flat_node(Flat_Node_Kind kind, Scope *scope = nullptr);
 ZAPI Flat_Node to_flat_node(AST_Declaration *decl, Scope *scope);
 ZAPI Flat_Node to_flat_node(AST_Statement *stmt, Scope *scope);
 ZAPI Flat_Node to_flat_node(AST_Expression *expr, Scope *scope, Infer_Node *infer_type_from = nullptr);
