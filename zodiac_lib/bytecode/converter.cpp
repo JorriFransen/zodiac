@@ -44,6 +44,7 @@ void bytecode_converter_init(Allocator *allocator, Zodiac_Context *context, Byte
     hash_table_create(allocator, &out_bc->allocations);
     hash_table_create(allocator, &out_bc->implicit_lvalues);
     hash_table_create(allocator, &out_bc->globals);
+    stack_init(allocator, &out_bc->break_blocks);
     hash_table_create(allocator, &out_bc->run_directives);
     hash_table_create(allocator, &out_bc->run_results);
 
@@ -279,9 +280,14 @@ bool ast_decl_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
                     bool found = hash_table_find(&bc->allocations, decl, &alloc_reg);
                     assert(found)
 
-                    if (!EXPR_IS_CONST(decl->variable.value) || decl->variable.value->kind == AST_Expression_Kind::RUN_DIRECTIVE) { // Constant should have been emitted when registering the allocation
-                        assignment_to_bytecode(bc, decl->variable.value, alloc_reg);
-                    }
+                    assignment_to_bytecode(bc, decl->variable.value, alloc_reg);
+                } else {
+                    Bytecode_Register alloc_reg;
+                    bool found = hash_table_find(&bc->allocations, decl, &alloc_reg);
+                    assert(found)
+
+                    Bytecode_Register zero_value = bytecode_zero_value(bc->builder, decl->variable.resolved_type);
+                    bytecode_emit_store_alloc(bc->builder, zero_value, alloc_reg);
                 }
             }
             break;
@@ -391,6 +397,8 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     if (foreign) {
         return;
     }
+
+    assert(bc->break_blocks.sp == 0);
 
     auto taa = temp_allocator_allocator();
     auto ta = temp_allocator();
@@ -559,21 +567,15 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
 
             for (s64 i = 0; i < decl->function.variables.count; i++) {
                 AST_Declaration *var_decl = decl->function.variables[i];
-                if (var_decl->variable.value && EXPR_IS_CONST(var_decl->variable.value) && var_decl->variable.value->kind != AST_Expression_Kind::RUN_DIRECTIVE) {
 
-                    Bytecode_Register alloc_reg;
-                    bool found = hash_table_find(&bc->allocations, var_decl, &alloc_reg);
-                    assert(found)
-
-                    assignment_to_bytecode(bc, var_decl->variable.value, alloc_reg);
-                } else if (!var_decl->variable.value) {
-
+                if (!var_decl->variable.value) {
                     Bytecode_Register alloc_reg;
                     bool found = hash_table_find(&bc->allocations, var_decl, &alloc_reg);
                     assert(found)
 
                     Bytecode_Register zero_value = bytecode_zero_value(bc->builder, var_decl->variable.resolved_type);
                     bytecode_emit_store_alloc(bc->builder, zero_value, alloc_reg);
+
                 }
             }
         }
@@ -862,6 +864,9 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             auto while_body_block = bytecode_create_block(bc->builder, cfn, "while.body");
             auto post_while_block = bytecode_create_block(bc->builder, cfn, "while.post");
 
+            Break_Block break_block = { stmt, post_while_block };
+            stack_push(&bc->break_blocks, break_block);
+
             bytecode_emit_jmp(bc->builder, while_cond_block);
 
             bytecode_set_insert_point(bc->builder, cfn, while_cond_block);
@@ -878,6 +883,9 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
             post_while_block = bytecode_append_block(bc->builder, cfn, post_while_block);
             bytecode_set_insert_point(bc->builder, cfn, post_while_block);
+
+            auto popped = stack_pop(&bc->break_blocks);
+            assert(popped.stmt == stmt);
             break;
         }
 
@@ -887,6 +895,9 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             auto for_cond_block = bytecode_append_block(bc->builder, cfn, "for.cond");
             auto for_body_block = bytecode_create_block(bc->builder, cfn, "for.body");
             auto post_for_block = bytecode_create_block(bc->builder, cfn, "for.post");
+
+            Break_Block break_block = { stmt, post_for_block };
+            stack_push(&bc->break_blocks, break_block);
 
             ast_decl_to_bytecode(bc, stmt->for_stmt.init_decl);
 
@@ -908,6 +919,9 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
             post_for_block = bytecode_append_block(bc->builder, cfn, post_for_block);
             bytecode_set_insert_point(bc->builder, cfn, post_for_block);
+
+            auto popped = stack_pop(&bc->break_blocks);
+            assert(popped.stmt == stmt);
             break;
         }
 
@@ -1019,7 +1033,12 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
         }
 
         case AST_Statement_Kind::BREAK: {
-            assert(false);
+
+            auto target_block = find_break_block(bc, stmt->break_stmt.break_from);
+            assert(target_block >= 0);
+
+            bytecode_emit_jmp(bc->builder, target_block);
+
             break;
         }
 
@@ -2363,6 +2382,15 @@ Bytecode_Register emit_type_info(Bytecode_Converter *bc, Type *target_type)
     auto elem_ptr = bytecode_emit_ptr_offset_pointer(bc->builder, arr, target_type->info_index);
 
     return bytecode_emit_load(bc->builder, elem_ptr);
+}
+
+Bytecode_Block_Handle find_break_block(Bytecode_Converter *bc, AST_Statement *break_from)
+{
+    for (s64 i = 0; i < bc->break_blocks.sp; i++) {
+        if (bc->break_blocks.buffer[i].stmt == break_from) return bc->break_blocks.buffer[i].block_handle;
+    }
+
+    return BC_INVALID_BLOCK_HANDLE;
 }
 
 Bytecode_Register emit_any(Bytecode_Converter *bc, AST_Expression *expr)

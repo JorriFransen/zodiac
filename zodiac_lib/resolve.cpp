@@ -45,6 +45,7 @@ void resolver_create(Resolver *resolver, Zodiac_Context *ctx)
     dynamic_array_create(&dynamic_allocator, &resolver->nodes_to_run_bytecode);
 
     stack_init(&dynamic_allocator, &resolver->switch_case_stack);
+    stack_init(&dynamic_allocator, &resolver->break_stack);
 
     assert(resolver->global_scope);
     assert(resolver->global_scope->global.file == nullptr);
@@ -829,9 +830,14 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
             assert(!stmt->while_stmt.scope);
             stmt->while_stmt.scope = while_scope;
 
+            stack_push(&resolver->break_stack, stmt);
+
             flatten_expression(resolver, stmt->while_stmt.cond, while_scope, dest);
 
             flatten_statement(resolver, stmt->while_stmt.body_stmt, while_scope, dest);
+
+            auto popped = stack_pop(&resolver->break_stack);
+            assert(popped == stmt);
             break;
         }
 
@@ -842,11 +848,16 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
             assert(!stmt->for_stmt.scope);
             stmt->for_stmt.scope = for_scope;
 
+            stack_push(&resolver->break_stack, stmt);
+
             flatten_declaration(resolver, stmt->for_stmt.init_decl, for_scope, dest);
             flatten_expression(resolver, stmt->for_stmt.cond_expr, for_scope, dest);
             flatten_statement(resolver, stmt->for_stmt.inc_stmt, for_scope, dest);
 
             flatten_statement(resolver, stmt->for_stmt.body_stmt, for_scope, dest);
+
+            auto popped = stack_pop(&resolver->break_stack);
+            assert(popped == stmt);
             break;
         }
 
@@ -898,7 +909,14 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
         }
 
         case AST_Statement_Kind::BREAK: {
-            assert(false);
+
+            if (!stack_count(&resolver->break_stack)) {
+                fatal_resolve_error(resolver->ctx, stmt, "Break outside of loop/switch");
+                return;
+            }
+
+            assert(stmt->break_stmt.break_from == nullptr);
+            stmt->break_stmt.break_from = stack_top(&resolver->break_stack);
             break;
         }
 
@@ -1419,7 +1437,11 @@ bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
             break;
         }
 
-        case AST_Statement_Kind::BREAK: assert(false); break;
+
+        case AST_Statement_Kind::BREAK: {
+            assert(stmt->break_stmt.break_from);
+            break;
+        }
 
         case AST_Statement_Kind::SWITCH:
         case AST_Statement_Kind::SWITCH_CASE:
@@ -2350,7 +2372,7 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
         }
 
         case AST_Statement_Kind::BREAK: {
-            assert(false);
+            assert(stmt->break_stmt.break_from);
             break;
         }
 

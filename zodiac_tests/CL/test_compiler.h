@@ -153,6 +153,7 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Vararg) \
     X(Vararg_Spreads) \
     X(Vararg_Spread_Illegal) \
+    X(Break_Loop) \
 
 
 // Function declarations

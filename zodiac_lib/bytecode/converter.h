@@ -32,6 +32,12 @@ struct Bytecode_Switch_Case_Info
     Bytecode_Block_Handle post_block;
 };
 
+struct Break_Block
+{
+    AST_Statement *stmt;
+    Bytecode_Block_Handle block_handle;
+};
+
 struct Bytecode_Converter
 {
     Allocator *allocator;
@@ -51,6 +57,8 @@ struct Bytecode_Converter
 
     // TODO: should these be separated per file?
     Hash_Table<AST_Declaration *, Bytecode_Global_Handle> globals;
+
+    Stack<Break_Block> break_blocks;
 
     s64 run_directive_count; // Used to generate unique names
     Hash_Table<AST_Directive *, Bytecode_Function_Handle> run_directives;
@@ -85,8 +93,7 @@ ZAPI Bytecode_Register ast_const_compound_expr_to_bytecode(Bytecode_Converter *b
 
 ZAPI void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, Bytecode_Register lvalue_reg);
 
-ZAPI void converter_add_type_info(Bytecode_Converter *bc, Type *target_type);
-ZAPI Bytecode_Register converter_type_info_base(Bytecode_Converter *bc, Type *target_type);
+ZAPI Bytecode_Block_Handle find_break_block(Bytecode_Converter *bc, AST_Statement *break_from);
 
 ZAPI Bytecode_Register emit_type_info(Bytecode_Converter *bc, Type *target_type);
 

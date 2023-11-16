@@ -276,6 +276,11 @@ struct AST_Falltrough_Statement
     AST_Directive *directive;
 };
 
+struct AST_Break_Statement
+{
+    AST_Statement *break_from;
+};
+
 struct AST_Switch_Statement
 {
     AST_Expression *value;
@@ -371,6 +376,7 @@ struct AST_Statement
         AST_Switch_Statement switch_stmt;
         AST_Switch_Case_Statement switch_case_stmt;
         AST_Falltrough_Statement falltrough;
+        AST_Break_Statement break_stmt;
         AST_Defer_Statement defer_stmt;
         AST_Return_Statement return_stmt;
         AST_Print_Expression print_expr;

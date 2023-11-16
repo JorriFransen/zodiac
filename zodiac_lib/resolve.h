@@ -120,6 +120,8 @@ struct Resolver
 
     // Only used during flattening
     Stack<AST_Statement *> switch_case_stack;
+
+    Stack<AST_Statement *> break_stack;
 };
 
 typedef u64 Resolve_Results;

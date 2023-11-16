@@ -163,7 +163,7 @@ struct Bytecode_Block
 
     bool terminated = false;
 
-    Bytecode_Block_Handle next = -1;
+    Bytecode_Block_Handle next = BC_INVALID_BLOCK_HANDLE;
 };
 
 ZAPI const bool operator==(const Bytecode_Instruction_Handle &lhs, const Bytecode_Instruction_Handle &rhs);
@@ -259,7 +259,7 @@ struct Bytecode_Builder
     Hash_Table<Atom, Bytecode_Register> global_registers = {};
 
     s64 insert_fn_index = -1;
-    s32 insert_block_index = -1;
+    s32 insert_block_index = BC_INVALID_BLOCK_HANDLE;
 
     Atom atom_string_eq;
 };

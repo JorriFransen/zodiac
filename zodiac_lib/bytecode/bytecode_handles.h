@@ -24,4 +24,7 @@ struct Bytecode_Instruction_Handle
 };
 
 
+const Bytecode_Block_Handle BC_INVALID_BLOCK_HANDLE = -1;
+
+
 } }

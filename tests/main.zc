@@ -6,9 +6,18 @@
 main :: () {
 
     for i := 0; i < 10; i += 1; {
-        println(i);
+        println("i: ", i);
 
         if (i == 3) break;
+
+        y := 0;
+        while y < 10 {
+            println("y: ", y);
+
+            if y == 2 break;
+
+            y += 1;
+        }
     }
 }
 

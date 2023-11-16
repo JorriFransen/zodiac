@@ -6050,7 +6050,7 @@ MunitResult Vararg(const MunitParameter params[], void* user_data_or_fixture) {
             args.data = *args[1];
 
             print_func("Spread args (modified): ", ..args);
-    
+
             call_print_func("Spread args (modified): ", ..args);
 
             return 0;
@@ -6074,7 +6074,7 @@ MunitResult Vararg(const MunitParameter params[], void* user_data_or_fixture) {
         }
     )CODE_STR";
 
-    Expected_Results expected = { .std_out = 
+    Expected_Results expected = { .std_out =
 R"OUT_STR(abc, 55
 fmt: "Hello!"
 args: 
@@ -6314,6 +6314,59 @@ MunitResult Vararg_Spread_Illegal(const MunitParameter params[], void* user_data
         auto result = compile_and_run(code_string, expected);
         defer { free_compile_run_results(&result); };
     }
+
+    return MUNIT_OK;
+}
+
+MunitResult Break_Loop(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
+        main :: () -> s64 {
+
+            for i := 0; i < 10; i += 1; {
+                println("i: ", i);
+
+                if (i == 3) break;
+
+                y := 0;
+                while y < 10 {
+                    println("y: ", y);
+
+                    if y == 2 break;
+
+                    y += 1;
+                }
+
+
+
+
+            }
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(i: 0
+y: 0
+y: 1
+y: 2
+i: 1
+y: 0
+y: 1
+y: 2
+i: 2
+y: 0
+y: 1
+y: 2
+i: 3)OUT_STR",
+
+    };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
 
     return MUNIT_OK;
 }
