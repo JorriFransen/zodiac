@@ -6074,7 +6074,7 @@ MunitResult Vararg(const MunitParameter params[], void* user_data_or_fixture) {
         }
     )CODE_STR";
 
-    Expected_Results expected = { .std_out =
+    Expected_Results expected = { .std_out = 
 R"OUT_STR(abc, 55
 fmt: "Hello!"
 args: 
@@ -6362,6 +6362,70 @@ y: 0
 y: 1
 y: 2
 i: 3)OUT_STR",
+
+    };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Break_Switch(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
+        main :: () -> s64 {
+
+            break_switch(1, 1);
+            break_switch(2, 1);
+
+            break_switch(1, 2);
+            break_switch(2, 2);
+
+            return 0;
+        }
+        break_switch :: (x: s64, y: s64) {
+
+            println("break_switch(", x, ", ", y, ")");
+
+            switch (x) {
+                case (1): {
+                    println("    case 1:");
+
+                    if y == 2 {
+                        println("    taking a break...");
+                        break;
+                    }
+
+                    #falltrough
+                }
+
+                case (2): {
+                    println("    case 2:");
+                }
+            }
+
+            println();
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(break_switch(1, 1)
+    case 1:
+    case 2:
+
+break_switch(2, 1)
+    case 2:
+
+break_switch(1, 2)
+    case 1:
+    taking a break...
+
+break_switch(2, 2)
+    case 2:
+)OUT_STR",
 
     };
 

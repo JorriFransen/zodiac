@@ -935,6 +935,10 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             dynamic_array_create(bc->allocator, &bc_cases, stmt->switch_stmt.cases.count);
 
             auto post_switch_block = bytecode_create_block(bc->builder, cfn, "switch.post");
+
+            Break_Block break_block = { stmt, post_switch_block };
+            stack_push(&bc->break_blocks, break_block);
+
             auto default_or_post_block = post_switch_block;
 
             auto blocks = temp_array_create<Bytecode_Block_Handle>(temp_allocator_allocator(), stmt->switch_stmt.cases.count);
@@ -1004,6 +1008,9 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
             bytecode_append_block(bc->builder, cfn, post_switch_block);
             bytecode_set_insert_point(bc->builder, cfn, post_switch_block);
+
+            auto popped = stack_pop(&bc->break_blocks);
+            assert(popped.stmt == stmt);
 
             temp_array_destroy(&blocks);
 

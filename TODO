@@ -1,4 +1,6 @@
 
+- Ensure defer statements are emitted when breaking.
+
 - Try to have read only memory in the interpreter
 
 - When tests don't output anything, but output is expected they succeed

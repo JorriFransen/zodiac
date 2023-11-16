@@ -5,6 +5,40 @@
 
 main :: () {
 
+    // break_loop();
+
+    break_switch(1, 1);
+    break_switch(2, 1);
+
+    break_switch(1, 2);
+    break_switch(2, 2);
+}
+
+break_switch :: (x: s64, y: s64) {
+
+    println("break_switch(", x, ", ", y, ")");
+
+    switch (x) {
+        case (1): {
+            println("\tcase 1:");
+
+            if y == 2 {
+                println("\ttaking a break...");
+                break;
+            }
+
+            #falltrough
+        }
+
+        case (2): {
+            println("\tcase 2:");
+        }
+    }
+
+    println();
+}
+
+break_loop :: () {
     for i := 0; i < 10; i += 1; {
         println("i: ", i);
 
@@ -19,6 +53,9 @@ main :: () {
             y += 1;
         }
     }
-}
 
+    for x := 0; x < 5; x += 1; {
+        println("x: ", x);
+    }
+}
 

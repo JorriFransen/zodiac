@@ -876,9 +876,15 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
 
             Infer_Node *case_value_infer_node = infer_node_new(resolver->ctx, stmt->switch_stmt.value);
 
+            stack_push(&resolver->break_stack, stmt);
+
             for (s64 i = 0; i < stmt->switch_stmt.cases.count; i++) {
                 flatten_statement(resolver, stmt->switch_stmt.cases[i], scope, dest, case_value_infer_node);
             }
+
+            auto popped = stack_pop(&resolver->break_stack);
+            assert(popped == stmt);
+
             break;
         }
 
