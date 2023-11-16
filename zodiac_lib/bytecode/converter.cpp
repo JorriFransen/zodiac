@@ -1063,6 +1063,10 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             break;
         }
 
+        case AST_Statement_Kind::CONTINUE: {
+            assert(false);
+        }
+
         case AST_Statement_Kind::DEFER: {
             stack_push(&bc->defer_stack, stmt);
             break;

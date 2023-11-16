@@ -72,24 +72,25 @@ struct Lexer
     Token token;
 };
 
-#define ALL_ZODIAC_KEYWORDS \
-    ZODIAC_KEYWORD(if)      \
-    ZODIAC_KEYWORD(else)    \
-    ZODIAC_KEYWORD(return)  \
-    ZODIAC_KEYWORD(while)   \
-    ZODIAC_KEYWORD(for)     \
-    ZODIAC_KEYWORD(switch)  \
-    ZODIAC_KEYWORD(case)    \
-    ZODIAC_KEYWORD(default) \
-    ZODIAC_KEYWORD(break)   \
-    ZODIAC_KEYWORD(sizeof)  \
-    ZODIAC_KEYWORD(struct)  \
-    ZODIAC_KEYWORD(union)   \
-    ZODIAC_KEYWORD(enum)    \
-    ZODIAC_KEYWORD(true)    \
-    ZODIAC_KEYWORD(false)   \
-    ZODIAC_KEYWORD(defer)   \
-    ZODIAC_KEYWORD(cast)    \
+#define ALL_ZODIAC_KEYWORDS  \
+    ZODIAC_KEYWORD(if)       \
+    ZODIAC_KEYWORD(else)     \
+    ZODIAC_KEYWORD(return)   \
+    ZODIAC_KEYWORD(while)    \
+    ZODIAC_KEYWORD(for)      \
+    ZODIAC_KEYWORD(switch)   \
+    ZODIAC_KEYWORD(case)     \
+    ZODIAC_KEYWORD(default)  \
+    ZODIAC_KEYWORD(break)    \
+    ZODIAC_KEYWORD(continue) \
+    ZODIAC_KEYWORD(sizeof)   \
+    ZODIAC_KEYWORD(struct)   \
+    ZODIAC_KEYWORD(union)    \
+    ZODIAC_KEYWORD(enum)     \
+    ZODIAC_KEYWORD(true)     \
+    ZODIAC_KEYWORD(false)    \
+    ZODIAC_KEYWORD(defer)    \
+    ZODIAC_KEYWORD(cast)     \
     ZODIAC_KEYWORD(null)
 
 // Emit atom declarations for all keywords

@@ -933,6 +933,16 @@ void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dy
             break;
         }
 
+        case AST_Statement_Kind::CONTINUE: {
+            if (!stack_count(&resolver->break_stack)) {
+                fatal_resolve_error(resolver->ctx, stmt, "Continue outside of loop");
+            }
+
+            assert(stmt->continue_stmt.continue_to == nullptr);
+            stmt->continue_stmt.continue_to = stack_top(&resolver->break_stack);
+            break;
+        }
+
         case AST_Statement_Kind::RETURN: {
 
             if (stmt->return_stmt.value) {
@@ -1453,6 +1463,11 @@ bool name_resolve_stmt(Zodiac_Context *ctx, AST_Statement *stmt, Scope *scope)
 
         case AST_Statement_Kind::BREAK: {
             assert(stmt->break_stmt.break_from);
+            break;
+        }
+
+        case AST_Statement_Kind::CONTINUE: {
+            assert(stmt->continue_stmt.continue_to);
             break;
         }
 
@@ -2386,6 +2401,11 @@ bool type_resolve_statement(Resolver *resolver, AST_Statement *stmt, Scope *scop
 
         case AST_Statement_Kind::BREAK: {
             assert(stmt->break_stmt.break_from);
+            break;
+        }
+
+        case AST_Statement_Kind::CONTINUE: {
+            assert(stmt->continue_stmt.continue_to);
             break;
         }
 

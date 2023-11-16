@@ -5,32 +5,11 @@
 
 main :: () {
 
-    switch_test(1, 1); println();
-    switch_test(2, 1); println();
+    for i := 0; i < 6; i += 1; {
+        println(i);
 
-    switch_test(1, 2); println();
-    switch_test(2, 2); println();
-
-}
-
-switch_test :: (x: s64, y: s64) {
-
-    defer println("defer before switch");
-
-    switch (x) {
-        case 1: {
-            println("    case 1:");
-
-            defer println("    deferred case 1:");
-
-            if y == 2 {
-                println("    breaking from case 1");
-                break;
-            }
-        }
-
-        case 2: {
-            println("    case 2:");
-        }
+        if i == 3 continue;
     }
+
 }
+

@@ -373,6 +373,13 @@ void ast_break_stmt_create(AST_Statement *out_stmt)
     out_stmt->break_stmt.break_from = nullptr;
 }
 
+void ast_continue_stmt_create(AST_Statement *out_stmt)
+{
+    ast_statement_create(AST_Statement_Kind::CONTINUE, out_stmt);
+
+    out_stmt->continue_stmt.continue_to = nullptr;
+}
+
 void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
 {
     debug_assert(out_stmt);
@@ -927,6 +934,13 @@ AST_Statement *ast_break_stmt_new(Zodiac_Context *ctx, Source_Range sr)
 {
     auto stmt = ast_statement_new(ctx, sr);
     ast_break_stmt_create(stmt);
+    return stmt;
+}
+
+AST_Statement *ast_continue_stmt_new(Zodiac_Context *ctx, Source_Range sr)
+{
+    auto stmt = ast_statement_new(ctx, sr);
+    ast_continue_stmt_create(stmt);
     return stmt;
 }
 
@@ -1519,6 +1533,11 @@ void ast_print_statement(String_Builder *sb, AST_Statement *stmt, int indent/*=0
 
         case AST_Statement_Kind::BREAK: {
             string_builder_append(sb, "break");
+            break;
+        }
+
+        case AST_Statement_Kind::CONTINUE: {
+            string_builder_append(sb, "continue");
             break;
         }
 
