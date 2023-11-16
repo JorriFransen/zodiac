@@ -1,6 +1,4 @@
 
-- Ensure defer statements are emitted when breaking.
-
 - Try to have read only memory in the interpreter
 
 - When tests don't output anything, but output is expected they succeed
@@ -15,8 +13,6 @@
 - Logical && and ||
 
 - Break
-  - Loops
-  - Switch
   - Labels (use the  loop condition / iterator / switch value  somehow)
 
 - Switch

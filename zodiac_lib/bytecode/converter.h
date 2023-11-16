@@ -93,7 +93,7 @@ ZAPI Bytecode_Register ast_const_compound_expr_to_bytecode(Bytecode_Converter *b
 
 ZAPI void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, Bytecode_Register lvalue_reg);
 
-ZAPI Bytecode_Block_Handle find_break_block(Bytecode_Converter *bc, AST_Statement *break_from);
+ZAPI Break_Block find_break_block(Bytecode_Converter *bc, AST_Statement *break_from);
 
 ZAPI Bytecode_Register emit_type_info(Bytecode_Converter *bc, Type *target_type);
 

@@ -1042,9 +1042,23 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
         case AST_Statement_Kind::BREAK: {
 
             auto target_block = find_break_block(bc, stmt->break_stmt.break_from);
-            assert(target_block >= 0);
+            assert(target_block.block_handle >= 0);
 
-            bytecode_emit_jmp(bc->builder, target_block);
+            auto defer_count = stack_count(&bc->defer_stack);
+            if (defer_count > 0) {
+                Array_Ref<AST_Statement *> defers(bc->defer_stack.buffer, defer_count);
+
+                for (s64 i = defers.count - 1; i >= 0; i -= 1) {
+                    auto defer_stmt = defers[i];
+
+                    if (defer_stmt->sequence_id < target_block.stmt->sequence_id) break;
+
+                    assert(defer_stmt->kind == AST_Statement_Kind::DEFER);
+                    ast_stmt_to_bytecode(bc, defer_stmt->defer_stmt.stmt);
+                }
+            }
+
+            bytecode_emit_jmp(bc->builder, target_block.block_handle);
 
             break;
         }
@@ -1063,6 +1077,7 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
                 for (s64 i = defers.count - 1; i >= 0; i -= 1) {
                     auto defer_stmt = defers[i];
+
                     assert(defer_stmt->kind == AST_Statement_Kind::DEFER);
                     ast_stmt_to_bytecode(bc, defer_stmt->defer_stmt.stmt);
                 }
@@ -2391,13 +2406,13 @@ Bytecode_Register emit_type_info(Bytecode_Converter *bc, Type *target_type)
     return bytecode_emit_load(bc->builder, elem_ptr);
 }
 
-Bytecode_Block_Handle find_break_block(Bytecode_Converter *bc, AST_Statement *break_from)
+Break_Block find_break_block(Bytecode_Converter *bc, AST_Statement *break_from)
 {
     for (s64 i = 0; i < bc->break_blocks.sp; i++) {
-        if (bc->break_blocks.buffer[i].stmt == break_from) return bc->break_blocks.buffer[i].block_handle;
+        if (bc->break_blocks.buffer[i].stmt == break_from) return bc->break_blocks.buffer[i];
     }
 
-    return BC_INVALID_BLOCK_HANDLE;
+    return { nullptr, -1 };
 }
 
 Bytecode_Register emit_any(Bytecode_Converter *bc, AST_Expression *expr)

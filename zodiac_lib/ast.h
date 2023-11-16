@@ -381,6 +381,8 @@ struct AST_Statement
         AST_Return_Statement return_stmt;
         AST_Print_Expression print_expr;
     };
+
+    u64 sequence_id;
 };
 
 // Also used for constant variables

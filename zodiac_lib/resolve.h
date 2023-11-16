@@ -122,6 +122,8 @@ struct Resolver
     Stack<AST_Statement *> switch_case_stack;
 
     Stack<AST_Statement *> break_stack;
+
+    u64 next_sequence_id;
 };
 
 typedef u64 Resolve_Results;

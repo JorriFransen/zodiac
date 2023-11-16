@@ -47,6 +47,8 @@ void resolver_create(Resolver *resolver, Zodiac_Context *ctx)
     stack_init(&dynamic_allocator, &resolver->switch_case_stack);
     stack_init(&dynamic_allocator, &resolver->break_stack);
 
+    resolver->next_sequence_id = 1;
+
     assert(resolver->global_scope);
     assert(resolver->global_scope->global.file == nullptr);
 
@@ -601,6 +603,8 @@ void flatten_declaration(Resolver *resolver, AST_Declaration *decl, Scope *scope
                 flatten_type_spec(resolver, decl->function.return_ts, scope, dest);
             }
 
+            resolver->next_sequence_id = 1;
+
             for (u64 i = 0; i < decl->function.body.count; i++) {
                 flatten_statement(resolver, decl->function.body[i], local_scope, dest);
             }
@@ -763,6 +767,9 @@ void flatten_enum_declaration(Resolver *resolver, AST_Declaration *decl, Scope *
 void flatten_statement(Resolver *resolver, AST_Statement *stmt, Scope *scope, Dynamic_Array<Flat_Node> *dest, Infer_Node *infer_node/*=nullptr*/)
 {
     debug_assert(resolver && stmt && scope && dest);
+
+    assert(stmt->sequence_id == 0);
+    stmt->sequence_id = resolver->next_sequence_id++;
 
     switch (stmt->kind) {
 

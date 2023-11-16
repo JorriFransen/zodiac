@@ -6435,6 +6435,110 @@ break_switch(2, 2)
     return MUNIT_OK;
 }
 
+MunitResult Break_Loop_Defer(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
+        main :: () -> s64 {
+
+            defer println("defer before loop");
+
+            for i := 0; i < 10; i += 1; {
+                defer println("deferred: i: ", i);
+
+                if i == 2 {
+                    break;
+                }
+
+                defer println("deferred after break: ", i);
+
+                println("i: ", i);
+            }
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(i: 0
+deferred after break: 0
+deferred: i: 0
+i: 1
+deferred after break: 1
+deferred: i: 1
+deferred: i: 2
+defer before loop)OUT_STR",
+
+    };
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Break_Switch_Defer(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
+        main :: () -> s64 {
+            switch_test(1, 1); println();
+            switch_test(2, 1); println();
+
+            switch_test(1, 2); println();
+            switch_test(2, 2); println();
+
+            return 0;
+        }
+
+        switch_test :: (x: s64, y: s64) {
+
+            defer println("defer before switch");
+
+            switch (x) {
+                case 1: {
+                    println("    case 1:");
+
+                    defer println("    deferred case 1:");
+
+                    if y == 2 {
+                        println("    breaking from case 1");
+                        break;
+                    }
+                }
+
+                case 2: {
+                    println("    case 2:");
+                }
+            }
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(    case 1:
+    deferred case 1:
+defer before switch
+
+    case 2:
+defer before switch
+
+    case 1:
+    breaking from case 1
+    deferred case 1:
+defer before switch
+
+    case 2:
+defer before switch
+)OUT_STR"};
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
 #undef DAY_ENUM_DECL
 #undef RESOLVE_ERR
 

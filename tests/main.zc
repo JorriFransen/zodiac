@@ -5,57 +5,32 @@
 
 main :: () {
 
-    // break_loop();
+    switch_test(1, 1); println();
+    switch_test(2, 1); println();
 
-    break_switch(1, 1);
-    break_switch(2, 1);
+    switch_test(1, 2); println();
+    switch_test(2, 2); println();
 
-    break_switch(1, 2);
-    break_switch(2, 2);
 }
 
-break_switch :: (x: s64, y: s64) {
+switch_test :: (x: s64, y: s64) {
 
-    println("break_switch(", x, ", ", y, ")");
+    defer println("defer before switch");
 
     switch (x) {
-        case (1): {
-            println("\tcase 1:");
+        case 1: {
+            println("    case 1:");
+
+            defer println("    deferred case 1:");
 
             if y == 2 {
-                println("\ttaking a break...");
+                println("    breaking from case 1");
                 break;
             }
-
-            #falltrough
         }
 
-        case (2): {
-            println("\tcase 2:");
+        case 2: {
+            println("    case 2:");
         }
-    }
-
-    println();
-}
-
-break_loop :: () {
-    for i := 0; i < 10; i += 1; {
-        println("i: ", i);
-
-        if (i == 3) break;
-
-        y := 0;
-        while y < 10 {
-            println("y: ", y);
-
-            if y == 2 break;
-
-            y += 1;
-        }
-    }
-
-    for x := 0; x < 5; x += 1; {
-        println("x: ", x);
     }
 }
-

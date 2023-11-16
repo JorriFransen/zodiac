@@ -378,6 +378,7 @@ void ast_statement_create(AST_Statement_Kind kind, AST_Statement *out_stmt)
     debug_assert(out_stmt);
 
     out_stmt->kind = kind;
+    out_stmt->sequence_id = 0;
 }
 
 void ast_variable_decl_create(AST_Identifier ident, AST_Type_Spec *ts, AST_Expression *value, AST_Declaration *out_decl)
