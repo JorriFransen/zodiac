@@ -59,6 +59,7 @@ struct Bytecode_Converter
     Hash_Table<AST_Declaration *, Bytecode_Global_Handle> globals;
 
     Stack<Break_Block> break_blocks;
+    Stack<Break_Block> continue_blocks;
 
     s64 run_directive_count; // Used to generate unique names
     Hash_Table<AST_Directive *, Bytecode_Function_Handle> run_directives;
@@ -94,6 +95,7 @@ ZAPI Bytecode_Register ast_const_compound_expr_to_bytecode(Bytecode_Converter *b
 ZAPI void assignment_to_bytecode(Bytecode_Converter *bc, AST_Expression *value_expr, Bytecode_Register lvalue_reg);
 
 ZAPI Break_Block find_break_block(Bytecode_Converter *bc, AST_Statement *break_from);
+ZAPI Break_Block find_continue_block(Bytecode_Converter *bc, AST_Statement *break_from);
 
 ZAPI Bytecode_Register emit_type_info(Bytecode_Converter *bc, Type *target_type);
 

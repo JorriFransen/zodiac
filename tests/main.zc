@@ -1,14 +1,25 @@
 
 #import "print.zc"
 
-#run main();
+// #run main();
 
 main :: () {
 
     for i := 0; i < 6; i += 1; {
-        println(i);
-
         if i == 3 continue;
+
+        println(i);
+    }
+
+    i := 0;
+    while i < 6 {
+        ii := i;
+        i += 1;
+
+        if ii == 3 continue;
+
+        println(ii);
+
     }
 
 }

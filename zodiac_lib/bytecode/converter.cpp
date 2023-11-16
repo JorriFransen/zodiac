@@ -45,6 +45,7 @@ void bytecode_converter_init(Allocator *allocator, Zodiac_Context *context, Byte
     hash_table_create(allocator, &out_bc->implicit_lvalues);
     hash_table_create(allocator, &out_bc->globals);
     stack_init(allocator, &out_bc->break_blocks);
+    stack_init(allocator, &out_bc->continue_blocks);
     hash_table_create(allocator, &out_bc->run_directives);
     hash_table_create(allocator, &out_bc->run_results);
 
@@ -399,6 +400,7 @@ void ast_function_to_bytecode(Bytecode_Converter *bc, AST_Declaration *decl)
     }
 
     assert(bc->break_blocks.sp == 0);
+    assert(bc->continue_blocks.sp == 0);
 
     auto taa = temp_allocator_allocator();
     auto ta = temp_allocator();
@@ -864,6 +866,9 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             auto while_body_block = bytecode_create_block(bc->builder, cfn, "while.body");
             auto post_while_block = bytecode_create_block(bc->builder, cfn, "while.post");
 
+            Break_Block continue_block = { stmt, while_cond_block };
+            stack_push(&bc->continue_blocks, continue_block);
+
             Break_Block break_block = { stmt, post_while_block };
             stack_push(&bc->break_blocks, break_block);
 
@@ -884,8 +889,14 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             post_while_block = bytecode_append_block(bc->builder, cfn, post_while_block);
             bytecode_set_insert_point(bc->builder, cfn, post_while_block);
 
-            auto popped = stack_pop(&bc->break_blocks);
-            assert(popped.stmt == stmt);
+            {
+                auto popped = stack_pop(&bc->continue_blocks);
+                assert(popped.stmt == stmt);
+            }
+            {
+                auto popped = stack_pop(&bc->break_blocks);
+                assert(popped.stmt == stmt);
+            }
             break;
         }
 
@@ -894,7 +905,11 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
 
             auto for_cond_block = bytecode_append_block(bc->builder, cfn, "for.cond");
             auto for_body_block = bytecode_create_block(bc->builder, cfn, "for.body");
+            auto for_inc_block = bytecode_create_block(bc->builder, cfn, "for.inc");
             auto post_for_block = bytecode_create_block(bc->builder, cfn, "for.post");
+
+            Break_Block continue_block = { stmt, for_inc_block };
+            stack_push(&bc->continue_blocks, continue_block);
 
             Break_Block break_block = { stmt, post_for_block };
             stack_push(&bc->break_blocks, break_block);
@@ -912,16 +927,28 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
             ast_stmt_to_bytecode(bc, stmt->for_stmt.body_stmt);
 
             if (!bytecode_block_is_terminated(bytecode_get_insert_block(bc->builder))) {
-                ast_stmt_to_bytecode(bc, stmt->for_stmt.inc_stmt);
-                bytecode_emit_jmp(bc->builder, for_cond_block);
+                bytecode_emit_jmp(bc->builder, for_inc_block);
             }
 
+            for_inc_block = bytecode_append_block(bc->builder, cfn, for_inc_block);
+            bytecode_set_insert_point(bc->builder, cfn, for_inc_block);
+            ast_stmt_to_bytecode(bc, stmt->for_stmt.inc_stmt);
+
+            if (!bytecode_block_is_terminated(bytecode_get_insert_block(bc->builder))) {
+                bytecode_emit_jmp(bc->builder, for_cond_block);
+            }
 
             post_for_block = bytecode_append_block(bc->builder, cfn, post_for_block);
             bytecode_set_insert_point(bc->builder, cfn, post_for_block);
 
-            auto popped = stack_pop(&bc->break_blocks);
-            assert(popped.stmt == stmt);
+            {
+                auto popped = stack_pop(&bc->continue_blocks);
+                assert(popped.stmt == stmt);
+            }
+            {
+                auto popped = stack_pop(&bc->break_blocks);
+                assert(popped.stmt == stmt);
+            }
             break;
         }
 
@@ -1064,7 +1091,24 @@ bool ast_stmt_to_bytecode(Bytecode_Converter *bc, AST_Statement *stmt)
         }
 
         case AST_Statement_Kind::CONTINUE: {
-            assert(false);
+            auto target_block = find_continue_block(bc, stmt->continue_stmt.continue_to);
+            assert(target_block.block_handle >= 0);
+
+            auto defer_count = stack_count(&bc->defer_stack);
+            if (defer_count > 0) {
+                Array_Ref<AST_Statement *> defers(bc->defer_stack.buffer, defer_count);
+
+                for (s64 i = defers.count - 1; i >= 0; i -= 1) {
+                    auto defer_stmt = defers[i];
+
+                    if (defer_stmt->sequence_id < target_block.stmt->sequence_id) break;
+
+                    assert(defer_stmt->kind == AST_Statement_Kind::DEFER);
+                    ast_stmt_to_bytecode(bc, defer_stmt->defer_stmt.stmt);
+                }
+            }
+
+            bytecode_emit_jmp(bc->builder, target_block.block_handle);
         }
 
         case AST_Statement_Kind::DEFER: {
@@ -2414,6 +2458,15 @@ Break_Block find_break_block(Bytecode_Converter *bc, AST_Statement *break_from)
 {
     for (s64 i = 0; i < bc->break_blocks.sp; i++) {
         if (bc->break_blocks.buffer[i].stmt == break_from) return bc->break_blocks.buffer[i];
+    }
+
+    return { nullptr, -1 };
+}
+
+Break_Block find_continue_block(Bytecode_Converter *bc, AST_Statement *break_from)
+{
+    for (s64 i = 0; i < bc->continue_blocks.sp; i++) {
+        if (bc->continue_blocks.buffer[i].stmt == break_from) return bc->continue_blocks.buffer[i];
     }
 
     return { nullptr, -1 };
