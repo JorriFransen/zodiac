@@ -157,6 +157,8 @@ Compile_Run_Results compile_and_run(String_Ref code_str, Expected_Results expect
     X(Break_Switch) \
     X(Break_Loop_Defer) \
     X(Break_Switch_Defer) \
+    X(Continue_Loop) \
+    X(Continue_Loop_Defer) \
 
 
 // Function declarations

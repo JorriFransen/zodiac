@@ -6539,6 +6539,126 @@ defer before switch
     return MUNIT_OK;
 }
 
+MunitResult Continue_Loop(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+        #import "print.zc"
+
+        main :: () -> s64 {
+
+            for i := 0; i < 6; i += 1; {
+                if i == 3 continue;
+
+                println(i);
+            }
+
+            i := 0;
+            while i < 6 {
+                ii := i;
+                i += 1;
+
+                if ii == 3 continue;
+
+                println(ii);
+
+            }
+
+            return 0;
+
+        }
+
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(0
+1
+2
+4
+5
+0
+1
+2
+4
+5)OUT_STR"};
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
+
+MunitResult Continue_Loop_Defer(const MunitParameter params[], void* user_data_or_fixture) {
+
+    String_Ref code_string = R"CODE_STR(
+
+        #import "print.zc"
+
+        main :: () -> s64 {
+
+            defer println("Before loop");
+
+            for i := 0; i < 6; i += 1; {
+
+                defer println("Before for continue: ", i);
+
+                if i == 3 continue;
+
+                println(i);
+            }
+
+            defer println("Between loops");
+
+            i := 0;
+            while i < 6 {
+                ii := i;
+                i += 1;
+
+                defer println("Before while continue: ", ii);
+
+                if ii == 3 continue;
+
+                println(ii);
+
+            }
+
+            defer println("After loops");
+
+            return 0;
+        }
+    )CODE_STR";
+
+    Expected_Results expected = { .std_out =
+R"OUT_STR(0
+Before for continue: 0
+1
+Before for continue: 1
+2
+Before for continue: 2
+Before for continue: 3
+4
+Before for continue: 4
+5
+Before for continue: 5
+0
+Before while continue: 0
+1
+Before while continue: 1
+2
+Before while continue: 2
+Before while continue: 3
+4
+Before while continue: 4
+5
+Before while continue: 5
+After loops
+Between loops
+Before loop)OUT_STR"};
+
+    auto result = compile_and_run(code_string, expected);
+    defer { free_compile_run_results(&result); };
+
+    return MUNIT_OK;
+}
 #undef DAY_ENUM_DECL
 #undef RESOLVE_ERR
 

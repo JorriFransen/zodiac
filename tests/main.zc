@@ -1,26 +1,37 @@
 
 #import "print.zc"
 
-// #run main();
+#run main();
 
 main :: () {
 
+    defer println("Before loop");
+
     for i := 0; i < 6; i += 1; {
+
+        defer println("Before for continue: ", i);
+
         if i == 3 continue;
 
         println(i);
     }
+
+    defer println("Between loops");
 
     i := 0;
     while i < 6 {
         ii := i;
         i += 1;
 
+        defer println("Before while continue: ", ii);
+
         if ii == 3 continue;
 
         println(ii);
 
     }
+
+    defer println("After loops");
 
 }
 
